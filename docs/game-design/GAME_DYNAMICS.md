@@ -123,7 +123,7 @@ INDIVIDUAL REWARD
         - lambda_own * OwnedRuined_i(T)
 
   where
-    r_i(t) = 
+    r_i(t) =
        -c_i if working,
        +r_rest if resting,
        +alpha_own * change in owned Safe houses during the night.

@@ -7,7 +7,6 @@ policies, similar to the tournament setup. The trained agent learns optimal
 strategies through interaction with the environment.
 """
 
-import os
 import sys
 import argparse
 import numpy as np
@@ -21,7 +20,6 @@ import pufferlib.utils
 import pufferlib.vectorization
 from pufferlib.models import PolicyValueNetwork
 import torch
-import torch.nn as nn
 
 from bucket_brigade.envs import make_env, make_vectorized_env
 
@@ -39,7 +37,7 @@ def make_policy(env):
 
 
 def train_policy(
-    scenario_name: str = 'default',
+    scenario_name: str = "default",
     num_opponents: int = 3,
     opponent_policies: list = None,
     total_timesteps: int = 1_000_000,
@@ -105,9 +103,7 @@ def train_policy(
 
     # Create training environments
     train_envs = make_vectorized_env(
-        num_envs=num_envs,
-        scenario_name=scenario_name,
-        num_opponents=num_opponents
+        num_envs=num_envs, scenario_name=scenario_name, num_opponents=num_opponents
     )
 
     # Create evaluation environment
@@ -144,7 +140,7 @@ def train_policy(
     print("🚀 Starting training...")
 
     global_step = 0
-    best_reward = float('-inf')
+    best_reward = float("-inf")
 
     while global_step < total_timesteps:
         # Training step
@@ -154,11 +150,13 @@ def train_policy(
 
         # Logging
         if global_step % 1000 == 0:
-            print(f"📈 Step {global_step:,} | "
-                  f"Loss: {stats['policy_loss']:.3f} | "
-                  f"Value Loss: {stats['value_loss']:.3f} | "
-                  f"Entropy: {stats['entropy']:.3f} | "
-                  f"Reward: {stats['mean_reward']:.2f}")
+            print(
+                f"📈 Step {global_step:,} | "
+                f"Loss: {stats['policy_loss']:.3f} | "
+                f"Value Loss: {stats['value_loss']:.3f} | "
+                f"Entropy: {stats['entropy']:.3f} | "
+                f"Reward: {stats['mean_reward']:.2f}"
+            )
 
         # Evaluation
         if global_step % eval_interval == 0:
@@ -208,7 +206,7 @@ def evaluate_policy(policy, env, num_episodes: int = 10, deterministic: bool = T
 
             # Convert multi-discrete action back to [house, mode]
             house_idx = action // 2  # First dimension
-            mode = action % 2        # Second dimension
+            mode = action % 2  # Second dimension
             action_array = np.array([house_idx, mode])
 
             # Step environment
@@ -222,56 +220,81 @@ def evaluate_policy(policy, env, num_episodes: int = 10, deterministic: bool = T
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train Bucket Brigade RL Policy')
+    parser = argparse.ArgumentParser(description="Train Bucket Brigade RL Policy")
 
     # Environment settings
-    parser.add_argument('--scenario', type=str, default='default',
-                       choices=['default', 'trivial_cooperation', 'early_containment',
-                               'greedy_neighbor', 'sparse_heroics'],
-                       help='Training scenario')
-    parser.add_argument('--num-opponents', type=int, default=3,
-                       help='Number of opponent agents')
-    parser.add_argument('--opponent-policies', type=str, nargs='+',
-                       default=['random', 'firefighter', 'coordinator'],
-                       help='Opponent policy types')
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="default",
+        choices=[
+            "default",
+            "trivial_cooperation",
+            "early_containment",
+            "greedy_neighbor",
+            "sparse_heroics",
+        ],
+        help="Training scenario",
+    )
+    parser.add_argument(
+        "--num-opponents", type=int, default=3, help="Number of opponent agents"
+    )
+    parser.add_argument(
+        "--opponent-policies",
+        type=str,
+        nargs="+",
+        default=["random", "firefighter", "coordinator"],
+        help="Opponent policy types",
+    )
 
     # Training settings
-    parser.add_argument('--total-timesteps', type=int, default=1_000_000,
-                       help='Total training timesteps')
-    parser.add_argument('--batch-size', type=int, default=2**12,
-                       help='Batch size')
-    parser.add_argument('--learning-rate', type=float, default=2.5e-4,
-                       help='Learning rate')
-    parser.add_argument('--num-envs', type=int, default=8,
-                       help='Number of parallel environments')
-    parser.add_argument('--num-epochs', type=int, default=4,
-                       help='PPO epochs per update')
-    parser.add_argument('--num-minibatches', type=int, default=4,
-                       help='Minibatches per epoch')
+    parser.add_argument(
+        "--total-timesteps",
+        type=int,
+        default=1_000_000,
+        help="Total training timesteps",
+    )
+    parser.add_argument("--batch-size", type=int, default=2**12, help="Batch size")
+    parser.add_argument(
+        "--learning-rate", type=float, default=2.5e-4, help="Learning rate"
+    )
+    parser.add_argument(
+        "--num-envs", type=int, default=8, help="Number of parallel environments"
+    )
+    parser.add_argument(
+        "--num-epochs", type=int, default=4, help="PPO epochs per update"
+    )
+    parser.add_argument(
+        "--num-minibatches", type=int, default=4, help="Minibatches per epoch"
+    )
 
     # PPO hyperparameters
-    parser.add_argument('--gamma', type=float, default=0.99,
-                       help='Discount factor')
-    parser.add_argument('--gae-lambda', type=float, default=0.95,
-                       help='GAE lambda')
-    parser.add_argument('--clip-coef', type=float, default=0.2,
-                       help='PPO clip coefficient')
-    parser.add_argument('--ent-coef', type=float, default=0.01,
-                       help='Entropy coefficient')
-    parser.add_argument('--vf-coef', type=float, default=0.5,
-                       help='Value function coefficient')
-    parser.add_argument('--max-grad-norm', type=float, default=0.5,
-                       help='Maximum gradient norm')
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
+    parser.add_argument("--gae-lambda", type=float, default=0.95, help="GAE lambda")
+    parser.add_argument(
+        "--clip-coef", type=float, default=0.2, help="PPO clip coefficient"
+    )
+    parser.add_argument(
+        "--ent-coef", type=float, default=0.01, help="Entropy coefficient"
+    )
+    parser.add_argument(
+        "--vf-coef", type=float, default=0.5, help="Value function coefficient"
+    )
+    parser.add_argument(
+        "--max-grad-norm", type=float, default=0.5, help="Maximum gradient norm"
+    )
 
     # Training options
-    parser.add_argument('--seed', type=int, default=42,
-                       help='Random seed')
-    parser.add_argument('--eval-interval', type=int, default=1000,
-                       help='Evaluation interval')
-    parser.add_argument('--save-interval', type=int, default=10000,
-                       help='Model save interval')
-    parser.add_argument('--run-name', type=str, default=None,
-                       help='Name for this training run')
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--eval-interval", type=int, default=1000, help="Evaluation interval"
+    )
+    parser.add_argument(
+        "--save-interval", type=int, default=10000, help="Model save interval"
+    )
+    parser.add_argument(
+        "--run-name", type=str, default=None, help="Name for this training run"
+    )
 
     args = parser.parse_args()
 

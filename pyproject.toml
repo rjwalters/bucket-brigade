@@ -54,3 +54,7 @@ disallow_incomplete_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "scripts"]
+skips = ["B101", "B102", "B324"]  # Skip assert, exec (needed for agent loading), and MD5 (used for naming only)

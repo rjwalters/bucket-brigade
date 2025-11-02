@@ -22,7 +22,7 @@ def run_batch_games(
     num_games: int = 50,
     num_agents: int = 6,
     output_dir: str = "results",
-    seed: int = 42
+    seed: int = 42,
 ):
     """
     Run a batch of games with random agents and scenarios.
@@ -85,9 +85,9 @@ def run_batch_games(
             "team_reward": float(np.sum(total_rewards)),
             "agent_rewards": total_rewards.tolist(),
             "nights_played": env.night,
-            "saved_houses": int(np.sum(obs['houses'] == 0)),
-            "ruined_houses": int(np.sum(obs['houses'] == 2)),
-            "replay_path": str(replay_file.relative_to(output_path))
+            "saved_houses": int(np.sum(obs["houses"] == 0)),
+            "ruined_houses": int(np.sum(obs["houses"] == 2)),
+            "replay_path": str(replay_file.relative_to(output_path)),
         }
         results.append(result)
 
@@ -100,14 +100,14 @@ def run_batch_games(
     summary = {
         "num_games": num_games,
         "num_agents": num_agents,
-        "avg_team_reward": float(df['team_reward'].mean()),
-        "avg_nights": float(df['nights_played'].mean()),
-        "avg_saved_houses": float(df['saved_houses'].mean()),
-        "total_games": len(results)
+        "avg_team_reward": float(df["team_reward"].mean()),
+        "avg_nights": float(df["nights_played"].mean()),
+        "avg_saved_houses": float(df["saved_houses"].mean()),
+        "total_games": len(results),
     }
 
     summary_path = output_path / "summary.json"
-    with open(summary_path, 'w') as f:
+    with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
 
     print("\nBatch complete!")
@@ -116,11 +116,13 @@ def run_batch_games(
     print(".2f")
     print(".1f")
     print(".1f")
+
+
 def main(
     num_games: int = typer.Option(50, help="Number of games to run"),
     num_agents: int = typer.Option(6, help="Number of agents per game"),
     output_dir: str = typer.Option("results", help="Output directory"),
-    seed: int = typer.Option(42, help="Random seed")
+    seed: int = typer.Option(42, help="Random seed"),
 ):
     """Run a batch of Bucket Brigade games."""
     run_batch_games(num_games, num_agents, output_dir, seed)

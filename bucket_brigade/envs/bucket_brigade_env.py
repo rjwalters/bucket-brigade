@@ -4,7 +4,7 @@ Bucket Brigade multi-agent environment implementation.
 
 import numpy as np
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 
 from .scenarios import Scenario
@@ -60,6 +60,9 @@ class BucketBrigadeEnv:
 
         # Trajectory recording for replays
         self.trajectory: List[Dict] = []
+
+        # Previous house state for reward computation
+        self._prev_houses_state: np.ndarray = np.zeros(10, dtype=np.int8)
 
         # House ownership: assign agents to houses in round-robin fashion
         self.house_owners = np.arange(10) % self.num_agents
@@ -154,14 +157,14 @@ class BucketBrigadeEnv:
             {},
         )
 
-    def _initialize_houses(self):
+    def _initialize_houses(self) -> None:
         """Initialize houses with some burning based on rho_ignite."""
         num_burning = int(np.round(self.scenario.rho_ignite * 10))
         burning_indices = self.rng.choice(10, size=num_burning, replace=False)
         self.houses = np.zeros(10, dtype=np.int8)
         self.houses[burning_indices] = self.BURNING
 
-    def _extinguish_fires(self, actions: np.ndarray):
+    def _extinguish_fires(self, actions: np.ndarray) -> None:
         """Extinguish fires based on worker presence and kappa parameter."""
         for house_idx in range(10):
             if self.houses[house_idx] != self.BURNING:
@@ -178,7 +181,7 @@ class BucketBrigadeEnv:
             if self.rng.random() < p_extinguish:
                 self.houses[house_idx] = self.SAFE
 
-    def _spread_fires(self):
+    def _spread_fires(self) -> None:
         """Spread fires to neighboring safe houses."""
         # Burning houses try to ignite their safe neighbors
         for house_idx in range(10):
@@ -192,13 +195,13 @@ class BucketBrigadeEnv:
                     if self.rng.random() < self.scenario.beta:
                         self.houses[neighbor_idx] = self.BURNING
 
-    def _burn_out_houses(self):
+    def _burn_out_houses(self) -> None:
         """Burning houses that neither extinguished nor spread become ruined."""
         # Any remaining burning houses become ruined
         burning_mask = self.houses == self.BURNING
         self.houses[burning_mask] = self.RUINED
 
-    def _spark_fires(self):
+    def _spark_fires(self) -> None:
         """Add spontaneous fires if spark phase is active."""
         for house_idx in range(10):
             if (
@@ -267,7 +270,7 @@ class BucketBrigadeEnv:
         all_safe = np.all(self.houses == self.SAFE)
         all_ruined = np.all(self.houses == self.RUINED)
 
-        return all_safe or all_ruined
+        return bool(all_safe or all_ruined)
 
     def _get_observation(self) -> Dict[str, np.ndarray]:
         """Get current observation for all agents."""
@@ -279,7 +282,7 @@ class BucketBrigadeEnv:
             "scenario_info": self.scenario.to_feature_vector(),
         }
 
-    def _record_night(self):
+    def _record_night(self) -> None:
         """Record current night state for replay."""
         night_data = {
             "night": self.night,
@@ -291,7 +294,7 @@ class BucketBrigadeEnv:
         }
         self.trajectory.append(night_data)
 
-    def save_replay(self, path: str):
+    def save_replay(self, path: str) -> None:
         """
         Save complete game trajectory as JSON.
 
@@ -318,7 +321,7 @@ class BucketBrigadeEnv:
         with open(path, "w") as f:
             json.dump(replay_data, f, indent=2)
 
-    def render(self):
+    def render(self) -> None:
         """Simple text-based rendering for debugging."""
         house_symbols = ["□", "🔥", "💀"]  # SAFE, BURNING, RUINED
 
@@ -330,13 +333,13 @@ class BucketBrigadeEnv:
         print()
 
     @property
-    def observation_space(self):
+    def observation_space(self) -> Any:
         """Gym/PufferLib compatible observation space."""
         # This would need pufferlib import, simplified for now
         return None
 
     @property
-    def action_space(self):
+    def action_space(self) -> Any:
         """Gym/PufferLib compatible action space."""
         # This would need pufferlib import, simplified for now
         return None

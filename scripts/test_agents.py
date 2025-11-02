@@ -11,7 +11,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bucket_brigade.envs import BucketBrigadeEnv, default_scenario
-from bucket_brigade.agents import create_random_agent, create_archetype_agent, RandomAgent
+from bucket_brigade.agents import (
+    create_random_agent,
+    create_archetype_agent,
+    RandomAgent,
+)
 
 
 def test_agent_types():
@@ -26,9 +30,9 @@ def test_agent_types():
     # Create different agent types
     agents = [
         RandomAgent(0, "Random"),
-        create_archetype_agent('firefighter', 1),
-        create_archetype_agent('free_rider', 2),
-        create_archetype_agent('coordinator', 3)
+        create_archetype_agent("firefighter", 1),
+        create_archetype_agent("free_rider", 2),
+        create_archetype_agent("coordinator", 3),
     ]
 
     print(f"Created {len(agents)} agents:")
@@ -41,7 +45,9 @@ def test_agent_types():
 
     for night in range(5):
         print(f"Night {night}:")
-        print(f"  Houses: {''.join(['□' if h == 0 else '🔥' if h == 1 else '💀' for h in obs['houses']])}")
+        print(
+            f"  Houses: {''.join(['□' if h == 0 else '🔥' if h == 1 else '💀' for h in obs['houses']])}"
+        )
 
         actions = []
         for agent in agents:
@@ -84,9 +90,19 @@ def test_random_agents():
         total_rewards += rewards
 
         if night == 0:
-            print("Initial houses:", ''.join(['□' if h == 0 else '🔥' if h == 1 else '💀' for h in obs['houses']]))
+            print(
+                "Initial houses:",
+                "".join(
+                    ["□" if h == 0 else "🔥" if h == 1 else "💀" for h in obs["houses"]]
+                ),
+            )
         elif night == 9:
-            print("Final houses:  ", ''.join(['□' if h == 0 else '🔥' if h == 1 else '💀' for h in obs['houses']]))
+            print(
+                "Final houses:  ",
+                "".join(
+                    ["□" if h == 0 else "🔥" if h == 1 else "💀" for h in obs["houses"]]
+                ),
+            )
 
     print("Total rewards:", total_rewards)
     print()

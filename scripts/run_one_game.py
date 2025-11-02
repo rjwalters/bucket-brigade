@@ -39,7 +39,9 @@ def main():
         for agent in agents:
             action = agent.act(obs)
             actions.append(action)
-            print(f"{agent.name}: house {action[0]}, mode {'WORK' if action[1] else 'REST'}")
+            print(
+                f"{agent.name}: house {action[0]}, mode {'WORK' if action[1] else 'REST'}"
+            )
 
         actions = np.array(actions)
 
@@ -47,7 +49,10 @@ def main():
         obs, rewards, dones, info = env.step(actions)
 
         # Show results
-        print("Houses:", ''.join(['□' if h == 0 else '🔥' if h == 1 else '💀' for h in obs['houses']]))
+        print(
+            "Houses:",
+            "".join(["□" if h == 0 else "🔥" if h == 1 else "💀" for h in obs["houses"]]),
+        )
         print("Rewards:", rewards)
         print()
 
@@ -57,8 +62,8 @@ def main():
             break
 
     # Final results
-    saved_houses = np.sum(obs['houses'] == 0)
-    ruined_houses = np.sum(obs['houses'] == 2)
+    saved_houses = np.sum(obs["houses"] == 0)
+    ruined_houses = np.sum(obs["houses"] == 2)
     total_team_reward = 100 * saved_houses - 100 * ruined_houses
 
     print("=== Game Over ===")

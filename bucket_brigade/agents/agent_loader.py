@@ -7,7 +7,7 @@ user-submitted agents while preventing security issues.
 
 import importlib.util
 import sys
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, Union, cast, Callable
 from pathlib import Path
 import hashlib
 import logging
@@ -105,7 +105,9 @@ def validate_agent_code(source_code: str) -> None:
                     raise AgentSecurityError(f"Forbidden import: {module}")
 
 
-def load_agent_from_file(file_path: str, validate: bool = True) -> Type[AgentBase]:
+def load_agent_from_file(
+    file_path: Union[str, Path], validate: bool = True
+) -> Type[AgentBase]:
     """
     Load an agent class from a Python file.
 
@@ -121,7 +123,7 @@ def load_agent_from_file(file_path: str, validate: bool = True) -> Type[AgentBas
         AgentSecurityError: If security check fails
         ImportError: If file cannot be loaded
     """
-    file_path = Path(file_path)
+    file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
     if not file_path.exists():
         raise FileNotFoundError(f"Agent file not found: {file_path}")
@@ -225,7 +227,7 @@ def load_agent_from_string(
 
 
 def create_agent_instance(
-    agent_class: Type[AgentBase], agent_id: int, **kwargs
+    agent_class: Type[AgentBase], agent_id: int, **kwargs: Any
 ) -> AgentBase:
     """
     Create an instance of an agent class.
@@ -241,7 +243,7 @@ def create_agent_instance(
     # Try to use create_agent function if available
     module = sys.modules.get(agent_class.__module__)
     if module and hasattr(module, "create_agent"):
-        create_func = getattr(module, "create_agent")
+        create_func = cast(Callable[..., AgentBase], getattr(module, "create_agent"))
         return create_func(agent_id, **kwargs)
     else:
         # Fallback to direct instantiation
@@ -260,7 +262,7 @@ def get_agent_metadata(agent_class: Type[AgentBase]) -> Dict[str, Any]:
     """
     module = sys.modules.get(agent_class.__module__)
     if module and hasattr(module, "AGENT_METADATA"):
-        return getattr(module, "AGENT_METADATA")
+        return cast(Dict[str, Any], getattr(module, "AGENT_METADATA"))
     else:
         return {
             "name": agent_class.__name__,
@@ -284,7 +286,12 @@ def validate_agent_behavior(agent: AgentBase, max_steps: int = 100) -> Dict[str,
     """
     from ..envs import BucketBrigadeEnv, default_scenario
 
-    results = {"valid": True, "errors": [], "warnings": [], "stats": {}}
+    results: Dict[str, Any] = {
+        "valid": True,
+        "errors": [],
+        "warnings": [],
+        "stats": {},
+    }
 
     try:
         # Create test environment
@@ -315,7 +322,7 @@ def validate_agent_behavior(agent: AgentBase, max_steps: int = 100) -> Dict[str,
             if action[1] not in [0, 1]:
                 results["errors"].append(f"Invalid mode at step {step}: {action[1]}")
 
-            obs, rewards, dones, info = env.step([action])  # Single agent
+            obs, rewards, dones, info = env.step(action)  # Single agent
             rewards_received.append(float(rewards[0]))
 
             if env.done:

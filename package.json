@@ -1,6 +1,7 @@
 {
   "name": "bucket-brigade-monorepo",
   "private": true,
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "install:all": "uv pip install -e .[dev] && cd web && pnpm install",
     "format": "black . && cd web && pnpm run format",
