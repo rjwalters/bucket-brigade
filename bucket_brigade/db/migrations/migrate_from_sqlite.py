@@ -86,12 +86,16 @@ def import_to_postgresql(data: Dict[str, List[Dict[str, Any]]]) -> None:
                 name=agent_data.get("name", "Unknown"),
                 author=agent_data.get("author", "Unknown"),
                 code_path=agent_data["code_path"],
-                created_at=datetime.fromisoformat(agent_data["created_at"])
-                if "created_at" in agent_data
-                else datetime.utcnow(),
-                updated_at=datetime.fromisoformat(agent_data["updated_at"])
-                if "updated_at" in agent_data
-                else datetime.utcnow(),
+                created_at=(
+                    datetime.fromisoformat(agent_data["created_at"])
+                    if "created_at" in agent_data
+                    else datetime.utcnow()
+                ),
+                updated_at=(
+                    datetime.fromisoformat(agent_data["updated_at"])
+                    if "updated_at" in agent_data
+                    else datetime.utcnow()
+                ),
                 active=agent_data.get("active", True),
             )
             session.add(agent)
@@ -112,9 +116,11 @@ def import_to_postgresql(data: Dict[str, List[Dict[str, Any]]]) -> None:
                     validation_errors=submission_data.get("validation_errors"),
                     validation_warnings=submission_data.get("validation_warnings"),
                     test_stats=submission_data.get("test_stats"),
-                    submitted_at=datetime.fromisoformat(submission_data["submitted_at"])
-                    if "submitted_at" in submission_data
-                    else datetime.utcnow(),
+                    submitted_at=(
+                        datetime.fromisoformat(submission_data["submitted_at"])
+                        if "submitted_at" in submission_data
+                        else datetime.utcnow()
+                    ),
                 )
                 session.add(submission)
 

@@ -99,28 +99,43 @@ class AgentRegistryService:
                 agent_class = load_agent_from_string(agent_code, validate=True)
             except AgentSecurityError as e:
                 result["errors"].append(f"Security violation: {e}")
-                self._record_submission(session, None, False, result["errors"], result["warnings"], None)
+                self._record_submission(
+                    session, None, False, result["errors"], result["warnings"], None
+                )
                 return result
             except AgentValidationError as e:
                 result["errors"].append(f"Validation error: {e}")
-                self._record_submission(session, None, False, result["errors"], result["warnings"], None)
+                self._record_submission(
+                    session, None, False, result["errors"], result["warnings"], None
+                )
                 return result
             except Exception as e:
                 result["errors"].append(f"Failed to load agent: {e}")
-                self._record_submission(session, None, False, result["errors"], result["warnings"], None)
+                self._record_submission(
+                    session, None, False, result["errors"], result["warnings"], None
+                )
                 return result
 
             # Run behavioral tests if requested
             if test_run:
                 try:
-                    agent_instance = create_agent_instance(agent_class, 0, name="TestAgent")
-                    validation_results = validate_agent_behavior(agent_instance, max_steps=20)
+                    agent_instance = create_agent_instance(
+                        agent_class, 0, name="TestAgent"
+                    )
+                    validation_results = validate_agent_behavior(
+                        agent_instance, max_steps=20
+                    )
 
                     if not validation_results["valid"]:
                         result["errors"].extend(validation_results["errors"])
                         result["warnings"].extend(validation_results["warnings"])
                         self._record_submission(
-                            session, None, False, result["errors"], result["warnings"], validation_results["stats"]
+                            session,
+                            None,
+                            False,
+                            result["errors"],
+                            result["warnings"],
+                            validation_results["stats"],
                         )
                         return result
 
@@ -129,7 +144,9 @@ class AgentRegistryService:
 
                 except Exception as e:
                     result["errors"].append(f"Behavioral validation failed: {e}")
-                    self._record_submission(session, None, False, result["errors"], result["warnings"], None)
+                    self._record_submission(
+                        session, None, False, result["errors"], result["warnings"], None
+                    )
                     return result
 
             # Create agent record
@@ -164,7 +181,12 @@ class AgentRegistryService:
 
             # Record successful submission
             self._record_submission(
-                session, agent.id, True, result["errors"], result["warnings"], result.get("stats")
+                session,
+                agent.id,
+                True,
+                result["errors"],
+                result["warnings"],
+                result.get("stats"),
             )
 
             session.commit()
@@ -272,11 +294,25 @@ class AgentRegistryService:
                 "updated_at": agent.updated_at.isoformat(),
                 "active": agent.active,
                 "metadata": {
-                    "description": agent.agent_metadata.description if agent.agent_metadata else None,
-                    "version": agent.agent_metadata.version if agent.agent_metadata else "1.0.0",
+                    "description": (
+                        agent.agent_metadata.description
+                        if agent.agent_metadata
+                        else None
+                    ),
+                    "version": (
+                        agent.agent_metadata.version
+                        if agent.agent_metadata
+                        else "1.0.0"
+                    ),
                     "tags": agent.agent_metadata.tags if agent.agent_metadata else [],
-                    "license": agent.agent_metadata.license if agent.agent_metadata else None,
-                    "repository_url": agent.agent_metadata.repository_url if agent.agent_metadata else None,
+                    "license": (
+                        agent.agent_metadata.license if agent.agent_metadata else None
+                    ),
+                    "repository_url": (
+                        agent.agent_metadata.repository_url
+                        if agent.agent_metadata
+                        else None
+                    ),
                 },
             }
 
@@ -327,8 +363,16 @@ class AgentRegistryService:
                     "created_at": agent.created_at.isoformat(),
                     "updated_at": agent.updated_at.isoformat(),
                     "active": agent.active,
-                    "description": agent.agent_metadata.description if agent.agent_metadata else None,
-                    "version": agent.agent_metadata.version if agent.agent_metadata else "1.0.0",
+                    "description": (
+                        agent.agent_metadata.description
+                        if agent.agent_metadata
+                        else None
+                    ),
+                    "version": (
+                        agent.agent_metadata.version
+                        if agent.agent_metadata
+                        else "1.0.0"
+                    ),
                     "tags": agent.agent_metadata.tags if agent.agent_metadata else [],
                 }
                 for agent in agents

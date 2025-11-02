@@ -16,7 +16,7 @@ from bucket_brigade.services.api import app
 
 
 # Sample valid agent code
-VALID_AGENT_CODE = '''
+VALID_AGENT_CODE = """
 from bucket_brigade.agents import AgentBase
 import numpy as np
 
@@ -32,7 +32,7 @@ class TestAgent(AgentBase):
 
 def create_agent(agent_id, name="TestAgent"):
     return TestAgent(agent_id, name)
-'''
+"""
 
 
 @pytest.fixture
@@ -44,6 +44,7 @@ def client(monkeypatch):
     # Re-import to pick up new environment variable
     import importlib
     from bucket_brigade import db
+
     importlib.reload(db.connection)
     from bucket_brigade.db import init_db as _init_db
 

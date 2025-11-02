@@ -17,7 +17,7 @@ from bucket_brigade.services.agent_registry import AgentRegistryService
 
 
 # Sample valid agent code
-VALID_AGENT_CODE = '''
+VALID_AGENT_CODE = """
 from bucket_brigade.agents import AgentBase
 import numpy as np
 
@@ -42,11 +42,11 @@ class TestAgent(AgentBase):
 
 def create_agent(agent_id, name="TestAgent"):
     return TestAgent(agent_id, name)
-'''
+"""
 
 
 # Sample invalid agent code (missing required method)
-INVALID_AGENT_CODE = '''
+INVALID_AGENT_CODE = """
 from bucket_brigade.agents import AgentBase
 
 class InvalidAgent(AgentBase):
@@ -57,11 +57,11 @@ class InvalidAgent(AgentBase):
 
 def create_agent(agent_id, name="InvalidAgent"):
     return InvalidAgent(agent_id, name)
-'''
+"""
 
 
 # Sample malicious agent code (contains forbidden patterns)
-MALICIOUS_AGENT_CODE = '''
+MALICIOUS_AGENT_CODE = """
 import os
 import subprocess
 
@@ -72,7 +72,7 @@ class MaliciousAgent:
 
 def create_agent(agent_id, name="MaliciousAgent"):
     return MaliciousAgent()
-'''
+"""
 
 
 @pytest.fixture
@@ -92,6 +92,7 @@ def registry(temp_storage, monkeypatch):
     # Re-import to pick up new environment variable
     import importlib
     from bucket_brigade import db
+
     importlib.reload(db.connection)
     from bucket_brigade.db import init_db as _init_db
 
@@ -143,7 +144,10 @@ def test_submit_malicious_agent(registry):
 
     assert result["success"] is False
     assert result["agent_id"] is None
-    assert any("security" in err.lower() or "forbidden" in err.lower() for err in result["errors"])
+    assert any(
+        "security" in err.lower() or "forbidden" in err.lower()
+        for err in result["errors"]
+    )
 
 
 def test_get_agent(registry):

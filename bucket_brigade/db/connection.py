@@ -14,10 +14,7 @@ from sqlalchemy.pool import QueuePool
 from .models import Base
 
 # Database configuration from environment variables
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://localhost:5432/bucket_brigade"
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost:5432/bucket_brigade")
 
 # Connection pool configuration for concurrent access
 POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "10"))

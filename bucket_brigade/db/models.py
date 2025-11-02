@@ -44,12 +44,21 @@ class Agent(Base):
     author = Column(String(255), nullable=False, index=True)
     code_path = Column(String(512), nullable=False, unique=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
     active = Column(Boolean, default=True, nullable=False, index=True)
 
     # Relationships
-    submissions = relationship("Submission", back_populates="agent", cascade="all, delete-orphan")
-    agent_metadata = relationship("AgentMetadata", back_populates="agent", uselist=False, cascade="all, delete-orphan")
+    submissions = relationship(
+        "Submission", back_populates="agent", cascade="all, delete-orphan"
+    )
+    agent_metadata = relationship(
+        "AgentMetadata",
+        back_populates="agent",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Agent(id={self.id}, name='{self.name}', author='{self.author}')>"
@@ -72,7 +81,9 @@ class Submission(Base):
     __tablename__ = "submissions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    agent_id = Column(Integer, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(
+        Integer, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     validation_passed = Column(Boolean, nullable=False)
     validation_errors = Column(JSON, nullable=True)
     validation_warnings = Column(JSON, nullable=True)
@@ -103,7 +114,13 @@ class AgentMetadata(Base):
     __tablename__ = "agent_metadata"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    agent_id = Column(Integer, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    agent_id = Column(
+        Integer,
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
     description = Column(Text, nullable=True)
     version = Column(String(50), default="1.0.0", nullable=False)
     tags = Column(JSON, nullable=True)

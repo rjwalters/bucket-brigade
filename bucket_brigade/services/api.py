@@ -255,9 +255,7 @@ def get_agent_code(agent_id: int):
     code = registry.load_agent_code(agent_id)
 
     if code is None:
-        raise HTTPException(
-            status_code=404, detail=f"Agent {agent_id} code not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} code not found")
 
     return {"agent_id": agent_id, "code": code}
 
