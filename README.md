@@ -2,6 +2,8 @@
 
 *A groundbreaking platform for studying cooperation, deception, and collective intelligence in multi-agent systems.*
 
+**[🎮 Try the Interactive Demo](https://rjwalters.github.io/bucket-brigade/)** - Run tournaments in your browser
+
 ---
 
 ## 🧭 The Story & Challenge
