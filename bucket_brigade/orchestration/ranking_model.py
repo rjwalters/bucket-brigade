@@ -8,11 +8,10 @@ This implements the ranking system described in RANKING_SYSTEM.md:
 """
 
 import numpy as np
-from typing import List, Dict, Tuple, Optional, NamedTuple
+from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 import logging
 
-from ..envs.scenarios import Scenario
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RankingResult:
     """Result of fitting a ranking model."""
+
     agent_ids: List[int]
     skill_estimates: np.ndarray  # θ_i estimates
     skill_uncertainty: np.ndarray  # SE(θ_i)
@@ -73,7 +73,7 @@ class AgentRankingModel:
         # Extract unique agent IDs
         all_agent_ids = set()
         for result in batch_results:
-            all_agent_ids.update(result['team'])
+            all_agent_ids.update(result["team"])
         self.agent_ids = sorted(list(all_agent_ids))
 
         agent_id_to_idx = {agent_id: idx for idx, agent_id in enumerate(self.agent_ids)}
@@ -85,8 +85,8 @@ class AgentRankingModel:
         y = np.zeros(num_games)  # Team rewards
 
         for game_idx, result in enumerate(batch_results):
-            team = result['team']
-            y[game_idx] = result['team_reward']
+            team = result["team"]
+            y[game_idx] = result["team_reward"]
 
             # Set agent membership indicators
             for agent_id in team:
@@ -139,12 +139,15 @@ class AgentRankingModel:
             posterior_mean=posterior_mean,
             posterior_cov=posterior_cov,
             log_likelihood=log_likelihood,
-            num_games=num_games
+            num_games=num_games,
         )
 
-    def _calculate_marginal_values(self, skill_estimates: np.ndarray,
-                                 posterior_cov: np.ndarray,
-                                 batch_results: List[Dict]) -> np.ndarray:
+    def _calculate_marginal_values(
+        self,
+        skill_estimates: np.ndarray,
+        posterior_cov: np.ndarray,
+        batch_results: List[Dict],
+    ) -> np.ndarray:
         """
         Calculate deployment-relevant marginal values using Monte Carlo sampling.
 
@@ -167,8 +170,8 @@ class AgentRankingModel:
             total_reward_without = 0.0
 
             for result in batch_results:
-                team = result['team']
-                reward = result['team_reward']
+                team = result["team"]
+                reward = result["team_reward"]
 
                 if agent_id in team:
                     games_with_agent += 1
@@ -236,30 +239,39 @@ class AgentRankingModel:
         rankings = []
         for i, agent_id in enumerate(ranking_result.agent_ids):
             # 95% confidence interval
-            ci_lower = ranking_result.skill_estimates[i] - 1.96 * ranking_result.skill_uncertainty[i]
-            ci_upper = ranking_result.skill_estimates[i] + 1.96 * ranking_result.skill_uncertainty[i]
+            ci_lower = (
+                ranking_result.skill_estimates[i]
+                - 1.96 * ranking_result.skill_uncertainty[i]
+            )
+            ci_upper = (
+                ranking_result.skill_estimates[i]
+                + 1.96 * ranking_result.skill_uncertainty[i]
+            )
 
-            rankings.append({
-                'agent_id': agent_id,
-                'rank': i + 1,  # Will be resorted
-                'skill_estimate': ranking_result.skill_estimates[i],
-                'skill_uncertainty': ranking_result.skill_uncertainty[i],
-                'marginal_value': ranking_result.marginal_values[i],
-                'confidence_interval': [ci_lower, ci_upper],
-                'games_played': ranking_result.num_games  # Approximate
-            })
+            rankings.append(
+                {
+                    "agent_id": agent_id,
+                    "rank": i + 1,  # Will be resorted
+                    "skill_estimate": ranking_result.skill_estimates[i],
+                    "skill_uncertainty": ranking_result.skill_uncertainty[i],
+                    "marginal_value": ranking_result.marginal_values[i],
+                    "confidence_interval": [ci_lower, ci_upper],
+                    "games_played": ranking_result.num_games,  # Approximate
+                }
+            )
 
         # Sort by marginal value (deployment-relevant ranking)
-        rankings.sort(key=lambda x: x['marginal_value'], reverse=True)
+        rankings.sort(key=lambda x: x["marginal_value"], reverse=True)
 
         # Update ranks
         for i, ranking in enumerate(rankings):
-            ranking['rank'] = i + 1
+            ranking["rank"] = i + 1
 
         return rankings
 
-    def suggest_next_batch(self, ranking_result: RankingResult,
-                          num_candidates: int = 32) -> List[Dict]:
+    def suggest_next_batch(
+        self, ranking_result: RankingResult, num_candidates: int = 32
+    ) -> List[Dict]:
         """
         Suggest next batch of teams to maximize information gain.
 
@@ -279,8 +291,9 @@ class AgentRankingModel:
         suggestions = []
 
         # Sort agents by uncertainty (most uncertain first)
-        agent_uncertainty = list(zip(ranking_result.agent_ids,
-                                   ranking_result.skill_uncertainty))
+        agent_uncertainty = list(
+            zip(ranking_result.agent_ids, ranking_result.skill_uncertainty)
+        )
         agent_uncertainty.sort(key=lambda x: x[1], reverse=True)
 
         # Generate team combinations with varying sizes
@@ -288,29 +301,36 @@ class AgentRankingModel:
 
         for team_size in team_sizes:
             # Focus on uncertain agents but include some known ones for baseline
-            uncertain_agents = [aid for aid, _ in agent_uncertainty[:team_size//2]]
+            uncertain_agents = [aid for aid, _ in agent_uncertainty[: team_size // 2]]
             remaining_slots = team_size - len(uncertain_agents)
 
             # Fill with random selection from remaining agents
-            available_agents = [aid for aid in ranking_result.agent_ids
-                              if aid not in uncertain_agents]
+            available_agents = [
+                aid for aid in ranking_result.agent_ids if aid not in uncertain_agents
+            ]
             if len(available_agents) >= remaining_slots:
-                fillers = np.random.choice(available_agents, remaining_slots, replace=False)
+                fillers = np.random.choice(
+                    available_agents, remaining_slots, replace=False
+                )
                 team = uncertain_agents + fillers.tolist()
-                suggestions.append({
-                    'team': sorted(team),
-                    'team_size': team_size,
-                    'focus': 'uncertainty_reduction',
-                    'expected_info_gain': np.mean([u for _, u in agent_uncertainty
-                                                 if _ in uncertain_agents])
-                })
+                suggestions.append(
+                    {
+                        "team": sorted(team),
+                        "team_size": team_size,
+                        "focus": "uncertainty_reduction",
+                        "expected_info_gain": np.mean(
+                            [u for _, u in agent_uncertainty if _ in uncertain_agents]
+                        ),
+                    }
+                )
 
         # Limit to requested number
         return suggestions[:num_candidates]
 
 
-def evaluate_ranking_accuracy(true_skills: Dict[int, float],
-                            ranking_result: RankingResult) -> Dict[str, float]:
+def evaluate_ranking_accuracy(
+    true_skills: Dict[int, float], ranking_result: RankingResult
+) -> Dict[str, float]:
     """
     Evaluate ranking accuracy against known true skills.
 
@@ -332,7 +352,7 @@ def evaluate_ranking_accuracy(true_skills: Dict[int, float],
             uncertainties.append(ranking_result.skill_uncertainty[i])
 
     if not true_values:
-        return {'error': 'No overlapping agents found'}
+        return {"error": "No overlapping agents found"}
 
     true_values = np.array(true_values)
     estimated_values = np.array(estimated_values)
@@ -351,10 +371,10 @@ def evaluate_ranking_accuracy(true_skills: Dict[int, float],
     calibration_score = np.mean(errors <= uncertainties)  # Fraction within 1σ
 
     return {
-        'mse': mse,
-        'rmse': rmse,
-        'mae': mae,
-        'correlation': correlation,
-        'calibration_score': calibration_score,
-        'num_agents': len(true_values)
+        "mse": mse,
+        "rmse": rmse,
+        "mae": mae,
+        "correlation": correlation,
+        "calibration_score": calibration_score,
+        "num_agents": len(true_values),
     }

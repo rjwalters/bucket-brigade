@@ -80,16 +80,16 @@ class BrowserRNG {
 
 // Core game engine
 export class BrowserBucketBrigade {
-  private houses: HouseState[];
-  private agent_positions: number[];
-  private agent_signals: number[];
-  private last_actions: number[][];
-  private night: number;
-  private done: boolean;
-  private rewards: number[];
+  private houses!: HouseState[];
+  private agent_positions!: number[];
+  private agent_signals!: number[];
+  private last_actions!: number[][];
+  private night!: number;
+  private done!: boolean;
+  private rewards!: number[];
   private rng: BrowserRNG;
   private scenario: Scenario;
-  private trajectory: GameNight[];
+  private trajectory!: GameNight[];
 
   constructor(scenario: Scenario, seed?: number) {
     this.scenario = scenario;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Flame, BarChart3, Play, Trophy, Settings } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import GameReplay from './pages/GameReplay';
@@ -8,14 +8,28 @@ import Tournament from './pages/Tournament';
 import SettingsPage from './pages/Settings';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Map current path to active tab
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === '/dashboard' || path === '/') return 'dashboard';
+    if (path === '/tournament') return 'tournament';
+    if (path.startsWith('/replay')) return 'replay';
+    if (path === '/rankings') return 'rankings';
+    if (path === '/settings') return 'settings';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'tournament', label: 'Tournament', icon: Flame },
-    { id: 'replay', label: 'Game Replay', icon: Play },
-    { id: 'rankings', label: 'Rankings', icon: Trophy },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
+    { id: 'tournament', label: 'Tournament', icon: Flame, path: '/tournament' },
+    { id: 'replay', label: 'Game Replay', icon: Play, path: '/replay' },
+    { id: 'rankings', label: 'Rankings', icon: Trophy, path: '/rankings' },
+    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
   ];
 
   return (
@@ -39,7 +53,7 @@ function App() {
                     <button
                       key={tab.id}
                       data-testid={`nav-${tab.id}`}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => navigate(tab.path)}
                       className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         activeTab === tab.id
                           ? 'bg-blue-100 text-blue-700'

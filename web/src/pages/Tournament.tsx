@@ -1,17 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Play, Pause, Square, Code, Trophy, Users, Target, Zap } from 'lucide-react';
+import { Play, Square, Code, Trophy } from 'lucide-react';
 import {
   TournamentRunner,
   Agent,
   SCENARIOS,
-  Scenario,
   GameResult
 } from '../utils/browserEngine';
 import {
-  create_user_agent_from_code,
-  create_tournament_agents,
-  AgentType
+  create_tournament_agents
 } from '../utils/browserAgents';
 
 const Tournament: React.FC = () => {
@@ -42,7 +38,6 @@ return function(obs) {
   const [userAgentName, setUserAgentName] = useState('MyAgent');
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<GameResult[]>([]);
   const [rankings, setRankings] = useState<Array<{agent: Agent; score: number; rank: number}>>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +48,6 @@ return function(obs) {
   const run_tournament = useCallback(async () => {
     setError(null);
     setProgress(0);
-    setResults([]);
     setRankings([]);
 
     // Create user agent
@@ -86,7 +80,6 @@ return function(obs) {
         setProgress((completed / total) * 100);
       });
 
-      setResults(game_results);
       calculate_rankings(agents, game_results);
 
     } catch (err) {
@@ -115,21 +108,23 @@ return function(obs) {
       });
     });
 
-    // Create rankings array
+    // Create rankings array with scores
     const ranking_data = agents.map(agent => ({
       agent,
-      score: agent_scores.get(agent.id) || 0
+      score: agent_scores.get(agent.id) || 0,
+      rank: 0  // Placeholder, will be set after sorting
     }));
 
     // Sort by score (descending)
     ranking_data.sort((a, b) => b.score - a.score);
 
     // Add ranks
-    ranking_data.forEach((item, index) => {
-      item.rank = index + 1;
-    });
+    const rankings_with_ranks = ranking_data.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
 
-    setRankings(ranking_data);
+    setRankings(rankings_with_ranks);
   };
 
   const get_rank_icon = (rank: number) => {

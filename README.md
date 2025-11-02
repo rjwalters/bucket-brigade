@@ -31,49 +31,66 @@ The result? Endless fascinating dynamics of **trust, deception, coordination, an
 ```
 bucket-brigade/
 ├── README.md
-├── pyproject.toml / setup.py
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
 │
-├── bucket_brigade/
-│ ├── envs/ # Simulation environments
+├── bucket_brigade/           # Python implementation
+│ ├── envs/                   # Simulation environments
 │ │ ├── bucket_brigade_env.py
-│ │ └── scenarios.py
+│ │ ├── scenarios.py
+│ │ └── __init__.py
 │ │
-│ ├── agents/ # Heuristic + learned agents
+│ ├── agents/                 # Heuristic + learned agents
+│ │ ├── agent_base.py
 │ │ ├── heuristic_agent.py
-│ │ ├── random_agent.py
-│ │ └── puffer_adapter.py
+│ │ ├── agent_loader.py
+│ │ ├── agent_template.py
+│ │ └── __init__.py
 │ │
-│ ├── orchestration/ # Ranking + batch orchestration
-│ │ ├── orchestrator.py
+│ ├── orchestration/          # Ranking + batch orchestration
 │ │ ├── ranking_model.py
-│ │ └── database.py
+│ │ └── __init__.py
 │ │
-│ ├── data/ # Results + replays
-│ │ ├── results.db
+│ ├── data/                   # Results + replays
 │ │ └── replays/
 │ │
-│ ├── utils/ # Shared utilities
-│ │ ├── logging.py
-│ │ └── serialization.py
+│ ├── utils/                  # Shared utilities
+│ │ └── __init__.py
 │ │
-│ └── visualizer_api/ # Replay export / web bridge
-│ └── exporter.py
+│ └── visualizer_api/         # Replay export / web bridge
+│ └── __init__.py
 │
-├── scripts/ # CLI + experiment runners
+├── bucket-brigade-core/      # Rust implementation (10-20x faster)
+│ ├── Cargo.toml
+│ ├── pyproject.toml
+│ ├── src/
+│ │ ├── lib.rs
+│ │ ├── engine.rs
+│ │ ├── scenarios.rs
+│ │ ├── rng.rs
+│ │ ├── python.rs
+│ │ └── wasm.rs
+│ └── bucket_brigade_core/
+│ └── __init__.py
+│
+├── scripts/                   # CLI + experiment runners
 │ ├── run_one_game.py
 │ ├── run_batch.py
 │ └── analyze_rankings.py
 │
-├── tests/ # Unit tests (pytest)
+├── tests/                     # Unit tests (pytest)
+│ ├── test_environment.py
+│ ├── test_agents.py
+│ ├── test_orchestration.py
+│ └── test_rust_integration.py
 │
-└── web/ # Front-end visualizer (TypeScript)
+└── web/                       # Front-end visualizer (TypeScript)
 ├── src/
-│   ├── components/     # GameBoard, ReplayControls, GameInfo
-│   ├── pages/          # Dashboard, GameReplay, Rankings, Settings
-│   ├── types/          # TypeScript definitions
-│   ├── utils/           # Storage utilities
-│   └── main.tsx        # App entry point
+│   ├── components/           # GameBoard, ReplayControls, GameInfo
+│   ├── pages/                # Dashboard, GameReplay, Rankings, Settings
+│   ├── types/                # TypeScript definitions
+│   ├── utils/                # Storage utilities
+│   └── main.tsx              # App entry point
 └── public/
 ```
 
@@ -126,19 +143,25 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 | ✅ 4 | Add replay logging + JSON exporter | One file per episode |
 | ✅ 5 | Build ranking orchestration loop | Batch runner + basic analysis |
 | ✅ 6 | Create TypeScript web visualizer | Game replay + ranking dashboard |
-| 🔜 7 | (Future) Integrate PufferLib | Train learned policies |
+| ✅ 7 | **Rust core engine** | `bucket-brigade-core/` - 10-20x faster |
+| 🔜 8 | (Future) Integrate PufferLib | Train learned policies |
 
 ---
 
 ## 🧰 Dependencies
 
 ```bash
-pip install pufferlib numpy pandas scikit-learn matplotlib
+pip install numpy pandas scikit-learn matplotlib
 ```
 
 for development and testing:
 ```bash
 pip install pytest black ruff mypy typer
+```
+
+for Rust core (optional, provides 10-20x speedup):
+```bash
+cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 pip install -e .
 ```
 
 🚀 Quickstart

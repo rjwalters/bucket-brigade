@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, TrendingUp, Users, Flame, FileText, Trophy, Code, Zap } from 'lucide-react';
-import { GameReplay, BatchResult, STORAGE_KEYS } from '../types';
+import { GameReplay } from '../types';
 import { loadGameReplays, loadBatchResults } from '../utils/storage';
 
 const Dashboard: React.FC = () => {

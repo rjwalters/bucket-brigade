@@ -10,24 +10,23 @@ authors = [{name = "Your Name", email = "your.email@example.com"}]
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "numpy>=1.21.0",
-    "pandas>=1.3.0",
-    "scikit-learn>=1.0.0",
-    "matplotlib>=3.5.0",
-    "pufferlib>=0.1.0",
-    "typer>=0.4.0",
-    "rich>=10.0.0",
-    "hatchling",
+"numpy>=1.21.0",
+"pandas>=1.3.0",
+"scikit-learn>=1.0.0",
+"matplotlib>=3.5.0",
+"typer>=0.4.0",
+"rich>=10.0.0",
+"hatchling",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0.0",
+    "pytest-cov>=4.0.0",
     "black>=21.0.0",
     "ruff>=0.0.1",
     "mypy>=0.900",
     "pre-commit>=2.15.0",
-    "hatchling",
 ]
 
 [tool.setuptools.packages.find]

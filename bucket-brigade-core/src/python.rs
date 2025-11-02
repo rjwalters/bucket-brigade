@@ -1,6 +1,6 @@
+use crate::{AgentObservation, BucketBrigade, Scenario};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use crate::{BucketBrigade, Scenario, AgentObservation};
 
 /// Python-compatible Bucket Brigade environment
 #[pyclass]
@@ -23,9 +23,7 @@ impl PyBucketBrigade {
     }
 
     fn step(&mut self, py: Python, actions: Vec<Vec<u8>>) -> PyResult<(PyObject, bool, PyObject)> {
-        let rust_actions: Vec<[u8; 2]> = actions.iter()
-            .map(|a| [a[0], a[1]])
-            .collect();
+        let rust_actions: Vec<[u8; 2]> = actions.iter().map(|a| [a[0], a[1]]).collect();
 
         let result = self.inner.step(&rust_actions);
 
@@ -68,6 +66,7 @@ pub struct PyScenario {
 #[pymethods]
 impl PyScenario {
     #[new]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         beta: f32,
         kappa: f32,
@@ -97,25 +96,45 @@ impl PyScenario {
     }
 
     #[getter]
-    fn beta(&self) -> f32 { self.inner.beta }
+    fn beta(&self) -> f32 {
+        self.inner.beta
+    }
     #[getter]
-    fn kappa(&self) -> f32 { self.inner.kappa }
+    fn kappa(&self) -> f32 {
+        self.inner.kappa
+    }
     #[getter]
-    fn a(&self) -> f32 { self.inner.a }
+    fn a(&self) -> f32 {
+        self.inner.a
+    }
     #[getter]
-    fn l(&self) -> f32 { self.inner.l }
+    fn l(&self) -> f32 {
+        self.inner.l
+    }
     #[getter]
-    fn c(&self) -> f32 { self.inner.c }
+    fn c(&self) -> f32 {
+        self.inner.c
+    }
     #[getter]
-    fn rho_ignite(&self) -> f32 { self.inner.rho_ignite }
+    fn rho_ignite(&self) -> f32 {
+        self.inner.rho_ignite
+    }
     #[getter]
-    fn n_min(&self) -> u32 { self.inner.n_min }
+    fn n_min(&self) -> u32 {
+        self.inner.n_min
+    }
     #[getter]
-    fn p_spark(&self) -> f32 { self.inner.p_spark }
+    fn p_spark(&self) -> f32 {
+        self.inner.p_spark
+    }
     #[getter]
-    fn n_spark(&self) -> u32 { self.inner.n_spark }
+    fn n_spark(&self) -> u32 {
+        self.inner.n_spark
+    }
     #[getter]
-    fn num_agents(&self) -> usize { self.inner.num_agents }
+    fn num_agents(&self) -> usize {
+        self.inner.num_agents
+    }
 }
 
 /// Python-compatible Agent Observation
@@ -127,14 +146,23 @@ pub struct PyAgentObservation {
 #[pymethods]
 impl PyAgentObservation {
     #[getter]
-    fn signals(&self) -> Vec<u8> { self.inner.signals.clone() }
+    fn signals(&self) -> Vec<u8> {
+        self.inner.signals.clone()
+    }
     #[getter]
-    fn locations(&self) -> Vec<u8> { self.inner.locations.clone() }
+    fn locations(&self) -> Vec<u8> {
+        self.inner.locations.clone()
+    }
     #[getter]
-    fn houses(&self) -> Vec<u8> { self.inner.houses.clone() }
+    fn houses(&self) -> Vec<u8> {
+        self.inner.houses.clone()
+    }
     #[getter]
     fn last_actions(&self, py: Python) -> PyObject {
-        let actions: Vec<Vec<u8>> = self.inner.last_actions.iter()
+        let actions: Vec<Vec<u8>> = self
+            .inner
+            .last_actions
+            .iter()
             .map(|action| vec![action[0], action[1]])
             .collect();
         actions.into_py(py)
@@ -142,17 +170,26 @@ impl PyAgentObservation {
 
     #[getter]
     fn actions(&self, py: Python) -> PyObject {
-        let actions: Vec<Vec<u8>> = self.inner.last_actions.iter()
+        let actions: Vec<Vec<u8>> = self
+            .inner
+            .last_actions
+            .iter()
             .map(|action| vec![action[0], action[1]])
             .collect();
         actions.into_py(py)
     }
     #[getter]
-    fn scenario_info(&self) -> Vec<f32> { self.inner.scenario_info.clone() }
+    fn scenario_info(&self) -> Vec<f32> {
+        self.inner.scenario_info.clone()
+    }
     #[getter]
-    fn agent_id(&self) -> usize { self.inner.agent_id }
+    fn agent_id(&self) -> usize {
+        self.inner.agent_id
+    }
     #[getter]
-    fn night(&self) -> u32 { self.inner.night }
+    fn night(&self) -> u32 {
+        self.inner.night
+    }
 }
 
 /// Python-compatible Game State
@@ -164,15 +201,25 @@ pub struct PyGameState {
 #[pymethods]
 impl PyGameState {
     #[getter]
-    fn houses(&self) -> Vec<u8> { self.inner.houses.clone() }
+    fn houses(&self) -> Vec<u8> {
+        self.inner.houses.clone()
+    }
     #[getter]
-    fn agent_positions(&self) -> Vec<u8> { self.inner.agent_positions.clone() }
+    fn agent_positions(&self) -> Vec<u8> {
+        self.inner.agent_positions.clone()
+    }
     #[getter]
-    fn agent_signals(&self) -> Vec<u8> { self.inner.agent_signals.clone() }
+    fn agent_signals(&self) -> Vec<u8> {
+        self.inner.agent_signals.clone()
+    }
     #[getter]
-    fn night(&self) -> u32 { self.inner.night }
+    fn night(&self) -> u32 {
+        self.inner.night
+    }
     #[getter]
-    fn done(&self) -> bool { self.inner.done }
+    fn done(&self) -> bool {
+        self.inner.done
+    }
 }
 
 /// Python-compatible Game Result
@@ -190,22 +237,39 @@ impl PyGameResult {
         }
     }
     #[getter]
-    fn final_score(&self) -> f32 { self.inner.final_score }
+    fn final_score(&self) -> f32 {
+        self.inner.final_score
+    }
     #[getter]
-    fn agent_scores(&self) -> Vec<f32> { self.inner.agent_scores.clone() }
+    fn agent_scores(&self) -> Vec<f32> {
+        self.inner.agent_scores.clone()
+    }
     #[getter]
     fn nights(&self, py: Python) -> PyObject {
         // Convert nights to Python objects
-        let nights: Vec<PyObject> = self.inner.nights.iter().map(|night| {
-            let dict = PyDict::new_bound(py);
-            dict.set_item("night", night.night).unwrap();
-            dict.set_item("houses", &night.houses).unwrap();
-            dict.set_item("signals", &night.signals).unwrap();
-            dict.set_item("locations", &night.locations).unwrap();
-            dict.set_item("actions", &night.actions.iter().map(|a| vec![a[0], a[1]]).collect::<Vec<Vec<u8>>>()).unwrap();
-            dict.set_item("rewards", &night.rewards).unwrap();
-            dict.into()
-        }).collect();
+        let nights: Vec<PyObject> = self
+            .inner
+            .nights
+            .iter()
+            .map(|night| {
+                let dict = PyDict::new_bound(py);
+                dict.set_item("night", night.night).unwrap();
+                dict.set_item("houses", &night.houses).unwrap();
+                dict.set_item("signals", &night.signals).unwrap();
+                dict.set_item("locations", &night.locations).unwrap();
+                dict.set_item(
+                    "actions",
+                    night
+                        .actions
+                        .iter()
+                        .map(|a| vec![a[0], a[1]])
+                        .collect::<Vec<Vec<u8>>>(),
+                )
+                .unwrap();
+                dict.set_item("rewards", &night.rewards).unwrap();
+                dict.into()
+            })
+            .collect();
         nights.into_py(py)
     }
 }
@@ -221,7 +285,15 @@ fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     // Add scenarios
     let scenarios = PyDict::new_bound(m.py());
     for (name, scenario) in crate::SCENARIOS.entries() {
-        scenarios.set_item(name, Py::new(m.py(), PyScenario { inner: scenario.clone() })?)?;
+        scenarios.set_item(
+            name,
+            Py::new(
+                m.py(),
+                PyScenario {
+                    inner: scenario.clone(),
+                },
+            )?,
+        )?;
     }
     m.add("SCENARIOS", scenarios)?;
 

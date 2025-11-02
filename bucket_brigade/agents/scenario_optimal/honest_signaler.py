@@ -32,7 +32,7 @@ class HonestSignaler(AgentBase):
         """
         Signal truthfully and work on any new or existing fires.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
 
         # Check for new fires since last turn
         new_fires = []

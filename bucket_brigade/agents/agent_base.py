@@ -5,7 +5,7 @@ Provides a unified interface compatible with both scripted heuristics and learne
 
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 
 class AgentBase(ABC):
@@ -70,5 +70,5 @@ class RandomAgent(AgentBase):
         Choose a random house and random mode (work/rest).
         """
         house_index = np.random.randint(0, 10)  # Random house 0-9
-        mode_flag = np.random.randint(0, 2)      # Random mode 0=REST, 1=WORK
+        mode_flag = np.random.randint(0, 2)  # Random mode 0=REST, 1=WORK
         return np.array([house_index, mode_flag], dtype=np.int8)

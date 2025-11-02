@@ -1,7 +1,5 @@
-use wasm_bindgen::prelude::*;
 use crate::{BucketBrigade, Scenario};
-
-
+use wasm_bindgen::prelude::*;
 
 /// WASM-compatible Bucket Brigade environment
 #[wasm_bindgen]
@@ -84,6 +82,7 @@ pub struct WasmScenario {
 #[wasm_bindgen]
 impl WasmScenario {
     #[wasm_bindgen(constructor)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         beta: f32,
         kappa: f32,

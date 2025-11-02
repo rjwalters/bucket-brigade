@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Users, Target } from 'lucide-react';
-import { AgentRanking, BatchResult, STORAGE_KEYS } from '../types';
+import { AgentRanking, BatchResult } from '../types';
 import { loadBatchResults } from '../utils/storage';
 
 const Rankings: React.FC = () => {

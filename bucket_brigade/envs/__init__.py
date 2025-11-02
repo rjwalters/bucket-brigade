@@ -3,7 +3,21 @@ Environment implementations for Bucket Brigade.
 """
 
 from .bucket_brigade_env import BucketBrigadeEnv
-from .puffer_env import PufferBucketBrigade, PufferBucketBrigadeVectorized, make_env, make_vectorized_env
+
+# Optional PufferLib imports (only available if gymnasium is installed)
+try:
+    from .puffer_env import (
+        PufferBucketBrigade,
+        PufferBucketBrigadeVectorized,
+        make_env,
+        make_vectorized_env,
+    )
+except ImportError:
+    # PufferLib not available, skip these imports
+    PufferBucketBrigade = None
+    PufferBucketBrigadeVectorized = None
+    make_env = None
+    make_vectorized_env = None
 from .scenarios import (
     Scenario,
     random_scenario,

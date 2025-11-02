@@ -30,16 +30,18 @@ class HeuristicAgent(AgentBase):
         assert len(params) == 10, f"Expected 10 parameters, got {len(params)}"
 
         # Unpack parameters with descriptive names
-        self.honesty_bias = params[0]           # Probability of truthful signaling (0-1)
-        self.work_tendency = params[1]          # Base tendency to work (0-1)
-        self.neighbor_help_bias = params[2]     # Preference for helping neighbor houses (0-1)
-        self.own_house_priority = params[3]     # Priority for own house (0-1)
-        self.risk_aversion = params[4]          # Sensitivity to burning houses (0-1)
-        self.coordination_weight = params[5]    # Trust in others' signals (0-1)
-        self.exploration_rate = params[6]       # Randomness in decisions (0-1)
-        self.fatigue_memory = params[7]         # Inertia to repeat actions (0-1)
-        self.rest_reward_bias = params[8]       # Preference for resting (0-1)
-        self.altruism_factor = params[9]        # Willingness to help others (0-1)
+        self.honesty_bias = params[0]  # Probability of truthful signaling (0-1)
+        self.work_tendency = params[1]  # Base tendency to work (0-1)
+        self.neighbor_help_bias = params[
+            2
+        ]  # Preference for helping neighbor houses (0-1)
+        self.own_house_priority = params[3]  # Priority for own house (0-1)
+        self.risk_aversion = params[4]  # Sensitivity to burning houses (0-1)
+        self.coordination_weight = params[5]  # Trust in others' signals (0-1)
+        self.exploration_rate = params[6]  # Randomness in decisions (0-1)
+        self.fatigue_memory = params[7]  # Inertia to repeat actions (0-1)
+        self.rest_reward_bias = params[8]  # Preference for resting (0-1)
+        self.altruism_factor = params[9]  # Willingness to help others (0-1)
 
         # Internal state
         self.last_action = None
@@ -56,11 +58,11 @@ class HeuristicAgent(AgentBase):
             Action [house_index, mode_flag]
         """
         # Extract observation components
-        signals = obs['signals']           # (N,) - current signals
-        locations = obs['locations']       # (N,) - current locations
-        houses = obs['houses']             # (10,) - house states
-        last_actions = obs['last_actions'] # (N,2) - previous actions
-        scenario_info = obs['scenario_info']  # Scenario parameters
+        signals = obs["signals"]  # (N,) - current signals
+        locations = obs["locations"]  # (N,) - current locations
+        houses = obs["houses"]  # (10,) - house states
+        # last_actions = obs['last_actions'] # (N,2) - previous actions (not used)
+        scenario_info = obs["scenario_info"]  # Scenario parameters
 
         # Determine owned house
         owned_house = self.agent_id % 10
@@ -70,7 +72,9 @@ class HeuristicAgent(AgentBase):
         signal = self._choose_signal(work_intent)
 
         # 2. Action selection
-        house_choice = self._choose_house(houses, signals, locations, owned_house, scenario_info)
+        house_choice = self._choose_house(
+            houses, signals, locations, owned_house, scenario_info
+        )
         mode_choice = self._choose_mode(signal, work_intent)
 
         # 3. Apply exploration
@@ -87,7 +91,9 @@ class HeuristicAgent(AgentBase):
 
         return np.array([house_choice, mode_choice], dtype=np.int8)
 
-    def _compute_work_intent(self, houses: np.ndarray, scenario_info: np.ndarray) -> float:
+    def _compute_work_intent(
+        self, houses: np.ndarray, scenario_info: np.ndarray
+    ) -> float:
         """Compute internal tendency to work this night."""
         burning_fraction = np.mean(houses == 1)  # Fraction of burning houses
         owned_house = self.agent_id % 10
@@ -104,7 +110,7 @@ class HeuristicAgent(AgentBase):
             intent += self.own_house_priority * 0.5
 
         # Adjust for rest preference
-        intent *= (1.0 - self.rest_reward_bias)
+        intent *= 1.0 - self.rest_reward_bias
 
         return np.clip(intent, 0.0, 1.0)
 
@@ -117,8 +123,14 @@ class HeuristicAgent(AgentBase):
             # Dishonest signaling - opposite of intent
             return 0 if work_intent > 0.5 else 1
 
-    def _choose_house(self, houses: np.ndarray, signals: np.ndarray, locations: np.ndarray,
-                     owned_house: int, scenario_info: np.ndarray) -> int:
+    def _choose_house(
+        self,
+        houses: np.ndarray,
+        signals: np.ndarray,
+        locations: np.ndarray,
+        owned_house: int,
+        scenario_info: np.ndarray,
+    ) -> int:
         """Choose which house to target."""
         candidates = []
 
@@ -127,8 +139,9 @@ class HeuristicAgent(AgentBase):
             score = 0.0
 
             # Distance from owned house (prefer closer houses)
-            distance = min(abs(house_idx - owned_house),
-                          10 - abs(house_idx - owned_house))
+            distance = min(
+                abs(house_idx - owned_house), 10 - abs(house_idx - owned_house)
+            )
             proximity_bonus = 1.0 / (1.0 + distance)
             score += proximity_bonus * 0.1
 
@@ -192,11 +205,66 @@ def create_archetype_agent(archetype: str, agent_id: int) -> HeuristicAgent:
         agent_id: Agent ID
     """
     archetypes = {
-        'firefighter': [1.0, 0.9, 0.5, 0.8, 0.5, 0.7, 0.1, 0.0, 0.0, 0.8],  # Honest, works a lot, helps neighbors
-        'liar': [0.1, 0.7, 0.0, 0.9, 0.2, 0.8, 0.3, 0.0, 0.4, 0.2],          # Dishonest, selfish
-        'free_rider': [0.7, 0.2, 0.0, 0.9, 0.0, 0.0, 0.1, 0.0, 0.9, 0.0],    # Rarely works, protects own house
-        'hero': [1.0, 1.0, 1.0, 0.5, 0.1, 0.5, 0.0, 0.9, 0.0, 1.0],          # Always works, helps everyone
-        'coordinator': [0.9, 0.6, 0.7, 0.6, 0.8, 1.0, 0.05, 0.0, 0.2, 0.6]   # Coordinates with others
+        "firefighter": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8,
+        ],  # Honest, works a lot, helps neighbors
+        "liar": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2,
+        ],  # Dishonest, selfish
+        "free_rider": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0,
+        ],  # Rarely works, protects own house
+        "hero": [
+            1.0,
+            1.0,
+            1.0,
+            0.5,
+            0.1,
+            0.5,
+            0.0,
+            0.9,
+            0.0,
+            1.0,
+        ],  # Always works, helps everyone
+        "coordinator": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6,
+        ],  # Coordinates with others
     }
 
     if archetype not in archetypes:

@@ -66,7 +66,7 @@ class MyCustomAgent(AgentBase):
         Returns:
             Action as [house_index, mode_flag]
         """
-        houses = obs['houses']
+        houses = obs["houses"]
         own_house = self.agent_id % 10
 
         # Example strategy: Work on own house if burning, otherwise rest
@@ -93,11 +93,11 @@ def create_agent(agent_id: int, **kwargs):
 
 # OPTIONAL: Agent metadata for the submission system
 AGENT_METADATA = {
-    'name': 'My Custom Agent',
-    'author': 'Your Name',
-    'description': 'Brief description of your agent strategy',
-    'version': '1.0.0',
-    'tags': ['example', 'template'],  # Categories for your agent
+    "name": "My Custom Agent",
+    "author": "Your Name",
+    "description": "Brief description of your agent strategy",
+    "version": "1.0.0",
+    "tags": ["example", "template"],  # Categories for your agent
 }
 
 # OPTIONAL: Parameter ranges for hyperparameter optimization

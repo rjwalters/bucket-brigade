@@ -25,7 +25,7 @@ class ChainReactionCoordinator(AgentBase):
         """
         Find fire clusters and work on the most underserved one.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
         burning_houses = set(np.where(houses == 1)[0])
 
         if not burning_houses:
@@ -43,7 +43,9 @@ class ChainReactionCoordinator(AgentBase):
 
         return np.array([target_house, 1])  # Work
 
-    def _find_fire_clusters(self, houses: np.ndarray, burning_houses: set) -> List[List[int]]:
+    def _find_fire_clusters(
+        self, houses: np.ndarray, burning_houses: set
+    ) -> List[List[int]]:
         """Find connected components of burning houses."""
         clusters = []
         visited = set()
@@ -75,7 +77,9 @@ class ChainReactionCoordinator(AgentBase):
 
         return clusters
 
-    def _select_best_cluster(self, clusters: List[List[int]], houses: np.ndarray) -> List[int]:
+    def _select_best_cluster(
+        self, clusters: List[List[int]], houses: np.ndarray
+    ) -> List[int]:
         """Select the best cluster to work on."""
         if len(clusters) == 1:
             return clusters[0]

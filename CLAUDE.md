@@ -513,7 +513,7 @@ which claude
 - **Main Repository**: https://github.com/loomhq/loom
 - **Getting Started**: https://github.com/loomhq/loom#getting-started
 - **Role Definitions**: See `.loom/roles/*.md` in this repository
-- **Workflow Details**: See `.loom/AGENTS.md` in this repository
+- **Workflow Details**: See `AGENTS.md` in this repository
 
 ### Local Configuration
 

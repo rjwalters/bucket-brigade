@@ -7,7 +7,7 @@ This wraps the BucketBrigadeEnv to work with PufferLib's multi-agent training fr
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List
 import logging
 
 from .bucket_brigade_env import BucketBrigadeEnv
@@ -25,11 +25,13 @@ class PufferBucketBrigade(gym.Env):
     by fixed policies (random, expert, etc.) assigned randomly each episode.
     """
 
-    def __init__(self,
-                 scenario: Optional[Scenario] = None,
-                 num_opponents: int = 3,
-                 opponent_policies: Optional[List[str]] = None,
-                 max_steps: int = 50):
+    def __init__(
+        self,
+        scenario: Optional[Scenario] = None,
+        num_opponents: int = 3,
+        opponent_policies: Optional[List[str]] = None,
+        max_steps: int = 50,
+    ):
         """
         Initialize the PufferLib environment.
 
@@ -48,7 +50,7 @@ class PufferBucketBrigade(gym.Env):
 
         # Default opponent policies
         if opponent_policies is None:
-            opponent_policies = ['random', 'random', 'firefighter', 'coordinator']
+            opponent_policies = ["random", "random", "firefighter", "coordinator"]
         self.opponent_policies = opponent_policies[:num_opponents]
 
         # Create scenario
@@ -76,7 +78,9 @@ class PufferBucketBrigade(gym.Env):
         self.episode_rewards = []
         self.episode_lengths = []
 
-    def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
+    def reset(
+        self, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[np.ndarray, Dict]:
         """Reset the environment."""
         if seed is not None:
             np.random.seed(seed)
@@ -133,9 +137,15 @@ class PufferBucketBrigade(gym.Env):
         for i, policy_type in enumerate(self.opponent_policies):
             agent_id = i + 1  # 0 is trained agent
 
-            if policy_type == 'random':
+            if policy_type == "random":
                 agent = create_random_agent(agent_id)
-            elif policy_type in ['firefighter', 'coordinator', 'free_rider', 'liar', 'hero']:
+            elif policy_type in [
+                "firefighter",
+                "coordinator",
+                "free_rider",
+                "liar",
+                "hero",
+            ]:
                 agent = create_archetype_agent(policy_type, agent_id)
             else:
                 # Default to random
@@ -143,22 +153,26 @@ class PufferBucketBrigade(gym.Env):
 
             self.opponent_agents.append(agent)
 
-    def _flatten_observation(self, obs: Dict[str, np.ndarray], agent_id: int) -> np.ndarray:
+    def _flatten_observation(
+        self, obs: Dict[str, np.ndarray], agent_id: int
+    ) -> np.ndarray:
         """Convert observation dict to flat array for PufferLib."""
-        houses = obs['houses'].astype(np.float32)
-        signals = obs['signals'].astype(np.float32)
-        locations = obs['locations'].astype(np.float32)
-        last_actions = obs['last_actions'].flatten().astype(np.float32)
-        scenario_info = obs['scenario_info'].astype(np.float32)
+        houses = obs["houses"].astype(np.float32)
+        signals = obs["signals"].astype(np.float32)
+        locations = obs["locations"].astype(np.float32)
+        last_actions = obs["last_actions"].flatten().astype(np.float32)
+        scenario_info = obs["scenario_info"].astype(np.float32)
 
         # Concatenate all observation components
-        flat_obs = np.concatenate([
-            houses,           # 10 values
-            signals,          # N values
-            locations,        # N values
-            last_actions,     # N*2 values
-            scenario_info     # 10 values
-        ])
+        flat_obs = np.concatenate(
+            [
+                houses,  # 10 values
+                signals,  # N values
+                locations,  # N values
+                last_actions,  # N*2 values
+                scenario_info,  # 10 values
+            ]
+        )
 
         return flat_obs
 
@@ -203,11 +217,19 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
         # For simplicity, just step the single environment
         # In a full implementation, this would handle multiple envs
         obs, reward, terminated, truncated, info = super().step(actions[0])
-        return np.array([obs]), np.array([reward]), np.array([terminated]), np.array([truncated]), [info]
+        return (
+            np.array([obs]),
+            np.array([reward]),
+            np.array([terminated]),
+            np.array([truncated]),
+            [info],
+        )
 
 
 # Factory functions for easy environment creation
-def make_env(scenario_name: str = 'default', num_opponents: int = 3) -> PufferBucketBrigade:
+def make_env(
+    scenario_name: str = "default", num_opponents: int = 3
+) -> PufferBucketBrigade:
     """Create a PufferLib environment with specified scenario."""
 
     # Import scenario functions locally to avoid circular imports
@@ -216,16 +238,16 @@ def make_env(scenario_name: str = 'default', num_opponents: int = 3) -> PufferBu
         early_containment_scenario,
         greedy_neighbor_scenario,
         sparse_heroics_scenario,
-        default_scenario
+        default_scenario,
     )
 
     # Map scenario names to functions
     scenario_map = {
-        'default': default_scenario,
-        'trivial_cooperation': trivial_cooperation_scenario,
-        'early_containment': early_containment_scenario,
-        'greedy_neighbor': greedy_neighbor_scenario,
-        'sparse_heroics': sparse_heroics_scenario,
+        "default": default_scenario,
+        "trivial_cooperation": trivial_cooperation_scenario,
+        "early_containment": early_containment_scenario,
+        "greedy_neighbor": greedy_neighbor_scenario,
+        "sparse_heroics": sparse_heroics_scenario,
     }
 
     scenario_func = scenario_map.get(scenario_name, default_scenario)
@@ -234,10 +256,10 @@ def make_env(scenario_name: str = 'default', num_opponents: int = 3) -> PufferBu
     return PufferBucketBrigade(scenario, num_opponents)
 
 
-def make_vectorized_env(num_envs: int = 8, scenario_name: str = 'default', num_opponents: int = 3):
+def make_vectorized_env(
+    num_envs: int = 8, scenario_name: str = "default", num_opponents: int = 3
+):
     """Create a vectorized environment for parallel training."""
     return PufferBucketBrigadeVectorized(
-        num_envs=num_envs,
-        scenario_name=scenario_name,
-        num_opponents=num_opponents
+        num_envs=num_envs, scenario_name=scenario_name, num_opponents=num_opponents
     )

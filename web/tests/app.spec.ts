@@ -7,7 +7,7 @@ test.describe('Bucket Brigade Visualizer', () => {
 
   test('should load the dashboard', async ({ page }) => {
     await expect(page).toHaveTitle(/Bucket Brigade/);
-    await expect(page.locator('h1')).toContainText('Welcome to Bucket Brigade');
+    await expect(page.locator('h1')).toContainText('Bucket Brigade');
   });
 
   test('should navigate between pages', async ({ page }) => {
@@ -17,29 +17,33 @@ test.describe('Bucket Brigade Visualizer', () => {
     // Navigate to rankings
     await page.locator('[data-testid="nav-rankings"]').click();
     await expect(page.locator('h1')).toContainText('Agent Rankings');
+    await expect(page.locator('text=No Rankings Available')).toBeVisible();
 
     // Navigate to settings
     await page.locator('[data-testid="nav-settings"]').click();
     await expect(page.locator('h1')).toContainText('Settings');
+    await expect(page.locator('text=Data Management')).toBeVisible();
 
     // Navigate back to dashboard
     await page.locator('[data-testid="nav-dashboard"]').click();
-    await expect(page.locator('h1')).toContainText('Welcome to Bucket Brigade');
+    await expect(page.locator('h1')).toContainText('Bucket Brigade');
   });
 
   test('should show empty state when no data', async ({ page }) => {
-    await expect(page.locator('text=No games available')).toBeVisible();
+    await expect(page.locator('text=No games loaded yet')).toBeVisible();
+    await page.locator('[data-testid="nav-rankings"]').click();
     await expect(page.locator('text=No Rankings Available')).toBeVisible();
   });
 });
 
 test.describe('Data Import/Export', () => {
   test('should handle file uploads', async ({ page }) => {
-    await page.goto('/settings');
+  await page.goto('/settings');
 
-    // Check that file inputs exist
-    await expect(page.locator('input[type="file"][accept=".json"]')).toBeVisible();
-    await expect(page.locator('input[type="file"][accept=".csv"]')).toBeVisible();
+  // Check that upload buttons exist
+  await expect(page.locator('text=Import Data')).toBeVisible();
+  await expect(page.locator('button:has-text("Upload JSON")')).toBeVisible();
+    await expect(page.locator('button:has-text("Upload CSV")')).toBeVisible();
   });
 
   test('should validate data formats', async ({ page }) => {

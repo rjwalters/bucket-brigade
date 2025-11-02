@@ -25,7 +25,7 @@ class TrivialCooperator(AgentBase):
         """
         Always signal WORK and work on the first available burning house.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
 
         # Find first burning house (0=Safe, 1=Burning, 2=Ruined)
         burning_houses = np.where(houses == 1)[0]

@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, Trash2, Database } from 'lucide-react';
-import { GameReplay, BatchResult, STORAGE_KEYS, ExportData } from '../types';
+import { BatchResult, ExportData } from '../types';
 import {
-  loadFromStorage,
-  saveToStorage,
   clearStorage,
   saveGameReplays,
   loadGameReplays,

@@ -27,7 +27,6 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
     locations.forEach((houseIndex, agentId) => {
       // Position agents in a small orbit around their target house
       const angle = (houseIndex / 10) * 2 * Math.PI - Math.PI / 2;
-      const radius = 120; // Same as house radius
       const centerX = 150;
       const centerY = 150;
 
@@ -83,8 +82,9 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
               cy={agent.y}
               r="8"
               className="agent-dot fill-blue-500 stroke-white stroke-2 cursor-pointer hover:stroke-blue-300 transition-all"
-              title={`Agent ${agent.agentId} at house ${agent.houseIndex}`}
-            />
+            >
+              <title>{`Agent ${agent.agentId} at house ${agent.houseIndex}`}</title>
+            </circle>
 
             {/* Signal indicator */}
             <text

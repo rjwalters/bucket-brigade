@@ -30,7 +30,7 @@ export class RandomAgent extends BrowserAgent {
     super(id, "Random");
   }
 
-  act(obs: AgentObservation): number[] {
+  act(_obs: AgentObservation): number[] {
     const house = Math.floor(Math.random() * 10);
     const mode = Math.floor(Math.random() * 2);
     return [house, mode];

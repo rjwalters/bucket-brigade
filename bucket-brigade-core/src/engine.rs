@@ -1,6 +1,6 @@
-use crate::scenarios::Scenario;
 use crate::rng::DeterministicRng;
-use crate::{GameNight, AgentObservation, Action, HouseState};
+use crate::scenarios::Scenario;
+use crate::{Action, AgentObservation, GameNight, HouseState};
 use serde::{Deserialize, Serialize};
 
 /// Current game state
@@ -141,7 +141,8 @@ impl BucketBrigade {
             }
 
             // Count workers at this house
-            let workers_here = actions.iter()
+            let workers_here = actions
+                .iter()
                 .filter(|action| action[0] as usize == house_idx && action[1] == 1)
                 .count();
 
@@ -164,8 +165,8 @@ impl BucketBrigade {
 
             // Check neighbors
             let neighbors = [
-                (house_idx + 9) % 10,  // (i-1) mod 10
-                (house_idx + 1) % 10,  // (i+1) mod 10
+                (house_idx + 9) % 10, // (i-1) mod 10
+                (house_idx + 1) % 10, // (i+1) mod 10
             ];
 
             for &neighbor in &neighbors {
@@ -200,36 +201,37 @@ impl BucketBrigade {
         let ruined_houses = self.houses.iter().filter(|&&h| h == 2).count() as f32;
 
         // Team reward
-        let team_reward = self.scenario.a * (saved_houses / 10.0) - self.scenario.l * (ruined_houses / 10.0);
+        let team_reward =
+            self.scenario.a * (saved_houses / 10.0) - self.scenario.l * (ruined_houses / 10.0);
 
-        let mut rewards = Vec::with_capacity(self.scenario.num_agents);
+        actions
+            .iter()
+            .enumerate()
+            .map(|(agent_idx, action)| {
+                let mut reward = 0.0;
 
-        for agent_idx in 0..self.scenario.num_agents {
-            let mut reward = 0.0;
+                // Work/rest cost
+                if action[1] == 1 {
+                    reward -= self.scenario.c; // Work cost
+                } else {
+                    reward += 0.5; // Rest reward
+                }
 
-            // Work/rest cost
-            if actions[agent_idx][1] == 1 {
-                reward -= self.scenario.c; // Work cost
-            } else {
-                reward += 0.5; // Rest reward
-            }
+                // Ownership bonus/penalty
+                let owned_house = agent_idx % 10;
+                if prev_houses[owned_house] == 0 && self.houses[owned_house] == 0 {
+                    reward += 1.0; // Bonus for keeping house safe
+                }
+                if self.houses[owned_house] == 2 {
+                    reward -= 2.0; // Penalty for ruined house
+                }
 
-            // Ownership bonus/penalty
-            let owned_house = agent_idx % 10;
-            if prev_houses[owned_house] == 0 && self.houses[owned_house] == 0 {
-                reward += 1.0; // Bonus for keeping house safe
-            }
-            if self.houses[owned_house] == 2 {
-                reward -= 2.0; // Penalty for ruined house
-            }
+                // Team reward share
+                reward += 0.1 * team_reward;
 
-            // Team reward share
-            reward += 0.1 * team_reward;
-
-            rewards.push(reward);
-        }
-
-        rewards
+                reward
+            })
+            .collect()
     }
 
     fn check_termination(&self) -> bool {
@@ -278,13 +280,15 @@ impl BucketBrigade {
     }
 
     pub fn get_result(&self) -> GameResult {
-        let agent_scores = self.trajectory.iter()
-            .fold(vec![0.0; self.scenario.num_agents], |mut acc, night| {
-                for (i, &reward) in night.rewards.iter().enumerate() {
-                    acc[i] += reward;
-                }
-                acc
-            });
+        let agent_scores =
+            self.trajectory
+                .iter()
+                .fold(vec![0.0; self.scenario.num_agents], |mut acc, night| {
+                    for (i, &reward) in night.rewards.iter().enumerate() {
+                        acc[i] += reward;
+                    }
+                    acc
+                });
 
         let final_score = agent_scores.iter().sum();
 

@@ -1,6 +1,6 @@
 pub mod engine;
-pub mod scenarios;
 pub mod rng;
+pub mod scenarios;
 
 #[cfg(feature = "python")]
 pub mod python;
@@ -11,7 +11,7 @@ pub mod wasm;
 use serde::{Deserialize, Serialize};
 
 // Re-export key types for easy access
-pub use engine::{BucketBrigade, GameState, GameResult};
+pub use engine::{BucketBrigade, GameResult, GameState};
 pub use scenarios::{Scenario, SCENARIOS};
 
 /// House states: 0 = Safe, 1 = Burning, 2 = Ruined

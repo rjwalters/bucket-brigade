@@ -33,7 +33,7 @@ class EarlyContainmentAgent(AgentBase):
         Later game: Rest if no fires remain.
         """
         self.night_count += 1
-        houses = obs['houses']
+        houses = obs["houses"]
 
         # Find burning houses
         burning_houses = np.where(houses == 1)[0]
@@ -47,7 +47,9 @@ class EarlyContainmentAgent(AgentBase):
             own_house = self.agent_id % 10
             return np.array([own_house, 0])  # [house, REST]
 
-    def _select_best_burning_house(self, houses: np.ndarray, burning_houses: np.ndarray) -> int:
+    def _select_best_burning_house(
+        self, houses: np.ndarray, burning_houses: np.ndarray
+    ) -> int:
         """
         Select the best burning house to work on.
 

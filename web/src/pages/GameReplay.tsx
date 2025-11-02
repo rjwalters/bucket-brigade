@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw, Home } from 'lucide-react';
-import { GameReplay, GameNight, ReplayState, STORAGE_KEYS } from '../types';
+import { Home } from 'lucide-react';
+import type { GameReplay } from '../types';
 import { loadGameReplays } from '../utils/storage';
 import Town from '../components/Town';
 import AgentLayer from '../components/AgentLayer';

@@ -32,13 +32,14 @@ class RestTrapAdaptiveAgent(AgentBase):
         """
         Rest unless fires show unusual persistence.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
         current_burning = set(np.where(houses == 1)[0])
 
         # Update persistence tracking
         # Remove fires that are no longer burning
         self.fire_persistence = {
-            house: nights for house, nights in self.fire_persistence.items()
+            house: nights
+            for house, nights in self.fire_persistence.items()
             if house in current_burning
         }
 
@@ -49,7 +50,9 @@ class RestTrapAdaptiveAgent(AgentBase):
             self.fire_persistence[house] += 1
 
         # Check for persistent fires (burning > 2 nights)
-        persistent_fires = [house for house, nights in self.fire_persistence.items() if nights > 2]
+        persistent_fires = [
+            house for house, nights in self.fire_persistence.items() if nights > 2
+        ]
 
         if persistent_fires:
             # Emergency: work on persistent fire

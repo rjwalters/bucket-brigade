@@ -27,7 +27,7 @@ class GreedyNeighborAgent(AgentBase):
         """
         Prioritize own house, but help neighbors if they threaten you.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
 
         # Check if own house is burning
         if houses[self.own_house] == 1:
@@ -39,7 +39,9 @@ class GreedyNeighborAgent(AgentBase):
 
         if threatening_neighbors:
             # Help neighbor to prevent spread to own house
-            return np.array([threatening_neighbors[0], 1])  # Work on first threatening neighbor
+            return np.array(
+                [threatening_neighbors[0], 1]
+            )  # Work on first threatening neighbor
 
         # No immediate threats - rest to save costs
         return np.array([self.own_house, 0])  # Rest at own house

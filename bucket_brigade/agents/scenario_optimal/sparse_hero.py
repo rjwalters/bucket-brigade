@@ -27,7 +27,7 @@ class SparseHeroAgent(AgentBase):
         """
         Work only when fires need attention, rest otherwise.
         """
-        houses = obs['houses']
+        houses = obs["houses"]
         burning_count = np.sum(houses == 1)
 
         # If no fires, rest

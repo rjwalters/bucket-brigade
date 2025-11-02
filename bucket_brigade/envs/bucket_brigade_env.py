@@ -4,7 +4,7 @@ Bucket Brigade multi-agent environment implementation.
 
 import numpy as np
 import json
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
 from .scenarios import Scenario
@@ -37,6 +37,7 @@ class BucketBrigadeEnv:
         """
         if scenario is None:
             from .scenarios import default_scenario
+
             scenario = default_scenario(num_agents)
 
         self.scenario = scenario
@@ -45,8 +46,12 @@ class BucketBrigadeEnv:
         # Environment state
         self.houses = np.zeros(10, dtype=np.int8)  # House states: SAFE, BURNING, RUINED
         self.locations = np.zeros(self.num_agents, dtype=np.int8)  # Agent positions
-        self.signals = np.zeros(self.num_agents, dtype=np.int8)  # Agent signals: REST, WORK
-        self.last_actions = np.zeros((self.num_agents, 2), dtype=np.int8)  # [house, mode]
+        self.signals = np.zeros(
+            self.num_agents, dtype=np.int8
+        )  # Agent signals: REST, WORK
+        self.last_actions = np.zeros(
+            (self.num_agents, 2), dtype=np.int8
+        )  # [house, mode]
 
         # Game state
         self.night = 0
@@ -94,7 +99,9 @@ class BucketBrigadeEnv:
 
         return self._get_observation()
 
-    def step(self, actions: np.ndarray) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, Dict]:
+    def step(
+        self, actions: np.ndarray
+    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, Dict]:
         """
         Execute one night of the game.
 
@@ -140,7 +147,12 @@ class BucketBrigadeEnv:
         # 10. Advance to next night
         self.night += 1
 
-        return self._get_observation(), self.rewards.copy(), np.full(self.num_agents, self.done), {}
+        return (
+            self._get_observation(),
+            self.rewards.copy(),
+            np.full(self.num_agents, self.done),
+            {},
+        )
 
     def _initialize_houses(self):
         """Initialize houses with some burning based on rho_ignite."""
@@ -156,7 +168,9 @@ class BucketBrigadeEnv:
                 continue
 
             # Count workers at this house
-            workers_here = np.sum((actions[:, 0] == house_idx) & (actions[:, 1] == self.WORK))
+            workers_here = np.sum(
+                (actions[:, 0] == house_idx) & (actions[:, 1] == self.WORK)
+            )
 
             # Probability of extinguishing: 1 - exp(-kappa * k)
             p_extinguish = 1.0 - np.exp(-self.scenario.kappa * workers_here)
@@ -181,19 +195,26 @@ class BucketBrigadeEnv:
     def _burn_out_houses(self):
         """Burning houses that neither extinguished nor spread become ruined."""
         # Any remaining burning houses become ruined
-        burning_mask = (self.houses == self.BURNING)
+        burning_mask = self.houses == self.BURNING
         self.houses[burning_mask] = self.RUINED
 
     def _spark_fires(self):
         """Add spontaneous fires if spark phase is active."""
         for house_idx in range(10):
-            if self.houses[house_idx] == self.SAFE and self.rng.random() < self.scenario.p_spark:
+            if (
+                self.houses[house_idx] == self.SAFE
+                and self.rng.random() < self.scenario.p_spark
+            ):
                 self.houses[house_idx] = self.BURNING
 
     def _compute_rewards(self, actions: np.ndarray) -> np.ndarray:
         """Compute rewards for all agents."""
         # Store previous house states to compute changes
-        prev_houses = np.array(self._prev_houses_state) if hasattr(self, '_prev_houses_state') else self.houses.copy()
+        prev_houses = (
+            np.array(self._prev_houses_state)
+            if hasattr(self, "_prev_houses_state")
+            else self.houses.copy()
+        )
         self._prev_houses_state = self.houses.copy()
 
         # Count final outcomes
@@ -203,8 +224,10 @@ class BucketBrigadeEnv:
         total_burned_fraction = ruined_houses / 10.0
 
         # Team reward component (shared by all)
-        team_reward = (self.scenario.A * total_saved_fraction -
-                      self.scenario.L * total_burned_fraction)
+        team_reward = (
+            self.scenario.A * total_saved_fraction
+            - self.scenario.L * total_burned_fraction
+        )
 
         # Individual rewards
         individual_rewards = np.zeros(self.num_agents, dtype=np.float32)
@@ -219,7 +242,10 @@ class BucketBrigadeEnv:
             # Ownership changes: bonus for owned houses that become safe
             owned_houses = np.where(self.house_owners == agent_idx)[0]
             for house_idx in owned_houses:
-                if prev_houses[house_idx] != self.SAFE and self.houses[house_idx] == self.SAFE:
+                if (
+                    prev_houses[house_idx] != self.SAFE
+                    and self.houses[house_idx] == self.SAFE
+                ):
                     individual_rewards[agent_idx] += 1.0  # Bonus for saving owned house
 
             # Penalty for owned houses that are ruined
@@ -250,7 +276,7 @@ class BucketBrigadeEnv:
             "locations": self.locations.copy(),
             "houses": self.houses.copy(),
             "last_actions": self.last_actions.copy(),
-            "scenario_info": self.scenario.to_feature_vector()
+            "scenario_info": self.scenario.to_feature_vector(),
         }
 
     def _record_night(self):
@@ -261,7 +287,7 @@ class BucketBrigadeEnv:
             "signals": self.signals.tolist(),
             "locations": self.locations.tolist(),
             "actions": self.last_actions.tolist(),
-            "rewards": self.rewards.tolist()
+            "rewards": self.rewards.tolist(),
         }
         self.trajectory.append(night_data)
 
@@ -283,22 +309,22 @@ class BucketBrigadeEnv:
                 "N_min": self.scenario.N_min,
                 "p_spark": self.scenario.p_spark,
                 "N_spark": self.scenario.N_spark,
-                "num_agents": self.scenario.num_agents
+                "num_agents": self.scenario.num_agents,
             },
-            "nights": self.trajectory
+            "nights": self.trajectory,
         }
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(replay_data, f, indent=2)
 
     def render(self):
         """Simple text-based rendering for debugging."""
-        house_symbols = ['□', '🔥', '💀']  # SAFE, BURNING, RUINED
+        house_symbols = ["□", "🔥", "💀"]  # SAFE, BURNING, RUINED
 
         print(f"Night {self.night}:")
-        print("Houses:", ''.join(house_symbols[state] for state in self.houses))
-        print("Signals:", ''.join('R' if s == self.REST else 'W' for s in self.signals))
+        print("Houses:", "".join(house_symbols[state] for state in self.houses))
+        print("Signals:", "".join("R" if s == self.REST else "W" for s in self.signals))
         print("Locations:", self.locations)
         print("Rewards:", self.rewards)
         print()
