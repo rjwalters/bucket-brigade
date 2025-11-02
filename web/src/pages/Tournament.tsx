@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Play, Square, Code, Trophy } from 'lucide-react';
 import {
   TournamentRunner,
@@ -9,8 +9,10 @@ import {
 import {
   create_tournament_agents
 } from '../utils/browserAgents';
+import { initWasm, isWasmInitialized } from '../utils/wasmEngine';
 
 const Tournament: React.FC = () => {
+  const [wasmReady, setWasmReady] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<keyof typeof SCENARIOS>('trivial_cooperation');
   const [userAgentCode, setUserAgentCode] = useState(`// Your agent function
 // Input: obs (observation object)
@@ -44,6 +46,23 @@ return function(obs) {
   const tournament_runner_ref = useRef<TournamentRunner | null>(null);
 
   const scenario_options = Object.keys(SCENARIOS) as Array<keyof typeof SCENARIOS>;
+
+  // Initialize WASM on component mount
+  useEffect(() => {
+    if (!isWasmInitialized()) {
+      initWasm()
+        .then(() => {
+          setWasmReady(true);
+          console.log('✅ WASM ready for tournaments');
+        })
+        .catch((error) => {
+          console.warn('⚠️  WASM failed to load, using JS engine:', error);
+          setWasmReady(false); // Use JS fallback
+        });
+    } else {
+      setWasmReady(true);
+    }
+  }, []);
 
   const run_tournament = useCallback(async () => {
     setError(null);

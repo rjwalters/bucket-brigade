@@ -36,3 +36,4 @@ optional = true
 [lib]
 name = "bucket_brigade_core"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
