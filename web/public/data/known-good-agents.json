@@ -1,0 +1,326 @@
+{
+  "version": 1,
+  "schema_version": "1.0.0",
+  "last_updated": "2025-01-15T10:30:00Z",
+  "description": "Community-discovered high-performing agent configurations",
+  "agents": [
+    {
+      "id": "heroic-coordinator-001",
+      "name": "Heroic Coordinator",
+      "archetype": "Firefighter",
+      "parameters": {
+        "honesty_bias": 0.95,
+        "work_tendency": 0.85,
+        "neighbor_help_bias": 0.72,
+        "own_house_priority": 0.38,
+        "risk_aversion": 0.45,
+        "coordination_weight": 0.88,
+        "exploration_rate": 0.08,
+        "fatigue_memory": 0.52,
+        "rest_reward_bias": 0.12,
+        "altruism_factor": 0.82
+      },
+      "performance": {
+        "win_rate": 0.72,
+        "avg_score": 48.3,
+        "avg_contribution": 8.3,
+        "games_played": 50,
+        "scenarios_tested": ["greedy_neighbor", "chain_reaction"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 32,
+            "losses": 18,
+            "win_rate": 0.64
+          },
+          "chain_reaction": {
+            "wins": 28,
+            "losses": 22,
+            "win_rate": 0.56
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-15T10:30:00Z",
+        "tags": ["cooperative", "reliable", "honest"],
+        "notes": "Excels in high-cooperation scenarios. Works well with other honest signalers.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "tactical-free-rider-001",
+      "name": "Tactical Free Rider",
+      "archetype": "Free Rider",
+      "parameters": {
+        "honesty_bias": 0.68,
+        "work_tendency": 0.25,
+        "neighbor_help_bias": 0.18,
+        "own_house_priority": 0.92,
+        "risk_aversion": 0.83,
+        "coordination_weight": 0.28,
+        "exploration_rate": 0.22,
+        "fatigue_memory": 0.81,
+        "rest_reward_bias": 0.88,
+        "altruism_factor": 0.08
+      },
+      "performance": {
+        "win_rate": 0.68,
+        "avg_score": 52.1,
+        "avg_contribution": 5.2,
+        "games_played": 80,
+        "scenarios_tested": ["greedy_neighbor", "sparse_heroics"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 48,
+            "losses": 32,
+            "win_rate": 0.6
+          },
+          "sparse_heroics": {
+            "wins": 38,
+            "losses": 22,
+            "win_rate": 0.63
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-16T14:20:00Z",
+        "tags": ["strategic", "selfish", "efficient"],
+        "notes": "Performs well when teammates are cooperative. Maximizes personal reward while letting others handle fires.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "balanced-strategist-001",
+      "name": "Balanced Strategist",
+      "archetype": "Strategist",
+      "parameters": {
+        "honesty_bias": 0.88,
+        "work_tendency": 0.62,
+        "neighbor_help_bias": 0.55,
+        "own_house_priority": 0.48,
+        "risk_aversion": 0.68,
+        "coordination_weight": 0.92,
+        "exploration_rate": 0.05,
+        "fatigue_memory": 0.32,
+        "rest_reward_bias": 0.52,
+        "altruism_factor": 0.58
+      },
+      "performance": {
+        "win_rate": 0.65,
+        "avg_score": 46.8,
+        "avg_contribution": 7.1,
+        "games_played": 60,
+        "scenarios_tested": ["greedy_neighbor", "chain_reaction", "sparse_heroics"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 22,
+            "losses": 18,
+            "win_rate": 0.55
+          },
+          "chain_reaction": {
+            "wins": 24,
+            "losses": 16,
+            "win_rate": 0.6
+          },
+          "sparse_heroics": {
+            "wins": 18,
+            "losses": 12,
+            "win_rate": 0.6
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-17T09:45:00Z",
+        "tags": ["balanced", "efficient", "adaptive"],
+        "notes": "Consistent performance across diverse scenarios. Excels at reading team composition and adjusting strategy.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "defensive-coordinator-001",
+      "name": "Defensive Coordinator",
+      "archetype": "Coordinator",
+      "parameters": {
+        "honesty_bias": 0.92,
+        "work_tendency": 0.58,
+        "neighbor_help_bias": 0.62,
+        "own_house_priority": 0.65,
+        "risk_aversion": 0.55,
+        "coordination_weight": 0.95,
+        "exploration_rate": 0.04,
+        "fatigue_memory": 0.38,
+        "rest_reward_bias": 0.42,
+        "altruism_factor": 0.55
+      },
+      "performance": {
+        "win_rate": 0.61,
+        "avg_score": 44.5,
+        "avg_contribution": 6.8,
+        "games_played": 45,
+        "scenarios_tested": ["greedy_neighbor", "chain_reaction"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 28,
+            "losses": 17,
+            "win_rate": 0.62
+          },
+          "chain_reaction": {
+            "wins": 20,
+            "losses": 15,
+            "win_rate": 0.57
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-18T11:15:00Z",
+        "tags": ["defensive", "coordinated", "reliable"],
+        "notes": "Prioritizes protecting own neighborhood while maintaining team coordination. Works well in mixed-motivation teams.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "altruistic-hero-001",
+      "name": "Altruistic Hero",
+      "archetype": "Hero",
+      "parameters": {
+        "honesty_bias": 1.0,
+        "work_tendency": 0.98,
+        "neighbor_help_bias": 0.95,
+        "own_house_priority": 0.15,
+        "risk_aversion": 0.08,
+        "coordination_weight": 0.52,
+        "exploration_rate": 0.12,
+        "fatigue_memory": 0.88,
+        "rest_reward_bias": 0.02,
+        "altruism_factor": 0.98
+      },
+      "performance": {
+        "win_rate": 0.58,
+        "avg_score": 42.2,
+        "avg_contribution": 9.5,
+        "games_played": 35,
+        "scenarios_tested": ["chain_reaction", "sparse_heroics"],
+        "scenario_performance": {
+          "chain_reaction": {
+            "wins": 18,
+            "losses": 12,
+            "win_rate": 0.6
+          },
+          "sparse_heroics": {
+            "wins": 12,
+            "losses": 13,
+            "win_rate": 0.48
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-19T16:30:00Z",
+        "tags": ["altruistic", "hardworking", "consistent"],
+        "notes": "High individual contribution. Best in teams with free riders. Can burn out in sparse scenarios where rest is optimal.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "calculated-opportunist-001",
+      "name": "Calculated Opportunist",
+      "archetype": "Opportunist",
+      "parameters": {
+        "honesty_bias": 0.58,
+        "work_tendency": 0.64,
+        "neighbor_help_bias": 0.15,
+        "own_house_priority": 0.98,
+        "risk_aversion": 0.62,
+        "coordination_weight": 0.22,
+        "exploration_rate": 0.18,
+        "fatigue_memory": 0.58,
+        "rest_reward_bias": 0.72,
+        "altruism_factor": 0.05
+      },
+      "performance": {
+        "win_rate": 0.63,
+        "avg_score": 50.8,
+        "avg_contribution": 4.2,
+        "games_played": 55,
+        "scenarios_tested": ["greedy_neighbor", "sparse_heroics"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 38,
+            "losses": 22,
+            "win_rate": 0.63
+          },
+          "sparse_heroics": {
+            "wins": 28,
+            "losses": 17,
+            "win_rate": 0.62
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-20T13:00:00Z",
+        "tags": ["selfish", "defensive", "opportunistic"],
+        "notes": "Focuses exclusively on own house. High personal scores but low team contribution. Works when paired with altruistic agents.",
+        "submitter": "community"
+      }
+    },
+    {
+      "id": "adaptive-maverick-001",
+      "name": "Adaptive Maverick",
+      "archetype": "Maverick",
+      "parameters": {
+        "honesty_bias": 0.52,
+        "work_tendency": 0.55,
+        "neighbor_help_bias": 0.48,
+        "own_house_priority": 0.52,
+        "risk_aversion": 0.45,
+        "coordination_weight": 0.58,
+        "exploration_rate": 0.85,
+        "fatigue_memory": 0.28,
+        "rest_reward_bias": 0.48,
+        "altruism_factor": 0.52
+      },
+      "performance": {
+        "win_rate": 0.56,
+        "avg_score": 43.1,
+        "avg_contribution": 6.2,
+        "games_played": 70,
+        "scenarios_tested": ["greedy_neighbor", "chain_reaction", "sparse_heroics"],
+        "scenario_performance": {
+          "greedy_neighbor": {
+            "wins": 25,
+            "losses": 20,
+            "win_rate": 0.56
+          },
+          "chain_reaction": {
+            "wins": 22,
+            "losses": 18,
+            "win_rate": 0.55
+          },
+          "sparse_heroics": {
+            "wins": 18,
+            "losses": 17,
+            "win_rate": 0.51
+          }
+        }
+      },
+      "metadata": {
+        "submitted_at": "2025-01-21T10:20:00Z",
+        "tags": ["unpredictable", "exploratory", "versatile"],
+        "notes": "High variance but consistent across scenarios. Good for testing team adaptability and discovering edge case strategies.",
+        "submitter": "community"
+      }
+    }
+  ],
+  "stats": {
+    "total_agents": 7,
+    "total_games_tested": 395,
+    "avg_win_rate": 0.632,
+    "archetypes_represented": [
+      "Firefighter",
+      "Free Rider",
+      "Strategist",
+      "Coordinator",
+      "Hero",
+      "Opportunist",
+      "Maverick"
+    ]
+  }
+}

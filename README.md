@@ -443,6 +443,26 @@ class MyAgent(AgentBase):
 
 See `bucket_brigade/agents/scenario_optimal/` for examples of optimal strategies for each test scenario.
 
+### Community Agent Registry
+
+Discover and share high-performing agent configurations through the **distributed agent discovery system**:
+
+- **Browse known-good agents** - Explore community-discovered configurations in the registry
+- **Submit your discoveries** - Share agents that perform well in your tournaments
+- **Crowdsource optimization** - Treat agent discovery as distributed parameter search
+- **Build collective knowledge** - Contribute to understanding of effective strategies
+
+```bash
+# View the community registry
+cat web/public/data/known-good-agents.json
+
+# Submit an agent via GitHub Issue
+# Go to: https://github.com/rjwalters/bucket-brigade/issues/new/choose
+# Select: "Agent Submission" template
+```
+
+**Learn more**: See [docs/AGENT_SUBMISSION_GUIDE.md](docs/AGENT_SUBMISSION_GUIDE.md) for complete submission guidelines.
+
 🧠 Future Work
 
 Bayesian team-composition optimization
