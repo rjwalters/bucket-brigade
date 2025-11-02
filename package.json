@@ -16,16 +16,5 @@
     "build": "cd web && pnpm run build"
   },
   "devDependencies": {
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0"
-  },
-  "lint-staged": {
-    "*.{py,pyx}": [
-      "black",
-      "ruff check --fix"
-    ],
-    "*.{js,ts,jsx,tsx}": [
-      "cd web && biome check --write"
-    ]
   }
 }
