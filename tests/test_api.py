@@ -13,7 +13,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from bucket_brigade.services.api import app
-from bucket_brigade.db import init_db
 
 
 # Sample valid agent code
