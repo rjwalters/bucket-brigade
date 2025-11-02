@@ -1,0 +1,507 @@
+{
+  "version": "1.0.0",
+  "description": "Metadata for all agent archetypes in Bucket Brigade, including radar chart properties and behavioral parameters",
+  "radarDimensions": {
+    "cooperation": {
+      "name": "Cooperation",
+      "description": "Willingness to help neighbors and coordinate with team",
+      "derivedFrom": ["neighbor_help_bias", "altruism_factor", "coordination_weight"],
+      "min": 0,
+      "max": 10
+    },
+    "reliability": {
+      "name": "Reliability",
+      "description": "Consistency and trustworthiness in actions and signals",
+      "derivedFrom": ["honesty_bias", "1 - exploration_rate", "1 - fatigue_memory"],
+      "min": 0,
+      "max": 10
+    },
+    "workEthic": {
+      "name": "Work Ethic",
+      "description": "Energy and commitment to actively fighting fires",
+      "derivedFrom": ["work_tendency", "1 - rest_reward_bias"],
+      "min": 0,
+      "max": 10
+    },
+    "selfPreservation": {
+      "name": "Self-Preservation",
+      "description": "Priority on protecting own house vs. helping others",
+      "derivedFrom": ["own_house_priority", "1 - altruism_factor"],
+      "min": 0,
+      "max": 10
+    },
+    "riskManagement": {
+      "name": "Risk Management",
+      "description": "Caution and strategic thinking about fire spread",
+      "derivedFrom": ["risk_aversion", "1 - exploration_rate"],
+      "min": 0,
+      "max": 10
+    },
+    "initiative": {
+      "name": "Initiative",
+      "description": "Independence and willingness to act without coordination",
+      "derivedFrom": ["1 - coordination_weight", "work_tendency", "exploration_rate"],
+      "min": 0,
+      "max": 10
+    }
+  },
+  "archetypes": {
+    "firefighter": {
+      "id": "firefighter",
+      "name": "Firefighter",
+      "icon": "🧑‍🚒",
+      "color": "#ef4444",
+      "tagline": "The reliable first responder",
+      "description": "Honest, hardworking, and community-focused. Firefighters are the backbone of any team, consistently showing up to work on fires and signaling truthfully about their intentions.",
+      "parameters": {
+        "honesty_bias": 1.0,
+        "work_tendency": 0.9,
+        "neighbor_help_bias": 0.5,
+        "own_house_priority": 0.8,
+        "risk_aversion": 0.5,
+        "coordination_weight": 0.7,
+        "exploration_rate": 0.1,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.0,
+        "altruism_factor": 0.8
+      },
+      "radarProfile": {
+        "cooperation": 8,
+        "reliability": 9,
+        "workEthic": 9,
+        "selfPreservation": 6,
+        "riskManagement": 5,
+        "initiative": 6
+      },
+      "strengths": [
+        "High trustworthiness (100% honest signals)",
+        "Strong work ethic",
+        "Balanced concern for own house and neighbors"
+      ],
+      "weaknesses": [
+        "May overwork without strategic rest",
+        "Moderate risk management could lead to suboptimal fire prioritization"
+      ],
+      "teamRoles": ["Core team member", "Reliable worker", "First responder"],
+      "tags": ["cooperative", "honest", "hardworking", "balanced"]
+    },
+    "free_rider": {
+      "id": "free_rider",
+      "name": "Free Rider",
+      "icon": "💤",
+      "color": "#8b5cf6",
+      "tagline": "Why work when others will do it?",
+      "description": "Selfish and lazy, the Free Rider avoids work whenever possible, letting others shoulder the burden. They focus exclusively on their own house and maximize rest rewards.",
+      "parameters": {
+        "honesty_bias": 0.7,
+        "work_tendency": 0.2,
+        "neighbor_help_bias": 0.0,
+        "own_house_priority": 0.9,
+        "risk_aversion": 0.0,
+        "coordination_weight": 0.0,
+        "exploration_rate": 0.1,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.9,
+        "altruism_factor": 0.0
+      },
+      "radarProfile": {
+        "cooperation": 1,
+        "reliability": 6,
+        "workEthic": 2,
+        "selfPreservation": 9,
+        "riskManagement": 2,
+        "initiative": 4
+      },
+      "strengths": [
+        "Conserves energy efficiently",
+        "Decent honesty means signals somewhat reliable when they do work",
+        "Will protect own house aggressively"
+      ],
+      "weaknesses": [
+        "Extremely low work ethic drags team down",
+        "Zero altruism and neighbor help",
+        "Doesn't coordinate with team"
+      ],
+      "teamRoles": ["None (challenges team dynamics)", "Useful for testing resilience"],
+      "tags": ["selfish", "lazy", "defector", "challenging"]
+    },
+    "liar": {
+      "id": "liar",
+      "name": "Liar",
+      "icon": "🤥",
+      "color": "#22c55e",
+      "tagline": "Trust me... or don't",
+      "description": "Deceptive and self-interested, the Liar sends misleading signals to manipulate team behavior. They work moderately but prioritize their own house above all.",
+      "parameters": {
+        "honesty_bias": 0.1,
+        "work_tendency": 0.7,
+        "neighbor_help_bias": 0.0,
+        "own_house_priority": 0.9,
+        "risk_aversion": 0.2,
+        "coordination_weight": 0.8,
+        "exploration_rate": 0.3,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.4,
+        "altruism_factor": 0.2
+      },
+      "radarProfile": {
+        "cooperation": 3,
+        "reliability": 2,
+        "workEthic": 6,
+        "selfPreservation": 8,
+        "riskManagement": 3,
+        "initiative": 4
+      },
+      "strengths": [
+        "High coordination weight means they respond to others' signals",
+        "Moderate work tendency keeps them somewhat active",
+        "Exploration creates unpredictability (can be strategic)"
+      ],
+      "weaknesses": [
+        "90% dishonesty destroys team trust",
+        "Zero neighbor help and low altruism",
+        "Deceptive signals cascade into team failures"
+      ],
+      "teamRoles": ["Antagonist", "Adversarial testing", "Game theory experiments"],
+      "tags": ["deceptive", "manipulative", "self-interested", "unreliable"]
+    },
+    "hero": {
+      "id": "hero",
+      "name": "Hero",
+      "icon": "🦸",
+      "color": "#eab308",
+      "tagline": "I'll save everyone!",
+      "description": "The ultimate altruist. Heroes work tirelessly to help others, often neglecting their own house. They signal honestly and coordinate well, but their extreme work ethic can lead to burnout patterns.",
+      "parameters": {
+        "honesty_bias": 1.0,
+        "work_tendency": 1.0,
+        "neighbor_help_bias": 1.0,
+        "own_house_priority": 0.5,
+        "risk_aversion": 0.1,
+        "coordination_weight": 0.5,
+        "exploration_rate": 0.0,
+        "fatigue_memory": 0.9,
+        "rest_reward_bias": 0.0,
+        "altruism_factor": 1.0
+      },
+      "radarProfile": {
+        "cooperation": 10,
+        "reliability": 10,
+        "workEthic": 10,
+        "selfPreservation": 3,
+        "riskManagement": 2,
+        "initiative": 7
+      },
+      "strengths": [
+        "Maximum altruism (1.0) and cooperation",
+        "Perfect honesty creates team trust",
+        "Constant work (no rest bias)",
+        "High neighbor help"
+      ],
+      "weaknesses": [
+        "Low own house priority risks personal loss",
+        "High fatigue memory causes repetitive behavior",
+        "Low risk aversion may miss strategic priorities",
+        "Can be exploited by free riders"
+      ],
+      "teamRoles": ["Leader", "Anchor player", "Emergency responder"],
+      "tags": ["altruistic", "tireless", "honest", "self-sacrificing"]
+    },
+    "coordinator": {
+      "id": "coordinator",
+      "name": "Coordinator",
+      "icon": "📋",
+      "color": "#3b82f6",
+      "tagline": "Let's work together efficiently",
+      "description": "Strategic and team-oriented, the Coordinator excels at reading and responding to team signals. They balance work and risk management, making calculated decisions based on team coordination.",
+      "parameters": {
+        "honesty_bias": 0.9,
+        "work_tendency": 0.6,
+        "neighbor_help_bias": 0.7,
+        "own_house_priority": 0.6,
+        "risk_aversion": 0.8,
+        "coordination_weight": 1.0,
+        "exploration_rate": 0.05,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.2,
+        "altruism_factor": 0.6
+      },
+      "radarProfile": {
+        "cooperation": 9,
+        "reliability": 9,
+        "workEthic": 6,
+        "selfPreservation": 5,
+        "riskManagement": 8,
+        "initiative": 3
+      },
+      "strengths": [
+        "Maximum coordination weight (1.0) - perfect signal reading",
+        "High honesty (0.9) builds trust",
+        "Balanced risk aversion enables strategic prioritization",
+        "Good neighbor help and altruism",
+        "Minimal exploration ensures consistent behavior"
+      ],
+      "weaknesses": [
+        "Moderate work tendency means less raw output than Hero",
+        "Medium own house priority could lead to losses",
+        "Dependence on team signals vulnerable to Liars"
+      ],
+      "teamRoles": ["Team captain", "Signal processor", "Strategic planner"],
+      "tags": ["strategic", "coordinated", "reliable", "team-oriented"]
+    },
+    "strategist": {
+      "id": "strategist",
+      "name": "Strategist",
+      "icon": "🎯",
+      "color": "#1e40af",
+      "tagline": "Calculated efficiency over brute force",
+      "description": "The Strategist combines high risk aversion with moderate work tendency and exploration. They make calculated decisions, avoiding waste while maintaining productivity.",
+      "parameters": {
+        "honesty_bias": 0.8,
+        "work_tendency": 0.6,
+        "neighbor_help_bias": 0.4,
+        "own_house_priority": 0.7,
+        "risk_aversion": 0.9,
+        "coordination_weight": 0.6,
+        "exploration_rate": 0.15,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.3,
+        "altruism_factor": 0.5
+      },
+      "radarProfile": {
+        "cooperation": 6,
+        "reliability": 8,
+        "workEthic": 6,
+        "selfPreservation": 7,
+        "riskManagement": 9,
+        "initiative": 5
+      },
+      "strengths": [
+        "High risk aversion prevents wasteful work",
+        "Good honesty maintains trust",
+        "Balanced parameters for versatility"
+      ],
+      "weaknesses": [
+        "Moderate work tendency may not respond to emergencies quickly",
+        "Lower cooperation than Coordinator/Hero",
+        "Exploration can introduce inconsistency"
+      ],
+      "teamRoles": ["Tactical decision-maker", "Resource optimizer"],
+      "tags": ["analytical", "efficient", "cautious", "calculated"]
+    },
+    "opportunist": {
+      "id": "opportunist",
+      "name": "Opportunist",
+      "icon": "💰",
+      "color": "#f97316",
+      "tagline": "Work smart, not hard",
+      "description": "Self-interested but not lazy. The Opportunist works when it benefits them, shows moderate honesty, and adapts to team dynamics opportunistically.",
+      "parameters": {
+        "honesty_bias": 0.5,
+        "work_tendency": 0.5,
+        "neighbor_help_bias": 0.2,
+        "own_house_priority": 0.8,
+        "risk_aversion": 0.6,
+        "coordination_weight": 0.4,
+        "exploration_rate": 0.25,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.5,
+        "altruism_factor": 0.3
+      },
+      "radarProfile": {
+        "cooperation": 4,
+        "reliability": 5,
+        "workEthic": 5,
+        "selfPreservation": 8,
+        "riskManagement": 6,
+        "initiative": 6
+      },
+      "strengths": [
+        "Adaptive to changing game state",
+        "Balanced risk management",
+        "Some exploration enables learning"
+      ],
+      "weaknesses": [
+        "Low honesty can disrupt coordination",
+        "Self-interested priorities conflict with team goals",
+        "Moderate on most dimensions means no clear specialty"
+      ],
+      "teamRoles": ["Flexible fill-in", "Adaptive responder"],
+      "tags": ["adaptive", "self-interested", "flexible", "pragmatic"]
+    },
+    "cautious": {
+      "id": "cautious",
+      "name": "Cautious",
+      "icon": "😰",
+      "color": "#fef08a",
+      "tagline": "Better safe than sorry",
+      "description": "Extremely risk-averse with high self-preservation. The Cautious agent works primarily on personal threats and avoids dangerous fire clusters.",
+      "parameters": {
+        "honesty_bias": 0.75,
+        "work_tendency": 0.5,
+        "neighbor_help_bias": 0.2,
+        "own_house_priority": 0.9,
+        "risk_aversion": 1.0,
+        "coordination_weight": 0.5,
+        "exploration_rate": 0.05,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.4,
+        "altruism_factor": 0.2
+      },
+      "radarProfile": {
+        "cooperation": 3,
+        "reliability": 7,
+        "workEthic": 5,
+        "selfPreservation": 9,
+        "riskManagement": 10,
+        "initiative": 4
+      },
+      "strengths": [
+        "Maximum risk aversion (1.0) prevents cascading failures",
+        "Highly reliable and consistent",
+        "Strong self-preservation ensures survival"
+      ],
+      "weaknesses": [
+        "Low cooperation and neighbor help",
+        "Avoids risky but necessary interventions",
+        "May let fires spread due to excessive caution"
+      ],
+      "teamRoles": ["Perimeter defense", "Containment specialist"],
+      "tags": ["risk-averse", "defensive", "protective", "conservative"]
+    },
+    "maverick": {
+      "id": "maverick",
+      "name": "Maverick",
+      "icon": "🎲",
+      "color": "#ec4899",
+      "tagline": "Unpredictable and unconventional",
+      "description": "High exploration rate and low fatigue memory create an agent that tries novel approaches. Good for discovering unexpected strategies but unreliable.",
+      "parameters": {
+        "honesty_bias": 0.6,
+        "work_tendency": 0.6,
+        "neighbor_help_bias": 0.5,
+        "own_house_priority": 0.5,
+        "risk_aversion": 0.4,
+        "coordination_weight": 0.3,
+        "exploration_rate": 0.6,
+        "fatigue_memory": 0.0,
+        "rest_reward_bias": 0.3,
+        "altruism_factor": 0.5
+      },
+      "radarProfile": {
+        "cooperation": 5,
+        "reliability": 3,
+        "workEthic": 6,
+        "selfPreservation": 5,
+        "riskManagement": 4,
+        "initiative": 9
+      },
+      "strengths": [
+        "High exploration discovers novel strategies",
+        "Balanced parameters on many dimensions",
+        "Independent (low coordination weight)"
+      ],
+      "weaknesses": [
+        "Extreme exploration reduces reliability",
+        "Inconsistent behavior confuses team",
+        "Low coordination means ignores team signals"
+      ],
+      "teamRoles": ["Innovation", "Chaos agent", "Testing adaptive strategies"],
+      "tags": ["exploratory", "unpredictable", "innovative", "independent"]
+    },
+    "random": {
+      "id": "random",
+      "name": "Random",
+      "icon": "❓",
+      "color": "#9ca3af",
+      "tagline": "Chaos is a ladder",
+      "description": "Fully randomized parameters (0-1 uniform distribution). Every Random agent is unique. Useful for baseline testing and discovering parameter combinations.",
+      "parameters": {
+        "honesty_bias": "uniform(0, 1)",
+        "work_tendency": "uniform(0, 1)",
+        "neighbor_help_bias": "uniform(0, 1)",
+        "own_house_priority": "uniform(0, 1)",
+        "risk_aversion": "uniform(0, 1)",
+        "coordination_weight": "uniform(0, 1)",
+        "exploration_rate": "uniform(0, 1)",
+        "fatigue_memory": "uniform(0, 1)",
+        "rest_reward_bias": "uniform(0, 1)",
+        "altruism_factor": "uniform(0, 1)"
+      },
+      "radarProfile": {
+        "cooperation": "varies",
+        "reliability": "varies",
+        "workEthic": "varies",
+        "selfPreservation": "varies",
+        "riskManagement": "varies",
+        "initiative": "varies"
+      },
+      "strengths": [
+        "Every instance is unique",
+        "Discovers novel parameter combinations",
+        "Useful for parameter space exploration"
+      ],
+      "weaknesses": [
+        "Unpredictable performance",
+        "No consistent strategy",
+        "May produce extremely poor configurations"
+      ],
+      "teamRoles": ["Experimental control", "Parameter space exploration"],
+      "tags": ["random", "experimental", "baseline", "exploratory"]
+    }
+  },
+  "teamTemplates": {
+    "balanced": {
+      "name": "Balanced Team",
+      "description": "General purpose team with diverse roles",
+      "composition": [
+        {"archetype": "firefighter", "count": 1, "role": "Reliable core worker"},
+        {"archetype": "coordinator", "count": 1, "role": "Signal processor and strategist"},
+        {"archetype": "hero", "count": 1, "role": "Emergency response and altruism"},
+        {"archetype": "strategist", "count": 2, "role": "Risk management"}
+      ],
+      "tags": ["versatile", "recommended", "beginner-friendly"]
+    },
+    "highTrust": {
+      "name": "High Trust Team",
+      "description": "Coordination-heavy team relying on honest signals",
+      "composition": [
+        {"archetype": "coordinator", "count": 2, "role": "Maximum signal coordination"},
+        {"archetype": "firefighter", "count": 2, "role": "Honest and hardworking"},
+        {"archetype": "hero", "count": 1, "role": "Backup altruism"}
+      ],
+      "tags": ["coordination", "trust-based", "cooperative"]
+    },
+    "adversarial": {
+      "name": "Adversarial Testing",
+      "description": "Test team resilience with defectors",
+      "composition": [
+        {"archetype": "hero", "count": 2, "role": "Strong cooperators"},
+        {"archetype": "liar", "count": 1, "role": "Trust breaker"},
+        {"archetype": "free_rider", "count": 1, "role": "Resource drain"},
+        {"archetype": "coordinator", "count": 1, "role": "Handle deception"}
+      ],
+      "tags": ["experimental", "game-theory", "challenging"]
+    },
+    "exploration": {
+      "name": "Exploration Team",
+      "description": "Discover novel parameter combinations",
+      "composition": [
+        {"archetype": "random", "count": 3, "role": "Discover novel strategies"},
+        {"archetype": "coordinator", "count": 1, "role": "Baseline coordination"},
+        {"archetype": "firefighter", "count": 1, "role": "Reliable anchor"}
+      ],
+      "tags": ["experimental", "research", "discovery"]
+    },
+    "efficiency": {
+      "name": "Efficiency Team",
+      "description": "Minimize work while preventing escalation",
+      "composition": [
+        {"archetype": "strategist", "count": 2, "role": "Calculated decisions"},
+        {"archetype": "cautious", "count": 2, "role": "Prevent escalation"},
+        {"archetype": "coordinator", "count": 1, "role": "Resource optimization"}
+      ],
+      "tags": ["efficient", "defensive", "resource-conscious"]
+    }
+  }
+}
