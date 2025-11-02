@@ -8,6 +8,7 @@ that works with the current environment setup.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
@@ -34,9 +35,9 @@ class PolicyNetwork(nn.Module):
         )
 
         # Separate heads for each action dimension
-        self.action_heads = nn.ModuleList([
-            nn.Linear(hidden_size, dim) for dim in action_dims
-        ])
+        self.action_heads = nn.ModuleList(
+            [nn.Linear(hidden_size, dim) for dim in action_dims]
+        )
 
         # Value head
         self.value_head = nn.Linear(hidden_size, 1)
@@ -211,12 +212,16 @@ def train_ppo(
             fps = global_step / elapsed
             avg_reward = np.mean(episode_rewards) if episode_rewards else 0
 
-            print(f"Step {global_step:,}/{num_steps:,} | "
-                  f"Avg Reward: {avg_reward:.2f} | "
-                  f"FPS: {fps:.0f} | "
-                  f"Episodes: {len(episode_rewards)}")
+            print(
+                f"Step {global_step:,}/{num_steps:,} | "
+                f"Avg Reward: {avg_reward:.2f} | "
+                f"FPS: {fps:.0f} | "
+                f"Episodes: {len(episode_rewards)}"
+            )
 
-    print(f"\n✅ Training complete! Total time: {(time.time() - start_time)/60:.1f} minutes")
+    print(
+        f"\n✅ Training complete! Total time: {(time.time() - start_time)/60:.1f} minutes"
+    )
 
     return policy
 
@@ -225,20 +230,24 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Train Bucket Brigade policy with PPO")
-    parser.add_argument("--num-opponents", type=int, default=2,
-                       help="Number of opponent agents")
-    parser.add_argument("--num-steps", type=int, default=100000,
-                       help="Total training steps")
-    parser.add_argument("--batch-size", type=int, default=2048,
-                       help="Batch size for training")
-    parser.add_argument("--hidden-size", type=int, default=64,
-                       help="Hidden layer size")
-    parser.add_argument("--lr", type=float, default=3e-4,
-                       help="Learning rate")
-    parser.add_argument("--seed", type=int, default=42,
-                       help="Random seed")
-    parser.add_argument("--save-path", type=str, default="models/simple_policy.pt",
-                       help="Path to save trained model")
+    parser.add_argument(
+        "--num-opponents", type=int, default=2, help="Number of opponent agents"
+    )
+    parser.add_argument(
+        "--num-steps", type=int, default=100000, help="Total training steps"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=2048, help="Batch size for training"
+    )
+    parser.add_argument("--hidden-size", type=int, default=64, help="Hidden layer size")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--save-path",
+        type=str,
+        default="models/simple_policy.pt",
+        help="Path to save trained model",
+    )
 
     args = parser.parse_args()
 
@@ -272,12 +281,15 @@ def main():
 
     # Save model
     Path(args.save_path).parent.mkdir(parents=True, exist_ok=True)
-    torch.save({
-        'policy_state_dict': policy.state_dict(),
-        'obs_dim': obs_dim,
-        'action_dims': action_dims,
-        'hidden_size': args.hidden_size,
-    }, args.save_path)
+    torch.save(
+        {
+            "policy_state_dict": policy.state_dict(),
+            "obs_dim": obs_dim,
+            "action_dims": action_dims,
+            "hidden_size": args.hidden_size,
+        },
+        args.save_path,
+    )
 
     print(f"💾 Model saved to {args.save_path}")
 
