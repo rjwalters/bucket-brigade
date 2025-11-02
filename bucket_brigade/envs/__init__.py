@@ -2,9 +2,14 @@
 Environment implementations for Bucket Brigade.
 """
 
+from typing import TYPE_CHECKING, Optional, Type, Callable, Any
+
 from .bucket_brigade_env import BucketBrigadeEnv
 
 # Optional PufferLib imports (only available if gymnasium is installed)
+if TYPE_CHECKING:
+    pass
+
 try:
     from .puffer_env import (
         PufferBucketBrigade,
@@ -14,10 +19,10 @@ try:
     )
 except ImportError:
     # PufferLib not available, skip these imports
-    PufferBucketBrigade = None
-    PufferBucketBrigadeVectorized = None
-    make_env = None
-    make_vectorized_env = None
+    PufferBucketBrigade: Optional[Type[Any]] = None  # type: ignore[assignment, misc, no-redef]
+    PufferBucketBrigadeVectorized: Optional[Type[Any]] = None  # type: ignore[assignment, misc, no-redef]
+    make_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
+    make_vectorized_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
 from .scenarios import (
     Scenario,
     random_scenario,
