@@ -180,15 +180,15 @@ def run_scenario_test(scenario_name: str, num_games: int = 20,
     print(f"✅ Completed {len(batch_results)} games")
 
     # Analyze results
-    print("
-📈 Results Analysis:"    rewards = [r['team_reward'] for r in batch_results]
-    print(".2f")
+    print("\n📈 Results Analysis:")
+    rewards = [r['team_reward'] for r in batch_results]
+    print(f"   Mean Reward: {np.mean(rewards):.2f}")
     print(f"   Best game: {max(rewards):.2f}")
     print(f"   Worst game: {min(rewards):.2f}")
 
     # Fit ranking model
-    print("
-🤖 Fitting Ranking Model..."    model = AgentRankingModel(regularization_lambda=1.0)
+    print("\n🤖 Fitting Ranking Model...")
+    model = AgentRankingModel(regularization_lambda=1.0)
     ranking_result = model.fit(batch_results)
 
     print("✅ Ranking model fitted")
@@ -196,12 +196,12 @@ def run_scenario_test(scenario_name: str, num_games: int = 20,
     # Display agent rankings
     agent_rankings = model.get_agent_rankings(ranking_result)
 
-    print("
-🏆 Agent Rankings:"    for ranking in agent_rankings:
+    print("\n🏆 Agent Rankings:")
+    for ranking in agent_rankings:
         agent_name = agents[ranking['agent_id']].name
         print(f"   #{ranking['rank']} {agent_name}: "
-              ".3f"
-              ".3f")
+              f"strength={ranking['strength']:.3f}, "
+              f"uncertainty={ranking['uncertainty']:.3f}")
 
     # Save results
     results_file = output_path / "results.json"
@@ -230,8 +230,8 @@ def run_scenario_test(scenario_name: str, num_games: int = 20,
     print(f"\n💾 Results saved to: {results_file}")
 
     # Interpretation
-    print("
-🎯 Scenario Interpretation:"    if scenario_name == 'trivial_cooperation':
+    print("\n🎯 Scenario Interpretation:")
+    if scenario_name == 'trivial_cooperation':
         print("   Expected: Firefighters should rank higher than Free Riders")
         firefighters_rank = next((r['rank'] for r in agent_rankings
                                 if 'firefighter' in agents[r['agent_id']].name.lower()), None)

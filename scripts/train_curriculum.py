@@ -102,8 +102,8 @@ class CurriculumTrainer:
             print(f"   ✅ Stage complete! Total timesteps: {total_timesteps:,}")
 
         # Final evaluation
-        print("
-🎯 Final Evaluation:"        self._evaluate_curriculum_policy(policy, run_name)
+        print("\n🎯 Final Evaluation:")
+        self._evaluate_curriculum_policy(policy, run_name)
 
         # Save final model
         output_dir = Path("models") / run_name
@@ -148,7 +148,8 @@ class CurriculumTrainer:
 
             if stage_timesteps % 50000 == 0:
                 progress = min(stage_timesteps / target_timesteps, 1.0)
-                print(".1f"
+                print(f"   Progress: {progress * 100:.1f}% ({stage_timesteps}/{target_timesteps})")
+
         return stage_timesteps
 
     def _evaluate_curriculum_policy(self, policy, run_name):
@@ -169,7 +170,9 @@ class CurriculumTrainer:
             )
 
             trained_perf = results['trained_agent']
-            print(".3f"            print(".3f"            print(".3f"
+            print(f"   Win Rate: {trained_perf['win_rate']:.3f}")
+            print(f"   Mean Reward: {trained_perf['mean_reward']:.3f}")
+            print(f"   Std Reward: {trained_perf['std_reward']:.3f}")
             # Clean up
             os.unlink(temp_model_path)
 

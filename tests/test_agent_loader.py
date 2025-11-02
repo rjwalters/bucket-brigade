@@ -1,10 +1,6 @@
 """Tests for agent loader and validation system."""
 
-import numpy as np
 import pytest
-import tempfile
-import os
-from pathlib import Path
 
 from bucket_brigade.agents.agent_loader import (
     validate_agent_code,
@@ -17,7 +13,6 @@ from bucket_brigade.agents.agent_loader import (
     ALLOWED_IMPORTS,
     FORBIDDEN_PATTERNS,
 )
-from bucket_brigade.agents.agent_base import AgentBase
 
 
 # Sample valid agent code for testing

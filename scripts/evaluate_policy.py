@@ -165,8 +165,12 @@ def evaluate_policy_tournament(
         'ranking_analysis': analyze_agent_rankings(results, trained_agent.name)
     }
 
-    print("
-📊 Results Summary:"    print(".3f"    print(".3f"    print(".3f"    print(".1f"    print(".3f"
+    print("\n📊 Results Summary:")
+    print(f"   Win Rate: {analysis['trained_agent']['win_rate']:.3f}")
+    print(f"   Mean Reward: {analysis['trained_agent']['mean_reward']:.3f}")
+    print(f"   Std Reward: {analysis['trained_agent']['std_reward']:.3f}")
+    print(f"   Games Played: {num_games}")
+
     return analysis
 
 

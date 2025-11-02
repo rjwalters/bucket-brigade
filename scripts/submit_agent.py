@@ -46,16 +46,16 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
 
         # Get metadata
         metadata = get_agent_metadata(agent_class)
-        print("
-📋 Agent Metadata:"        print(f"   Name: {metadata.get('name', 'Unknown')}")
+        print("\n📋 Agent Metadata:")
+        print(f"   Name: {metadata.get('name', 'Unknown')}")
         print(f"   Author: {metadata.get('author', 'Unknown')}")
         print(f"   Description: {metadata.get('description', 'No description')}")
         print(f"   Version: {metadata.get('version', '1.0.0')}")
         print(f"   Tags: {', '.join(metadata.get('tags', []))}")
 
         if test_run:
-            print("
-🧪 Running behavioral validation..."            # Create test instance
+            print("\n🧪 Running behavioral validation...")
+            # Create test instance
             agent = create_agent_instance(agent_class, 0, name="TestAgent")
 
             # Run validation
@@ -63,10 +63,12 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
 
             if results['valid']:
                 print("✅ Behavioral validation passed!")
-                print("
-📊 Test Results:"                stats = results['stats']
+                print("\n📊 Test Results:")
+                stats = results['stats']
                 print(f"   Steps run: {stats['steps_run']}")
-                print(".3f"                print(".3f"                print(f"   Game completed: {stats['game_completed']}")
+                print(f"   Avg reward: {stats.get('avg_reward', 0):.3f}")
+                print(f"   Valid actions: {stats.get('valid_actions_pct', 0):.3f}")
+                print(f"   Game completed: {stats['game_completed']}")
             else:
                 print("❌ Behavioral validation failed!")
                 print("\n❌ Errors:")
@@ -78,12 +80,12 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
                         print(f"   • {warning}")
                 return
 
-        print("
-🎉 Agent submission successful!"        print("Your agent is ready for evaluation in the Bucket Brigade tournament!")
+        print("\n🎉 Agent submission successful!")
+        print("Your agent is ready for evaluation in the Bucket Brigade tournament!")
 
         if verbose:
-            print("
-🔧 Technical Details:"            print(f"   Agent class: {agent_class.__name__}")
+            print("\n🔧 Technical Details:")
+            print(f"   Agent class: {agent_class.__name__}")
             print(f"   Module: {agent_class.__module__}")
             print(f"   Methods: {[m for m in dir(agent_class) if not m.startswith('_')]}")
 
@@ -125,8 +127,10 @@ def create_agent_template(output_file: str = "my_agent.py") -> None:
     shutil.copy2(template_path, output_path)
 
     print(f"✅ Agent template created: {output_path}")
-    print("
-📝 Next steps:"    print("1. Edit the template with your agent logic"    print("2. Test locally: python scripts/submit_agent.py my_agent.py"    print("3. Submit when ready!")
+    print("\n📝 Next steps:")
+    print("1. Edit the template with your agent logic")
+    print("2. Test locally: python scripts/submit_agent.py my_agent.py")
+    print("3. Submit when ready!")
 
 
 def main(
