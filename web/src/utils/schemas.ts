@@ -108,14 +108,6 @@ export function validateBatchResult(data: unknown): BatchResult {
   return BatchResultSchema.parse(data);
 }
 
-export function validateExportData(data: unknown): ExportData {
-  return ExportDataSchema.parse(data);
-}
-
-export function validateAgentRanking(data: unknown): AgentRanking {
-  return AgentRankingSchema.parse(data);
-}
-
 // Safe validation functions (return null on error)
 export function safeValidateGameReplay(data: unknown): GameReplay | null {
   try {
