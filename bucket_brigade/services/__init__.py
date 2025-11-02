@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """Services module for Bucket Brigade.
 
 This module contains shared services used throughout the system.
@@ -18,3 +19,10 @@ __all__ = [
     "JobQueueBackend",
     "InMemoryJobQueue",
 ]
+=======
+"""Services for Bucket Brigade."""
+
+from .agent_registry import AgentRegistryService
+
+__all__ = ["AgentRegistryService"]
+>>>>>>> origin/main
