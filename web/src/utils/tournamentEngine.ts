@@ -16,7 +16,6 @@ import type {
 } from '../types/teamBuilder';
 import type { Scenario } from '../types';
 import {
-  BrowserBucketBrigade,
   type AgentObservation,
   type Agent,
 } from './browserEngine';
@@ -24,6 +23,7 @@ import { generateScenarioSet } from './scenarioGenerator';
 import type { ScenarioType } from './scenarioGenerator';
 import { BrowserAgent } from './browserAgents';
 import type { AgentArchetype } from '../types/teamBuilder';
+import { createGameEngine, initWasm, isWasmInitialized } from './wasmEngine';
 
 /**
  * Generate unique ID
@@ -125,8 +125,8 @@ async function runSingleGame(
   // Filter out null agents
   const activeAgents = team.positions.filter((a) => a != null);
 
-  // Create engine with scenario
-  const engine = new BrowserBucketBrigade(scenario);
+  // Create engine with scenario (WASM if available, fallback to JS)
+  const engine = await createGameEngine(scenario);
 
   // Create agents
   const agents: Agent[] = activeAgents.map((archetype, i) =>
@@ -304,6 +304,18 @@ export class TournamentEngine {
     onProgress?: (progress: TournamentProgress) => void,
   ): Promise<TournamentResult> {
     const startTime = Date.now();
+
+    // Try to initialize WASM for better performance
+    if (!isWasmInitialized()) {
+      try {
+        console.log('🚀 Initializing WASM engine for tournament...');
+        await initWasm();
+        console.log('✅ Using WASM engine (10-20x faster)');
+      } catch (error) {
+        console.warn('⚠️  WASM initialization failed, using JS engine:', error);
+      }
+    }
+
     const activeAgents = team.positions.filter((a) => a != null);
     const numAgents = activeAgents.length;
 
