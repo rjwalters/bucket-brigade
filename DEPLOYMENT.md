@@ -4,7 +4,7 @@ This guide covers deploying the Bucket Brigade platform to various environments.
 
 ## 📋 Prerequisites
 
-- Python 3.8+ with uv package manager
+- Python 3.9+ with uv package manager
 - Node.js 18+ with pnpm
 - Docker (optional, for containerized deployment)
 - Web server (nginx, Apache, etc.) for production
@@ -39,7 +39,9 @@ pip install dist/*.whl
 
 ## 🌐 Deployment Options
 
-### Option 1: Static Site + API (Recommended)
+> 📝 **Note**: The backend API deployment option described below is for future implementation. The current version can be deployed as a static site only (Option 2). See API.md for details on the planned backend API.
+
+### Option 1: Static Site + API (Future - Not Yet Implemented)
 
 Deploy the frontend as static files and run the Python API separately.
 

@@ -10,6 +10,8 @@ This document describes the data structures and interfaces used in the Bucket Br
 - Data stored in browser session storage
 - Future: Optional Python API server for advanced features
 
+> ⚠️ **Important**: The backend API endpoints described later in this document are planned for future implementation but do not currently exist. The current version is browser-based only with no server component. See the roadmap in README.md for planned backend features.
+
 ## 📊 Core Data Structures
 
 ### House States

@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Bucket Brigade! This document pro
 
 ## 🏗️ Development Workflow
 
-We use **Loom** for AI-powered development orchestration. See [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for details on our automated development workflow.
+We use **Loom** for AI-powered development orchestration. See [CLAUDE.md](CLAUDE.md) and [LOOM_AGENTS.md](LOOM_AGENTS.md) for details on our automated development workflow.
 
 ### For Contributors
 
@@ -38,7 +38,7 @@ We use **Loom** for AI-powered development orchestration. See [CLAUDE.md](CLAUDE
 
 ### Prerequisites
 
-- Python 3.8+ with uv package manager
+- Python 3.9+ with uv package manager
 - Node.js 18+ with pnpm
 - Git
 

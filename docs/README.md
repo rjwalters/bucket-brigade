@@ -12,7 +12,8 @@ This directory contains comprehensive documentation for the Bucket Brigade proje
 Technical documentation for developers working on the codebase.
 
 - **[CLAUDE.md](../CLAUDE.md)** - Loom orchestration system guide for AI-powered development (also at repo root)
-- **[AGENTS.md](../AGENTS.md)** - Agent workflow definitions for autonomous development (also at repo root)
+- **[LOOM_AGENTS.md](../LOOM_AGENTS.md)** - Loom agent workflow definitions for autonomous development (also at repo root)
+- **[AGENT_ROSTER.md](AGENT_ROSTER.md)** - Game AI agent specifications (Firefighter, Hero, Free Rider, etc.)
 - **[CLASS_DESIGN.md](development/CLASS_DESIGN.md)** - Class structure, API specifications, and IO design
 - **[API.md](../API.md)** - API reference and data structure documentation (also at repo root)
 - **[DEPLOYMENT.md](../DEPLOYMENT.md)** - Deployment guides and production setup (also at repo root)
@@ -36,7 +37,7 @@ Plans and roadmaps for future development phases.
 
 1. **New to the project?** Start with [README.md](../README.md) for overview and setup
 2. **Want to contribute?** Read [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines and workflow
-3. **Contributing code?** Read [CLAUDE.md](../CLAUDE.md) and [AGENTS.md](../AGENTS.md) for Loom workflows
+3. **Contributing code?** Read [CLAUDE.md](../CLAUDE.md) and [LOOM_AGENTS.md](../LOOM_AGENTS.md) for Loom workflows
 4. **Understanding the game?** See [GAME_DYNAMICS.md](game-design/GAME_DYNAMICS.md) for mechanics
 5. **Planning features?** Check [CLASS_DESIGN.md](development/CLASS_DESIGN.md) for architecture
 6. **Deploying the app?** See [DEPLOYMENT.md](../DEPLOYMENT.md) for production setup
