@@ -12,7 +12,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import Optional, List, Literal, Tuple
 from enum import IntEnum
-import json
 import pickle
 import threading
 
@@ -23,9 +22,10 @@ class JobPriority(IntEnum):
     Lower numeric values indicate higher priority.
     Jobs are dequeued in priority order: HIGH → MEDIUM → LOW.
     """
-    HIGH = 0      # High uncertainty matchups (adaptive sampling)
-    MEDIUM = 1    # Standard matchups
-    LOW = 2       # Backfill/maintenance jobs
+
+    HIGH = 0  # High uncertainty matchups (adaptive sampling)
+    MEDIUM = 1  # Standard matchups
+    LOW = 2  # Backfill/maintenance jobs
 
 
 @dataclass
@@ -38,12 +38,13 @@ class MatchupJob:
         seed: Random seed for reproducibility
         priority: Job priority level (default: MEDIUM)
     """
+
     team_ids: List[int]
     scenario: str
     seed: int
     priority: JobPriority = JobPriority.MEDIUM
 
-    def __lt__(self, other: 'MatchupJob') -> bool:
+    def __lt__(self, other: "MatchupJob") -> bool:
         """Enable priority comparison for PriorityQueue.
 
         Lower priority values (e.g., HIGH=0) are "less than" higher values (e.g., LOW=2),
@@ -58,11 +59,11 @@ class MatchupJob:
             Dictionary representation with all fields
         """
         data = asdict(self)
-        data['priority'] = int(self.priority)  # Convert enum to int
+        data["priority"] = int(self.priority)  # Convert enum to int
         return data
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'MatchupJob':
+    def from_dict(cls, data: dict) -> "MatchupJob":
         """Deserialize job from dictionary.
 
         Args:
@@ -71,7 +72,7 @@ class MatchupJob:
         Returns:
             MatchupJob instance
         """
-        data['priority'] = JobPriority(data['priority'])
+        data["priority"] = JobPriority(data["priority"])
         return cls(**data)
 
 
@@ -92,7 +93,9 @@ class JobQueueBackend(ABC):
         pass
 
     @abstractmethod
-    def dequeue(self, block: bool = True, timeout: Optional[float] = None) -> Optional[MatchupJob]:
+    def dequeue(
+        self, block: bool = True, timeout: Optional[float] = None
+    ) -> Optional[MatchupJob]:
         """Remove and return highest-priority job.
 
         Args:
@@ -176,7 +179,9 @@ class InMemoryJobQueue(JobQueueBackend):
             # Store as (priority, job) tuple for ordering
             self._jobs.append((job.priority, job))
 
-    def dequeue(self, block: bool = True, timeout: Optional[float] = None) -> Optional[MatchupJob]:
+    def dequeue(
+        self, block: bool = True, timeout: Optional[float] = None
+    ) -> Optional[MatchupJob]:
         """Get highest-priority job (lowest priority number).
 
         Implementation sorts jobs by priority and returns the highest priority one.
@@ -235,11 +240,12 @@ class InMemoryJobQueue(JobQueueBackend):
         """
         with self._lock:
             # Convert to serializable format (dict list)
-            serializable_jobs = [(int(priority), job.to_dict())
-                                 for priority, job in self._jobs]
+            serializable_jobs = [
+                (int(priority), job.to_dict()) for priority, job in self._jobs
+            ]
 
             # Save to file
-            with open(filepath, 'wb') as f:
+            with open(filepath, "wb") as f:
                 pickle.dump(serializable_jobs, f)
 
     def restore(self, filepath: str) -> None:
@@ -248,12 +254,14 @@ class InMemoryJobQueue(JobQueueBackend):
         Args:
             filepath: Path to restore queue state from
         """
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             serializable_jobs: List[Tuple[int, dict]] = pickle.load(f)
 
         # Convert back to job objects
-        jobs = [(JobPriority(priority), MatchupJob.from_dict(job_dict))
-                for priority, job_dict in serializable_jobs]
+        jobs = [
+            (JobPriority(priority), MatchupJob.from_dict(job_dict))
+            for priority, job_dict in serializable_jobs
+        ]
 
         with self._lock:
             # Clear existing queue and restore
@@ -278,7 +286,7 @@ class JobQueue:
     def __init__(
         self,
         backend: Literal["memory", "redis"] = "memory",
-        redis_url: str = "redis://localhost:6379/0"
+        redis_url: str = "redis://localhost:6379/0",
     ):
         """Initialize job queue with specified backend.
 
@@ -305,7 +313,9 @@ class JobQueue:
         """
         return self._backend.enqueue(job)
 
-    def dequeue(self, block: bool = True, timeout: Optional[float] = None) -> Optional[MatchupJob]:
+    def dequeue(
+        self, block: bool = True, timeout: Optional[float] = None
+    ) -> Optional[MatchupJob]:
         """Remove and return highest-priority job.
 
         Args:

@@ -4,7 +4,6 @@ import os
 import tempfile
 import threading
 import time
-from typing import List
 
 import pytest
 
@@ -47,18 +46,18 @@ class TestMatchupJob:
         job = MatchupJob([1, 2], "scenario_a", 42, JobPriority.HIGH)
         data = job.to_dict()
 
-        assert data['team_ids'] == [1, 2]
-        assert data['scenario'] == "scenario_a"
-        assert data['seed'] == 42
-        assert data['priority'] == 0  # HIGH = 0
+        assert data["team_ids"] == [1, 2]
+        assert data["scenario"] == "scenario_a"
+        assert data["seed"] == 42
+        assert data["priority"] == 0  # HIGH = 0
 
     def test_job_deserialization(self):
         """Test job deserialization from dict."""
         data = {
-            'team_ids': [1, 2],
-            'scenario': 'scenario_a',
-            'seed': 42,
-            'priority': 0,
+            "team_ids": [1, 2],
+            "scenario": "scenario_a",
+            "seed": 42,
+            "priority": 0,
         }
         job = MatchupJob.from_dict(data)
 
@@ -153,7 +152,7 @@ class TestInMemoryJobQueue:
         queue = InMemoryJobQueue()
 
         for i in range(10):
-            queue.enqueue(MatchupJob([i, i+1], "scenario", i))
+            queue.enqueue(MatchupJob([i, i + 1], "scenario", i))
 
         assert queue.size() == 10
 
@@ -287,13 +286,13 @@ class TestConcurrentAccess:
         def worker(start: int, count: int):
             """Worker function that enqueues jobs."""
             for i in range(start, start + count):
-                job = MatchupJob([i, i+1], "scenario", i)
+                job = MatchupJob([i, i + 1], "scenario", i)
                 queue.enqueue(job)
 
         # Spawn 5 workers, each adding 20 jobs
         threads = []
         for i in range(5):
-            t = threading.Thread(target=worker, args=(i*20, 20))
+            t = threading.Thread(target=worker, args=(i * 20, 20))
             t.start()
             threads.append(t)
 
@@ -312,7 +311,7 @@ class TestConcurrentAccess:
         def producer(count: int):
             """Producer that enqueues jobs."""
             for i in range(count):
-                job = MatchupJob([i, i+1], "scenario", i, JobPriority.MEDIUM)
+                job = MatchupJob([i, i + 1], "scenario", i, JobPriority.MEDIUM)
                 queue.enqueue(job)
                 time.sleep(0.001)  # Small delay to allow interleaving
 
@@ -368,11 +367,13 @@ class TestBenchmarks:
         # Enqueue 1000 jobs
         start = time.time()
         for i in range(1000):
-            queue.enqueue(MatchupJob([i, i+1], "scenario", i))
+            queue.enqueue(MatchupJob([i, i + 1], "scenario", i))
         enqueue_duration = time.time() - start
 
         enqueue_rate = 1000 / enqueue_duration
-        assert enqueue_rate > 1000, f"Enqueue rate too slow: {enqueue_rate:.0f} jobs/sec"
+        assert (
+            enqueue_rate > 1000
+        ), f"Enqueue rate too slow: {enqueue_rate:.0f} jobs/sec"
 
         # Dequeue 1000 jobs
         start = time.time()
@@ -381,7 +382,9 @@ class TestBenchmarks:
         dequeue_duration = time.time() - start
 
         dequeue_rate = 1000 / dequeue_duration
-        assert dequeue_rate > 1000, f"Dequeue rate too slow: {dequeue_rate:.0f} jobs/sec"
+        assert (
+            dequeue_rate > 1000
+        ), f"Dequeue rate too slow: {dequeue_rate:.0f} jobs/sec"
 
     def test_large_queue_performance(self):
         """Test performance with larger queue (5000 jobs)."""
@@ -391,20 +394,18 @@ class TestBenchmarks:
         start = time.time()
         for i in range(5000):
             priority = JobPriority(i % 3)  # Cycle through priorities
-            queue.enqueue(MatchupJob([i, i+1], "scenario", i, priority))
+            queue.enqueue(MatchupJob([i, i + 1], "scenario", i, priority))
         enqueue_duration = time.time() - start
 
         assert queue.size() == 5000
         assert enqueue_duration < 5.0, f"Enqueue took too long: {enqueue_duration:.2f}s"
 
         # Dequeue all jobs
-        start = time.time()
         dequeued_count = 0
         while queue.size() > 0:
             job = queue.dequeue()
             if job:
                 dequeued_count += 1
-        dequeue_duration = time.time() - start
 
         assert dequeued_count == 5000
         # Note: Dequeue is O(n log n) so this will be slower for large queues

@@ -12,9 +12,9 @@ from bucket_brigade.services.job_queue import (
 )
 
 __all__ = [
-    'JobQueue',
-    'MatchupJob',
-    'JobPriority',
-    'JobQueueBackend',
-    'InMemoryJobQueue',
+    "JobQueue",
+    "MatchupJob",
+    "JobPriority",
+    "JobQueueBackend",
+    "InMemoryJobQueue",
 ]
