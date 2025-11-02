@@ -9,6 +9,8 @@ import type { AgentArchetype } from '../../types/teamBuilder';
 import { getAllArchetypes } from '../../utils/agentArchetypes';
 import { AgentCardLarge } from './AgentCard';
 import { AgentStatsDisplay } from './AgentStatsDisplay';
+import { AgentRadarChart } from './AgentRadarChart';
+import { calculateRadarProfile } from '../../utils/agentRadarChart';
 
 interface AgentSelectorModalProps {
   isOpen: boolean;
@@ -31,7 +33,9 @@ export function AgentSelectorModal({
     : 0;
 
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
+  const [viewMode, setViewMode] = useState<'radar' | 'bars'>('radar');
   const selectedArchetype = archetypes[selectedIndex];
+  const radarProfile = calculateRadarProfile(selectedArchetype.parameters);
 
   const handlePrevious = () => {
     setSelectedIndex((prev) => (prev - 1 + archetypes.length) % archetypes.length);
@@ -122,12 +126,50 @@ export function AgentSelectorModal({
             </p>
           </div>
 
-          {/* Stats */}
+          {/* Stats - Toggle between Radar and Bars */}
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-              Behavioral Stats
-            </h3>
-            <AgentStatsDisplay archetype={selectedArchetype} />
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Behavioral Profile
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('radar')}
+                  className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'radar'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📊 Radar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('bars')}
+                  className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                    viewMode === 'bars'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📈 Bars
+                </button>
+              </div>
+            </div>
+
+            {viewMode === 'radar' ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                <AgentRadarChart
+                  archetype={selectedArchetype}
+                  radarProfile={radarProfile}
+                  size="medium"
+                  showLabels={true}
+                />
+              </div>
+            ) : (
+              <AgentStatsDisplay archetype={selectedArchetype} />
+            )}
           </div>
 
           {/* Strategy Notes */}
