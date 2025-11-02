@@ -5,20 +5,21 @@ repos:
     hooks:
       - id: black
         language_version: python3
+        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.14
     hooks:
       - id: ruff
         args: [--fix]
-        exclude: ^scripts/
+        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]
-        exclude: ^(scripts|tests)/
+        exclude: ^(\.venv|scripts|tests|node_modules|web/node_modules)/
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -38,7 +39,7 @@ repos:
       - id: bandit
         args: [-c, pyproject.toml]
         additional_dependencies: ['bandit[toml]']
-        exclude: ^(tests|scripts)/
+        exclude: ^(\.venv|tests|scripts|node_modules|web/node_modules)/
 
   # JavaScript/TypeScript formatting (if biome isn't handling it)
   - repo: https://github.com/pre-commit/mirrors-eslint
