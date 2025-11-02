@@ -8,7 +8,6 @@ This module defines the database schema for:
 """
 
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import (
     Column,
     Integer,
@@ -16,7 +15,6 @@ from sqlalchemy import (
     Text,
     DateTime,
     Boolean,
-    Float,
     ForeignKey,
     JSON,
 )

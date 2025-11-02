@@ -5,11 +5,8 @@ This service handles agent submissions, validation, storage, and retrieval
 with full database persistence to PostgreSQL.
 """
 
-import os
-import shutil
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 from sqlalchemy.orm import Session
 
 from ..db.models import Agent, Submission, AgentMetadata
@@ -312,7 +309,7 @@ class AgentRegistryService:
             query = session.query(Agent)
 
             if active_only:
-                query = query.filter(Agent.active == True)
+                query = query.filter(Agent.active)
 
             if author:
                 query = query.filter(Agent.author == author)

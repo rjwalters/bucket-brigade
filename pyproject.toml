@@ -34,6 +34,7 @@ dev = [
     "ruff>=0.0.1",
     "mypy>=0.900",
     "pre-commit>=2.15.0",
+    "httpx>=0.24.0",
 ]
 rl = [
     "pufferlib>=1.0.0,<2.0.0",

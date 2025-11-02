@@ -12,10 +12,9 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 from bucket_brigade.services.agent_registry import AgentRegistryService
-from bucket_brigade.db import init_db, get_session
+from bucket_brigade.db import get_session
 from bucket_brigade.db.models import Agent, Submission, AgentMetadata
 
 
