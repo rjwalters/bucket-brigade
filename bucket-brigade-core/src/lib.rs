@@ -81,3 +81,148 @@ impl Agent for RandomAgent {
         &self.name
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_agent_creation() {
+        let agent = RandomAgent::new(0, "TestAgent");
+        assert_eq!(agent.id(), 0);
+        assert_eq!(agent.name(), "TestAgent");
+    }
+
+    #[test]
+    fn test_random_agent_act() {
+        let agent = RandomAgent::new(0, "TestAgent");
+        let obs = AgentObservation {
+            signals: vec![0, 0, 0, 0],
+            locations: vec![0, 0, 0, 0],
+            houses: vec![0; 10],
+            last_actions: vec![[0, 0]; 4],
+            scenario_info: vec![0.0; 10],
+            agent_id: 0,
+            night: 0,
+        };
+
+        // Random agent should produce valid actions
+        for _ in 0..100 {
+            let action = agent.act(&obs);
+            assert!(action[0] < 10, "House index should be < 10");
+            assert!(action[1] < 2, "Mode should be 0 or 1");
+        }
+    }
+
+    #[test]
+    fn test_random_agent_reset() {
+        let mut agent = RandomAgent::new(0, "TestAgent");
+        agent.reset(); // Should not panic
+        assert_eq!(agent.id(), 0); // Agent should still be valid
+    }
+
+    #[test]
+    fn test_agent_observation_structure() {
+        let obs = AgentObservation {
+            signals: vec![0, 1, 0, 1],
+            locations: vec![3, 5, 7, 9],
+            houses: vec![0, 1, 2, 0, 0, 1, 2, 0, 0, 1],
+            last_actions: vec![[0, 0], [1, 1], [2, 0], [3, 1]],
+            scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 4.0],
+            agent_id: 2,
+            night: 5,
+        };
+
+        assert_eq!(obs.agent_id, 2);
+        assert_eq!(obs.night, 5);
+        assert_eq!(obs.signals.len(), 4);
+        assert_eq!(obs.locations.len(), 4);
+        assert_eq!(obs.houses.len(), 10);
+        assert_eq!(obs.scenario_info.len(), 10);
+    }
+
+    #[test]
+    fn test_agent_observation_serialization() {
+        let obs = AgentObservation {
+            signals: vec![0, 1],
+            locations: vec![3, 5],
+            houses: vec![0; 10],
+            last_actions: vec![[0, 0], [1, 1]],
+            scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 2.0],
+            agent_id: 0,
+            night: 1,
+        };
+
+        let json = serde_json::to_string(&obs).unwrap();
+        let deserialized: AgentObservation = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(obs.agent_id, deserialized.agent_id);
+        assert_eq!(obs.night, deserialized.night);
+        assert_eq!(obs.signals, deserialized.signals);
+    }
+
+    #[test]
+    fn test_game_night_serialization() {
+        let night = GameNight {
+            night: 3,
+            houses: vec![0, 1, 2, 0, 1, 2, 0, 1, 2, 0],
+            signals: vec![0, 1, 0, 1],
+            locations: vec![2, 3, 4, 5],
+            actions: vec![[2, 1], [3, 1], [4, 0], [5, 1]],
+            rewards: vec![1.5, 2.0, 0.5, -0.5],
+        };
+
+        let json = serde_json::to_string(&night).unwrap();
+        let deserialized: GameNight = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(night.night, deserialized.night);
+        assert_eq!(night.houses, deserialized.houses);
+        assert_eq!(night.rewards, deserialized.rewards);
+    }
+
+    #[test]
+    fn test_game_night_clone() {
+        let night = GameNight {
+            night: 1,
+            houses: vec![0; 10],
+            signals: vec![0; 4],
+            locations: vec![0; 4],
+            actions: vec![[0, 0]; 4],
+            rewards: vec![0.0; 4],
+        };
+
+        let cloned = night.clone();
+        assert_eq!(night.night, cloned.night);
+        assert_eq!(night.houses, cloned.houses);
+    }
+
+    #[test]
+    fn test_multiple_random_agents() {
+        let agents: Vec<RandomAgent> = (0..4)
+            .map(|i| RandomAgent::new(i, &format!("Agent{}", i)))
+            .collect();
+
+        for (i, agent) in agents.iter().enumerate() {
+            assert_eq!(agent.id(), i);
+            assert_eq!(agent.name(), format!("Agent{}", i));
+        }
+    }
+
+    #[test]
+    fn test_action_type() {
+        let action: Action = [5, 1];
+        assert_eq!(action[0], 5); // House index
+        assert_eq!(action[1], 1); // Mode (work)
+    }
+
+    #[test]
+    fn test_house_states() {
+        let safe: HouseState = 0;
+        let burning: HouseState = 1;
+        let ruined: HouseState = 2;
+
+        assert_eq!(safe, 0);
+        assert_eq!(burning, 1);
+        assert_eq!(ruined, 2);
+    }
+}
