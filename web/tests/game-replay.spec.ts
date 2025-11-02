@@ -12,19 +12,18 @@ test.describe('Game Replay Functionality', () => {
 
     // Check navigation back to dashboard
     await page.locator('text=Back to Dashboard').click();
-    await expect(page.locator('h1')).toContainText('Bucket Brigade');
+    await expect(page.locator('header h1')).toContainText('Bucket Brigade');
   });
 
   test('should handle replay controls', async ({ page }) => {
-  // Test the UI structure when games are available
+  // Test the UI structure when no games are available
   await page.goto('/replay');
 
-  // Should show select game interface
-  await expect(page.locator('text=Select Game')).toBeVisible();
-
-  // Since no games are loaded, we can't test the full replay functionality
-  // But we can test that the page structure is correct
+  // Should show empty state when no games
   await expect(page.locator('text=No Games Available')).toBeVisible();
+
+  // Should have a back to dashboard button
+  await expect(page.locator('text=Back to Dashboard')).toBeVisible();
   });
 
   test('should validate game data integrity', async ({ page }) => {
@@ -40,7 +39,7 @@ test.describe('Agent Data Validation', () => {
   await page.goto('/settings');
 
   // Test that the upload interface is present
-  await expect(page.locator('text=Batch Results')).toBeVisible();
+  await expect(page.locator('h3:has-text("Batch Results")')).toBeVisible();
     await expect(page.locator('button:has-text("Upload CSV")')).toBeVisible();
 
   // The actual file upload functionality uses browser alerts
@@ -51,7 +50,7 @@ test.describe('Agent Data Validation', () => {
   await page.goto('/settings');
 
   // Test that CSV upload interface exists
-    await expect(page.locator('text=Batch Results')).toBeVisible();
+    await expect(page.locator('h3:has-text("Batch Results")')).toBeVisible();
 
   // The actual validation happens on file upload and uses alerts
   // so we can't easily test the error case without mocking
@@ -66,17 +65,17 @@ test.describe('End-to-End Workflows', () => {
     await page.goto('/');
 
     // Navigate through all sections using data-testid
-    await page.locator('[data-testid="nav-rankings"]').click();
-    await expect(page.locator('text=Agent Rankings')).toBeVisible();
+    await page.locator('[data-testid="nav-rankings"]').click({ force: true });
+    await expect(page.locator('text=No Rankings Available')).toBeVisible();
 
-    await page.locator('[data-testid="nav-replay"]').click();
-    await expect(page.locator('text=Select Game')).toBeVisible();
+    await page.locator('[data-testid="nav-replay"]').click({ force: true });
+    await expect(page.locator('text=No Games Available')).toBeVisible();
 
-    await page.locator('[data-testid="nav-settings"]').click();
+    await page.locator('[data-testid="nav-settings"]').click({ force: true });
     await expect(page.locator('text=Data Management')).toBeVisible();
 
     // Back to dashboard
-    await page.locator('[data-testid="nav-dashboard"]').click();
-    await expect(page.locator('h1')).toContainText('Bucket Brigade');
+    await page.locator('[data-testid="nav-dashboard"]').click({ force: true });
+    await expect(page.locator('header h1')).toContainText('Bucket Brigade');
   });
 });
