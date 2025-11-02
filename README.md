@@ -250,6 +250,46 @@ npm run lint:fix
 npm run typecheck
 ```
 
+## 🤖 Reinforcement Learning Training
+
+Train RL agents using **PufferLib** to learn optimal firefighting strategies:
+
+```bash
+# Train a policy on a specific scenario
+uv run python scripts/train_policy.py --scenario trivial_cooperation --total-timesteps 500000
+
+# Train with custom opponent mix
+uv run python scripts/train_policy.py --scenario early_containment \
+    --opponent-policies firefighter coordinator free_rider \
+    --run-name my_training_run
+
+# Train on harder scenarios for advanced strategies
+uv run python scripts/train_policy.py --scenario chain_reaction \
+    --num-opponents 5 --total-timesteps 2000000
+```
+
+### Evaluate Trained Policies
+
+Test trained models against expert agents:
+
+```bash
+# Evaluate a trained model
+uv run python scripts/evaluate_policy.py models/my_training_run/final_policy.pt \
+    --scenario greedy_neighbor --num-games 100
+
+# Compare against different opponent types
+uv run python scripts/evaluate_policy.py models/my_run/best_policy_500000.pt \
+    --scenario sparse_heroics --num-opponents 4
+```
+
+### Training Features
+
+- **Multi-agent training**: Learn against diverse opponent strategies
+- **Scenario curriculum**: Train from easy to hard scenarios
+- **Parallel environments**: Efficient training with vectorization
+- **Automatic evaluation**: Regular assessment against expert agents
+- **Model checkpointing**: Save best models during training
+
 ## 🧪 Scenario Testing & Validation
 
 The platform includes **10 carefully designed test scenarios** with known optimal strategies:

@@ -3,6 +3,7 @@ Environment implementations for Bucket Brigade.
 """
 
 from .bucket_brigade_env import BucketBrigadeEnv
+from .puffer_env import PufferBucketBrigade, PufferBucketBrigadeVectorized, make_env, make_vectorized_env
 from .scenarios import (
     Scenario,
     random_scenario,
@@ -28,6 +29,10 @@ from .scenarios import (
 
 __all__ = [
     "BucketBrigadeEnv",
+    "PufferBucketBrigade",
+    "PufferBucketBrigadeVectorized",
+    "make_env",
+    "make_vectorized_env",
     "Scenario",
     "random_scenario",
     "default_scenario",
