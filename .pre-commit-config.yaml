@@ -1,21 +1,16 @@
 repos:
   # Python formatting and linting
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
-    hooks:
-      - id: black
-        language_version: python3
-        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
-
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.14
+    rev: v0.14.3
     hooks:
       - id: ruff
         args: [--fix]
         exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
+      - id: ruff-format
+        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.18.2
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]
@@ -23,7 +18,7 @@ repos:
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -34,7 +29,7 @@ repos:
 
   # Python-specific checks
   - repo: https://github.com/pycqa/bandit
-    rev: 1.7.6
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: [-c, pyproject.toml]
@@ -43,7 +38,7 @@ repos:
 
   # JavaScript/TypeScript formatting (if biome isn't handling it)
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.55.0
+    rev: v9.39.0
     hooks:
       - id: eslint
         files: \.(js|ts|jsx|tsx)$

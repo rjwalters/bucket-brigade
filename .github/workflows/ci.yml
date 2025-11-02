@@ -75,8 +75,8 @@ jobs:
       run: uv pip install -e .[dev]
     - name: Run Ruff
       run: uv run ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
-    - name: Run Black
-      run: uv run black --check . --exclude '/(\.venv|scripts|node_modules|web\/node_modules)/'
+    - name: Run Ruff Format Check
+      run: uv run ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
     - name: Run MyPy
       run: uv run mypy . --ignore-missing-imports || true
 

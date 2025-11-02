@@ -371,9 +371,9 @@ class TestBenchmarks:
         enqueue_duration = time.time() - start
 
         enqueue_rate = 1000 / enqueue_duration
-        assert (
-            enqueue_rate > 1000
-        ), f"Enqueue rate too slow: {enqueue_rate:.0f} jobs/sec"
+        assert enqueue_rate > 1000, (
+            f"Enqueue rate too slow: {enqueue_rate:.0f} jobs/sec"
+        )
 
         # Dequeue 1000 jobs
         start = time.time()
@@ -382,9 +382,9 @@ class TestBenchmarks:
         dequeue_duration = time.time() - start
 
         dequeue_rate = 1000 / dequeue_duration
-        assert (
-            dequeue_rate > 1000
-        ), f"Dequeue rate too slow: {dequeue_rate:.0f} jobs/sec"
+        assert dequeue_rate > 1000, (
+            f"Dequeue rate too slow: {dequeue_rate:.0f} jobs/sec"
+        )
 
     def test_large_queue_performance(self):
         """Test performance with larger queue (5000 jobs)."""

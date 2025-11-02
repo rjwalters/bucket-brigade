@@ -86,7 +86,7 @@ format: format-python format-web format-rust
 
 format-python:
 	@echo "🐍 Running Python formatting..."
-	uv run black bucket_brigade/ tests/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
+	uv run ruff format bucket_brigade/ tests/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
 
 format-rust:
 	@echo "🦀 Running Rust formatting..."

@@ -74,9 +74,9 @@ class TestRustCoreIntegration:
             )
 
             # Termination should match
-            assert (
-                rust_d == python_d
-            ), f"Termination differs at step {i}: Rust={rust_d}, Python={python_d}"
+            assert rust_d == python_d, (
+                f"Termination differs at step {i}: Rust={rust_d}, Python={python_d}"
+            )
 
     def test_rust_core_performance(self):
         """Test that Rust core performs well."""

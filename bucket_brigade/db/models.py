@@ -128,7 +128,7 @@ class AgentMetadata(Base):
     repository_url = Column(String(512), nullable=True)
 
     # Relationships
-    agent = relationship("Agent", back_populates="metadata")
+    agent = relationship("Agent", back_populates="agent_metadata")
 
     def __repr__(self):
         return f"<AgentMetadata(agent_id={self.agent_id}, version='{self.version}')>"

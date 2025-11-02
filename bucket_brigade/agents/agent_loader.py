@@ -27,6 +27,7 @@ ALLOWED_IMPORTS = {
     "collections",  # Data structures
     "itertools",  # Iteration utilities
     "functools",  # Function utilities
+    "bucket_brigade.agents",  # Framework base classes
 }
 
 # Forbidden patterns that indicate potentially malicious code
