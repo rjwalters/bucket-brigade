@@ -84,10 +84,11 @@ def temp_storage():
 
 
 @pytest.fixture
-def registry(temp_storage, monkeypatch):
+def registry(temp_storage, monkeypatch, tmp_path):
     """Create registry service with temp storage."""
-    # Use SQLite in-memory database for tests
-    monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
+    # Use SQLite file-based database for tests (in-memory doesn't work with threading)
+    db_path = tmp_path / "test.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
 
     # Re-import to pick up new environment variable
     import importlib
@@ -100,7 +101,12 @@ def registry(temp_storage, monkeypatch):
     _init_db(drop_existing=True)
 
     registry = AgentRegistryService(storage_dir=temp_storage)
-    return registry
+
+    yield registry
+
+    # Cleanup: remove test database file
+    if db_path.exists():
+        db_path.unlink()
 
 
 def test_submit_valid_agent(registry):

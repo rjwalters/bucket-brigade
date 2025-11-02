@@ -12,8 +12,6 @@ Tests cover:
 import pytest
 from fastapi.testclient import TestClient
 
-from bucket_brigade.services.api import app
-
 
 # Sample valid agent code
 VALID_AGENT_CODE = """
@@ -36,14 +34,16 @@ def create_agent(agent_id, name="TestAgent"):
 
 
 @pytest.fixture
-def client(monkeypatch):
-    """Create test client with in-memory database."""
-    # Use SQLite in-memory database for tests
-    monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
+def client(monkeypatch, tmp_path):
+    """Create test client with temporary file-based database."""
+    # Use SQLite file-based database for tests (in-memory doesn't work with threading)
+    db_path = tmp_path / "test.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
 
     # Re-import to pick up new environment variable
     import importlib
     from bucket_brigade import db
+    from bucket_brigade.services import api
 
     importlib.reload(db.connection)
     from bucket_brigade.db import init_db as _init_db
@@ -51,8 +51,15 @@ def client(monkeypatch):
     # Initialize test database
     _init_db(drop_existing=True)
 
-    with TestClient(app) as c:
+    # Reload API module to recreate registry with new database connection
+    importlib.reload(api)
+
+    with TestClient(api.app) as c:
         yield c
+
+    # Cleanup: remove test database file
+    if db_path.exists():
+        db_path.unlink()
 
 
 def test_root_endpoint(client):

@@ -296,7 +296,8 @@ def validate_agent_behavior(agent: AgentBase, max_steps: int = 100) -> Dict[str,
 
     try:
         # Create test environment
-        env = BucketBrigadeEnv(default_scenario(4))
+        num_agents = 4
+        env = BucketBrigadeEnv(default_scenario(num_agents))
         obs = env.reset()
 
         actions_taken = []
@@ -323,7 +324,11 @@ def validate_agent_behavior(agent: AgentBase, max_steps: int = 100) -> Dict[str,
             if action[1] not in [0, 1]:
                 results["errors"].append(f"Invalid mode at step {step}: {action[1]}")
 
-            obs, rewards, dones, info = env.step(action)  # Single agent
+            # Environment expects actions for all agents, create dummy actions for others
+            all_actions = np.zeros((num_agents, 2), dtype=np.int8)
+            all_actions[0] = action  # Put test agent's action at index 0
+
+            obs, rewards, dones, info = env.step(all_actions)
             rewards_received.append(float(rewards[0]))
 
             if env.done:
