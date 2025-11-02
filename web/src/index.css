@@ -16,20 +16,181 @@
     @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
   }
 
+  /* Town Visualization Styles */
+  .town-visualization {
+    @apply relative;
+  }
+
+  .town-svg {
+    @apply border border-gray-200 rounded-lg bg-gray-50;
+  }
+
+  .town-connection {
+    @apply transition-all duration-300;
+  }
+
+  .town-house {
+    @apply transition-all duration-300 cursor-pointer;
+  }
+
+  .town-house:hover {
+    @apply ring-4 ring-blue-300 ring-opacity-50;
+  }
+
+  .town-house-symbol {
+    @apply pointer-events-none;
+  }
+
   .house-safe {
-    @apply bg-green-100 border-2 border-green-300 text-green-800;
+    fill: #4caf50;
+    stroke: #2e7d32;
+    stroke-width: 3;
   }
 
   .house-burning {
-    @apply bg-red-100 border-2 border-red-300 text-red-800 animate-pulse-slow;
+    fill: #e53935;
+    stroke: #b71c1c;
+    stroke-width: 3;
+    animation: flicker 0.8s infinite alternate;
   }
 
   .house-ruined {
-    @apply bg-gray-100 border-2 border-gray-300 text-gray-600;
+    fill: #424242;
+    stroke: #212121;
+    stroke-width: 3;
   }
 
-  .agent-present {
-    @apply ring-2 ring-blue-400 ring-opacity-75;
+  @keyframes flicker {
+    0% { filter: brightness(1) contrast(1); }
+    50% { filter: brightness(1.2) contrast(1.1); }
+    100% { filter: brightness(0.9) contrast(0.9); }
+  }
+
+  /* Agent Layer Styles */
+  .agent-layer {
+    @apply absolute inset-0 pointer-events-none;
+  }
+
+  .agent-svg {
+    @apply pointer-events-auto;
+  }
+
+  .agent-group {
+    @apply transition-all duration-300;
+  }
+
+  .agent-dot {
+    @apply transition-all duration-200;
+  }
+
+  .agent-dot:hover {
+    r: 10;
+  }
+
+  .agent-signal {
+    @apply transition-all duration-300;
+  }
+
+  .signal-work {
+    @apply text-orange-500 drop-shadow-sm;
+  }
+
+  .signal-rest {
+    @apply text-blue-500 drop-shadow-sm;
+  }
+
+  .house-info-popup {
+    @apply transition-opacity duration-200;
+  }
+
+  /* Replay Controls Styles */
+  .replay-controls {
+    @apply bg-white rounded-lg shadow-lg;
+  }
+
+  .control-button {
+    @apply transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+  }
+
+  .control-button:hover:not(:disabled) {
+    @apply transform scale-105;
+  }
+
+  /* Sidebar Styles */
+  .sidebar-section {
+    @apply bg-white rounded-lg shadow-md p-4;
+  }
+
+  .sidebar-title {
+    @apply text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200;
+  }
+
+  .sidebar-content {
+    @apply space-y-3;
+  }
+
+  .parameter-grid {
+    @apply space-y-2;
+  }
+
+  .parameter-item {
+    @apply flex justify-between items-center text-sm;
+  }
+
+  .parameter-label {
+    @apply text-gray-600;
+  }
+
+  .parameter-value {
+    @apply font-medium text-gray-900;
+  }
+
+  .stats-grid {
+    @apply grid grid-cols-3 gap-4;
+  }
+
+  .stat-item {
+    @apply text-center p-3 bg-gray-50 rounded-lg;
+  }
+
+  .stat-number {
+    @apply text-2xl font-bold;
+  }
+
+  .stat-label {
+    @apply text-sm text-gray-600 mt-1;
+  }
+
+  .final-stats {
+    @apply space-y-2;
+  }
+
+  .final-stat-item {
+    @apply flex justify-between items-center;
+  }
+
+  .final-stat-label {
+    @apply text-gray-700;
+  }
+
+  .final-stat-value {
+    @apply font-semibold;
+  }
+
+  .agent-rewards {
+    @apply max-h-48 overflow-y-auto;
+  }
+
+  .agent-reward-item {
+    @apply p-2 bg-gray-50 rounded text-sm;
+  }
+
+  .agent-id {
+    @apply text-gray-700;
+  }
+
+  .agent-reward {
+    @apply font-mono;
   }
 }
 

@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw, Home } from 'lucide-react';
 import { GameReplay, GameNight, ReplayState, STORAGE_KEYS } from '../types';
 import { loadGameReplays } from '../utils/storage';
-import GameBoard from '../components/GameBoard';
+import Town from '../components/Town';
+import AgentLayer from '../components/AgentLayer';
 import ReplayControls from '../components/ReplayControls';
-import GameInfo from '../components/GameInfo';
+import GameSidebar from '../components/GameSidebar';
 
 const GameReplay: React.FC = () => {
   const { gameId } = useParams<{ gameId?: string }>();
@@ -143,23 +144,31 @@ const GameReplay: React.FC = () => {
             onSpeedChange={handleSpeedChange}
           />
 
-          {/* Game Board and Info */}
+          {/* Game Visualization and Info */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Game Board */}
+            {/* Game Visualization */}
             <div className="lg:col-span-2">
-              <GameBoard
-                houses={currentNightData.houses}
-                agents={currentNightData.locations}
-                night={currentNight}
-              />
+              <div className="card">
+                <div className="relative">
+                  {/* Town (houses) */}
+                  <Town houses={currentNightData.houses} />
+
+                  {/* Agent Layer */}
+                  <AgentLayer
+                    locations={currentNightData.locations}
+                    signals={currentNightData.signals}
+                    actions={currentNightData.actions}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Game Info */}
+            {/* Game Sidebar */}
             <div>
-              <GameInfo
+              <GameSidebar
                 scenario={selectedGame.scenario}
-                nightData={currentNightData}
-                currentNight={currentNight}
+                currentNightData={currentNightData}
+                allNights={selectedGame.nights}
               />
             </div>
           </div>
