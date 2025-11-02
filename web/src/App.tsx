@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Flame, BarChart3, Play, Settings } from 'lucide-react';
+import { Flame, BarChart3, Play, Trophy, Settings } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import GameReplay from './pages/GameReplay';
 import Rankings from './pages/Rankings';
+import Tournament from './pages/Tournament';
 import SettingsPage from './pages/Settings';
 
 function App() {
@@ -11,8 +12,9 @@ function App() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'tournament', label: 'Tournament', icon: Flame },
     { id: 'replay', label: 'Game Replay', icon: Play },
-    { id: 'rankings', label: 'Rankings', icon: Flame },
+    { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
@@ -59,6 +61,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/tournament" element={<Tournament />} />
             <Route path="/replay/:gameId?" element={<GameReplay />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/settings" element={<SettingsPage />} />
