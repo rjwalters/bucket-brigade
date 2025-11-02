@@ -1,0 +1,31 @@
+{
+  "name": "bucket-brigade-monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd web && npm install",
+    "format": "black . && cd web && npm run format",
+    "lint": "ruff check . && cd web && npm run lint:biome",
+    "lint:fix": "ruff check . --fix && cd web && npm run lint:biome:fix",
+    "typecheck": "mypy . && cd web && npm run typecheck",
+    "test": "pytest && cd web && npm run test",
+    "test:python": "pytest",
+    "test:web": "cd web && npm run test",
+    "test:web:headed": "cd web && npm run test:headed",
+    "clean": "find . -type f -name '*.pyc' -delete && find . -type d -name __pycache__ -delete && rm -rf .pytest_cache",
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "*.{py,pyx}": [
+      "black",
+      "ruff check --fix"
+    ],
+    "*.{js,ts,jsx,tsx}": [
+      "cd web && biome check --write"
+    ]
+  }
+}

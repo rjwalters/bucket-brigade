@@ -161,6 +161,83 @@ cd web && npm install && npm run dev
 
 This repository is set up to use **Loom** for AI-powered development orchestration in future development stages. See `AGENTS.md` and `CLAUDE.md` for details on the autonomous agent workflow system that will be used for managing complex development tasks like implementing the full Bayesian ranking system and PufferLib integration.
 
+## 🧪 Testing & Quality
+
+### Python Testing
+```bash
+# Run Python tests
+pytest
+
+# Run with coverage
+pytest --cov=bucket_brigade
+
+# Run specific test file
+pytest tests/test_environment.py
+```
+
+### Web Testing
+```bash
+cd web
+
+# Run Playwright tests
+npm run test
+
+# Run in headed mode (visible browser)
+npm run test:headed
+
+# Run with UI mode
+npm run test:ui
+```
+
+### Code Quality
+```bash
+# Format Python code
+black .
+
+# Lint Python code
+ruff check . --fix
+
+# Type check Python
+mypy .
+
+# Format web code
+cd web && npm run format
+
+# Lint web code
+cd web && npm run lint:biome
+
+# Type check web code
+cd web && npm run typecheck
+```
+
+### Pre-commit Hooks
+```bash
+# Install pre-commit hooks
+pip install pre-commit
+pre-commit install
+
+# Run all checks manually
+pre-commit run --all-files
+```
+
+### Monorepo Scripts
+```bash
+# Install all dependencies
+npm run install:all
+
+# Run all tests
+npm run test
+
+# Format all code
+npm run format
+
+# Lint all code
+npm run lint:fix
+
+# Type check everything
+npm run typecheck
+```
+
 🧠 Future Work
 
 Bayesian team-composition optimization
