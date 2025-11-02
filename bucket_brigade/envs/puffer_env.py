@@ -110,9 +110,9 @@ class PufferBucketBrigade(gym.Env):
         all_actions = [agent_action]  # Trained agent first
 
         # Get opponent actions
+        current_obs = self.env._get_observation()
         for opponent in self.opponent_agents:
-            obs = self.env.get_observation(opponent.id)
-            opponent_action = opponent.act(obs)
+            opponent_action = opponent.act(current_obs)
             all_actions.append(opponent_action)
 
         # Step the environment
