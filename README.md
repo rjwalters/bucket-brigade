@@ -64,6 +64,11 @@ bucket-brigade/
 │
 └── web/ # Front-end visualizer (TypeScript)
 ├── src/
+│   ├── components/     # GameBoard, ReplayControls, GameInfo
+│   ├── pages/          # Dashboard, GameReplay, Rankings, Settings
+│   ├── types/          # TypeScript definitions
+│   ├── utils/          # Storage utilities
+│   └── main.tsx        # App entry point
 └── public/
 ```
 
@@ -115,7 +120,7 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 | ✅ 3 | Implement heuristic scripted agents | `HeuristicAgent` with 10 parameters |
 | ✅ 4 | Add replay logging + JSON exporter | One file per episode |
 | ✅ 5 | Build ranking orchestration loop | Batch runner + basic analysis |
-| 🔜 6 | Create TypeScript web visualizer | Load & replay saved games |
+| ✅ 6 | Create TypeScript web visualizer | Game replay + ranking dashboard |
 | 🔜 7 | (Future) Integrate PufferLib | Train learned policies |
 
 ---
@@ -133,7 +138,7 @@ pip install pytest black ruff mypy typer
 
 🚀 Quickstart
 ```bash
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Run a single game with random agents
@@ -147,6 +152,9 @@ python scripts/run_batch.py --num-games 50 --num-agents 6
 
 # Analyze batch results
 python scripts/analyze_rankings.py results/
+
+# Launch the web visualizer
+cd web && npm install && npm run dev
 ```
 
 ## 🧵 Development Orchestration
