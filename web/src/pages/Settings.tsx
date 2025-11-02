@@ -164,8 +164,8 @@ const Settings: React.FC = () => {
         <div className="card text-center">
           <Database className="w-8 h-8 mx-auto mb-2 text-purple-600" />
           <div className="text-2xl font-bold text-gray-900">
-            {(JSON.stringify(loadGameReplays()).length +
-              JSON.stringify(loadBatchResults()).length) / 1024).toFixed(1)} KB
+          {((JSON.stringify(loadGameReplays()).length +
+          JSON.stringify(loadBatchResults()).length) / 1024).toFixed(1)} KB
           </div>
           <div className="text-sm text-gray-600">Storage Used</div>
         </div>

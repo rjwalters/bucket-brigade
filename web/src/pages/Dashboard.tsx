@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, TrendingUp, Users, Flame, FileText } from 'lucide-react';
+import { Play, TrendingUp, Users, Flame, FileText, Trophy, Code, Zap } from 'lucide-react';
 import { GameReplay, BatchResult, STORAGE_KEYS } from '../types';
 import { loadGameReplays, loadBatchResults } from '../utils/storage';
 
@@ -63,15 +63,35 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome to Bucket Brigade
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Explore multi-agent cooperation in firefighting scenarios. Watch agents learn to work together,
-          analyze their strategies, and track ranking progress over time.
+      {/* Hero Section */}
+      <div className="text-center mb-8 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-8 border border-orange-200">
+      <div className="flex items-center justify-center mb-4">
+      <Flame className="w-10 h-10 text-orange-600 mr-3" />
+        <h1 className="text-4xl font-bold text-gray-900">Bucket Brigade</h1>
+      </div>
+      <p className="text-xl text-gray-700 mb-4 max-w-3xl mx-auto">
+      A frontier town where <strong>10 houses stand in a circle</strong>, connected by paths that carry both people and relentless fire.
+        When flames erupt, they leap from home to home with terrifying speed.
         </p>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+          The townsfolk have formed a <strong>Bucket Brigade</strong> — but not everyone wants to be a hero.
+          Some are exhausted, others selfish, a few might even deceive. In this microcosm of human nature,
+          <strong>cooperation isn't guaranteed — it's earned</strong>.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4 text-sm">
+          <div className="flex items-center bg-white px-3 py-1 rounded-full border border-orange-200">
+            <Code className="w-4 h-4 mr-2 text-blue-600" />
+            Write JavaScript agents
+          </div>
+          <div className="flex items-center bg-white px-3 py-1 rounded-full border border-orange-200">
+            <Trophy className="w-4 h-4 mr-2 text-yellow-600" />
+            Compete in tournaments
+          </div>
+          <div className="flex items-center bg-white px-3 py-1 rounded-full border border-orange-200">
+            <Zap className="w-4 h-4 mr-2 text-green-600" />
+            Real-time rankings
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}

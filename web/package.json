@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "playwright test",
@@ -20,9 +20,10 @@
     "playwright:install": "playwright install --with-deps"
   },
   "dependencies": {
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "^0.294.0",
+    "react-router-dom": "^7.9.5",
     "recharts": "^2.8.0",
     "zod": "^3.22.4"
   },

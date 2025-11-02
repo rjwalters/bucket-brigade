@@ -1,23 +1,28 @@
-# 🔥 Bucket Brigade
+# 🔥 Bucket Brigade: The Ultimate Cooperation Challenge
 
-*A multi-agent cooperation game and ranking engine for team-based environments.*
+*A groundbreaking platform for studying cooperation, deception, and collective intelligence in multi-agent systems.*
 
 ---
 
-## 🧭 Overview
+## 🧭 The Story & Challenge
 
-**Bucket Brigade** is a research platform for studying cooperation, deception, and skill ranking in multi-agent systems.
+Imagine a frontier town where **10 houses stand in a circle**, connected by paths that carry not just people, but also the relentless spread of fire. When flames erupt, they leap from house to house with terrifying speed. The townsfolk have formed a **Bucket Brigade** — but not everyone wants to be a hero.
 
-Agents play repeated “nights” in a small town arranged as a **ring of 10 houses**.  
-Each night, they can **signal** whether they will work or rest, and then choose an **action**:
+Some are exhausted from long workdays. Others prioritize their own home over the community's needs. A few might even spread false information or work against the group. In this microcosm of human nature, **cooperation isn't guaranteed — it's earned**.
 
-- **Work** on a specific house to fight fires.  
-- **Rest** to save energy (and perhaps mislead others).  
+**Bucket Brigade** transforms this dramatic scenario into a research platform where AI agents navigate the complex dance between self-interest and collective good. Every "night," agents make two crucial decisions:
 
-Fires spread probabilistically, and the team’s total reward depends on how many houses are saved versus ruined.  
-Agents can lie, coordinate, or free-ride — the dynamics create natural tension and emergent strategies.
+1. **Signal** their intent (work or rest) — but they might be lying
+2. **Choose an action**: where to go and whether to fight fires or conserve energy
 
-The long-term goal is to estimate each agent’s **marginal contribution** to team performance using a scalable **ranking orchestration system** inspired by Elo, Bradley-Terry, and Bayesian optimization methods.
+The result? Endless fascinating dynamics of **trust, deception, coordination, and sacrifice**.
+
+## 🎯 Research Goals
+
+- **Estimate each agent's marginal contribution** to team performance
+- **Compare cooperation strategies** across diverse scenarios
+- **Rank agents fairly** using advanced statistical methods
+- **Understand emergent behaviors** in multi-agent systems
 
 ---
 
@@ -67,7 +72,7 @@ bucket-brigade/
 │   ├── components/     # GameBoard, ReplayControls, GameInfo
 │   ├── pages/          # Dashboard, GameReplay, Rankings, Settings
 │   ├── types/          # TypeScript definitions
-│   ├── utils/          # Storage utilities
+│   ├── utils/           # Storage utilities
 │   └── main.tsx        # App entry point
 └── public/
 ```
@@ -92,19 +97,19 @@ bucket-brigade/
 
 ## 🧠 Ranking Orchestration
 
-The **ranking system** runs batches of simulated games to estimate each agent’s marginal value.
+The **ranking system** runs batches of simulated games to estimate each agent's marginal value.
 
 ### Workflow
-1. Randomly sample teams and scenarios.  
-2. Run games via `BucketBrigadeEnv`.  
-3. Record outcomes (team composition, rewards, replay path).  
+1. Randomly sample teams and scenarios.
+2. Run games via `BucketBrigadeEnv`.
+3. Record outcomes (team composition, rewards, replay path).
 4. Fit a surrogate model:
 
-   \[
-   R_{\text{team}} = \alpha + \sum_{i\in\text{team}} \theta_i + \langle w, \phi_c\rangle + \varepsilon
-   \]
+   \\[
+   R_{\\text{team}} = \\alpha + \\sum_{i\\in\\text{team}} \\theta_i + \\langle w, \\phi_c\\rangle + \\varepsilon
+   \\]
 
-5. Rank agents by estimated contribution \( \theta_i \).  
+5. Rank agents by estimated contribution \\( \\theta_i \\).
 6. Optionally, adaptively select new team combinations to reduce uncertainty.
 
 All results are logged to a local SQLite database and saved as JSON replays for analysis and visualization.
@@ -378,4 +383,3 @@ Cross-game generalization (ranking transferable to other environments)
 Real-time leaderboard visualization
 
 Integration with reinforcement learning pipelines via PufferLib
-
