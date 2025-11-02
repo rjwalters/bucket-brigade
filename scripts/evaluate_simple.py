@@ -8,6 +8,7 @@ over multiple episodes.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
@@ -51,9 +52,11 @@ def evaluate_policy(policy, env, num_episodes=100, render=False):
         if (episode + 1) % 10 == 0:
             avg_reward = np.mean(episode_rewards[-10:])
             avg_length = np.mean(episode_lengths[-10:])
-            print(f"Episode {episode + 1}/{num_episodes} | "
-                  f"Avg Reward (last 10): {avg_reward:.2f} | "
-                  f"Avg Length: {avg_length:.1f}")
+            print(
+                f"Episode {episode + 1}/{num_episodes} | "
+                f"Avg Reward (last 10): {avg_reward:.2f} | "
+                f"Avg Length: {avg_length:.1f}"
+            )
 
     return episode_rewards, episode_lengths
 
@@ -61,17 +64,23 @@ def evaluate_policy(policy, env, num_episodes=100, render=False):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Evaluate trained Bucket Brigade policy")
-    parser.add_argument("--model-path", type=str, default="models/bucket_brigade_policy.pt",
-                       help="Path to trained model")
-    parser.add_argument("--num-episodes", type=int, default=100,
-                       help="Number of episodes to evaluate")
-    parser.add_argument("--num-opponents", type=int, default=3,
-                       help="Number of opponent agents")
-    parser.add_argument("--render", action="store_true",
-                       help="Render the environment")
-    parser.add_argument("--seed", type=int, default=42,
-                       help="Random seed")
+    parser = argparse.ArgumentParser(
+        description="Evaluate trained Bucket Brigade policy"
+    )
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="models/bucket_brigade_policy.pt",
+        help="Path to trained model",
+    )
+    parser.add_argument(
+        "--num-episodes", type=int, default=100, help="Number of episodes to evaluate"
+    )
+    parser.add_argument(
+        "--num-opponents", type=int, default=3, help="Number of opponent agents"
+    )
+    parser.add_argument("--render", action="store_true", help="Render the environment")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
 
     args = parser.parse_args()
 
@@ -83,12 +92,12 @@ def main():
     print(f"📂 Loading model from {args.model_path}")
     checkpoint = torch.load(args.model_path)
 
-    obs_dim = checkpoint['obs_dim']
-    action_dims = checkpoint['action_dims']
-    hidden_size = checkpoint['hidden_size']
+    obs_dim = checkpoint["obs_dim"]
+    action_dims = checkpoint["action_dims"]
+    hidden_size = checkpoint["hidden_size"]
 
     policy = PolicyNetwork(obs_dim, action_dims, hidden_size=hidden_size)
-    policy.load_state_dict(checkpoint['policy_state_dict'])
+    policy.load_state_dict(checkpoint["policy_state_dict"])
     policy.eval()
 
     print(f"✅ Model loaded successfully")
@@ -108,10 +117,14 @@ def main():
 
     # Print statistics
     print(f"\n📊 Evaluation Results:")
-    print(f"   Mean Reward: {np.mean(episode_rewards):.2f} ± {np.std(episode_rewards):.2f}")
+    print(
+        f"   Mean Reward: {np.mean(episode_rewards):.2f} ± {np.std(episode_rewards):.2f}"
+    )
     print(f"   Min Reward: {np.min(episode_rewards):.2f}")
     print(f"   Max Reward: {np.max(episode_rewards):.2f}")
-    print(f"   Mean Episode Length: {np.mean(episode_lengths):.1f} ± {np.std(episode_lengths):.1f}")
+    print(
+        f"   Mean Episode Length: {np.mean(episode_lengths):.1f} ± {np.std(episode_lengths):.1f}"
+    )
 
 
 if __name__ == "__main__":
