@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import Optional, List, Literal, Tuple
 from enum import IntEnum
-import pickle
+import pickle  # nosec B403 - internal use only, not deserializing untrusted data
 import threading
 
 
@@ -255,7 +255,7 @@ class InMemoryJobQueue(JobQueueBackend):
             filepath: Path to restore queue state from
         """
         with open(filepath, "rb") as f:
-            serializable_jobs: List[Tuple[int, dict]] = pickle.load(f)
+            serializable_jobs: List[Tuple[int, dict]] = pickle.load(f)  # nosec B301 - loading trusted internal data only
 
         # Convert back to job objects
         jobs = [
