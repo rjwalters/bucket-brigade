@@ -102,7 +102,7 @@ bucket-brigade/
 | Feature | Description |
 |----------|-------------|
 | **World** | 10 houses in a ring, each `Safe`, `Burning`, or `Ruined` |
-| **Agents** | 4–10 agents, each owning a house |
+| **Agents** | 4–10 agents, each owning one or more houses |
 | **Signals** | Broadcast intent (`Work` or `Rest`) each night |
 | **Actions** | `(house, mode)` → choose where and whether to work |
 | **Fire spread** | Burning houses ignite neighbors with probability β |
@@ -122,11 +122,11 @@ The **ranking system** runs batches of simulated games to estimate each agent's 
 3. Record outcomes (team composition, rewards, replay path).
 4. Fit a surrogate model:
 
-   \\[
-   R_{\\text{team}} = \\alpha + \\sum_{i\\in\\text{team}} \\theta_i + \\langle w, \\phi_c\\rangle + \\varepsilon
-   \\]
+   $$
+   R_{\text{team}} = \alpha + \sum_{i\in\text{team}} \theta_i + \langle w, \phi_c\rangle + \varepsilon
+   $$
 
-5. Rank agents by estimated contribution \\( \\theta_i \\).
+5. Rank agents by estimated contribution $\theta_i$.
 6. Optionally, adaptively select new team combinations to reduce uncertainty.
 
 All results are logged to a local SQLite database and saved as JSON replays for analysis and visualization.
@@ -135,6 +135,7 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 
 ## 🧱 Implementation Roadmap
 
+### ✅ Completed Foundation
 | Stage | Goal | Deliverable |
 |-------|------|-------------|
 | ✅ 1 | Define environment dynamics | `bucket_brigade_env.py` |
@@ -144,7 +145,46 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 | ✅ 5 | Build ranking orchestration loop | Batch runner + basic analysis |
 | ✅ 6 | Create TypeScript web visualizer | Game replay + ranking dashboard |
 | ✅ 7 | **Rust core engine** | `bucket-brigade-core/` - 10-20x faster |
-| 🔜 8 | (Future) Integrate PufferLib | Train learned policies |
+| ✅ 8 | **PufferLib integration** | Train learned policies with PPO |
+
+### 🚧 Phase 1: Backend Infrastructure (Tournament System)
+| Issue | Goal | Status |
+|-------|------|--------|
+| [#4](../../issues/4) | PostgreSQL schema & Agent Registry | 📋 Planned |
+| [#5](../../issues/5) | Job Queue with priority support | 📋 Planned |
+| [#6](../../issues/6) | Tournament Coordinator with adaptive sampling | 📋 Planned |
+| [#7](../../issues/7) | Worker Pool for parallel execution | 📋 Planned |
+| [#8](../../issues/8) | Ranking Service with periodic re-computation | 🚫 Blocked |
+| [#9](../../issues/9) | Web API for live rankings & history | 🚫 Blocked |
+
+### 🤖 Phase 2: RL Training Enhancements
+| Issue | Goal | Status |
+|-------|------|--------|
+| [#10](../../issues/10) | Longer training runs for better policies | 📋 Planned |
+| [#11](../../issues/11) | Hyperparameter tuning for PPO | 🚫 Blocked |
+| [#12](../../issues/12) | Scenario-specific policy training | 📋 Planned |
+| [#13](../../issues/13) | TensorBoard logging integration | 📋 Planned |
+| [#14](../../issues/14) | Curriculum learning for progressive difficulty | 📋 Planned |
+
+### 🔍 Phase 3: Agent Discovery & Analysis Tools
+| Issue | Goal | Status |
+|-------|------|--------|
+| [#20](../../issues/20) | Core agent comparison utilities | 📋 Planned |
+| [#21](../../issues/21) | Simple finder tools (Similar & Counter agents) | 🚫 Blocked |
+| [#22](../../issues/22) | Matchup matrix visualization | 📋 Planned |
+| [#23](../../issues/23) | Agent comparer (side-by-side) | 📋 Planned |
+| [#24](../../issues/24) | Team synergy analyzer | 📋 Planned |
+| [#31](../../issues/31) | Parameter explorer with live preview | 📋 Planned |
+| [#32](../../issues/32) | Integration & polish (routing, navigation, testing) | 📋 Planned |
+| [#15](../../issues/15) | React Radar Chart components | 📋 Planned |
+| [#16](../../issues/16) | Expand team templates library | 📋 Planned |
+| [#18](../../issues/18) | Parameter space visualizations | 📋 Planned |
+
+### 📚 Phase 4: Documentation & Cleanup
+| Issue | Goal | Status |
+|-------|------|--------|
+| [#19](../../issues/19) | Fix documentation inconsistencies | 📋 Planned |
+| [#25](../../issues/25) | Remove duplicate venv/ directory | 🔨 In Progress |
 
 ---
 
