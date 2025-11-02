@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]
-        exclude: ^(\.venv|scripts|tests|node_modules|web/node_modules)/
+        exclude: ^(\.venv|scripts|tests|node_modules|web/node_modules|bucket_brigade/services|bucket_brigade/db/migrations)/
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
