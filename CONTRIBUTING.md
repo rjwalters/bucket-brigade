@@ -50,13 +50,13 @@ git clone https://github.com/your-username/bucket-brigade.git
 cd bucket-brigade
 
 # Install all dependencies
-npm run install:all
+pnpm run install:all
 
 # Run tests
-npm run test
+pnpm run test
 
 # Start development servers
-npm run dev
+pnpm run dev
 ```
 
 ### Development Commands
@@ -64,7 +64,7 @@ npm run dev
 ```bash
 # Python development
 uv run pytest                    # Run tests
-uv run black .                   # Format code
+uv run ruff format .             # Format code
 uv run ruff check . --fix        # Lint code
 uv run mypy .                    # Type check
 
@@ -74,10 +74,10 @@ pnpm run lint:biome              # Lint web code
 pnpm run typecheck               # Type check web code
 
 # Full project
-npm run test                     # Run all tests
-npm run format                   # Format all code
-npm run lint:fix                 # Fix all linting issues
-npm run typecheck                # Type check everything
+pnpm run test                     # Run all tests
+pnpm run format                   # Format all code
+pnpm run lint:fix                 # Fix all linting issues
+pnpm run typecheck                # Type check everything
 ```
 
 ## 🧪 Testing
@@ -169,7 +169,7 @@ class MyAgent(AgentBase):
 
 ### Python
 
-- **Formatting**: Black with default settings
+- **Formatting**: Ruff format with Black-compatible settings
 - **Linting**: Ruff with our configuration
 - **Types**: Full type annotations, checked with mypy
 - **Imports**: Absolute imports, grouped by standard library → third-party → local

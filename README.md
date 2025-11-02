@@ -198,7 +198,7 @@ pip install numpy pandas scikit-learn matplotlib
 
 for development and testing:
 ```bash
-pip install pytest black ruff mypy typer
+pip install pytest ruff mypy typer
 ```
 
 for Rust core (optional, provides 10-20x speedup):
@@ -211,10 +211,10 @@ cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 pip install -e .
 # Install uv (Python package manager)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # Install pnpm (Node.js package manager)
-npm install -g pnpm
+curl -fsSL https://get.pnpm.io/install.sh | sh -
 
 # Install all dependencies
-npm run install:all
+pnpm run install:all
 
 # Run a single game with random agents
 uv run python scripts/run_one_game.py
@@ -238,7 +238,7 @@ uv run python scripts/submit_agent.py my_agent.py        # Validate & submit
 uv run python scripts/analyze_rankings.py results/
 
 # Launch the web visualizer (starts dev server on http://localhost:5173)
-npm run dev
+pnpm run dev
 ```
 
 ## 🧵 Development Orchestration
@@ -278,7 +278,7 @@ pnpm run test:ui
 ### Code Quality
 ```bash
 # Format Python code
-uv run black .
+uv run ruff format .
 
 # Lint Python code
 uv run ruff check . --fix
@@ -309,19 +309,19 @@ pre-commit run --all-files
 ### Monorepo Scripts
 ```bash
 # Install all dependencies
-npm run install:all
+pnpm run install:all
 
 # Run all tests
-npm run test
+pnpm run test
 
 # Format all code
-npm run format
+pnpm run format
 
 # Lint all code
-npm run lint:fix
+pnpm run lint:fix
 
 # Type check everything
-npm run typecheck
+pnpm run typecheck
 ```
 
 ## 🤖 Reinforcement Learning Training

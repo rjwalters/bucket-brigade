@@ -336,26 +336,26 @@ Content-Type: application/json
 
 ```bash
 # Test data validation
-npm run test:schemas
+pnpm run test:schemas
 
 # Test game engine
-npm run test:engine
+pnpm run test:engine
 
 # Test agent interfaces
-npm run test:agents
+pnpm run test:agents
 ```
 
 ### Integration Tests
 
 ```bash
 # Test complete game flow
-npm run test:integration
+pnpm run test:integration
 
 # Test storage operations
-npm run test:storage
+pnpm run test:storage
 
 # Test UI interactions
-npm run test:e2e
+pnpm run test:e2e
 ```
 
 ## 📝 Error Handling

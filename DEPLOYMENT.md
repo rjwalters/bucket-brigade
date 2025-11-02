@@ -50,7 +50,7 @@ Deploy the frontend as static files and run the Python API separately.
 **Netlify**
 ```bash
 # Install Netlify CLI
-npm install -g netlify-cli
+pnpm add -g netlify-cli
 
 # Deploy from web directory
 cd web
@@ -60,7 +60,7 @@ netlify deploy --prod --dir=dist
 **Vercel**
 ```bash
 # Install Vercel CLI
-npm install -g vercel
+pnpm add -g vercel
 
 # Deploy from web directory
 cd web
@@ -79,10 +79,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: npm install -g pnpm
+          cache: 'pnpm'
       - run: pnpm install
       - run: pnpm run build
       - uses: peaceiris/actions-gh-pages@v3
@@ -96,7 +99,7 @@ jobs:
 **Railway**
 ```bash
 # Install Railway CLI
-npm install -g @railway/cli
+pnpm add -g @railway/cli
 
 # Deploy Python API
 railway login
@@ -134,9 +137,11 @@ bucket-brigade-core
 # Dockerfile
 FROM python:3.11-slim
 
-# Install Node.js for building frontend
-RUN apt-get update && apt-get install -y nodejs npm
-RUN npm install -g pnpm
+# Install Node.js and pnpm for building frontend
+RUN apt-get update && apt-get install -y curl
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+RUN curl -fsSL https://get.pnpm.io/install.sh | sh -
 
 # Copy and setup backend
 COPY . /app
@@ -363,7 +368,7 @@ spec:
 
 ```bash
 # Run full test suite
-npm run test
+pnpm run test
 
 # Test API endpoints
 curl -X POST http://localhost:8000/api/games \

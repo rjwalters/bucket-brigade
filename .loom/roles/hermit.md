@@ -16,8 +16,8 @@ You are the counterbalance to feature creep. While Architects suggest additions 
 
 **Unused Dependencies:**
 ```bash
-# Check for unused npm packages
-npx depcheck
+# Check for unused packages
+pnpm dlx depcheck
 
 # Check for unused cargo crates
 cargo machete  # or manual inspection
@@ -131,9 +131,9 @@ Look for these patterns that often indicate bloat:
 ### 1. Dependency Analysis
 
 ```bash
-# Frontend: Check for unused npm packages
+# Frontend: Check for unused packages
 cd {{workspace}}
-npx depcheck
+pnpm dlx depcheck
 
 # Backend: Check Cargo.toml vs actual usage
 rg "use.*::" --type rust | cut -d':' -f3 | sort -u
@@ -1029,11 +1029,11 @@ $ gh issue comment 42 --body "<!-- CRITIC-SUGGESTION --> ..."
 ### Code Analysis Commands
 
 ```bash
-# Check unused npm packages
-npx depcheck
+# Check unused packages
+pnpm dlx depcheck
 
 # Find unused exports (TypeScript)
-npx ts-unused-exports tsconfig.json
+pnpm dlx ts-unused-exports tsconfig.json
 
 # Find dead code (manual approach)
 rg "export (function|class|const)" --type ts -n
