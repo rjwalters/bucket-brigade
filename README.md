@@ -112,9 +112,9 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 |-------|------|-------------|
 | ✅ 1 | Define environment dynamics | `bucket_brigade_env.py` |
 | ✅ 2 | Design architecture & repo layout | *(this document)* |
-| ⏳ 3 | Implement heuristic scripted agents | Simple `act(obs)` interface |
-| ⏳ 4 | Add replay logging + JSON exporter | One file per episode |
-| ⏳ 5 | Build ranking orchestration loop | Batch runner + ridge regression ranking |
+| ✅ 3 | Implement heuristic scripted agents | `HeuristicAgent` with 10 parameters |
+| ✅ 4 | Add replay logging + JSON exporter | One file per episode |
+| ✅ 5 | Build ranking orchestration loop | Batch runner + basic analysis |
 | 🔜 6 | Create TypeScript web visualizer | Load & replay saved games |
 | 🔜 7 | (Future) Integrate PufferLib | Train learned policies |
 
@@ -131,19 +131,27 @@ for development and testing:
 pip install pytest black ruff mypy typer
 ```
 
-🚀 Quickstart (after initial commit)
+🚀 Quickstart
 ```bash
-# Clone and install
-git clone https://github.com/<your-org>/bucket-brigade.git
-cd bucket-brigade
-pip install -e .
+# Install dependencies
+pip install -r requirements.txt
 
-# Run a simple test game
+# Run a single game with random agents
 python scripts/run_one_game.py
 
-# Run a batch for ranking
-python scripts/run_batch.py --num-games 50
+# Test different agent types
+python scripts/test_agents.py
+
+# Run a batch of games for ranking experiments
+python scripts/run_batch.py --num-games 50 --num-agents 6
+
+# Analyze batch results
+python scripts/analyze_rankings.py results/
 ```
+
+## 🧵 Development Orchestration
+
+This repository is set up to use **Loom** for AI-powered development orchestration in future development stages. See `AGENTS.md` and `CLAUDE.md` for details on the autonomous agent workflow system that will be used for managing complex development tasks like implementing the full Bayesian ranking system and PufferLib integration.
 
 🧠 Future Work
 

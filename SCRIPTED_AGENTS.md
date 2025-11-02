@@ -167,6 +167,16 @@ Procedure:
 This demonstrates the ranking engine’s ability to efficiently estimate
 individual performance from aggregate outcomes.
 
+IMPLEMENTATION STATUS
+--------------------
+
+Heuristic agents have been fully implemented in `bucket_brigade/agents/heuristic_agent.py` with:
+
+- `HeuristicAgent` class with 10 behavioral parameters
+- Archetypal agent presets (firefighter, free_rider, coordinator, etc.)
+- Random agent generation for diverse populations
+- Integration with environment observation/action interface
+
 EXTENSIONS
 ----------
 - Parameter evolution: sample new agents near top performers.

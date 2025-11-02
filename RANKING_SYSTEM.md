@@ -162,6 +162,18 @@ MINIMAL CONFIG TO RUN
 - Batch size per iteration (e.g., 32–256 games).
 - Regularization lambda and noise sigma^2 (or estimate sigma^2 from residuals).
 
+IMPLEMENTATION STATUS
+--------------------
+
+Basic ranking infrastructure has been implemented:
+
+- Batch orchestration system in `scripts/run_batch.py`
+- Data collection and CSV export functionality
+- Agent parameter storage and tracking
+- Basic result aggregation and summary statistics
+
+Full Bayesian ranking system (ridge regression, uncertainty quantification, adaptive batch design) is planned for the next development stage.
+
 OUTPUTS
 -------
 - Agent scores: theta_i (additive) or v_i (interaction-aware).

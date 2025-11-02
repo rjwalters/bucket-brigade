@@ -196,6 +196,18 @@ Termination occurs when:
 No hard cap is needed because spark events stop after N_spark nights
 and burning houses always transition to a terminal state.
 
+IMPLEMENTATION STATUS
+--------------------
+
+This class design has been fully implemented:
+
+- `BucketBrigadeEnv` class in `bucket_brigade/envs/bucket_brigade_env.py`
+- `Scenario` class and generation functions in `bucket_brigade/envs/scenarios.py`
+- `AgentBase` and `HeuristicAgent` classes in `bucket_brigade/agents/`
+- PufferLib-compatible API with observation/action spaces
+- JSON replay export functionality
+- Batch orchestration system
+
 SUMMARY
 -------
 This class design provides:

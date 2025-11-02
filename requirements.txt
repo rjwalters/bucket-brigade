@@ -1,0 +1,16 @@
+# Core dependencies
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+matplotlib>=3.5.0
+pufferlib>=0.1.0
+
+# CLI and utilities
+typer>=0.4.0
+rich>=10.0.0
+
+# Development dependencies
+pytest>=6.0.0
+black>=21.0.0
+ruff>=0.0.1
+mypy>=0.900

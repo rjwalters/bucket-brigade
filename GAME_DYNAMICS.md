@@ -137,6 +137,17 @@ The process is finite. Fires either extinguish or burn out,
 and sparks cease after N_spark nights. Therefore, all houses
 eventually reach a non-burning state and the game ends.
 
+IMPLEMENTATION STATUS
+--------------------
+
+This game specification has been fully implemented in `bucket_brigade/envs/bucket_brigade_env.py` with:
+
+- Complete environment dynamics in `BucketBrigadeEnv` class
+- Scenario generation in `scenarios.py`
+- Heuristic agents with 10 behavioral parameters
+- JSON replay export functionality
+- Batch orchestration for ranking experiments
+
 SUMMARY
 -------
 The Bucket Brigade game provides:
