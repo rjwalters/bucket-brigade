@@ -160,6 +160,10 @@ uv run python scripts/test_scenarios.py trivial_cooperation
 uv run python scripts/test_scenarios.py greedy_neighbor
 uv run python scripts/test_scenarios.py sparse_heroics
 
+# Submit your own agent
+uv run python scripts/submit_agent.py --create-template  # Create template
+uv run python scripts/submit_agent.py my_agent.py        # Validate & submit
+
 # Analyze batch results
 uv run python scripts/analyze_rankings.py results/
 
@@ -275,6 +279,55 @@ uv run python scripts/test_scenarios.py trivial_cooperation --num-games 30
 # Compare different agent types in challenging scenarios
 uv run python scripts/test_scenarios.py chain_reaction --num-games 50
 ```
+
+## 🤖 Agent Development
+
+### Creating Custom Agents
+
+The platform supports user-submitted agents for research and competition:
+
+```bash
+# 1. Create agent template
+uv run python scripts/submit_agent.py --create-template
+
+# 2. Implement your strategy in my_agent.py
+# Edit the MyCustomAgent class with your logic
+
+# 3. Validate and test your agent
+uv run python scripts/submit_agent.py my_agent.py
+
+# 4. Submit for evaluation in tournaments
+```
+
+### Agent Interface
+
+Your agent must implement this interface:
+
+```python
+class MyAgent(AgentBase):
+    def __init__(self, agent_id: int, name: str = "MyAgent"):
+        super().__init__(agent_id, name)
+
+    def reset(self):
+        # Reset between games
+        pass
+
+    def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
+        # Return [house_index, mode_flag]
+        # obs contains: signals, locations, houses, last_actions, scenario_info
+        return np.array([0, 1])  # Example: work on house 0
+```
+
+### Security & Validation
+
+- **Sandboxed execution** in isolated environments
+- **Static analysis** prevents dangerous code
+- **Behavioral testing** validates agent interface
+- **Only standard libraries** allowed (numpy, typing, etc.)
+
+### Example Agents
+
+See `bucket_brigade/agents/scenario_optimal/` for examples of optimal strategies for each test scenario.
 
 🧠 Future Work
 
