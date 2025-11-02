@@ -86,7 +86,7 @@ pnpm daemon:build
 - `.loom/` directory created with configuration
 - `.claude/` directory created (target-specific MCP servers only)
 - `.github/` directory created with labels and workflows
-- `CLAUDE.md` and `AGENTS.md` files created/updated
+- `CLAUDE.md` and `LOOM_AGENTS.md` files created/updated
 - `.gitignore` updated with Loom patterns
 
 ### Step 5: Sync GitHub Labels
@@ -144,7 +144,7 @@ After completing the installation, report to the user:
 - ✅ .loom/ directory with configuration and scripts
 - ✅ .claude/ directory with MCP servers and prompts
 - ✅ .github/ directory with labels and workflows
-- ✅ CLAUDE.md and AGENTS.md documentation
+- ✅ CLAUDE.md and LOOM_AGENTS.md documentation
 
 ## Next Steps:
 1. Review the pull request: {PR_URL}
@@ -186,7 +186,7 @@ If any step fails:
 - Each script handles its own error checking and reporting
 - Scripts are **modular** and can be run independently for debugging
 - The installation is **non-destructive** - existing files are preserved
-- Documentation files (CLAUDE.md, AGENTS.md) are **appended to** if they exist
+- Documentation files (CLAUDE.md, LOOM_AGENTS.md) are **appended to** if they exist
 
 ## Testing the Installation
 
@@ -208,5 +208,5 @@ After PR is merged, verify the installation works:
 
 After installation, users should refer to:
 - `.loom/CLAUDE.md` - Comprehensive Loom usage guide
-- `.loom/AGENTS.md` - Agent workflow and role details
+- `.loom/LOOM_AGENTS.md` - Agent workflow and role details
 - `.loom/roles/*.md` - Individual role definitions
