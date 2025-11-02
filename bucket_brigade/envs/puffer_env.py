@@ -7,7 +7,7 @@ This wraps the BucketBrigadeEnv to work with PufferLib's multi-agent training fr
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List, Any
 import logging
 
 from .bucket_brigade_env import BucketBrigadeEnv
@@ -62,7 +62,7 @@ class PufferBucketBrigade(gym.Env):
         self.env = BucketBrigadeEnv(scenario)
 
         # Create opponent agents (will be refreshed each episode)
-        self.opponent_agents = []
+        self.opponent_agents: List[Any] = []
 
         # PufferLib observation/action spaces
         # Observation: [houses(10), agent_signals(N), agent_locations(N), last_actions(N,2), scenario_info(10)]
@@ -75,8 +75,8 @@ class PufferBucketBrigade(gym.Env):
         self.action_space = spaces.MultiDiscrete([10, 2])
 
         # Track episode statistics
-        self.episode_rewards = []
-        self.episode_lengths = []
+        self.episode_rewards: List[float] = []
+        self.episode_lengths: List[int] = []
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None
@@ -130,7 +130,7 @@ class PufferBucketBrigade(gym.Env):
 
         return flat_obs, reward, terminated, truncated, info
 
-    def _create_opponent_agents(self):
+    def _create_opponent_agents(self) -> None:
         """Create opponent agents for this episode."""
         self.opponent_agents = []
 
@@ -176,11 +176,11 @@ class PufferBucketBrigade(gym.Env):
 
         return flat_obs
 
-    def render(self):
+    def render(self) -> None:
         """Render the environment."""
         self.env.render()
 
-    def close(self):
+    def close(self) -> None:
         """Close the environment."""
         pass
 
@@ -190,7 +190,7 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
     Vectorized version for multiple parallel environments.
     """
 
-    def __init__(self, num_envs: int = 1, **kwargs):
+    def __init__(self, num_envs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.num_envs = num_envs
 
@@ -202,7 +202,9 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
 
         self.action_space = spaces.MultiDiscrete([num_envs, 10, 2])
 
-    def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(
+        self, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[np.ndarray, Dict]:
         """Reset all environments."""
         if seed is not None:
             np.random.seed(seed)
@@ -212,7 +214,9 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
         obs, info = super().reset(seed, options)
         return np.array([obs]), info
 
-    def step(self, actions: np.ndarray):
+    def step(  # type: ignore[override]
+        self, actions: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
         """Step all environments."""
         # For simplicity, just step the single environment
         # In a full implementation, this would handle multiple envs
@@ -258,7 +262,7 @@ def make_env(
 
 def make_vectorized_env(
     num_envs: int = 8, scenario_name: str = "default", num_opponents: int = 3
-):
+) -> PufferBucketBrigadeVectorized:
     """Create a vectorized environment for parallel training."""
     return PufferBucketBrigadeVectorized(
         num_envs=num_envs, scenario_name=scenario_name, num_opponents=num_opponents
