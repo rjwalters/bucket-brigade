@@ -20,7 +20,7 @@ from bucket_brigade.agents import (
     get_agent_metadata,
     validate_agent_behavior,
     AgentValidationError,
-    AgentSecurityError
+    AgentSecurityError,
 )
 
 
@@ -61,10 +61,10 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
             # Run validation
             results = validate_agent_behavior(agent, max_steps=20)
 
-            if results['valid']:
+            if results["valid"]:
                 print("✅ Behavioral validation passed!")
                 print("\n📊 Test Results:")
-                stats = results['stats']
+                stats = results["stats"]
                 print(f"   Steps run: {stats['steps_run']}")
                 print(f"   Avg reward: {stats.get('avg_reward', 0):.3f}")
                 print(f"   Valid actions: {stats.get('valid_actions_pct', 0):.3f}")
@@ -72,11 +72,11 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
             else:
                 print("❌ Behavioral validation failed!")
                 print("\n❌ Errors:")
-                for error in results['errors']:
+                for error in results["errors"]:
                     print(f"   • {error}")
-                if results['warnings']:
+                if results["warnings"]:
                     print("\n⚠️ Warnings:")
-                    for warning in results['warnings']:
+                    for warning in results["warnings"]:
                         print(f"   • {warning}")
                 return
 
@@ -87,7 +87,9 @@ def submit_agent(agent_file: str, test_run: bool = True, verbose: bool = False) 
             print("\n🔧 Technical Details:")
             print(f"   Agent class: {agent_class.__name__}")
             print(f"   Module: {agent_class.__module__}")
-            print(f"   Methods: {[m for m in dir(agent_class) if not m.startswith('_')]}")
+            print(
+                f"   Methods: {[m for m in dir(agent_class) if not m.startswith('_')]}"
+            )
 
     except AgentSecurityError as e:
         print(f"🚨 SECURITY VIOLATION: {e}")
@@ -114,7 +116,9 @@ def create_agent_template(output_file: str = "my_agent.py") -> None:
     Args:
         output_file: Where to save the template
     """
-    template_path = Path(__file__).parent.parent / "bucket_brigade" / "agents" / "agent_template.py"
+    template_path = (
+        Path(__file__).parent.parent / "bucket_brigade" / "agents" / "agent_template.py"
+    )
 
     if not template_path.exists():
         print("❌ Agent template not found!")
@@ -124,6 +128,7 @@ def create_agent_template(output_file: str = "my_agent.py") -> None:
 
     # Copy template
     import shutil
+
     shutil.copy2(template_path, output_path)
 
     print(f"✅ Agent template created: {output_path}")
@@ -134,11 +139,13 @@ def create_agent_template(output_file: str = "my_agent.py") -> None:
 
 
 def main(
-    agent_file: Optional[str] = typer.Argument(None, help="Path to agent file to submit"),
+    agent_file: Optional[str] = typer.Argument(
+        None, help="Path to agent file to submit"
+    ),
     create_template: bool = typer.Option(False, help="Create a new agent template"),
     template_output: str = typer.Option("my_agent.py", help="Output file for template"),
     test_run: bool = typer.Option(True, help="Run behavioral tests"),
-    verbose: bool = typer.Option(False, help="Enable verbose output")
+    verbose: bool = typer.Option(False, help="Enable verbose output"),
 ):
     """Submit and validate Bucket Brigade agents."""
 

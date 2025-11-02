@@ -58,7 +58,9 @@ class TestCodeValidation:
 class Agent:
     pass
 """
-        with pytest.raises(AgentValidationError, match="Missing required function: create_agent"):
+        with pytest.raises(
+            AgentValidationError, match="Missing required function: create_agent"
+        ):
             validate_agent_code(code)
 
     def test_missing_class_fails(self):
@@ -91,7 +93,9 @@ class Agent:
 def create_agent(agent_id):
     return Agent()
 """
-        with pytest.raises(AgentSecurityError, match="Forbidden pattern.*import subprocess"):
+        with pytest.raises(
+            AgentSecurityError, match="Forbidden pattern.*import subprocess"
+        ):
             validate_agent_code(code)
 
     def test_forbidden_eval(self):
@@ -177,7 +181,7 @@ class TestLoadAgentFromString:
 
         assert agent_class is not None
         # Agent doesn't inherit from AgentBase but implements interface
-        assert hasattr(agent_class, '__init__')
+        assert hasattr(agent_class, "__init__")
 
     def test_create_agent_instance_from_loaded(self):
         """Test creating an instance from loaded agent."""
@@ -270,7 +274,9 @@ class TestGetAgentMetadata:
 
     def test_get_metadata_from_module(self):
         """Test getting metadata from module with AGENT_METADATA."""
-        agent_class = load_agent_from_string(VALID_AGENT_CODE, module_name="test_agent_with_metadata")
+        agent_class = load_agent_from_string(
+            VALID_AGENT_CODE, module_name="test_agent_with_metadata"
+        )
         metadata = get_agent_metadata(agent_class)
 
         # Since agent is loaded from string, module may not have AGENT_METADATA accessible

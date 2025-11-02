@@ -12,7 +12,7 @@ import argparse
 import torch
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add the bucket_brigade package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -25,7 +25,7 @@ import pufferlib.models
 class TrainedAgent:
     """Wrapper for a trained PufferLib policy."""
 
-    def __init__(self, policy, device='cpu'):
+    def __init__(self, policy, device="cpu"):
         self.policy = policy
         self.device = device
         self.id = 0  # Will be set when added to tournament
@@ -34,7 +34,9 @@ class TrainedAgent:
     def act(self, obs):
         """Get action from trained policy."""
         with torch.no_grad():
-            obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(self.device)
+            obs_tensor = (
+                torch.tensor(obs, dtype=torch.float32).unsqueeze(0).to(self.device)
+            )
             action_logits, _ = self.policy(obs_tensor)
 
             # Sample action (could also use argmax for deterministic)
@@ -43,7 +45,7 @@ class TrainedAgent:
 
         # Convert back to [house, mode] format
         house_idx = action // 2  # First dimension (0-9)
-        mode = action % 2        # Second dimension (0-1)
+        mode = action % 2  # Second dimension (0-1)
 
         return [int(house_idx), int(mode)]
 
@@ -52,7 +54,7 @@ class TrainedAgent:
         pass
 
 
-def load_trained_policy(model_path: str, env, device: str = 'cpu'):
+def load_trained_policy(model_path: str, env, device: str = "cpu"):
     """Load a trained policy from disk."""
     policy = pufferlib.models.PolicyValueNetwork(
         env.observation_space.shape[0],
@@ -74,10 +76,10 @@ def load_trained_policy(model_path: str, env, device: str = 'cpu'):
 
 def evaluate_policy_tournament(
     model_path: str,
-    scenario_name: str = 'default',
+    scenario_name: str = "default",
     num_games: int = 50,
     num_opponents: int = 3,
-    device: str = 'cpu'
+    device: str = "cpu",
 ) -> Dict[str, Any]:
     """
     Evaluate a trained policy in a tournament against expert agents.
@@ -100,11 +102,11 @@ def evaluate_policy_tournament(
     from bucket_brigade.agents import create_archetype_agent, create_random_agent
 
     # Create pool of expert agents (excluding the trained one)
-    expert_policies = ['firefighter', 'coordinator', 'free_rider', 'liar', 'hero']
+    expert_policies = ["firefighter", "coordinator", "free_rider", "liar", "hero"]
     expert_agents = []
 
     for i, policy in enumerate(expert_policies):
-        if policy == 'random':
+        if policy == "random":
             agent = create_random_agent(i + 1)
         else:
             agent = create_archetype_agent(policy, i + 1)
@@ -118,7 +120,9 @@ def evaluate_policy_tournament(
 
     for game_idx in range(num_games):
         # Select random opponents for this game
-        opponent_indices = np.random.choice(len(expert_agents), num_opponents, replace=False)
+        opponent_indices = np.random.choice(
+            len(expert_agents), num_opponents, replace=False
+        )
         opponents = [expert_agents[i] for i in opponent_indices]
 
         # Set agent IDs
@@ -133,36 +137,34 @@ def evaluate_policy_tournament(
             print(f"  Completed {game_idx + 1}/{num_games} games")
 
     # Analyze results
-    trained_rewards = [r['agent_rewards'][0] for r in results]  # Trained agent is always index 0
-    total_scores = [sum(r['agent_rewards']) for r in results]
+    trained_rewards = [
+        r["agent_rewards"][0] for r in results
+    ]  # Trained agent is always index 0
+    total_scores = [sum(r["agent_rewards"]) for r in results]
 
     analysis = {
-        'model_path': model_path,
-        'scenario': scenario_name,
-        'num_games': num_games,
-        'num_opponents': num_opponents,
-
+        "model_path": model_path,
+        "scenario": scenario_name,
+        "num_games": num_games,
+        "num_opponents": num_opponents,
         # Trained agent performance
-        'trained_agent': {
-            'name': trained_agent.name,
-            'mean_reward': float(np.mean(trained_rewards)),
-            'std_reward': float(np.std(trained_rewards)),
-            'min_reward': float(np.min(trained_rewards)),
-            'max_reward': float(np.max(trained_rewards)),
-            'win_rate': float(np.mean([1 if r > 0 else 0 for r in trained_rewards])),
+        "trained_agent": {
+            "name": trained_agent.name,
+            "mean_reward": float(np.mean(trained_rewards)),
+            "std_reward": float(np.std(trained_rewards)),
+            "min_reward": float(np.min(trained_rewards)),
+            "max_reward": float(np.max(trained_rewards)),
+            "win_rate": float(np.mean([1 if r > 0 else 0 for r in trained_rewards])),
         },
-
         # Opponent performance summary
-        'opponent_performance': {
-            'mean_total_reward': float(np.mean(total_scores)),
-            'std_total_reward': float(np.std(total_scores)),
+        "opponent_performance": {
+            "mean_total_reward": float(np.mean(total_scores)),
+            "std_total_reward": float(np.std(total_scores)),
         },
-
         # Individual game results
-        'game_results': results,
-
+        "game_results": results,
         # Ranking analysis
-        'ranking_analysis': analyze_agent_rankings(results, trained_agent.name)
+        "ranking_analysis": analyze_agent_rankings(results, trained_agent.name),
     }
 
     print("\n📊 Results Summary:")
@@ -207,11 +209,11 @@ def run_single_game(env, trained_agent, opponents):
             agent_rewards[i] += reward
 
     return {
-        'scenario': env.scenario.__dict__,
-        'agent_rewards': agent_rewards.tolist(),
-        'nights_played': env.night,
-        'final_houses': obs['houses'].tolist(),
-        'opponent_types': [opp.name for opp in opponents]
+        "scenario": env.scenario.__dict__,
+        "agent_rewards": agent_rewards.tolist(),
+        "nights_played": env.night,
+        "final_houses": obs["houses"].tolist(),
+        "opponent_types": [opp.name for opp in opponents],
     }
 
 
@@ -221,23 +223,25 @@ def analyze_agent_rankings(results, trained_agent_name):
     batch_results = []
 
     for game_idx, result in enumerate(results):
-        agent_rewards = result['agent_rewards']
+        agent_rewards = result["agent_rewards"]
 
         # Create fake agent parameters (not used in ranking)
         agent_params = [[0.5] * 10 for _ in agent_rewards]
 
-        batch_results.append({
-            'game_id': game_idx,
-            'scenario_id': 0,
-            'team': list(range(len(agent_rewards))),
-            'agent_params': agent_params,
-            'team_reward': sum(agent_rewards),
-            'agent_rewards': agent_rewards,
-            'nights_played': result['nights_played'],
-            'saved_houses': sum(1 for h in result['final_houses'] if h == 0),
-            'ruined_houses': sum(1 for h in result['final_houses'] if h == 2),
-            'replay_path': f"replays/game_{game_idx}.json"
-        })
+        batch_results.append(
+            {
+                "game_id": game_idx,
+                "scenario_id": 0,
+                "team": list(range(len(agent_rewards))),
+                "agent_params": agent_params,
+                "team_reward": sum(agent_rewards),
+                "agent_rewards": agent_rewards,
+                "nights_played": result["nights_played"],
+                "saved_houses": sum(1 for h in result["final_houses"] if h == 0),
+                "ruined_houses": sum(1 for h in result["final_houses"] if h == 2),
+                "replay_path": f"replays/game_{game_idx}.json",
+            }
+        )
 
     # Fit ranking model
     model = AgentRankingModel(regularization_lambda=1.0)
@@ -247,32 +251,57 @@ def analyze_agent_rankings(results, trained_agent_name):
     agent_rankings = model.get_agent_rankings(ranking_result)
 
     # Find trained agent ranking
-    trained_ranking = next((r for r in agent_rankings if r['rank'] == 1), None)  # Assume first is trained
+    trained_ranking = next(
+        (r for r in agent_rankings if r["rank"] == 1), None
+    )  # Assume first is trained
 
     return {
-        'rankings': agent_rankings,
-        'trained_agent_rank': trained_ranking['rank'] if trained_ranking else None,
-        'trained_agent_score': trained_ranking['skill_estimate'] if trained_ranking else None,
-        'ranking_model_log_likelihood': ranking_result.log_likelihood
+        "rankings": agent_rankings,
+        "trained_agent_rank": trained_ranking["rank"] if trained_ranking else None,
+        "trained_agent_score": trained_ranking["skill_estimate"]
+        if trained_ranking
+        else None,
+        "ranking_model_log_likelihood": ranking_result.log_likelihood,
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Evaluate trained Bucket Brigade policy')
-    parser.add_argument('model_path', help='Path to trained model file')
-    parser.add_argument('--scenario', type=str, default='default',
-                       choices=['default', 'trivial_cooperation', 'early_containment',
-                               'greedy_neighbor', 'sparse_heroics'],
-                       help='Evaluation scenario')
-    parser.add_argument('--num-games', type=int, default=50,
-                       help='Number of evaluation games')
-    parser.add_argument('--num-opponents', type=int, default=3,
-                       help='Number of opponent agents per game')
-    parser.add_argument('--device', type=str, default='cpu',
-                       choices=['cpu', 'cuda'],
-                       help='Device to run evaluation on')
-    parser.add_argument('--output', type=str, default=None,
-                       help='Output file for results (JSON)')
+    parser = argparse.ArgumentParser(
+        description="Evaluate trained Bucket Brigade policy"
+    )
+    parser.add_argument("model_path", help="Path to trained model file")
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="default",
+        choices=[
+            "default",
+            "trivial_cooperation",
+            "early_containment",
+            "greedy_neighbor",
+            "sparse_heroics",
+        ],
+        help="Evaluation scenario",
+    )
+    parser.add_argument(
+        "--num-games", type=int, default=50, help="Number of evaluation games"
+    )
+    parser.add_argument(
+        "--num-opponents",
+        type=int,
+        default=3,
+        help="Number of opponent agents per game",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        choices=["cpu", "cuda"],
+        help="Device to run evaluation on",
+    )
+    parser.add_argument(
+        "--output", type=str, default=None, help="Output file for results (JSON)"
+    )
 
     args = parser.parse_args()
 
@@ -283,17 +312,14 @@ def main():
 
     # Run evaluation
     results = evaluate_policy_tournament(
-        args.model_path,
-        args.scenario,
-        args.num_games,
-        args.num_opponents,
-        args.device
+        args.model_path, args.scenario, args.num_games, args.num_opponents, args.device
     )
 
     # Save results if requested
     if args.output:
         import json
-        with open(args.output, 'w') as f:
+
+        with open(args.output, "w") as f:
             json.dump(results, f, indent=2, default=str)
         print(f"\n💾 Results saved to: {args.output}")
 

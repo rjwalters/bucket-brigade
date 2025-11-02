@@ -204,7 +204,9 @@ class TestAgentRankingModel:
 
         model = AgentRankingModel()
 
-        with pytest.raises(ValueError, match="Cannot fit model with empty batch results"):
+        with pytest.raises(
+            ValueError, match="Cannot fit model with empty batch results"
+        ):
             model.fit([])
 
     def test_predict_team_reward(self):
