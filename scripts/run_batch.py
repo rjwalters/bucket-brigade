@@ -59,6 +59,7 @@ def run_batch_games(
         # Create random agents (each game gets fresh random agents)
         agent_params = [np.random.uniform(0, 1, 10) for _ in range(num_agents)]
         agents = [create_random_agent(i) for i in range(num_agents)]
+        team_agent_ids = list(range(num_agents))  # Agent IDs for this team
 
         # Run game
         obs = env.reset(seed=game_seed)
@@ -79,7 +80,7 @@ def run_batch_games(
         result = {
             "game_id": game_idx,
             "scenario_id": game_idx,  # Simple scenario ID
-            "team": list(range(num_agents)),  # Agent IDs
+            "team": team_agent_ids,  # Agent IDs in this team
             "agent_params": [params.tolist() for params in agent_params],
             "team_reward": float(np.sum(total_rewards)),
             "agent_rewards": total_rewards.tolist(),

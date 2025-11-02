@@ -1,0 +1,100 @@
+{
+  "model_params": {
+    "lambda": 1.0,
+    "num_games": 5,
+    "num_agents": 5
+  },
+  "agent_rankings": [
+    {
+      "agent_id": 0,
+      "rank": 1,
+      "skill_estimate": 14.00018239937981,
+      "skill_uncertainty": 0.7745962561245542,
+      "marginal_value": 35.0,
+      "confidence_interval": [
+        12.481973737375684,
+        15.518391061383936
+      ],
+      "games_played": 5
+    },
+    {
+      "agent_id": 3,
+      "rank": 2,
+      "skill_estimate": 4.000182399379867,
+      "skill_uncertainty": 0.7745962561245542,
+      "marginal_value": 10.0,
+      "confidence_interval": [
+        2.4819737373757405,
+        5.518391061383992
+      ],
+      "games_played": 5
+    },
+    {
+      "agent_id": 1,
+      "rank": 3,
+      "skill_estimate": -0.9998176006200197,
+      "skill_uncertainty": 0.7745962561245542,
+      "marginal_value": -2.5,
+      "confidence_interval": [
+        -2.518026262624146,
+        0.5183910613841065
+      ],
+      "games_played": 5
+    },
+    {
+      "agent_id": 2,
+      "rank": 4,
+      "skill_estimate": -5.99981760062019,
+      "skill_uncertainty": 0.7745962561245542,
+      "marginal_value": -15.0,
+      "confidence_interval": [
+        -7.518026262624316,
+        -4.4816089386160645
+      ],
+      "games_played": 5
+    },
+    {
+      "agent_id": 4,
+      "rank": 5,
+      "skill_estimate": -10.99981760062019,
+      "skill_uncertainty": 0.7745962561245542,
+      "marginal_value": -27.5,
+      "confidence_interval": [
+        -12.518026262624316,
+        -9.481608938616064
+      ],
+      "games_played": 5
+    }
+  ],
+  "model_stats": {
+    "log_likelihood": -26366.41794805567,
+    "rmse": 228.16149391179803,
+    "mae": 227.9992704024806,
+    "correlation": 1.0
+  },
+  "next_batch_suggestions": [
+    {
+      "team": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "team_size": 4,
+      "focus": "uncertainty_reduction",
+      "expected_info_gain": 0.7745962561245542
+    },
+    {
+      "team": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "team_size": 5,
+      "focus": "uncertainty_reduction",
+      "expected_info_gain": 0.7745962561245542
+    }
+  ]
+}
