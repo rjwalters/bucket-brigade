@@ -155,6 +155,11 @@ uv run python scripts/test_agents.py
 # Run a batch of games for ranking experiments
 uv run python scripts/run_batch.py --num-games 50 --num-agents 6
 
+# Test specific scenarios with known optimal strategies
+uv run python scripts/test_scenarios.py trivial_cooperation
+uv run python scripts/test_scenarios.py greedy_neighbor
+uv run python scripts/test_scenarios.py sparse_heroics
+
 # Analyze batch results
 uv run python scripts/analyze_rankings.py results/
 
@@ -239,6 +244,36 @@ npm run lint:fix
 
 # Type check everything
 npm run typecheck
+```
+
+## 🧪 Scenario Testing & Validation
+
+The platform includes **10 carefully designed test scenarios** with known optimal strategies:
+
+- **Trivial Cooperation**: Easy fires reward universal cooperation
+- **Early Containment**: Time pressure requires coordinated early action
+- **Greedy Neighbor**: Social dilemma between self-interest and helping others
+- **Sparse Heroics**: Minimal workers needed, overwork is wasteful
+- **Rest Trap**: Usually safe to rest, but occasional disasters require response
+- **Chain Reaction**: High spread demands distributed firefighting teams
+- **Deceptive Calm**: Honest signaling rewarded during occasional flare-ups
+- **Overcrowding**: Too many workers reduce efficiency
+- **Mixed Motivation**: House ownership creates conflicting incentives
+
+Each scenario tests different aspects of agent intelligence:
+- **Strategic timing** (when to work vs rest)
+- **Cooperation incentives** (help others vs focus on self)
+- **Resource allocation** (efficient use of limited workers)
+- **Honesty vs deception** (signaling and trust dynamics)
+
+Use these scenarios to validate agent learning and ranking accuracy:
+
+```bash
+# Test ranking system with known optimal strategies
+uv run python scripts/test_scenarios.py trivial_cooperation --num-games 30
+
+# Compare different agent types in challenging scenarios
+uv run python scripts/test_scenarios.py chain_reaction --num-games 50
 ```
 
 🧠 Future Work
