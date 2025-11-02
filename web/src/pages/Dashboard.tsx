@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, TrendingUp, Users, Flame, FileText } from 'lucide-react';
 import { GameReplay, BatchResult, STORAGE_KEYS } from '../types';
-import { loadFromStorage } from '../utils/storage';
+import { loadGameReplays, loadBatchResults } from '../utils/storage';
 
 const Dashboard: React.FC = () => {
   const [gameCount, setGameCount] = useState(0);
@@ -15,8 +15,8 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const loadDashboardData = () => {
-    const replays = loadFromStorage<GameReplay[]>(STORAGE_KEYS.GAME_REPLAYS, []);
-    const results = loadFromStorage<BatchResult[]>(STORAGE_KEYS.BATCH_RESULTS, []);
+    const replays = loadGameReplays();
+    const results = loadBatchResults();
 
     setGameCount(replays.length);
     setTotalGames(results.length);

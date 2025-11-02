@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw, Home } from 'lucide-react';
 import { GameReplay, GameNight, ReplayState, STORAGE_KEYS } from '../types';
-import { loadFromStorage } from '../utils/storage';
+import { loadGameReplays } from '../utils/storage';
 import GameBoard from '../components/GameBoard';
 import ReplayControls from '../components/ReplayControls';
 import GameInfo from '../components/GameInfo';
@@ -16,7 +16,7 @@ const GameReplay: React.FC = () => {
   const [speed, setSpeed] = useState(1000); // milliseconds
 
   useEffect(() => {
-    const loadedGames = loadFromStorage<GameReplay[]>(STORAGE_KEYS.GAME_REPLAYS, []);
+    const loadedGames = loadGameReplays();
     setGames(loadedGames);
 
     if (gameId && loadedGames[parseInt(gameId)]) {

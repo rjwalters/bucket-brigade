@@ -1,7 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, Trash2, Database } from 'lucide-react';
-import { GameReplay, BatchResult, STORAGE_KEYS } from '../types';
-import { loadFromStorage, saveToStorage, clearStorage } from '../utils/storage';
+import { GameReplay, BatchResult, STORAGE_KEYS, ExportData } from '../types';
+import {
+  loadFromStorage,
+  saveToStorage,
+  clearStorage,
+  saveGameReplays,
+  loadGameReplays,
+  saveBatchResults,
+  loadBatchResults,
+  saveExportData
+} from '../utils/storage';
+import { validateGameReplay, validateBatchResult } from '../utils/schemas';
 
 const Settings: React.FC = () => {
   const [gameCount, setGameCount] = useState(0);
@@ -14,8 +24,8 @@ const Settings: React.FC = () => {
   }, []);
 
   const updateCounts = () => {
-    const games = loadFromStorage<GameReplay[]>(STORAGE_KEYS.GAME_REPLAYS, []);
-    const results = loadFromStorage<BatchResult[]>(STORAGE_KEYS.BATCH_RESULTS, []);
+    const games = loadGameReplays();
+    const results = loadBatchResults();
     setGameCount(games.length);
     setResultCount(results.length);
   };
@@ -28,21 +38,19 @@ const Settings: React.FC = () => {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const gameData: GameReplay = JSON.parse(content);
+        const rawData = JSON.parse(content);
 
-        // Validate the data structure
-        if (!gameData.scenario || !gameData.nights) {
-          throw new Error('Invalid game replay format');
-        }
+        // Validate using Zod schema
+        const gameData = validateGameReplay(rawData);
 
-        const existingGames = loadFromStorage<GameReplay[]>(STORAGE_KEYS.GAME_REPLAYS, []);
+        const existingGames = loadGameReplays();
         existingGames.push(gameData);
-        saveToStorage(STORAGE_KEYS.GAME_REPLAYS, existingGames);
+        saveGameReplays(existingGames);
 
         updateCounts();
         alert(`Successfully loaded game replay: ${gameData.nights.length} nights`);
       } catch (error) {
-        alert(`Error loading game file: ${error}`);
+        alert(`Error loading game file: ${error instanceof Error ? error.message : 'Invalid format'}`);
       }
     };
     reader.readAsText(file);
@@ -76,43 +84,51 @@ const Settings: React.FC = () => {
                 result[header] = value;
               }
             });
-            results.push(result as BatchResult);
+            // Validate each result
+            results.push(validateBatchResult(result));
           }
         }
 
-        const existingResults = loadFromStorage<BatchResult[]>(STORAGE_KEYS.BATCH_RESULTS, []);
+        const existingResults = loadBatchResults();
         existingResults.push(...results);
-        saveToStorage(STORAGE_KEYS.BATCH_RESULTS, existingResults);
+        saveBatchResults(existingResults);
 
         updateCounts();
         alert(`Successfully loaded ${results.length} batch results`);
       } catch (error) {
-        alert(`Error loading results file: ${error}`);
+        alert(`Error loading results file: ${error instanceof Error ? error.message : 'Invalid format'}`);
       }
     };
     reader.readAsText(file);
   };
 
   const exportData = () => {
-    const games = loadFromStorage<GameReplay[]>(STORAGE_KEYS.GAME_REPLAYS, []);
-    const results = loadFromStorage<BatchResult[]>(STORAGE_KEYS.BATCH_RESULTS, []);
+    const games = loadGameReplays();
+    const results = loadBatchResults();
 
-    const exportData = {
+    const exportData: ExportData = {
       games,
       results,
       exported_at: new Date().toISOString(),
       version: '1.0'
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bucket-brigade-data-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Validate before exporting
+    try {
+      saveExportData(exportData);
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bucket-brigade-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Export validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const clearAllData = () => {
@@ -148,8 +164,8 @@ const Settings: React.FC = () => {
         <div className="card text-center">
           <Database className="w-8 h-8 mx-auto mb-2 text-purple-600" />
           <div className="text-2xl font-bold text-gray-900">
-            {(JSON.stringify(loadFromStorage(STORAGE_KEYS.GAME_REPLAYS, [])).length +
-              JSON.stringify(loadFromStorage(STORAGE_KEYS.BATCH_RESULTS, [])).length) / 1024).toFixed(1)} KB
+            {(JSON.stringify(loadGameReplays()).length +
+              JSON.stringify(loadBatchResults()).length) / 1024).toFixed(1)} KB
           </div>
           <div className="text-sm text-gray-600">Storage Used</div>
         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Users, Target } from 'lucide-react';
 import { AgentRanking, BatchResult, STORAGE_KEYS } from '../types';
-import { loadFromStorage } from '../utils/storage';
+import { loadBatchResults } from '../utils/storage';
 
 const Rankings: React.FC = () => {
   const [rankings, setRankings] = useState<AgentRanking[]>([]);
@@ -12,7 +12,7 @@ const Rankings: React.FC = () => {
   }, []);
 
   const loadRankingsData = () => {
-    const results = loadFromStorage<BatchResult[]>(STORAGE_KEYS.BATCH_RESULTS, []);
+    const results = loadBatchResults();
     setBatchResults(results);
 
     if (results.length > 0) {
