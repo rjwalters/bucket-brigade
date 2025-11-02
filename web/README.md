@@ -24,22 +24,22 @@ A modern web application for visualizing multi-agent cooperation in firefighting
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- pnpm (recommended) or npm
 
 ### Setup
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 
 # Build for production
-npm run build
+pnpm run build
 
 # Preview production build
-npm run preview
+pnpm run preview
 ```
 
 ### Project Structure

@@ -138,23 +138,28 @@ pip install pytest black ruff mypy typer
 
 🚀 Quickstart
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
+# Install uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install pnpm (Node.js package manager)
+npm install -g pnpm
+
+# Install all dependencies
+npm run install:all
 
 # Run a single game with random agents
-python scripts/run_one_game.py
+uv run python scripts/run_one_game.py
 
 # Test different agent types
-python scripts/test_agents.py
+uv run python scripts/test_agents.py
 
 # Run a batch of games for ranking experiments
-python scripts/run_batch.py --num-games 50 --num-agents 6
+uv run python scripts/run_batch.py --num-games 50 --num-agents 6
 
 # Analyze batch results
-python scripts/analyze_rankings.py results/
+uv run python scripts/analyze_rankings.py results/
 
 # Launch the web visualizer
-cd web && npm install && npm run dev
+npm run dev
 ```
 
 ## 🧵 Development Orchestration
@@ -166,54 +171,52 @@ This repository is set up to use **Loom** for AI-powered development orchestrati
 ### Python Testing
 ```bash
 # Run Python tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=bucket_brigade
+uv run pytest --cov=bucket_brigade
 
 # Run specific test file
-pytest tests/test_environment.py
+uv run pytest tests/test_environment.py
 ```
 
 ### Web Testing
 ```bash
-cd web
-
 # Run Playwright tests
-npm run test
+pnpm run test
 
 # Run in headed mode (visible browser)
-npm run test:headed
+pnpm run test:headed
 
 # Run with UI mode
-npm run test:ui
+pnpm run test:ui
 ```
 
 ### Code Quality
 ```bash
 # Format Python code
-black .
+uv run black .
 
 # Lint Python code
-ruff check . --fix
+uv run ruff check . --fix
 
 # Type check Python
-mypy .
+uv run mypy .
 
 # Format web code
-cd web && npm run format
+pnpm run format
 
 # Lint web code
-cd web && npm run lint:biome
+pnpm run lint:biome
 
 # Type check web code
-cd web && npm run typecheck
+pnpm run typecheck
 ```
 
 ### Pre-commit Hooks
 ```bash
 # Install pre-commit hooks
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 
 # Run all checks manually

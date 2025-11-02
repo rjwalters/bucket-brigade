@@ -2,6 +2,7 @@
   "name": "bucket-brigade-visualizer",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "pnpm@8.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +16,8 @@
     "format:check": "biome format .",
     "lint:biome": "biome check .",
     "lint:biome:fix": "biome check . --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "playwright:install": "playwright install --with-deps"
   },
   "dependencies": {
     "react": "^18.2.0",
