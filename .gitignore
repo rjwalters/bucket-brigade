@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.loom/state.json
+.loom/worktrees/
+.loom/*.log
+.loom/*.sock
