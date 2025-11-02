@@ -14,8 +14,6 @@ import shutil
 from pathlib import Path
 
 from bucket_brigade.services.agent_registry import AgentRegistryService
-from bucket_brigade.db import get_session
-from bucket_brigade.db.models import Agent, Submission, AgentMetadata
 
 
 # Sample valid agent code
