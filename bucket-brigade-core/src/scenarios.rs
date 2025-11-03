@@ -2,16 +2,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
-    pub beta: f32,       // Fire spread probability
-    pub kappa: f32,      // Extinguish efficiency
-    pub a: f32,          // Reward per saved house
-    pub l: f32,          // Penalty per ruined house
-    pub c: f32,          // Work cost per night
-    pub rho_ignite: f32, // Initial burn fraction
-    pub n_min: u32,      // Minimum nights
-    pub p_spark: f32,    // Spark probability
-    pub n_spark: u32,    // Spark duration
+    pub beta: f32,        // Fire spread probability
+    pub kappa: f32,       // Extinguish efficiency
+    pub a: f32,           // Reward per saved house (team reward)
+    pub l: f32,           // Penalty per ruined house (team penalty)
+    pub c: f32,           // Work cost per night
+    pub rho_ignite: f32,  // Initial burn fraction
+    pub n_min: u32,       // Minimum nights
+    pub p_spark: f32,     // Spark probability
+    pub n_spark: u32,     // Spark duration
     pub num_agents: usize,
+    pub a_own: f32,       // Value of owned house when saved (final reward)
+    pub a_neighbor: f32,  // Value of neighbor house when saved (final reward)
 }
 
 pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
@@ -26,6 +28,8 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         p_spark: 0.0,
         n_spark: 12,
         num_agents: 4,
+        a_own: 100.0,      // Owned house saved = +100
+        a_neighbor: 50.0,  // Neighbor house saved = +50
     },
 
     "early_containment" => Scenario {
@@ -39,6 +43,8 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         p_spark: 0.02,
         n_spark: 12,
         num_agents: 4,
+        a_own: 100.0,      // Owned house saved = +100
+        a_neighbor: 50.0,  // Neighbor house saved = +50
     },
 
     "greedy_neighbor" => Scenario {
@@ -52,6 +58,8 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         p_spark: 0.02,
         n_spark: 12,
         num_agents: 4,
+        a_own: 150.0,      // Higher ownership incentive
+        a_neighbor: 25.0,  // Lower neighbor value - creates greed
     },
 
     "random" => Scenario {
@@ -65,6 +73,8 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         p_spark: 0.02,
         n_spark: 12,
         num_agents: 4,
+        a_own: 100.0,      // Owned house saved = +100
+        a_neighbor: 50.0,  // Neighbor house saved = +50
     },
 };
 
