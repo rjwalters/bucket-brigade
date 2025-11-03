@@ -12,7 +12,7 @@ console.log(`🦀 Rust WASM package: ${hasWasm ? '✅ Available' : '⚠️  Not 
 // https://vitejs.dev/config/
 export default defineConfig({
   // Use /bucket-brigade/ for GitHub Pages, / for local dev
-  base: process.env.VITE_BASE_PATH || '/bucket-brigade/',
+  base: process.env.NODE_ENV === 'production' ? '/bucket-brigade/' : '/',
   plugins: [react()],
   server: {
     port: 3000,
