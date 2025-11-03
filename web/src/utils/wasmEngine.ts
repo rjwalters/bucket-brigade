@@ -6,16 +6,27 @@
  * Agent logic remains in JavaScript for flexibility and ease of development.
  */
 
-import init, {
-  WasmBucketBrigade,
-  get_scenario,
-  get_scenario_names,
-} from '../../../bucket-brigade-core/pkg/bucket_brigade_core';
 import type { Scenario, GameResult, AgentObservation } from './browserEngine';
+
+// WASM module types (will be loaded dynamically)
+type WasmModule = {
+  default: () => Promise<void>;
+  WasmBucketBrigade: new (scenarioJson: string) => {
+    reset(): void;
+    step(actionsJson: string): string;
+    get_observation(agentId: number): string;
+    get_current_state(): string;
+    get_result(): string;
+    is_done(): boolean;
+  };
+  get_scenario: (name: string) => string;
+  get_scenario_names: () => string[];
+};
 
 // WASM initialization state
 let wasmInitialized = false;
 let wasmInitPromise: Promise<void> | null = null;
+let wasmModule: WasmModule | null = null;
 
 /**
  * Initialize the WASM module (call once at startup)
@@ -29,7 +40,9 @@ export async function initWasm(): Promise<void> {
 
   wasmInitPromise = (async () => {
     try {
-      await init();
+      // Try to dynamically import the WASM module
+      wasmModule = await import('../../../bucket-brigade-core/pkg/bucket_brigade_core') as unknown as WasmModule;
+      await wasmModule.default();
       wasmInitialized = true;
       console.log('✅ WASM engine initialized successfully');
     } catch (error) {
@@ -52,20 +65,20 @@ export function isWasmInitialized(): boolean {
  * Get available scenario names from WASM
  */
 export function getWasmScenarioNames(): string[] {
-  if (!wasmInitialized) {
+  if (!wasmInitialized || !wasmModule) {
     throw new Error('WASM not initialized. Call initWasm() first.');
   }
-  return get_scenario_names();
+  return wasmModule.get_scenario_names();
 }
 
 /**
  * Get predefined scenario from WASM
  */
 export function getWasmScenario(name: string): Scenario {
-  if (!wasmInitialized) {
+  if (!wasmInitialized || !wasmModule) {
     throw new Error('WASM not initialized. Call initWasm() first.');
   }
-  const scenarioJson = get_scenario(name);
+  const scenarioJson = wasmModule.get_scenario(name);
   return JSON.parse(scenarioJson) as Scenario;
 }
 
@@ -76,17 +89,17 @@ export function getWasmScenario(name: string): Scenario {
  * The API is identical to the TypeScript engine, so they can be swapped seamlessly.
  */
 export class WasmGameEngine {
-  private engine: WasmBucketBrigade;
+  private engine: InstanceType<WasmModule['WasmBucketBrigade']>;
   private scenario: Scenario;
 
   constructor(scenario: Scenario) {
-    if (!wasmInitialized) {
+    if (!wasmInitialized || !wasmModule) {
       throw new Error('WASM not initialized. Call initWasm() first.');
     }
 
     this.scenario = scenario;
     const scenarioJson = JSON.stringify(scenario);
-    this.engine = new WasmBucketBrigade(scenarioJson);
+    this.engine = new wasmModule.WasmBucketBrigade(scenarioJson);
   }
 
   /**
