@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Use /bucket-brigade/ for GitHub Pages, / for local dev
+  base: process.env.VITE_BASE_PATH || '/bucket-brigade/',
   plugins: [react()],
   server: {
     port: 3000,
