@@ -61,8 +61,8 @@ NIGHTLY SEQUENCE
 4. Extinguish phase:
    Agents respond to fires visible at start of turn.
    For each burning house with k agents working there,
-   extinguish with probability:
-       P(extinguish) = 1 - exp(-kappa * k)
+   extinguish with probability (independent probabilities):
+       P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^k
    Extinguished houses become Safe.
 
 5. Burn-out phase:
@@ -70,25 +70,25 @@ NIGHTLY SEQUENCE
 
 6. Spread phase:
    Each remaining burning house ignites each neighbor (if Safe)
-   with probability beta.
+   with probability prob_fire_spreads_to_neighbor.
    **New fires are visible NEXT turn.**
 
-7. Spark phase:
-   For nights t <= N_spark, each Safe house ignites spontaneously
-   with probability p_spark.
-   **New sparks are visible NEXT turn.**
+7. Spontaneous ignition phase:
+   On every night, each Safe house can catch fire spontaneously
+   with probability prob_house_catches_fire.
+   **New fires are visible NEXT turn.**
 
 8. Reward and logging phase:
    Compute team and individual rewards, record all actions,
    signals, and house state updates.
 
 9. Termination:
-   The game runs for at least N_min nights.
+   The game runs for at least min_nights nights.
    After that, it ends when either:
       (a) all fires are extinguished, or
       (b) all houses are ruined, or
       (c) 100 nights have elapsed (safety limit).
-   Sparks stop after N_spark nights.
+   Spontaneous ignition continues throughout the game.
 
 KEY DESIGN DECISION: Fires spread and spark at the END of each turn,
 making them visible for the NEXT turn. This allows agents to observe
@@ -99,26 +99,28 @@ SCENARIO PARAMETERS
 -------------------
 Each game scenario is defined by a parameter vector:
 
-  beta          Fire spread probability per neighbor
-  kappa         Extinguish efficiency
-  A             Reward per saved house
-  L             Penalty per ruined house
-  c             Cost per worker per night
-  rho_ignite    Initial fraction of houses burning
-  N_min         Minimum nights before termination
-  p_spark       Probability of spontaneous ignition
-  N_spark       Number of nights with sparks active
+  prob_fire_spreads_to_neighbor      Fire spread probability per neighbor
+  prob_solo_agent_extinguishes_fire  Probability one agent extinguishes fire
+  prob_house_catches_fire            Probability house catches fire (any night)
+  team_reward_house_survives         Team reward per saved house
+  team_penalty_house_burns           Team penalty per ruined house
+  cost_to_work_one_night             Cost per worker per night
+  min_nights                         Minimum nights before termination
+  num_agents                         Number of agents (4-10)
+  reward_own_house_survives          Individual reward when own house survives
+  reward_other_house_survives        Individual reward when neighbor house survives
+  penalty_own_house_burns            Individual penalty when own house burns
+  penalty_other_house_burns          Individual penalty when other house burns
 
 Typical defaults:
-  beta = 0.25
-  kappa = 0.5
-  A = 100
-  L = 100
-  c = 0.5
-  rho_ignite = 0.2
-  N_min = 12
-  p_spark = 0.02
-  N_spark = 12
+  prob_fire_spreads_to_neighbor = 0.25
+  prob_solo_agent_extinguishes_fire = 0.45
+  team_reward_house_survives = 100
+  team_penalty_house_burns = 100
+  cost_to_work_one_night = 0.5
+  prob_house_catches_fire = 0.01
+  min_nights = 12
+  num_agents = 4
 
 REWARDS
 -------

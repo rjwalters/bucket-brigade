@@ -107,9 +107,9 @@ bucket-brigade/
 | **Agents** | 4–10 agents, each owning one or more houses |
 | **Signals** | Broadcast intent (`Work` or `Rest`) each night |
 | **Actions** | `(house, mode)` → choose where and whether to work |
-| **Fire spread** | Burning houses ignite neighbors with probability β |
-| **Extinguishing** | `P(extinguish) = 1 - exp(-κ * workers)` |
-| **Termination** | After ≥ N_min nights and all fires are out or all houses ruined (max 100 nights) |
+| **Fire spread** | Burning houses ignite neighbors with probability `prob_fire_spreads_to_neighbor` |
+| **Extinguishing** | `P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^workers` |
+| **Termination** | After ≥ min_nights and all fires are out or all houses ruined (max 100 nights) |
 | **Rewards** | Team and individual components based on saved/ruined houses and effort cost |
 
 ### 🎮 Turn Order & Game Mechanics
@@ -120,12 +120,12 @@ Each "night" in Bucket Brigade follows this sequence:
 2. **Signal Phase**: Agents broadcast their intended mode (`Work` or `Rest`)
 3. **Action Phase**: Agents simultaneously choose destination and mode `(house_index, work/rest)`
 4. **Extinguish Phase**: Workers attempt to put out fires at their chosen locations
-   - Probability: `P(extinguish) = 1 - exp(-κ * num_workers)`
+   - Probability: `P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^num_workers`
 5. **Burn-out Phase**: Unextinguished fires become RUINED houses
-6. **Spread Phase**: Fires spread to neighboring SAFE houses (probability β)
+6. **Spread Phase**: Fires spread to neighboring SAFE houses (probability `prob_fire_spreads_to_neighbor`)
    - **Important**: New fires are visible NEXT turn, giving agents time to respond
-7. **Spark Phase**: Random spontaneous fires ignite on SAFE houses (if night < N_spark)
-   - **Important**: New sparks are visible NEXT turn
+7. **Spontaneous Ignition Phase**: Random spontaneous fires ignite on SAFE houses (probability `prob_house_catches_fire`) on every night
+   - **Important**: New fires are visible NEXT turn
 8. **Reward Calculation**: Based on houses saved/ruined and work costs
 9. **Termination Check**: Game ends if `night ≥ N_min AND (all_safe OR all_ruined OR night ≥ 100)`
 

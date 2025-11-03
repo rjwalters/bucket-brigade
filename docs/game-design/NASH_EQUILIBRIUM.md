@@ -13,9 +13,9 @@ Bucket Brigade is a **stochastic Markov game** with the following properties:
 - **State Space**: Fire configurations (3^10 states) × agent positions × history
 - **Action Space**: Each agent chooses (house_index, mode) where house_index ∈ {0..9}, mode ∈ {WORK, REST}
 - **Players**: N agents (typically 4-10)
-- **Transitions**: Stochastic fire spread (probability β), extinguish (probability 1 - exp(-κn))
+- **Transitions**: Stochastic fire spread (probability `prob_fire_spreads_to_neighbor`), extinguish (probability `1 - (1-prob_solo_agent_extinguishes_fire)^n`)
 - **Payoffs**: Individual rewards based on work cost, rest bonus, ownership bonuses, and team component
-- **Time Horizon**: N_min to 100 nights
+- **Time Horizon**: min_nights to 100 nights
 - **Information**: Perfect information about current state, imperfect information about other agents' types
 
 ### Strategic Properties
@@ -136,7 +136,8 @@ def best_response_dynamics(scenario, max_iterations=100, epsilon=0.01):
     Find Nash equilibrium via iterated best response.
 
     Args:
-        scenario: Game scenario (β, κ, A, L, c, etc.)
+        scenario: Game scenario with parameters (prob_fire_spreads_to_neighbor,
+                  prob_solo_agent_extinguishes_fire, team_reward_house_survives, etc.)
         max_iterations: Maximum iteration count
         epsilon: Convergence threshold
 
@@ -566,7 +567,7 @@ def verify_evolutionary_stability(theta_star, scenario, num_trials=100):
 
 ## Scenario-Specific Predictions
 
-### Trivial Cooperation (Low β, High κ)
+### Trivial Cooperation (Low prob_fire_spreads_to_neighbor, High prob_solo_agent_extinguishes_fire)
 
 **Expected Equilibrium**: Pure strategy cooperative equilibrium
 
@@ -591,7 +592,7 @@ theta_trivial = [
 
 ---
 
-### Greedy Neighbor (High c, Low κ)
+### Greedy Neighbor (High cost_to_work_one_night, Low prob_solo_agent_extinguishes_fire)
 
 **Expected Equilibrium**: Mixed strategy or population polymorphism
 
@@ -623,7 +624,7 @@ Both strategies earn equal payoff (mixing indifference condition).
 
 ---
 
-### Deceptive Calm (p_spark > 0)
+### Deceptive Calm (prob_house_catches_fire > 0)
 
 **Expected Equilibrium**: Signaling equilibrium with high honesty
 

@@ -27,16 +27,18 @@ type HouseState = 0 | 1 | 2;
 
 ```typescript
 interface Scenario {
-  beta: number;        // Fire spread probability (0-1)
-  kappa: number;       // Extinguish efficiency (0-2)
-  A: number;           // Reward per saved house
-  L: number;           // Penalty per ruined house
-  c: number;           // Cost per worker per night
-  rho_ignite: number;  // Initial burning fraction (0-1)
-  N_min: number;       // Minimum nights before termination
-  p_spark: number;     // Probability of spontaneous ignition (0-1)
-  N_spark: number;     // Number of nights with sparks active
-  num_agents: number;  // Number of agents (2-10)
+  prob_fire_spreads_to_neighbor: number;      // Fire spread probability (0-1)
+  prob_solo_agent_extinguishes_fire: number;  // Probability one agent extinguishes fire (0-1)
+  prob_house_catches_fire: number;            // Probability of spontaneous ignition (0-1)
+  team_reward_house_survives: number;         // Team reward per saved house
+  team_penalty_house_burns: number;           // Team penalty per ruined house
+  cost_to_work_one_night: number;             // Cost per worker per night
+  min_nights: number;                         // Minimum nights before termination
+  num_agents: number;                         // Number of agents (4-10)
+  reward_own_house_survives: number;          // Individual reward when own house survives
+  reward_other_house_survives: number;        // Individual reward when neighbor survives
+  penalty_own_house_burns: number;            // Individual penalty when own house burns
+  penalty_other_house_burns: number;          // Individual penalty when other house burns
 }
 ```
 
@@ -224,16 +226,18 @@ Content-Type: application/json
 
 {
   "scenario": {
-    "beta": 0.25,
-    "kappa": 0.5,
-    "A": 100,
-    "L": 100,
-    "c": 0.5,
-    "rho_ignite": 0.2,
-    "N_min": 12,
-    "p_spark": 0.02,
-    "N_spark": 12,
-    "num_agents": 6
+    "prob_fire_spreads_to_neighbor": 0.25,
+    "prob_solo_agent_extinguishes_fire": 0.45,
+    "prob_house_catches_fire": 0.01,
+    "team_reward_house_survives": 100,
+    "team_penalty_house_burns": 100,
+    "cost_to_work_one_night": 0.5,
+    "min_nights": 12,
+    "num_agents": 6,
+    "reward_own_house_survives": 100.0,
+    "reward_other_house_survives": 50.0,
+    "penalty_own_house_burns": 100.0,
+    "penalty_other_house_burns": 50.0
   },
   "agents": [
     {"id": 1, "name": "Firefighter", "params": [1.0, 0.9, 0.8, 0.7, 0.5, 0.6, 0.1, 0.5, 0.4, 0.8]},
