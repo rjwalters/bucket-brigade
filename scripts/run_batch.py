@@ -113,9 +113,9 @@ def run_batch_games(
     print("\nBatch complete!")
     print(f"Results saved to: {output_path}")
     print(f"Games: {summary['num_games']}")
-    print(".2f")
-    print(".1f")
-    print(".1f")
+    print(f"Average team reward: {summary['avg_team_reward']:.2f}")
+    print(f"Average nights played: {summary['avg_nights']:.1f}")
+    print(f"Average saved houses: {summary['avg_saved_houses']:.1f}")
 
 
 def main(
