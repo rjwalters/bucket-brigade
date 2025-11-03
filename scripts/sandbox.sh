@@ -88,8 +88,19 @@ train() {
         exit 1
     fi
 
-    # Setup environment first
-    setup_environment
+    # Check if .venv exists, if not run setup
+    if [ ! -d "$PROJECT_ROOT/.venv" ]; then
+        echo "⚠️  Virtual environment not found. Setting up first..."
+        setup_environment
+    else
+        echo "✅ Using existing virtual environment"
+    fi
+
+    # Verify critical dependencies
+    if ! "$PROJECT_ROOT/.venv/bin/python" -c "import torch, tensorboard" 2>/dev/null; then
+        echo "⚠️  Missing critical dependencies. Re-running setup..."
+        setup_environment
+    fi
 
     # Check if tmux is installed
     if ! command -v tmux &> /dev/null; then
