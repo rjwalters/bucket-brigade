@@ -2,7 +2,9 @@
 
 ## Current Status
 
-We're troubleshooting why MCP Remote SSH tools are not loading. The MCP server is built and configured, but the tools (`remote_bash`, `remote_file_read`, `remote_bash_output`) are not available in the current session.
+**FIXED**: MCP configuration now uses the correct `.mcp.json` file format (previously was using wrong file `.claude/mcp_settings.json`).
+
+The MCP server is built and configured. After restarting Claude Code, the tools (`remote_bash`, `remote_file_read`, `remote_bash_output`) should be available.
 
 ## Critical: Start in the Correct Directory
 
@@ -12,7 +14,7 @@ We're troubleshooting why MCP Remote SSH tools are not loading. The MCP server i
 cd /Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-10
 ```
 
-**DO NOT** start in the main repo directory. Claude Code loads MCP servers from `.claude/mcp_settings.json` in the current working directory.
+**DO NOT** start in the main repo directory. Claude Code loads MCP servers from `.mcp.json` in the current working directory.
 
 ## Step 1: Verify You're in the Right Place
 
@@ -55,10 +57,10 @@ The MCP server didn't load. Possible causes:
 - You started Claude Code in the wrong directory
 - **Fix**: Restart Claude Code from the worktree path above
 
-#### Issue 2: Relative Path Problem
-- The MCP config uses a relative path: `mcp-server/dist/index.js`
-- Claude Code might not resolve it correctly from the worktree
-- **Fix**: Use `${PWD}` environment variable in `.claude/mcp_settings.json`:
+#### Issue 2: Wrong Configuration File
+- **Old (incorrect)**: `.claude/mcp_settings.json`
+- **New (correct)**: `.mcp.json` at project root
+- **Fix**: The correct `.mcp.json` file has been created with this content:
 
 ```json
 {
