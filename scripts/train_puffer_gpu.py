@@ -125,12 +125,13 @@ def train_ppo_vectorized(
     value_coef=0.5,
     entropy_coef=0.01,
     max_grad_norm=0.5,
-    eval_interval=1000,
+    eval_interval=10000,
     gamma=0.99,
     gae_lambda=0.95,
     writer=None,
+    minibatch_size=None,
 ):
-    """Train the policy using vectorized PPO."""
+    """Train the policy using vectorized PPO with optimized GPU utilization."""
 
     num_envs = vecenv.num_envs
     single_observation_space = vecenv.single_observation_space
@@ -139,9 +140,18 @@ def train_ppo_vectorized(
     # Calculate number of steps per environment
     num_steps_per_env = batch_size // num_envs
 
-    print(f"🚀 Starting vectorized training for {num_steps:,} steps")
-    print(f"📊 Num envs: {num_envs}, Steps per env: {num_steps_per_env}, Batch size: {batch_size}")
+    # Use minibatches for GPU efficiency
+    if minibatch_size is None:
+        minibatch_size = min(4096, batch_size)  # Default GPU-friendly size
+
+    if batch_size % minibatch_size != 0:
+        print(f"⚠️  Warning: batch_size ({batch_size}) not divisible by minibatch_size ({minibatch_size})")
+
+    print(f"🚀 Starting high-throughput vectorized training")
+    print(f"📊 Num envs: {num_envs}, Steps/env: {num_steps_per_env}, Batch: {batch_size:,}")
+    print(f"🎯 Minibatch size: {minibatch_size:,} (GPU batches)")
     print(f"🔧 Device: {device}")
+    print(f"⚡ Target: {num_steps:,} total steps")
 
     # Storage for rollout data
     obs_buffer = torch.zeros((num_steps_per_env, num_envs) + single_observation_space.shape).to(device)
@@ -216,13 +226,16 @@ def train_ppo_vectorized(
         b_returns = returns.reshape(-1)
         b_values = values_buffer.reshape(-1)
 
-        # Optimizing the policy and value network
+        # Optimizing the policy and value network using minibatches
         b_inds = np.arange(batch_size)
         clipfracs = []
+
         for epoch in range(num_epochs):
             np.random.shuffle(b_inds)
-            for start in range(0, batch_size, batch_size):  # Full batch update
-                end = start + batch_size
+
+            # Process in minibatches for GPU efficiency
+            for start in range(0, batch_size, minibatch_size):
+                end = min(start + minibatch_size, batch_size)
                 mb_inds = b_inds[start:end]
 
                 _, newlogprob, entropy, newvalue = policy.get_action_and_value(
@@ -238,7 +251,8 @@ def train_ppo_vectorized(
                     clipfracs += [((ratio - 1.0).abs() > clip_epsilon).float().mean().item()]
 
                 mb_advantages = b_advantages[mb_inds]
-                mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
+                if len(mb_advantages) > 1:  # Avoid division by zero with single sample
+                    mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
                 # Policy loss
                 pg_loss1 = -mb_advantages * ratio
@@ -305,9 +319,17 @@ def main():
     parser.add_argument("--num-opponents", type=int, default=3, help="Number of opponent agents")
     parser.add_argument("--num-steps", type=int, default=100000, help="Total training steps")
     parser.add_argument("--batch-size", type=int, default=2048, help="Batch size for training")
+    parser.add_argument("--minibatch-size", type=int, default=None, help="Minibatch size for GPU (default: 4096)")
     parser.add_argument("--hidden-size", type=int, default=128, help="Hidden layer size")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--preset",
+        type=str,
+        default=None,
+        choices=["fast", "balanced", "quality"],
+        help="Use preset configuration (overrides other params)",
+    )
     parser.add_argument(
         "--save-path",
         type=str,
@@ -335,6 +357,29 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Apply presets
+    if args.preset == "fast":
+        # Maximum throughput: many environments, huge batches
+        args.num_envs = 512
+        args.batch_size = 262144  # 256K
+        args.minibatch_size = 8192
+        args.vectorization = "multiprocessing"
+        print("🚀 Using FAST preset: 512 envs, 256K batch, 8K minibatch")
+    elif args.preset == "balanced":
+        # Balanced: good throughput with reasonable quality
+        args.num_envs = 256
+        args.batch_size = 131072  # 128K
+        args.minibatch_size = 4096
+        args.vectorization = "multiprocessing"
+        print("⚖️  Using BALANCED preset: 256 envs, 128K batch, 4K minibatch")
+    elif args.preset == "quality":
+        # Quality: smaller batches, more updates
+        args.num_envs = 128
+        args.batch_size = 65536  # 64K
+        args.minibatch_size = 4096
+        args.vectorization = "multiprocessing"
+        print("💎 Using QUALITY preset: 128 envs, 64K batch, 4K minibatch")
 
     # Set seeds
     torch.manual_seed(args.seed)
@@ -396,6 +441,7 @@ def main():
             device=device,
             num_steps=args.num_steps,
             batch_size=args.batch_size,
+            minibatch_size=args.minibatch_size,
             writer=writer,
         )
     finally:
