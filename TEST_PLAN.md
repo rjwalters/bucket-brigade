@@ -2,11 +2,21 @@
 
 ## Current Status
 
-The MCP Remote SSH Server has been implemented and built successfully in `mcp-server/`.
+✅ **MCP Server committed to main branch** - Available at `mcp-server/`
+✅ **MCP configuration in place** - `.claude/mcp_settings.json`
+✅ **Server built** - `mcp-server/dist/index.js` exists
+⏳ **Requires Claude Code restart** - To load MCP tools
+
+## ⚠️ IMPORTANT: Restart Required
+
+**You must restart Claude Code** for the MCP server to load. After restart:
+- The MCP tools will be available: `remote_bash`, `remote_bash_output`, `remote_file_read`
+- Claude can directly manage GPU training on `rwalters-sandbox-1`
+- Follow the test cases below to verify everything works
 
 ## Setup Steps
 
-### 1. Configure MCP Server in Claude Code
+### 1. MCP Configuration (Already Done ✅)
 
 Edit `~/.config/claude-code/mcp_settings.json`:
 
