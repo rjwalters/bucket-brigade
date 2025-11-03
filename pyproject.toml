@@ -17,6 +17,7 @@ dependencies = [
 "matplotlib>=3.5.0",
 "typer>=0.4.0",
 "rich>=10.0.0",
+"tqdm>=4.64.0",
 "hatchling",
 "sqlalchemy>=2.0.0",
 "psycopg2-binary>=2.9.0",
