@@ -1,11 +1,8 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, BarChart3, Play, Trophy, Settings, Users } from 'lucide-react';
-import Dashboard from './pages/Dashboard';
-import Rankings from './pages/Rankings';
+import { Flame, Play, Settings } from 'lucide-react';
+import SimpleDashboard from './pages/SimpleDashboard';
 import SettingsPage from './pages/Settings';
 import GameReplay from './pages/GameReplay';
-import TeamBuilder from './pages/TeamBuilder';
-import Tournament from './pages/Tournament';
 
 function App() {
   const location = useLocation();
@@ -13,11 +10,8 @@ function App() {
   // Map current path to active tab
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path === '/dashboard' || path === '/') return 'dashboard';
-    if (path === '/team-builder') return 'team-builder';
-    if (path === '/tournament') return 'tournament';
+    if (path === '/' || path === '/dashboard') return 'dashboard';
     if (path.startsWith('/replay')) return 'replay';
-    if (path === '/rankings') return 'rankings';
     if (path === '/settings') return 'settings';
     return 'dashboard';
   };
@@ -25,11 +19,8 @@ function App() {
   const activeTab = getActiveTab();
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
-    { id: 'team-builder', label: 'Team Builder', icon: Users, path: '/team-builder' },
-    { id: 'tournament', label: 'Tournament', icon: Flame, path: '/tournament' },
+    { id: 'dashboard', label: 'Dashboard', icon: Flame, path: '/' },
     { id: 'replay', label: 'Game Replay', icon: Play, path: '/replay' },
-    { id: 'rankings', label: 'Rankings', icon: Trophy, path: '/rankings' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
   ];
 
@@ -73,11 +64,8 @@ function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/team-builder" element={<TeamBuilder />} />
-          <Route path="/tournament" element={<Tournament />} />
-          <Route path="/rankings" element={<Rankings />} />
+          <Route path="/" element={<SimpleDashboard />} />
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/replay/:gameId?" element={<GameReplay />} />
         </Routes>
