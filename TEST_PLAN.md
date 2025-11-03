@@ -14,6 +14,8 @@
 - Claude can directly manage GPU training on `rwalters-sandbox-1`
 - Follow the test cases below to verify everything works
 
+📖 **See `SANDBOX_GUIDE.md` for complete usage patterns and best practices**
+
 ## Setup Steps
 
 ### 1. MCP Configuration (Already Done ✅)

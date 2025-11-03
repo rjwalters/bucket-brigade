@@ -100,6 +100,7 @@ ssh rwalters-sandbox-1 "tail -100 /workspace/bucket-brigade/logs/training_500000
 - `mcp-server/` - MCP Remote SSH server
 - `TEST_PLAN.md` - Testing checklist for MCP server
 - `.claude/mcp_settings.json` - MCP configuration
+- `SANDBOX_GUIDE.md` - **Complete guide for working with remote environments**
 
 ## Related Issues
 
