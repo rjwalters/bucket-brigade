@@ -43,6 +43,9 @@ class PufferBucketBrigade(gym.Env):
         """
         super().__init__()
 
+        # PufferLib compatibility
+        self.emulated = False  # Not an emulated environment
+
         self.num_opponents = num_opponents
         self.num_agents = num_opponents + 1  # +1 for trained agent
         self.max_steps = max_steps
