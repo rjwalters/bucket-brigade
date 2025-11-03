@@ -7,6 +7,9 @@
  * This allows Claude to directly interact with remote development/GPU machines.
  */
 
+import { config as loadEnv } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -15,6 +18,12 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Client } from "ssh2";
+
+// Load .env file from project root (two directories up from dist/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envPath = resolve(__dirname, "../../.env");
+loadEnv({ path: envPath });
 
 interface SSHConfig {
   host: string;
