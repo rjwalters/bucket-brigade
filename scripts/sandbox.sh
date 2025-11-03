@@ -123,6 +123,7 @@ train() {
 
     # Create tmux session and run training
     tmux new-session -d -s "$session_name" -c "$PROJECT_ROOT"
+    tmux send-keys -t "$session_name" "cd $PROJECT_ROOT" C-m
     tmux send-keys -t "$session_name" "source .venv/bin/activate" C-m
     tmux send-keys -t "$session_name" "python scripts/train_simple.py --num-steps $steps --num-opponents 3 --batch-size 2048 --hidden-size 128 --save-path $model_path --run-name $run_name | tee $log_path" C-m
 
