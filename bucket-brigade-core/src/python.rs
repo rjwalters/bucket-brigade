@@ -67,86 +67,96 @@ pub struct PyScenario {
 impl PyScenario {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (beta, kappa, a, l, c, rho_ignite, n_min, p_spark, n_spark, num_agents, a_own=100.0, a_neighbor=50.0))]
     fn new(
-        beta: f32,
-        kappa: f32,
-        a: f32,
-        l: f32,
-        c: f32,
-        rho_ignite: f32,
-        n_min: u32,
-        p_spark: f32,
-        n_spark: u32,
+        prob_fire_spreads_to_neighbor: f32,
+        prob_solo_agent_extinguishes_fire: f32,
+        prob_house_catches_fire: f32,
+        team_reward_house_survives: f32,
+        team_penalty_house_burns: f32,
+        cost_to_work_one_night: f32,
+        min_nights: u32,
         num_agents: usize,
-        a_own: f32,
-        a_neighbor: f32,
+        reward_own_house_survives: f32,
+        reward_other_house_survives: f32,
+        penalty_own_house_burns: f32,
+        penalty_other_house_burns: f32,
     ) -> Self {
         Self {
             inner: Scenario {
-                beta,
-                kappa,
-                a,
-                l,
-                c,
-                rho_ignite,
-                n_min,
-                p_spark,
-                n_spark,
+                prob_fire_spreads_to_neighbor,
+                prob_solo_agent_extinguishes_fire,
+                prob_house_catches_fire,
+                team_reward_house_survives,
+                team_penalty_house_burns,
+                cost_to_work_one_night,
+                min_nights,
                 num_agents,
-                a_own,
-                a_neighbor,
+                reward_own_house_survives,
+                reward_other_house_survives,
+                penalty_own_house_burns,
+                penalty_other_house_burns,
             },
         }
     }
 
     #[getter]
-    fn beta(&self) -> f32 {
-        self.inner.beta
+    fn prob_fire_spreads_to_neighbor(&self) -> f32 {
+        self.inner.prob_fire_spreads_to_neighbor
     }
+
     #[getter]
-    fn kappa(&self) -> f32 {
-        self.inner.kappa
+    fn prob_solo_agent_extinguishes_fire(&self) -> f32 {
+        self.inner.prob_solo_agent_extinguishes_fire
     }
+
     #[getter]
-    fn a(&self) -> f32 {
-        self.inner.a
+    fn prob_house_catches_fire(&self) -> f32 {
+        self.inner.prob_house_catches_fire
     }
+
     #[getter]
-    fn l(&self) -> f32 {
-        self.inner.l
+    fn team_reward_house_survives(&self) -> f32 {
+        self.inner.team_reward_house_survives
     }
+
     #[getter]
-    fn c(&self) -> f32 {
-        self.inner.c
+    fn team_penalty_house_burns(&self) -> f32 {
+        self.inner.team_penalty_house_burns
     }
+
     #[getter]
-    fn rho_ignite(&self) -> f32 {
-        self.inner.rho_ignite
+    fn cost_to_work_one_night(&self) -> f32 {
+        self.inner.cost_to_work_one_night
     }
+
     #[getter]
-    fn n_min(&self) -> u32 {
-        self.inner.n_min
+    fn min_nights(&self) -> u32 {
+        self.inner.min_nights
     }
-    #[getter]
-    fn p_spark(&self) -> f32 {
-        self.inner.p_spark
-    }
-    #[getter]
-    fn n_spark(&self) -> u32 {
-        self.inner.n_spark
-    }
+
     #[getter]
     fn num_agents(&self) -> usize {
         self.inner.num_agents
     }
+
     #[getter]
-    fn a_own(&self) -> f32 {
-        self.inner.a_own
+    fn reward_own_house_survives(&self) -> f32 {
+        self.inner.reward_own_house_survives
     }
+
     #[getter]
-    fn a_neighbor(&self) -> f32 {
-        self.inner.a_neighbor
+    fn reward_other_house_survives(&self) -> f32 {
+        self.inner.reward_other_house_survives
+    }
+
+    #[getter]
+    fn penalty_own_house_burns(&self) -> f32 {
+        self.inner.penalty_own_house_burns
+    }
+
+    #[getter]
+    fn penalty_other_house_burns(&self) -> f32 {
+        self.inner.penalty_other_house_burns
     }
 }
 

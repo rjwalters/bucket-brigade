@@ -2,79 +2,86 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
-    pub beta: f32,        // Fire spread probability
-    pub kappa: f32,       // Extinguish efficiency
-    pub a: f32,           // Reward per saved house (team reward)
-    pub l: f32,           // Penalty per ruined house (team penalty)
-    pub c: f32,           // Work cost per night
-    pub rho_ignite: f32,  // Initial burn fraction
-    pub n_min: u32,       // Minimum nights
-    pub p_spark: f32,     // Spark probability
-    pub n_spark: u32,     // Spark duration
-    pub num_agents: usize,
-    pub a_own: f32,       // Value of owned house when saved (final reward)
-    pub a_neighbor: f32,  // Value of neighbor house when saved (final reward)
+    // Fire dynamics
+    pub prob_fire_spreads_to_neighbor: f32,  // Probability fire spreads to adjacent house
+    pub prob_solo_agent_extinguishes_fire: f32,  // Probability one agent extinguishes fire
+    pub prob_house_catches_fire: f32,  // Probability house catches fire each night
+
+    // Team scoring (collective outcome)
+    pub team_reward_house_survives: f32,  // Team reward for each house that survives
+    pub team_penalty_house_burns: f32,    // Team penalty for each house that burns
+
+    // Individual rewards (ownership-based, for future use in issue #52)
+    pub reward_own_house_survives: f32,      // Individual reward when own house survives
+    pub reward_other_house_survives: f32,    // Individual reward when other house survives
+    pub penalty_own_house_burns: f32,        // Individual penalty when own house burns
+    pub penalty_other_house_burns: f32,      // Individual penalty when other house burns
+
+    // Costs and structure
+    pub cost_to_work_one_night: f32,  // Cost incurred when agent chooses to work
+    pub min_nights: u32,              // Minimum nights before game can end
+    pub num_agents: usize,            // Number of agents in game
 }
 
 pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
     "trivial_cooperation" => Scenario {
-        beta: 0.15,
-        kappa: 0.9,
-        a: 100.0,
-        l: 100.0,
-        c: 0.5,
-        rho_ignite: 0.1,
-        n_min: 12,
-        p_spark: 0.0,
-        n_spark: 12,
+        prob_fire_spreads_to_neighbor: 0.15,
+        prob_solo_agent_extinguishes_fire: 0.7,
+        prob_house_catches_fire: 0.01,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 12,
         num_agents: 4,
-        a_own: 100.0,      // Owned house saved = +100
-        a_neighbor: 50.0,  // Neighbor house saved = +50
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
     },
 
     "early_containment" => Scenario {
-        beta: 0.35,
-        kappa: 0.6,
-        a: 100.0,
-        l: 100.0,
-        c: 0.5,
-        rho_ignite: 0.3,
-        n_min: 12,
-        p_spark: 0.02,
-        n_spark: 12,
+        prob_fire_spreads_to_neighbor: 0.35,
+        prob_solo_agent_extinguishes_fire: 0.45,
+        prob_house_catches_fire: 0.03,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 12,
         num_agents: 4,
-        a_own: 100.0,      // Owned house saved = +100
-        a_neighbor: 50.0,  // Neighbor house saved = +50
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
     },
 
     "greedy_neighbor" => Scenario {
-        beta: 0.15,
-        kappa: 0.4,
-        a: 100.0,
-        l: 100.0,
-        c: 1.0,
-        rho_ignite: 0.2,
-        n_min: 12,
-        p_spark: 0.02,
-        n_spark: 12,
+        prob_fire_spreads_to_neighbor: 0.15,
+        prob_solo_agent_extinguishes_fire: 0.33,
+        prob_house_catches_fire: 0.02,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 1.0,
+        min_nights: 12,
         num_agents: 4,
-        a_own: 150.0,      // Higher ownership incentive
-        a_neighbor: 25.0,  // Lower neighbor value - creates greed
+        reward_own_house_survives: 150.0,
+        reward_other_house_survives: 25.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
     },
 
     "random" => Scenario {
-        beta: 0.25,
-        kappa: 0.5,
-        a: 100.0,
-        l: 100.0,
-        c: 0.5,
-        rho_ignite: 0.2,
-        n_min: 12,
-        p_spark: 0.02,
-        n_spark: 12,
+        prob_fire_spreads_to_neighbor: 0.25,
+        prob_solo_agent_extinguishes_fire: 0.39,
+        prob_house_catches_fire: 0.02,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 12,
         num_agents: 4,
-        a_own: 100.0,      // Owned house saved = +100
-        a_neighbor: 50.0,  // Neighbor house saved = +50
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
     },
 };
 
@@ -84,7 +91,6 @@ mod tests {
 
     #[test]
     fn test_scenarios_exist() {
-        // Test that all expected scenarios are available
         assert!(SCENARIOS.get("trivial_cooperation").is_some());
         assert!(SCENARIOS.get("early_containment").is_some());
         assert!(SCENARIOS.get("greedy_neighbor").is_some());
@@ -93,7 +99,6 @@ mod tests {
 
     #[test]
     fn test_scenario_not_found() {
-        // Test that non-existent scenarios return None
         assert!(SCENARIOS.get("nonexistent").is_none());
         assert!(SCENARIOS.get("").is_none());
     }
@@ -101,50 +106,43 @@ mod tests {
     #[test]
     fn test_trivial_cooperation_values() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
-        assert_eq!(scenario.beta, 0.15);
-        assert_eq!(scenario.kappa, 0.9);
-        assert_eq!(scenario.a, 100.0);
-        assert_eq!(scenario.l, 100.0);
-        assert_eq!(scenario.c, 0.5);
-        assert_eq!(scenario.rho_ignite, 0.1);
-        assert_eq!(scenario.n_min, 12);
-        assert_eq!(scenario.p_spark, 0.0); // No sparks in trivial cooperation
-        assert_eq!(scenario.n_spark, 12);
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.15);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.7);
+        assert_eq!(scenario.team_reward_house_survives, 100.0);
+        assert_eq!(scenario.team_penalty_house_burns, 100.0);
+        assert_eq!(scenario.cost_to_work_one_night, 0.5);
+        assert_eq!(scenario.prob_house_catches_fire, 0.01);
+        assert_eq!(scenario.min_nights, 12);
         assert_eq!(scenario.num_agents, 4);
     }
 
     #[test]
     fn test_early_containment_values() {
         let scenario = SCENARIOS.get("early_containment").unwrap();
-        assert_eq!(scenario.beta, 0.35); // Higher spread rate
-        assert_eq!(scenario.kappa, 0.6); // Lower extinguish efficiency
-        assert_eq!(scenario.rho_ignite, 0.3); // More initial fires
-        assert_eq!(scenario.p_spark, 0.02); // Has sparks
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.35);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.45);
+        assert_eq!(scenario.prob_house_catches_fire, 0.03);
     }
 
     #[test]
     fn test_greedy_neighbor_values() {
         let scenario = SCENARIOS.get("greedy_neighbor").unwrap();
-        assert_eq!(scenario.c, 1.0); // Higher work cost - discourages cooperation
-        assert_eq!(scenario.kappa, 0.4); // Lower extinguish efficiency
+        assert_eq!(scenario.cost_to_work_one_night, 1.0);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.33);
     }
 
     #[test]
     fn test_random_values() {
         let scenario = SCENARIOS.get("random").unwrap();
-        assert_eq!(scenario.beta, 0.25);
-        assert_eq!(scenario.kappa, 0.5);
-        assert_eq!(scenario.rho_ignite, 0.2);
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.39);
+        assert_eq!(scenario.prob_house_catches_fire, 0.02);
     }
 
     #[test]
     fn test_all_scenarios_have_4_agents() {
         for (name, scenario) in SCENARIOS.entries() {
-            assert_eq!(
-                scenario.num_agents, 4,
-                "Scenario '{}' should have 4 agents",
-                name
-            );
+            assert_eq!(scenario.num_agents, 4, "Scenario '{}' should have 4 agents", name);
         }
     }
 
@@ -152,28 +150,16 @@ mod tests {
     fn test_all_scenarios_valid_probabilities() {
         for (name, scenario) in SCENARIOS.entries() {
             assert!(
-                scenario.beta >= 0.0 && scenario.beta <= 1.0,
-                "Scenario '{}' has invalid beta: {}",
-                name,
-                scenario.beta
+                scenario.prob_fire_spreads_to_neighbor >= 0.0 && scenario.prob_fire_spreads_to_neighbor <= 1.0,
+                "Scenario '{}' has invalid prob_fire_spreads_to_neighbor: {}", name, scenario.prob_fire_spreads_to_neighbor
             );
             assert!(
-                scenario.kappa >= 0.0 && scenario.kappa <= 1.0,
-                "Scenario '{}' has invalid kappa: {}",
-                name,
-                scenario.kappa
+                scenario.prob_solo_agent_extinguishes_fire >= 0.0 && scenario.prob_solo_agent_extinguishes_fire <= 1.0,
+                "Scenario '{}' has invalid prob_solo_agent_extinguishes_fire: {}", name, scenario.prob_solo_agent_extinguishes_fire
             );
             assert!(
-                scenario.rho_ignite >= 0.0 && scenario.rho_ignite <= 1.0,
-                "Scenario '{}' has invalid rho_ignite: {}",
-                name,
-                scenario.rho_ignite
-            );
-            assert!(
-                scenario.p_spark >= 0.0 && scenario.p_spark <= 1.0,
-                "Scenario '{}' has invalid p_spark: {}",
-                name,
-                scenario.p_spark
+                scenario.prob_house_catches_fire >= 0.0 && scenario.prob_house_catches_fire <= 1.0,
+                "Scenario '{}' has invalid prob_house_catches_fire: {}", name, scenario.prob_house_catches_fire
             );
         }
     }
@@ -181,7 +167,7 @@ mod tests {
     #[test]
     fn test_scenario_clone() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        assert_eq!(scenario.beta, 0.15);
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.15);
         assert_eq!(scenario.num_agents, 4);
     }
 
@@ -189,12 +175,11 @@ mod tests {
     fn test_scenario_serialization() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
         let json = serde_json::to_string(scenario).unwrap();
-        assert!(json.contains("\"beta\":0.15"));
+        assert!(json.contains("\"prob_fire_spreads_to_neighbor\":0.15"));
         assert!(json.contains("\"num_agents\":4"));
 
-        // Test deserialization round-trip
         let deserialized: Scenario = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.beta, scenario.beta);
+        assert_eq!(deserialized.prob_fire_spreads_to_neighbor, scenario.prob_fire_spreads_to_neighbor);
         assert_eq!(deserialized.num_agents, scenario.num_agents);
     }
 
@@ -208,14 +193,12 @@ mod tests {
     fn test_scenarios_have_positive_rewards() {
         for (name, scenario) in SCENARIOS.entries() {
             assert!(
-                scenario.a > 0.0,
-                "Scenario '{}' should have positive reward for saved houses",
-                name
+                scenario.team_reward_house_survives > 0.0,
+                "Scenario '{}' should have positive reward for saved houses", name
             );
             assert!(
-                scenario.l > 0.0,
-                "Scenario '{}' should have positive penalty for ruined houses",
-                name
+                scenario.team_penalty_house_burns > 0.0,
+                "Scenario '{}' should have positive penalty for ruined houses", name
             );
         }
     }

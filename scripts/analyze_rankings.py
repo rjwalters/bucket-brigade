@@ -121,7 +121,7 @@ def analyze_rankings(
         print("\n🏆 Top Performers:")
         for i, ranking in enumerate(agent_rankings[:5]):
             print(
-                f"   #{i+1} Agent {ranking['agent_id']}: "
+                f"   #{i + 1} Agent {ranking['agent_id']}: "
                 f"{ranking['skill_estimate']:.3f} ± {ranking['skill_uncertainty']:.3f} "
                 f"(marginal: {ranking['marginal_value']:.3f})"
             )
@@ -172,7 +172,7 @@ def analyze_rankings(
         for i, suggestion in enumerate(suggestions):
             team_str = ",".join(map(str, suggestion["team"]))
             print(
-                f"   Team {i+1}: [{team_str}] "
+                f"   Team {i + 1}: [{team_str}] "
                 f"(size={suggestion['team_size']}, "
                 f"focus={suggestion['focus']})"
             )

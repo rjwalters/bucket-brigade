@@ -82,7 +82,10 @@ def create_agent_from_archetype(archetype: str, agent_id: int) -> HeuristicAgent
 
 
 def generate_scenario_set(
-    num_agents: int, count: int, scenario_types: Optional[List[str]] = None, seed: int = 42
+    num_agents: int,
+    count: int,
+    scenario_types: Optional[List[str]] = None,
+    seed: int = 42,
 ) -> List[tuple[str, Scenario]]:
     """
     Generate a set of scenarios for testing.
@@ -102,7 +105,9 @@ def generate_scenario_set(
     if scenario_types is None:
         # Generate random scenarios
         for i in range(count):
-            scenarios.append((f"random_{i}", random_scenario(num_agents, seed=seed + i)))
+            scenarios.append(
+                (f"random_{i}", random_scenario(num_agents, seed=seed + i))
+            )
     else:
         # Generate balanced mix of specified types
         scenarios_per_type = count // len(scenario_types)
@@ -122,7 +127,10 @@ def generate_scenario_set(
 
 
 def run_single_game(
-    agents: List[HeuristicAgent], scenario: Scenario, seed: int = 42, max_steps: int = 100
+    agents: List[HeuristicAgent],
+    scenario: Scenario,
+    seed: int = 42,
+    max_steps: int = 100,
 ) -> Dict[str, Any]:
     """
     Run a single game with the given agents and scenario.
@@ -180,7 +188,9 @@ def run_tournament(
     results = []
 
     # Create agents
-    agents = [create_agent_from_archetype(archetype, i) for i, archetype in enumerate(team)]
+    agents = [
+        create_agent_from_archetype(archetype, i) for i, archetype in enumerate(team)
+    ]
 
     # Run games
     if verbose:
@@ -268,7 +278,9 @@ def test(
         None, "--output", "-o", help="Output file path (JSON)"
     ),
     seed: int = typer.Option(42, "--seed", help="Random seed"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Print detailed progress"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Print detailed progress"
+    ),
 ):
     """
     Test a team against scenarios.
@@ -285,7 +297,9 @@ def test(
     for archetype in team_list:
         if archetype.lower() not in ARCHETYPES:
             typer.echo(f"Error: Unknown archetype '{archetype}'", err=True)
-            typer.echo(f"Available archetypes: {', '.join(ARCHETYPES.keys())}", err=True)
+            typer.echo(
+                f"Available archetypes: {', '.join(ARCHETYPES.keys())}", err=True
+            )
             raise typer.Exit(1)
 
     # Parse scenarios
@@ -296,7 +310,8 @@ def test(
             if scenario_type not in SCENARIO_TYPES:
                 typer.echo(f"Error: Unknown scenario type '{scenario_type}'", err=True)
                 typer.echo(
-                    f"Available scenario types: {', '.join(SCENARIO_TYPES.keys())}", err=True
+                    f"Available scenario types: {', '.join(SCENARIO_TYPES.keys())}",
+                    err=True,
                 )
                 raise typer.Exit(1)
 
@@ -319,17 +334,25 @@ def test(
     typer.echo("📊 TOURNAMENT RESULTS")
     typer.echo("=" * 60)
     typer.echo(f"\n🏆 Team Performance:")
-    typer.echo(f"   Mean Team Reward: {stats['team_reward']['mean']:.2f} ± {stats['team_reward']['std']:.2f}")
+    typer.echo(
+        f"   Mean Team Reward: {stats['team_reward']['mean']:.2f} ± {stats['team_reward']['std']:.2f}"
+    )
     typer.echo(f"   Median: {stats['team_reward']['median']:.2f}")
-    typer.echo(f"   Range: [{stats['team_reward']['min']:.2f}, {stats['team_reward']['max']:.2f}]")
+    typer.echo(
+        f"   Range: [{stats['team_reward']['min']:.2f}, {stats['team_reward']['max']:.2f}]"
+    )
 
     typer.echo(f"\n🏠 Houses Saved:")
-    typer.echo(f"   Mean: {stats['houses_saved']['mean']:.2f} ± {stats['houses_saved']['std']:.2f}")
+    typer.echo(
+        f"   Mean: {stats['houses_saved']['mean']:.2f} ± {stats['houses_saved']['std']:.2f}"
+    )
     typer.echo(f"   Median: {stats['houses_saved']['median']:.2f}")
-    typer.echo(f"   Success Rate (≥5): {stats['success_rate']*100:.1f}%")
+    typer.echo(f"   Success Rate (≥5): {stats['success_rate'] * 100:.1f}%")
 
     typer.echo(f"\n⏱️  Game Length:")
-    typer.echo(f"   Mean Nights: {stats['nights_played']['mean']:.1f} ± {stats['nights_played']['std']:.1f}")
+    typer.echo(
+        f"   Mean Nights: {stats['nights_played']['mean']:.1f} ± {stats['nights_played']['std']:.1f}"
+    )
 
     typer.echo(f"\n👥 Agent Contributions (by mean reward):")
     for i, contrib in enumerate(results["agent_contributions"], 1):
