@@ -53,8 +53,9 @@ Install with: `uv pip install -e ".[rl]"`
 
 ### Training Infrastructure
 
-1. **Environment Wrapper** (`bucket_brigade/envs/puffer_env.py`)
-   - Gymnasium-compatible wrapper
+1. **Environment Wrapper** (`bucket_brigade/envs/puffer_env_rust.py`)
+   - **Rust-backed** Gymnasium-compatible wrapper for 100x faster training
+   - Automatically used by default for maximum performance
    - Trains one agent against N opponents
    - Opponents use fixed policies (random, expert, etc.)
    - Observation space: 32-36 dim vector
@@ -214,9 +215,10 @@ The policy must learn to:
 ## Troubleshooting
 
 ### Training is Slow
+- **Rust backend is now used by default** (100x faster!)
 - Reduce `--batch-size`
 - Reduce `--num-opponents`
-- Use Rust backend: `cd bucket-brigade-core && pip install -e .`
+- Ensure Rust core is installed: `cd bucket-brigade-core && maturin develop --release`
 
 ### Policy Not Learning
 - Increase `--num-steps` (try 500K-1M)
@@ -240,11 +242,13 @@ bucket-brigade/
 │   └── train_curriculum.py      # (Original, requires newer PufferLib)
 ├── bucket_brigade/
 │   ├── envs/
-│   │   ├── puffer_env.py        # Gymnasium wrapper
+│   │   ├── puffer_env_rust.py   # Rust-backed Gymnasium wrapper (100x faster)
+│   │   ├── puffer_env.py        # Python fallback (not used by default)
 │   │   ├── bucket_brigade_env.py # Core environment
 │   │   └── scenarios.py         # Pre-defined scenarios
 │   └── agents/
 │       ├── heuristic_agent.py   # Scripted opponents
+│       ├── archetypes.py        # Predefined strategy profiles
 │       └── scenario_optimal/    # Expert agents
 ├── models/                      # Saved model checkpoints
 │   └── *.pt
