@@ -281,16 +281,26 @@ def train_ppo(
             elapsed = time.time() - start_time
             fps = global_step / elapsed
             avg_reward = np.mean(episode_rewards) if episode_rewards else 0
+            eta_seconds = (num_steps - global_step) / fps if fps > 0 else 0
+            eta_minutes = eta_seconds / 60
 
             print(
-                f"Step {global_step:,}/{num_steps:,} | "
-                f"Avg Reward: {avg_reward:.2f} | "
-                f"FPS: {fps:.0f} | "
-                f"Episodes: {len(episode_rewards)}"
+                f"\n{'='*60}\n"
+                f"📊 Step {global_step:,}/{num_steps:,} ({100*global_step/num_steps:.1f}%)\n"
+                f"   Avg Reward: {avg_reward:.2f} | Episodes: {len(episode_rewards)}\n"
+                f"   FPS: {fps:.0f} | Elapsed: {elapsed/60:.1f}m | ETA: {eta_minutes:.1f}m\n"
+                f"{'='*60}\n",
+                flush=True
             )
 
     print(
-        f"\n✅ Training complete! Total time: {(time.time() - start_time) / 60:.1f} minutes"
+        f"\n{'='*60}\n"
+        f"✅ Training complete!\n"
+        f"   Total time: {(time.time() - start_time) / 60:.1f} minutes\n"
+        f"   Final avg reward: {np.mean(episode_rewards) if episode_rewards else 0:.2f}\n"
+        f"   Total episodes: {len(episode_rewards)}\n"
+        f"{'='*60}\n",
+        flush=True
     )
 
     return policy
