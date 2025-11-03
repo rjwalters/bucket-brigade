@@ -50,6 +50,7 @@ NIGHTLY SEQUENCE
 ----------------
 1. Observation phase:
    Each agent observes signals, locations, house states, and last actions.
+   (Fires from previous night's spread/spark phase are visible)
 
 2. Signal phase:
    All agents simultaneously broadcast their signal (WORK or REST).
@@ -58,21 +59,24 @@ NIGHTLY SEQUENCE
    After observing all signals, each agent chooses an action (house, mode).
 
 4. Extinguish phase:
+   Agents respond to fires visible at start of turn.
    For each burning house with k agents working there,
    extinguish with probability:
        P(extinguish) = 1 - exp(-kappa * k)
    Extinguished houses become Safe.
 
-5. Spread phase:
+5. Burn-out phase:
+   Unextinguished burning houses become Ruined.
+
+6. Spread phase:
    Each remaining burning house ignites each neighbor (if Safe)
    with probability beta.
-
-6. Burn-out phase:
-   Burning houses that neither extinguished nor spread become Ruined.
+   **New fires are visible NEXT turn.**
 
 7. Spark phase:
    For nights t <= N_spark, each Safe house ignites spontaneously
    with probability p_spark.
+   **New sparks are visible NEXT turn.**
 
 8. Reward and logging phase:
    Compute team and individual rewards, record all actions,
@@ -82,8 +86,14 @@ NIGHTLY SEQUENCE
    The game runs for at least N_min nights.
    After that, it ends when either:
       (a) all fires are extinguished, or
-      (b) all houses are ruined.
-   Sparks stop after N_spark nights, so termination is guaranteed.
+      (b) all houses are ruined, or
+      (c) 100 nights have elapsed (safety limit).
+   Sparks stop after N_spark nights.
+
+KEY DESIGN DECISION: Fires spread and spark at the END of each turn,
+making them visible for the NEXT turn. This allows agents to observe
+fire locations and coordinate strategic responses, rewarding teamwork
+over luck.
 
 SCENARIO PARAMETERS
 -------------------

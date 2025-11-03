@@ -102,15 +102,19 @@ impl BucketBrigade {
         self.agent_positions = actions.iter().map(|action| action[0]).collect();
 
         // 3. Extinguish phase
+        // Agents respond to fires visible at start of turn
         self.extinguish_fires(actions);
 
-        // 4. Spread phase
-        self.spread_fires();
-
-        // 5. Burn-out phase
+        // 4. Burn-out phase
+        // Unextinguished fires become ruined houses
         self.burn_out_houses();
 
+        // 5. Spread phase
+        // Fires spread to neighbors (visible next turn)
+        self.spread_fires();
+
         // 6. Spark phase (if active)
+        // New fires ignite (visible next turn)
         if self.night < self.scenario.n_spark {
             self.spark_fires();
         }

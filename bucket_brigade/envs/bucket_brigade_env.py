@@ -126,15 +126,19 @@ class BucketBrigadeEnv:
         self.locations = actions[:, 0].copy()
 
         # 3. Extinguish phase
+        # Agents respond to fires visible at start of turn
         self._extinguish_fires(actions)
 
-        # 4. Spread phase
-        self._spread_fires()
-
-        # 5. Burn-out phase
+        # 4. Burn-out phase
+        # Unextinguished fires become ruined houses
         self._burn_out_houses()
 
+        # 5. Spread phase
+        # Fires spread to neighbors (visible next turn)
+        self._spread_fires()
+
         # 6. Spark phase (if active)
+        # New fires ignite (visible next turn)
         if self.night < self.scenario.N_spark:
             self._spark_fires()
 
