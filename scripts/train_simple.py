@@ -17,6 +17,7 @@ import torch.optim as optim
 import numpy as np
 from collections import deque
 import time
+from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade.envs.puffer_env import PufferBucketBrigade
 
@@ -104,6 +105,7 @@ def train_ppo(
     entropy_coef=0.01,
     max_grad_norm=0.5,
     eval_interval=10000,
+    writer=None,
 ):
     """Train the policy using PPO."""
 
@@ -203,8 +205,21 @@ def train_ppo(
             # Optimize
             optimizer.zero_grad()
             loss.backward()
-            nn.utils.clip_grad_norm_(policy.parameters(), max_grad_norm)
+            grad_norm = nn.utils.clip_grad_norm_(policy.parameters(), max_grad_norm)
             optimizer.step()
+
+        # TensorBoard logging
+        if writer is not None and global_step % 100 == 0:
+            writer.add_scalar("train/policy_loss", policy_loss.item(), global_step)
+            writer.add_scalar("train/value_loss", value_loss.item(), global_step)
+            writer.add_scalar("train/entropy", entropy.item(), global_step)
+            writer.add_scalar("train/total_loss", loss.item(), global_step)
+            writer.add_scalar("train/grad_norm", grad_norm.item(), global_step)
+            if episode_rewards:
+                writer.add_scalar("episode/mean_reward", np.mean(episode_rewards), global_step)
+                writer.add_scalar("episode/max_reward", np.max(episode_rewards), global_step)
+                writer.add_scalar("episode/min_reward", np.min(episode_rewards), global_step)
+            writer.add_scalar("train/learning_rate", optimizer.param_groups[0]["lr"], global_step)
 
         # Logging
         if global_step % eval_interval == 0:
@@ -259,6 +274,12 @@ def main():
         action="store_true",
         help="List available scenarios and exit",
     )
+    parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Name for TensorBoard run (default: auto-generated with timestamp)",
+    )
 
     args = parser.parse_args()
 
@@ -294,14 +315,36 @@ def main():
     policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size)
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
+    # Initialize TensorBoard writer
+    if args.run_name is None:
+        # Auto-generate run name with scenario, hyperparameters, and timestamp
+        args.run_name = f"{args.scenario}_lr{args.lr}_h{args.hidden_size}_b{args.batch_size}_{int(time.time())}"
+
+    writer = SummaryWriter(f"runs/{args.run_name}")
+    print(f"📊 TensorBoard logging to: runs/{args.run_name}")
+    print(f"   View with: tensorboard --logdir runs/")
+
+    # Log hyperparameters
+    writer.add_text("hyperparameters/scenario", args.scenario)
+    writer.add_text("hyperparameters/num_opponents", str(args.num_opponents))
+    writer.add_text("hyperparameters/hidden_size", str(args.hidden_size))
+    writer.add_text("hyperparameters/learning_rate", str(args.lr))
+    writer.add_text("hyperparameters/batch_size", str(args.batch_size))
+    writer.add_text("hyperparameters/seed", str(args.seed))
+
     # Train
-    policy = train_ppo(
-        env=env,
-        policy=policy,
-        optimizer=optimizer,
-        num_steps=args.num_steps,
-        batch_size=args.batch_size,
-    )
+    try:
+        policy = train_ppo(
+            env=env,
+            policy=policy,
+            optimizer=optimizer,
+            num_steps=args.num_steps,
+            batch_size=args.batch_size,
+            writer=writer,
+        )
+    finally:
+        writer.close()
+        print("📊 TensorBoard logs saved")
 
     # Save model
     Path(args.save_path).parent.mkdir(parents=True, exist_ok=True)

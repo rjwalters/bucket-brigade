@@ -16,7 +16,8 @@ uv run python scripts/train_simple.py \
     --num-opponents 3 \
     --batch-size 2048 \
     --hidden-size 128 \
-    --save-path models/my_policy.pt
+    --save-path models/my_policy.pt \
+    --run-name my_experiment
 ```
 
 **Key Parameters:**
@@ -25,6 +26,7 @@ uv run python scripts/train_simple.py \
 - `--batch-size`: Batch size for PPO updates (larger = more stable but slower)
 - `--hidden-size`: Neural network size (64-256 typical)
 - `--lr`: Learning rate (default: 3e-4)
+- `--run-name`: Name for TensorBoard logs (auto-generated if not specified)
 
 ### 2. Evaluate a Trained Policy
 
@@ -117,18 +119,63 @@ Initial training run (50K steps, 3 opponents):
    - Self-play training
    - Population-based training
 
-### Visualization
+### Visualization with TensorBoard
 
-Add TensorBoard logging to track training progress:
+TensorBoard logging is **now built-in** to the training script! Metrics are automatically logged during training.
 
-```python
-from torch.utils.tensorboard import SummaryWriter
+**Training with TensorBoard:**
 
-writer = SummaryWriter(f'runs/{run_name}')
-writer.add_scalar('train/reward', avg_reward, global_step)
+```bash
+# TensorBoard logs are created automatically
+uv run python scripts/train_simple.py --num-steps 100000
+
+# Custom run name for organization
+uv run python scripts/train_simple.py \
+    --num-steps 100000 \
+    --run-name my_experiment
+
+# View live training progress
+tensorboard --logdir runs/
+# Then open http://localhost:6006 in your browser
 ```
 
-View with: `tensorboard --logdir runs/`
+**Metrics Tracked:**
+
+- **Training Metrics** (every 100 steps):
+  - `train/policy_loss` - PPO policy loss
+  - `train/value_loss` - Value function loss
+  - `train/entropy` - Policy entropy (exploration)
+  - `train/total_loss` - Combined loss
+  - `train/grad_norm` - Gradient magnitude
+  - `train/learning_rate` - Current learning rate
+
+- **Episode Metrics** (when episodes complete):
+  - `episode/mean_reward` - Average reward over last 100 episodes
+  - `episode/max_reward` - Best recent episode
+  - `episode/min_reward` - Worst recent episode
+
+- **Hyperparameters** (logged at start):
+  - Scenario, learning rate, batch size, hidden size, seed, etc.
+
+**Comparing Runs:**
+
+TensorBoard makes it easy to compare different hyperparameters:
+
+```bash
+# Run 1: Baseline
+uv run python scripts/train_simple.py --run-name baseline_lr3e-4 --lr 3e-4
+
+# Run 2: Higher learning rate
+uv run python scripts/train_simple.py --run-name test_lr1e-3 --lr 1e-3
+
+# Run 3: Larger network
+uv run python scripts/train_simple.py --run-name large_h256 --hidden-size 256
+
+# View all runs together
+tensorboard --logdir runs/
+```
+
+All runs will be overlaid in TensorBoard for easy comparison!
 
 ## Environment Details
 
