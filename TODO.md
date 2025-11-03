@@ -22,7 +22,7 @@ Longer training (500K-1M steps) should allow the policy to:
 
 1. **MCP Remote SSH Server** - Built and committed to main
    - `mcp-server/` - TypeScript MCP server for remote SSH access
-   - `.claude/mcp_settings.json` - MCP configuration
+   - `.mcp.json` - MCP configuration (FIXED: was using wrong file)
    - Tools: `remote_bash`, `remote_bash_output`, `remote_file_read`
    - Target: `rwalters-sandbox-1` (GPU machine)
 
@@ -32,12 +32,12 @@ Longer training (500K-1M steps) should allow the policy to:
    - Auto-flush for real-time log visibility
    - Verbose debug output
 
-3. **MCP Troubleshooting Session**
-   - ✅ Verified MCP config exists: `.claude/mcp_settings.json`
-   - ✅ Verified MCP server built: `mcp-server/dist/index.js`
-   - ✅ Tested MCP server runs manually
-   - ❌ MCP tools not loading in Claude Code session
-   - **Hypothesis**: Need to start Claude Code in worktree directory
+3. **MCP Configuration Fix**
+   - ❌ Previous attempt used wrong file: `.claude/mcp_settings.json`
+   - ✅ **FIXED**: Created correct `.mcp.json` file at project root
+   - ✅ Updated documentation to reflect correct configuration
+   - ✅ Committed changes to both main and feature/issue-10 branches
+   - **Root cause**: Claude Code uses `.mcp.json`, not `.claude/mcp_settings.json`
 
 ### ⏳ Next Steps - AFTER RESTART
 
@@ -114,8 +114,9 @@ ssh rwalters-sandbox-1 "tail -100 /workspace/bucket-brigade/logs/training_500000
 - `scripts/sandbox.sh` - Remote training orchestration
 - `mcp-server/` - MCP Remote SSH server
 - `TEST_PLAN.md` - Testing checklist for MCP server
-- `.claude/mcp_settings.json` - MCP configuration
+- `.mcp.json` - MCP configuration (correct file location)
 - `SANDBOX_GUIDE.md` - **Complete guide for working with remote environments**
+- `RESTART_INSTRUCTIONS.md` - Troubleshooting guide for MCP setup
 
 ## Related Issues
 
