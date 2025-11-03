@@ -514,7 +514,7 @@ mod tests {
         for _ in 0..10 {
             engine.houses = vec![0; 10]; // Clear fires each round
             engine.step(&actions);
-            
+
             // Should still create fires even after many nights
             let burning = engine.houses.iter().filter(|&&h| h == 1).count();
             if !engine.done {
