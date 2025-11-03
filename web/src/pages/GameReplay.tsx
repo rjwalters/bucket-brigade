@@ -7,6 +7,7 @@ import Town from '../components/Town';
 import AgentLayer from '../components/AgentLayer';
 import ReplayControls from '../components/ReplayControls';
 import GameSidebar from '../components/GameSidebar';
+import GameAnalysis from '../components/GameAnalysis';
 
 const GameReplay: React.FC = () => {
   const { gameId } = useParams<{ gameId?: string }>();
@@ -185,6 +186,11 @@ const GameReplay: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Post-Game Analysis - Show when reached the end */}
+          {currentNight === selectedGame.nights.length - 1 && (
+            <GameAnalysis game={selectedGame} />
+          )}
         </>
       )}
     </div>
