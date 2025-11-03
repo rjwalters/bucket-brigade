@@ -69,7 +69,9 @@ class FitnessEvaluator:
             obs = env.reset(seed=int(self.rng.integers(0, 2**31)))
             agent.reset()
 
-            while not env.done:
+            max_steps = 1000  # Prevent infinite loops
+            steps = 0
+            while not env.done and steps < max_steps:
                 # Get action from agent
                 action = agent.act(obs)
 
@@ -77,6 +79,7 @@ class FitnessEvaluator:
                 actions = np.array([action])  # Wrap in array for single agent
                 obs, rewards, done, info = env.step(actions)
 
+                steps += 1
                 if done:
                     break
 
@@ -132,10 +135,13 @@ def win_rate_fitness(
         obs = env.reset()
         agent.reset()
 
-        while not env.done:
+        max_steps = 1000  # Prevent infinite loops
+        steps = 0
+        while not env.done and steps < max_steps:
             action = agent.act(obs)
             actions = np.array([action])  # Wrap in array for single agent
             obs, rewards, done, info = env.step(actions)
+            steps += 1
             if done:
                 break
 
@@ -171,10 +177,13 @@ def robustness_fitness(
             obs = env.reset()
             agent.reset()
 
-            while not env.done:
+            max_steps = 1000  # Prevent infinite loops
+            steps = 0
+            while not env.done and steps < max_steps:
                 action = agent.act(obs)
                 actions = np.array([action])  # Wrap in array for single agent
                 obs, rewards, done, info = env.step(actions)
+                steps += 1
                 if done:
                     break
 
@@ -223,10 +232,13 @@ def multi_objective_fitness(
         obs = env.reset()
         agent.reset()
 
-        while not env.done:
+        max_steps = 1000  # Prevent infinite loops
+        steps = 0
+        while not env.done and steps < max_steps:
             action = agent.act(obs)
             actions = np.array([action])  # Wrap in array for single agent
             obs, rewards, done, info = env.step(actions)
+            steps += 1
             if done:
                 break
 
