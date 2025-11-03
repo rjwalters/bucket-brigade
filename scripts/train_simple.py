@@ -248,16 +248,40 @@ def main():
         default="models/simple_policy.pt",
         help="Path to save trained model",
     )
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="default",
+        help="Scenario name (e.g., 'default', 'trivial_cooperation', 'chain_reaction')",
+    )
+    parser.add_argument(
+        "--list-scenarios",
+        action="store_true",
+        help="List available scenarios and exit",
+    )
 
     args = parser.parse_args()
+
+    # Handle --list-scenarios
+    if args.list_scenarios:
+        from bucket_brigade.envs import list_scenarios
+        print("Available scenarios:")
+        for name in list_scenarios():
+            print(f"  - {name}")
+        return
 
     # Set seeds
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    # Create environment
-    print(f"🎮 Creating environment with {args.num_opponents} opponents")
-    env = PufferBucketBrigade(num_opponents=args.num_opponents)
+    # Create environment with scenario
+    from bucket_brigade.envs import get_scenario_by_name
+
+    print(f"🎮 Creating environment with scenario: {args.scenario}")
+    print(f"   Number of opponents: {args.num_opponents}")
+
+    scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
+    env = PufferBucketBrigade(scenario=scenario, num_opponents=args.num_opponents)
 
     # Create policy
     obs_dim = env.observation_space.shape[0]

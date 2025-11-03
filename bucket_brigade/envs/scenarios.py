@@ -379,3 +379,61 @@ def sample_deception_scenario(num_agents: int, seed: Optional[int] = None) -> Sc
         N_spark=15,
         num_agents=num_agents,
     )
+
+
+# Scenario Registry
+
+SCENARIO_REGISTRY = {
+    "default": default_scenario,
+    "easy": easy_scenario,
+    "hard": hard_scenario,
+    "trivial_cooperation": trivial_cooperation_scenario,
+    "early_containment": early_containment_scenario,
+    "greedy_neighbor": greedy_neighbor_scenario,
+    "sparse_heroics": sparse_heroics_scenario,
+    "rest_trap": rest_trap_scenario,
+    "chain_reaction": chain_reaction_scenario,
+    "deceptive_calm": deceptive_calm_scenario,
+    "overcrowding": overcrowding_scenario,
+    "mixed_motivation": mixed_motivation_scenario,
+}
+
+
+def get_scenario_by_name(name: str, num_agents: int) -> Scenario:
+    """
+    Get a scenario by name.
+
+    Args:
+        name: Scenario name (e.g., "trivial_cooperation", "default")
+        num_agents: Number of agents in the scenario
+
+    Returns:
+        Scenario object
+
+    Raises:
+        ValueError: If scenario name is invalid
+
+    Example:
+        >>> scenario = get_scenario_by_name("trivial_cooperation", num_agents=4)
+        >>> env = PufferBucketBrigade(scenario=scenario)
+    """
+    if name not in SCENARIO_REGISTRY:
+        valid_names = ", ".join(sorted(SCENARIO_REGISTRY.keys()))
+        raise ValueError(f"Unknown scenario '{name}'. Valid options: {valid_names}")
+
+    return SCENARIO_REGISTRY[name](num_agents)
+
+
+def list_scenarios() -> list:
+    """
+    Get list of available scenario names.
+
+    Returns:
+        Sorted list of scenario names
+
+    Example:
+        >>> scenarios = list_scenarios()
+        >>> print(scenarios)
+        ['chain_reaction', 'deceptive_calm', 'default', ...]
+    """
+    return sorted(SCENARIO_REGISTRY.keys())
