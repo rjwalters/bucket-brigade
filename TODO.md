@@ -32,16 +32,31 @@ Longer training (500K-1M steps) should allow the policy to:
    - Auto-flush for real-time log visibility
    - Verbose debug output
 
-### ⏳ Next Steps
+3. **MCP Troubleshooting Session**
+   - ✅ Verified MCP config exists: `.claude/mcp_settings.json`
+   - ✅ Verified MCP server built: `mcp-server/dist/index.js`
+   - ✅ Tested MCP server runs manually
+   - ❌ MCP tools not loading in Claude Code session
+   - **Hypothesis**: Need to start Claude Code in worktree directory
 
-1. **Restart Claude Code** to load MCP server
-2. **Verify MCP tools** are accessible (`remote_bash`, etc.)
-3. **Test GPU availability** on remote machine (`nvidia-smi`)
-4. **Run 500K training** with default parameters
-5. **Monitor progress** via logs and GPU utilization
-6. **Run 1M training** if 500K shows improvement
-7. **Evaluate models** and compare performance metrics
-8. **Document findings** and optimal training duration
+### ⏳ Next Steps - AFTER RESTART
+
+**🚨 CRITICAL: Start Claude Code in the worktree directory:**
+```bash
+cd /Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-10
+```
+
+1. **Verify MCP tools loaded** - Try using `remote_bash` tool
+2. **If NOT loaded** - See `RESTART_INSTRUCTIONS.md` for troubleshooting
+3. **Once loaded** - Follow `TEST_PLAN.md`:
+   - Test basic connectivity
+   - Check GPU availability (`nvidia-smi`)
+   - Pull latest code on remote
+   - Start 500K training run
+   - Monitor progress
+4. **After 500K completes** - Run 1M training if results are good
+5. **Evaluate models** and compare performance metrics
+6. **Document findings** and optimal training duration
 
 ## Commands
 
