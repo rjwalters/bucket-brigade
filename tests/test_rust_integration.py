@@ -104,10 +104,10 @@ class TestRustCoreIntegration:
         total_time = end_time - start_time
 
         # Should complete in reasonable time (< 1 second for 1000 steps)
-        assert total_time < 1.0, ".2f"
+        assert total_time < 1.0, f"Took {total_time:.2f}s"
 
         steps_per_second = num_steps / total_time
-        print(".0f")
+        print(f"Steps per second: {steps_per_second:.0f}")
 
         # Should be very fast (> 1000 steps/second)
         assert steps_per_second > 1000
