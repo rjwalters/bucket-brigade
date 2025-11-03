@@ -108,8 +108,12 @@ def train_ppo(
     writer=None,
     experiment_session=None,
     experiment_run_id=None,
+    device=None,
 ):
     """Train the policy using PPO."""
+    # Get device from policy if not specified
+    if device is None:
+        device = next(policy.parameters()).device
 
     obs, _ = env.reset()
     obs = torch.FloatTensor(obs)
@@ -170,10 +174,12 @@ def train_ppo(
         # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        # Convert to tensors
-        obs_batch = torch.stack(observations)
-        actions_batch = torch.LongTensor(actions_taken)
-        log_probs_old = torch.stack(log_probs_old)
+        # Convert to tensors and move to device
+        obs_batch = torch.stack(observations).to(device)
+        actions_batch = torch.LongTensor(actions_taken).to(device)
+        log_probs_old = torch.stack(log_probs_old).to(device)
+        advantages = advantages.to(device)
+        returns = returns.to(device)
 
         # PPO update
         for epoch in range(num_epochs):
@@ -471,6 +477,7 @@ def main():
             writer=writer,
             experiment_session=experiment_session,
             experiment_run_id=experiment_run.id if experiment_run else None,
+            device=device,
         )
     finally:
         writer.close()
