@@ -114,10 +114,12 @@ class TestNashSolver:
         """Test Nash solver on a simple 2x2 game."""
         # Simple coordination game payoff matrix
         # Both players prefer to coordinate
-        payoff_matrix = np.array([
-            [10.0, 0.0],  # Strategy 0 vs [0, 1]
-            [0.0, 10.0],  # Strategy 1 vs [0, 1]
-        ])
+        payoff_matrix = np.array(
+            [
+                [10.0, 0.0],  # Strategy 0 vs [0, 1]
+                [0.0, 10.0],  # Strategy 1 vs [0, 1]
+            ]
+        )
 
         distribution = solve_symmetric_nash(payoff_matrix)
 
@@ -134,10 +136,12 @@ class TestNashSolver:
     def test_solve_symmetric_nash_dominant_strategy(self):
         """Test Nash solver with dominant strategy."""
         # Strategy 0 dominates strategy 1
-        payoff_matrix = np.array([
-            [10.0, 10.0],  # Strategy 0 always gets 10
-            [5.0, 5.0],    # Strategy 1 always gets 5
-        ])
+        payoff_matrix = np.array(
+            [
+                [10.0, 10.0],  # Strategy 0 always gets 10
+                [5.0, 5.0],  # Strategy 1 always gets 5
+            ]
+        )
 
         distribution = solve_symmetric_nash(payoff_matrix)
 
