@@ -50,7 +50,13 @@ setup_environment() {
 
     # Install RL dependencies
     echo "🤖 Installing RL dependencies (PyTorch, Gymnasium, etc.)..."
-    uv pip install --quiet -e ".[rl]"
+    if ! uv pip install -e ".[rl]" 2>&1 | tee /tmp/rl-install.log | grep -q "Installed"; then
+        echo "⚠️  Warning: Some dependencies may have failed to install"
+        echo "   Check /tmp/rl-install.log for details"
+        echo ""
+        echo "   Attempting to install tensorboard separately..."
+        uv pip install tensorboard
+    fi
 
     # Verify PyTorch installation
     echo ""
