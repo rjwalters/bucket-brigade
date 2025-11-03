@@ -164,7 +164,7 @@ def compute_nash_equilibrium(
         print(f"Strategy {idx + 1}: Probability = {probability:.3f}")
         print(f"  Classification: {classification}")
         print(f"  Closest archetype: {closest} (distance: {distances[closest]:.3f})")
-        print(f"  Parameters:")
+        print("  Parameters:")
 
         for name, value in zip(param_names, strategy):
             bar_length = int(value * 20)

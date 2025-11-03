@@ -17,7 +17,6 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm
 
@@ -221,7 +220,7 @@ def run_evolution(
             }
         }, f, indent=2)
 
-    print(f"✅ Results saved:")
+    print("✅ Results saved:")
     print(f"   Evolution trace: {trace_file}")
     print(f"   Best agent: {best_agent_file}")
     print()

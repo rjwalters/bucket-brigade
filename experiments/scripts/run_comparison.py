@@ -10,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -247,7 +247,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
                     closest_nash = name.replace("evolved_vs_", "")
 
         if closest_nash:
-            print(f"Strategy Similarity:")
+            print("Strategy Similarity:")
             print(f"  Evolved strategy is closest to: {closest_nash}")
             print(f"  Distance: {min_distance:.3f}")
             print()

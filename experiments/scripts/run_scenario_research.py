@@ -26,7 +26,7 @@ def run_command(cmd: list, description: str) -> bool:
     print(f"{'=' * 80}\n")
 
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         print(f"\n✅ {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
@@ -54,7 +54,7 @@ def run_scenario_research(
     print(f"SCENARIO RESEARCH PIPELINE: {scenario_name}")
     print("=" * 80)
     print()
-    print(f"Steps to run:")
+    print("Steps to run:")
     print(f"  [{'✓' if not skip_heuristics else ' '}] 1. Heuristics Analysis")
     print(f"  [{'✓' if not skip_evolution else ' '}] 2. Evolutionary Optimization")
     print(f"  [{'✓' if not skip_nash else ' '}] 3. Nash Equilibrium")

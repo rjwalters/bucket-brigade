@@ -49,7 +49,7 @@ while not env.done and night < max_nights:
         print(f"  Night {night}: fires={np.sum(obs['houses'] == 1)}, done={env.done}")
 
 if env.done:
-    print(f"\n✅ Game completed successfully!")
+    print("\n✅ Game completed successfully!")
     print(f"   Total nights: {env.night}")
     print(f"   Mean reward: {np.mean(total_rewards):.2f}")
     print(f"   Saved houses: {np.sum(obs['houses'] == 0)}")
