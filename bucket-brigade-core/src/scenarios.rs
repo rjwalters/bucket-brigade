@@ -3,31 +3,22 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
     // Fire dynamics
-    #[serde(alias = "beta")]
     pub prob_fire_spreads_to_neighbor: f32,  // Probability fire spreads to adjacent house
-    #[serde(alias = "kappa")]
     pub prob_solo_agent_extinguishes_fire: f32,  // Probability one agent extinguishes fire
-    #[serde(alias = "rho_ignite", alias = "p_spark")]
     pub prob_house_catches_fire: f32,  // Probability house catches fire each night
 
     // Team scoring (collective outcome)
-    #[serde(alias = "a")]
     pub team_reward_house_survives: f32,  // Team reward for each house that survives
-    #[serde(alias = "l")]
     pub team_penalty_house_burns: f32,    // Team penalty for each house that burns
 
     // Individual rewards (ownership-based, for future use in issue #52)
-    #[serde(alias = "a_own")]
     pub reward_own_house_survives: f32,      // Individual reward when own house survives
-    #[serde(alias = "a_neighbor")]
     pub reward_other_house_survives: f32,    // Individual reward when other house survives
     pub penalty_own_house_burns: f32,        // Individual penalty when own house burns
     pub penalty_other_house_burns: f32,      // Individual penalty when other house burns
 
     // Costs and structure
-    #[serde(alias = "c")]
     pub cost_to_work_one_night: f32,  // Cost incurred when agent chooses to work
-    #[serde(alias = "n_min")]
     pub min_nights: u32,              // Minimum nights before game can end
     pub num_agents: usize,            // Number of agents in game
 }
