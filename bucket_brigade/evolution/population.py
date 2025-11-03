@@ -53,7 +53,9 @@ class Individual:
         """
         return Individual(
             genome=self.genome.copy(),
-            generation=new_generation if new_generation is not None else self.generation,
+            generation=new_generation
+            if new_generation is not None
+            else self.generation,
             parents=self.parents,
         )
 
@@ -128,7 +130,10 @@ class Population:
         """
         # Move individuals without fitness to the end
         self.individuals.sort(
-            key=lambda ind: (ind.fitness is None, -(ind.fitness or 0) if reverse else (ind.fitness or float("inf")))
+            key=lambda ind: (
+                ind.fitness is None,
+                -(ind.fitness or 0) if reverse else (ind.fitness or float("inf")),
+            )
         )
 
     def get_best(self, n: int = 1) -> list[Individual]:
@@ -151,7 +156,9 @@ class Population:
         Returns:
             Dictionary with min, max, mean, std of fitness values
         """
-        fitnesses = np.array([ind.fitness for ind in self.individuals if ind.fitness is not None])
+        fitnesses = np.array(
+            [ind.fitness for ind in self.individuals if ind.fitness is not None]
+        )
 
         if len(fitnesses) == 0:
             return {"min": 0.0, "max": 0.0, "mean": 0.0, "std": 0.0}
@@ -207,11 +214,15 @@ class Population:
         Returns:
             New Population instance
         """
-        individuals = [Individual.from_dict(ind_data) for ind_data in data["individuals"]]
+        individuals = [
+            Individual.from_dict(ind_data) for ind_data in data["individuals"]
+        ]
         return cls(individuals)
 
 
-def create_random_individual(generation: int = 0, rng: Optional[np.random.Generator] = None) -> Individual:
+def create_random_individual(
+    generation: int = 0, rng: Optional[np.random.Generator] = None
+) -> Individual:
     """Create a random individual with genome in [0, 1]^10.
 
     Args:
@@ -228,7 +239,9 @@ def create_random_individual(generation: int = 0, rng: Optional[np.random.Genera
     return Individual(genome=genome, generation=generation)
 
 
-def create_random_population(size: int, generation: int = 0, seed: Optional[int] = None) -> Population:
+def create_random_population(
+    size: int, generation: int = 0, seed: Optional[int] = None
+) -> Population:
     """Create a population of random individuals.
 
     Args:
@@ -240,5 +253,7 @@ def create_random_population(size: int, generation: int = 0, seed: Optional[int]
         New Population with random individuals
     """
     rng = np.random.default_rng(seed)
-    individuals = [create_random_individual(generation=generation, rng=rng) for _ in range(size)]
+    individuals = [
+        create_random_individual(generation=generation, rng=rng) for _ in range(size)
+    ]
     return Population(individuals)

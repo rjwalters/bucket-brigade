@@ -58,7 +58,11 @@ class FitnessEvaluator:
 
         for _ in range(self.games_per_individual):
             # Create environment (single-agent evaluation)
-            scenario = self.scenario if self.scenario is not None else default_scenario(num_agents=1)
+            scenario = (
+                self.scenario
+                if self.scenario is not None
+                else default_scenario(num_agents=1)
+            )
             env = BucketBrigadeEnv(scenario=scenario)
 
             # Run game
@@ -82,7 +86,9 @@ class FitnessEvaluator:
         # Return mean reward
         return float(total_reward / self.games_per_individual)
 
-    def evaluate_population(self, population: Population, parallel: bool = False) -> None:
+    def evaluate_population(
+        self, population: Population, parallel: bool = False
+    ) -> None:
         """Evaluate all individuals in a population.
 
         Args:
@@ -100,7 +106,9 @@ class FitnessEvaluator:
 # ============================================================================
 
 
-def win_rate_fitness(individual: Individual, scenario: Optional[Scenario] = None, num_games: int = 20) -> float:
+def win_rate_fitness(
+    individual: Individual, scenario: Optional[Scenario] = None, num_games: int = 20
+) -> float:
     """Compute fitness as win rate (fraction of games where team succeeded).
 
     Win = all fires extinguished before all houses ruined.
@@ -117,7 +125,9 @@ def win_rate_fitness(individual: Individual, scenario: Optional[Scenario] = None
     wins = 0
 
     for _ in range(num_games):
-        scenario_inst = scenario if scenario is not None else default_scenario(num_agents=1)
+        scenario_inst = (
+            scenario if scenario is not None else default_scenario(num_agents=1)
+        )
         env = BucketBrigadeEnv(scenario=scenario_inst)
         obs = env.reset()
         agent.reset()
@@ -136,7 +146,9 @@ def win_rate_fitness(individual: Individual, scenario: Optional[Scenario] = None
     return float(wins / num_games)
 
 
-def robustness_fitness(individual: Individual, scenarios: list[Scenario], num_games_per_scenario: int = 5) -> float:
+def robustness_fitness(
+    individual: Individual, scenarios: list[Scenario], num_games_per_scenario: int = 5
+) -> float:
     """Compute fitness as performance across multiple scenarios.
 
     Robustness = average performance across diverse scenarios.
@@ -204,7 +216,9 @@ def multi_objective_fitness(
     total_length = 0
 
     for _ in range(num_games):
-        scenario_inst = scenario if scenario is not None else default_scenario(num_agents=1)
+        scenario_inst = (
+            scenario if scenario is not None else default_scenario(num_agents=1)
+        )
         env = BucketBrigadeEnv(scenario=scenario_inst)
         obs = env.reset()
         agent.reset()
@@ -226,10 +240,16 @@ def multi_objective_fitness(
     mean_reward = total_reward / num_games
     win_rate = wins / num_games
     mean_length = total_length / num_games
-    efficiency = 1.0 / (1.0 + mean_length / 50.0)  # Normalize to [0, 1], shorter is better
+    efficiency = 1.0 / (
+        1.0 + mean_length / 50.0
+    )  # Normalize to [0, 1], shorter is better
 
     # Weighted sum
-    fitness = weights["reward"] * mean_reward + weights["win_rate"] * win_rate + weights["efficiency"] * efficiency
+    fitness = (
+        weights["reward"] * mean_reward
+        + weights["win_rate"] * win_rate
+        + weights["efficiency"] * efficiency
+    )
 
     return float(fitness)
 
@@ -265,12 +285,20 @@ def create_fitness_function(
 
     elif fitness_type == "robustness":
         scenarios = kwargs.get("scenarios", [default_scenario(num_agents=1)])
-        games_per_scenario = kwargs.get("games_per_scenario", num_games // len(scenarios))
-        return lambda ind: robustness_fitness(ind, scenarios=scenarios, num_games_per_scenario=games_per_scenario)
+        games_per_scenario = kwargs.get(
+            "games_per_scenario", num_games // len(scenarios)
+        )
+        return lambda ind: robustness_fitness(
+            ind, scenarios=scenarios, num_games_per_scenario=games_per_scenario
+        )
 
     elif fitness_type == "multi_objective":
-        weights = kwargs.get("weights", {"reward": 1.0, "win_rate": 1.0, "efficiency": 0.5})
-        return lambda ind: multi_objective_fitness(ind, scenario=scenario, num_games=num_games, weights=weights)
+        weights = kwargs.get(
+            "weights", {"reward": 1.0, "win_rate": 1.0, "efficiency": 0.5}
+        )
+        return lambda ind: multi_objective_fitness(
+            ind, scenario=scenario, num_games=num_games, weights=weights
+        )
 
     else:
         raise ValueError(f"Unknown fitness type: {fitness_type}")

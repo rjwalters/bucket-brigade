@@ -49,7 +49,9 @@ def tournament_selection(
     evaluated = [ind for ind in population if ind.fitness is not None]
 
     if len(evaluated) < tournament_size:
-        raise ValueError(f"Population has only {len(evaluated)} evaluated individuals, need at least {tournament_size}")
+        raise ValueError(
+            f"Population has only {len(evaluated)} evaluated individuals, need at least {tournament_size}"
+        )
 
     parents = []
     for _ in range(num_parents):
@@ -64,7 +66,9 @@ def tournament_selection(
 
 
 def roulette_selection(
-    population: Population, num_parents: int = 2, rng: Optional[np.random.Generator] = None
+    population: Population,
+    num_parents: int = 2,
+    rng: Optional[np.random.Generator] = None,
 ) -> list[Individual]:
     """Select parents using roulette wheel selection (fitness-proportional).
 
@@ -104,14 +108,18 @@ def roulette_selection(
         probabilities = fitnesses / total_fitness
 
     # Select parents according to probabilities
-    indices = rng.choice(len(evaluated), size=num_parents, p=probabilities, replace=True)
+    indices = rng.choice(
+        len(evaluated), size=num_parents, p=probabilities, replace=True
+    )
     parents = [evaluated[i] for i in indices]
 
     return parents
 
 
 def rank_selection(
-    population: Population, num_parents: int = 2, rng: Optional[np.random.Generator] = None
+    population: Population,
+    num_parents: int = 2,
+    rng: Optional[np.random.Generator] = None,
 ) -> list[Individual]:
     """Select parents using rank-based selection.
 
@@ -146,7 +154,9 @@ def rank_selection(
     probabilities = ranks / np.sum(ranks)
 
     # Select parents according to rank-based probabilities
-    indices = rng.choice(len(sorted_individuals), size=num_parents, p=probabilities, replace=True)
+    indices = rng.choice(
+        len(sorted_individuals), size=num_parents, p=probabilities, replace=True
+    )
     parents = [sorted_individuals[i] for i in indices]
 
     return parents
@@ -158,7 +168,10 @@ def rank_selection(
 
 
 def uniform_crossover(
-    parent1: Individual, parent2: Individual, generation: int, rng: Optional[np.random.Generator] = None
+    parent1: Individual,
+    parent2: Individual,
+    generation: int,
+    rng: Optional[np.random.Generator] = None,
 ) -> tuple[Individual, Individual]:
     """Perform uniform crossover between two parents.
 
@@ -186,15 +199,26 @@ def uniform_crossover(
     child2_genome = np.where(mask, parent2.genome, parent1.genome)
 
     # Create offspring individuals
-    child1 = Individual(genome=child1_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child1 = Individual(
+        genome=child1_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
-    child2 = Individual(genome=child2_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child2 = Individual(
+        genome=child2_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
     return child1, child2
 
 
 def single_point_crossover(
-    parent1: Individual, parent2: Individual, generation: int, rng: Optional[np.random.Generator] = None
+    parent1: Individual,
+    parent2: Individual,
+    generation: int,
+    rng: Optional[np.random.Generator] = None,
 ) -> tuple[Individual, Individual]:
     """Perform single-point crossover between two parents.
 
@@ -223,9 +247,17 @@ def single_point_crossover(
     child2_genome = np.concatenate([parent2.genome[:point], parent1.genome[point:]])
 
     # Create offspring individuals
-    child1 = Individual(genome=child1_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child1 = Individual(
+        genome=child1_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
-    child2 = Individual(genome=child2_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child2 = Individual(
+        genome=child2_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
     return child1, child2
 
@@ -262,9 +294,17 @@ def arithmetic_crossover(
     child2_genome = np.clip(child2_genome, 0, 1)
 
     # Create offspring individuals
-    child1 = Individual(genome=child1_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child1 = Individual(
+        genome=child1_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
-    child2 = Individual(genome=child2_genome.copy(), generation=generation, parents=(parent1.id, parent2.id))
+    child2 = Individual(
+        genome=child2_genome.copy(),
+        generation=generation,
+        parents=(parent1.id, parent2.id),
+    )
 
     return child1, child2
 
@@ -275,7 +315,10 @@ def arithmetic_crossover(
 
 
 def gaussian_mutation(
-    individual: Individual, mutation_rate: float = 0.1, mutation_scale: float = 0.1, rng: Optional[np.random.Generator] = None
+    individual: Individual,
+    mutation_rate: float = 0.1,
+    mutation_scale: float = 0.1,
+    rng: Optional[np.random.Generator] = None,
 ) -> Individual:
     """Apply Gaussian mutation to an individual.
 
@@ -313,7 +356,9 @@ def gaussian_mutation(
 
 
 def uniform_mutation(
-    individual: Individual, mutation_rate: float = 0.1, rng: Optional[np.random.Generator] = None
+    individual: Individual,
+    mutation_rate: float = 0.1,
+    rng: Optional[np.random.Generator] = None,
 ) -> Individual:
     """Apply uniform mutation to an individual.
 
@@ -376,4 +421,6 @@ def adaptive_mutation(
     progress = generation / max(max_generations, 1)
     current_rate = initial_rate + (final_rate - initial_rate) * progress
 
-    return gaussian_mutation(individual, mutation_rate=current_rate, mutation_scale=mutation_scale, rng=rng)
+    return gaussian_mutation(
+        individual, mutation_rate=current_rate, mutation_scale=mutation_scale, rng=rng
+    )

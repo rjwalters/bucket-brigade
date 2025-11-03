@@ -12,7 +12,7 @@ from typing import Callable, Literal, Optional
 
 import numpy as np
 
-from .fitness import FitnessEvaluator, create_fitness_function
+from .fitness import FitnessEvaluator
 from .operators import (
     adaptive_mutation,
     arithmetic_crossover,
@@ -24,7 +24,12 @@ from .operators import (
     uniform_crossover,
     uniform_mutation,
 )
-from .population import Individual, Population, create_random_individual, create_random_population
+from .population import (
+    Individual,
+    Population,
+    create_random_individual,
+    create_random_population,
+)
 
 
 @dataclass
@@ -74,7 +79,9 @@ class EvolutionResult:
 
     best_individual: Individual
     final_population: Population
-    fitness_history: list[dict[str, float]]  # [{"min": ..., "max": ..., "mean": ..., "std": ...}, ...]
+    fitness_history: list[
+        dict[str, float]
+    ]  # [{"min": ..., "max": ..., "mean": ..., "std": ...}, ...]
     diversity_history: list[float]
     converged_at: Optional[int] = None
 
@@ -116,7 +123,9 @@ class GeneticAlgorithm:
         self.diversity_history: list[float] = []
         self.generation = 0
 
-    def initialize_population(self, seed_individuals: Optional[list[Individual]] = None) -> Population:
+    def initialize_population(
+        self, seed_individuals: Optional[list[Individual]] = None
+    ) -> Population:
         """Initialize population randomly or from seed individuals.
 
         Args:
@@ -128,7 +137,9 @@ class GeneticAlgorithm:
         if seed_individuals is None or len(seed_individuals) == 0:
             # Random initialization
             return create_random_population(
-                size=self.config.population_size, generation=0, seed=int(self.rng.integers(0, 2**31))
+                size=self.config.population_size,
+                generation=0,
+                seed=int(self.rng.integers(0, 2**31)),
             )
 
         # Use seed individuals and fill rest with random
@@ -164,7 +175,9 @@ class GeneticAlgorithm:
 
         # Need pairs of parents, so select 2 * num_offspring
         # (we'll create num_offspring from pairs)
-        num_parents_needed = num_offspring  # Each pair creates 2 children, we'll keep num_offspring
+        num_parents_needed = (
+            num_offspring  # Each pair creates 2 children, we'll keep num_offspring
+        )
 
         # Adjust to ensure even number
         if num_parents_needed % 2 != 0:
@@ -173,7 +186,12 @@ class GeneticAlgorithm:
         parents = []
 
         if self.config.selection_strategy == "tournament":
-            parents = tournament_selection(population, self.config.tournament_size, num_parents_needed, rng=self.rng)
+            parents = tournament_selection(
+                population,
+                self.config.tournament_size,
+                num_parents_needed,
+                rng=self.rng,
+            )
 
         elif self.config.selection_strategy == "roulette":
             parents = roulette_selection(population, num_parents_needed, rng=self.rng)
@@ -183,7 +201,9 @@ class GeneticAlgorithm:
 
         return parents
 
-    def crossover(self, parent1: Individual, parent2: Individual, generation: int) -> tuple[Individual, Individual]:
+    def crossover(
+        self, parent1: Individual, parent2: Individual, generation: int
+    ) -> tuple[Individual, Individual]:
         """Perform crossover between two parents.
 
         Args:
@@ -200,13 +220,23 @@ class GeneticAlgorithm:
                 return uniform_crossover(parent1, parent2, generation, rng=self.rng)
 
             elif self.config.crossover_strategy == "single_point":
-                return single_point_crossover(parent1, parent2, generation, rng=self.rng)
+                return single_point_crossover(
+                    parent1, parent2, generation, rng=self.rng
+                )
 
             elif self.config.crossover_strategy == "arithmetic":
-                return arithmetic_crossover(parent1, parent2, generation, alpha=self.config.arithmetic_alpha, rng=self.rng)
+                return arithmetic_crossover(
+                    parent1,
+                    parent2,
+                    generation,
+                    alpha=self.config.arithmetic_alpha,
+                    rng=self.rng,
+                )
 
         # No crossover: return clones of parents
-        return parent1.clone(new_generation=generation), parent2.clone(new_generation=generation)
+        return parent1.clone(new_generation=generation), parent2.clone(
+            new_generation=generation
+        )
 
     def mutate(self, individual: Individual) -> Individual:
         """Apply mutation to an individual.
@@ -219,11 +249,16 @@ class GeneticAlgorithm:
         """
         if self.config.mutation_strategy == "gaussian":
             return gaussian_mutation(
-                individual, mutation_rate=self.config.mutation_rate, mutation_scale=self.config.mutation_scale, rng=self.rng
+                individual,
+                mutation_rate=self.config.mutation_rate,
+                mutation_scale=self.config.mutation_scale,
+                rng=self.rng,
             )
 
         elif self.config.mutation_strategy == "uniform":
-            return uniform_mutation(individual, mutation_rate=self.config.mutation_rate, rng=self.rng)
+            return uniform_mutation(
+                individual, mutation_rate=self.config.mutation_rate, rng=self.rng
+            )
 
         elif self.config.mutation_strategy == "adaptive":
             return adaptive_mutation(
@@ -259,7 +294,9 @@ class GeneticAlgorithm:
 
         for i in range(0, len(parents) - 1, 2):
             # Crossover
-            child1, child2 = self.crossover(parents[i], parents[i + 1], self.generation + 1)
+            child1, child2 = self.crossover(
+                parents[i], parents[i + 1], self.generation + 1
+            )
 
             # Mutation
             child1 = self.mutate(child1)
@@ -271,7 +308,9 @@ class GeneticAlgorithm:
         offspring = offspring[: self.config.population_size - self.config.elite_size]
 
         # Combine elite and offspring
-        new_individuals = [ind.clone(new_generation=self.generation + 1) for ind in elite] + offspring
+        new_individuals = [
+            ind.clone(new_generation=self.generation + 1) for ind in elite
+        ] + offspring
 
         return Population(new_individuals)
 
@@ -299,7 +338,9 @@ class GeneticAlgorithm:
         return improvement < self.config.convergence_threshold
 
     def evolve(
-        self, seed_individuals: Optional[list[Individual]] = None, progress_callback: Optional[Callable[[int, Population], None]] = None
+        self,
+        seed_individuals: Optional[list[Individual]] = None,
+        progress_callback: Optional[Callable[[int, Population], None]] = None,
     ) -> EvolutionResult:
         """Run the evolutionary algorithm.
 
@@ -347,8 +388,12 @@ class GeneticAlgorithm:
                     # Inject random individuals
                     num_inject = max(1, self.config.population_size // 10)
                     for i in range(num_inject):
-                        population.individuals[-(i + 1)] = create_random_individual(generation=gen + 1, rng=self.rng)
-                        population.individuals[-(i + 1)].fitness = self.fitness_evaluator.evaluate_individual(
+                        population.individuals[-(i + 1)] = create_random_individual(
+                            generation=gen + 1, rng=self.rng
+                        )
+                        population.individuals[
+                            -(i + 1)
+                        ].fitness = self.fitness_evaluator.evaluate_individual(
                             population.individuals[-(i + 1)]
                         )
 

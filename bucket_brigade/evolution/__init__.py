@@ -23,7 +23,12 @@ from .operators import (
     uniform_crossover,
     uniform_mutation,
 )
-from .population import Individual, Population, create_random_individual, create_random_population
+from .population import (
+    Individual,
+    Population,
+    create_random_individual,
+    create_random_population,
+)
 
 __all__ = [
     # Core classes

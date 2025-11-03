@@ -27,7 +27,9 @@ class TestIndividual:
 
     def test_individual_creation(self):
         """Test creating an individual."""
-        genome = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32)
+        genome = np.array(
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32
+        )
         ind = Individual(genome=genome, generation=0)
 
         assert ind.genome.shape == (10,)
@@ -44,11 +46,16 @@ class TestIndividual:
 
         # Out of range
         with pytest.raises(ValueError):
-            Individual(genome=np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.5]), generation=0)
+            Individual(
+                genome=np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.5]),
+                generation=0,
+            )
 
     def test_individual_clone(self):
         """Test cloning an individual."""
-        genome = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32)
+        genome = np.array(
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32
+        )
         ind = Individual(genome=genome, generation=0, fitness=0.5)
 
         clone = ind.clone(new_generation=1)
@@ -60,7 +67,9 @@ class TestIndividual:
 
     def test_individual_serialization(self):
         """Test individual to/from dict."""
-        genome = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32)
+        genome = np.array(
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float32
+        )
         ind = Individual(genome=genome, generation=5, fitness=0.8)
 
         # To dict
@@ -142,7 +151,10 @@ class TestPopulation:
     def test_population_diversity(self):
         """Test diversity calculation."""
         # Create population with varying diversity
-        individuals = [create_random_individual(generation=0, rng=np.random.default_rng(i)) for i in range(10)]
+        individuals = [
+            create_random_individual(generation=0, rng=np.random.default_rng(i))
+            for i in range(10)
+        ]
         pop = Population(individuals)
 
         diversity = pop.get_diversity()
@@ -150,7 +162,9 @@ class TestPopulation:
 
         # Population of clones has zero diversity
         clone_genome = create_random_individual(generation=0).genome
-        clones = [Individual(genome=clone_genome.copy(), generation=0) for _ in range(10)]
+        clones = [
+            Individual(genome=clone_genome.copy(), generation=0) for _ in range(10)
+        ]
         clone_pop = Population(clones)
 
         clone_diversity = clone_pop.get_diversity()
@@ -213,7 +227,9 @@ class TestCrossoverOperators:
         parent1 = Individual(genome=genome1, generation=0)
         parent2 = Individual(genome=genome2, generation=0)
 
-        child1, child2 = uniform_crossover(parent1, parent2, generation=1, rng=np.random.default_rng(42))
+        child1, child2 = uniform_crossover(
+            parent1, parent2, generation=1, rng=np.random.default_rng(42)
+        )
 
         # Children should have mix of parent genes
         assert child1.generation == 1
@@ -230,7 +246,9 @@ class TestCrossoverOperators:
         parent1 = Individual(genome=genome1, generation=0)
         parent2 = Individual(genome=genome2, generation=0)
 
-        child1, child2 = single_point_crossover(parent1, parent2, generation=1, rng=np.random.default_rng(42))
+        child1, child2 = single_point_crossover(
+            parent1, parent2, generation=1, rng=np.random.default_rng(42)
+        )
 
         # Children should be complementary splits
         assert child1.generation == 1
@@ -261,7 +279,9 @@ class TestMutationOperators:
         genome = np.full(10, 0.5, dtype=np.float32)
         ind = Individual(genome=genome, generation=0)
 
-        mutated = gaussian_mutation(ind, mutation_rate=1.0, mutation_scale=0.1, rng=np.random.default_rng(42))
+        mutated = gaussian_mutation(
+            ind, mutation_rate=1.0, mutation_scale=0.1, rng=np.random.default_rng(42)
+        )
 
         # All genes should be mutated (rate=1.0)
         assert not np.all(mutated.genome == ind.genome)
@@ -273,7 +293,9 @@ class TestMutationOperators:
         genome = np.full(10, 0.5, dtype=np.float32)
         ind = Individual(genome=genome, generation=0)
 
-        mutated = uniform_mutation(ind, mutation_rate=1.0, rng=np.random.default_rng(42))
+        mutated = uniform_mutation(
+            ind, mutation_rate=1.0, rng=np.random.default_rng(42)
+        )
 
         # All genes should be mutated (rate=1.0)
         assert not np.all(mutated.genome == ind.genome)
@@ -339,7 +361,12 @@ class TestGeneticAlgorithm:
     def test_ga_evolve_basic(self):
         """Test basic evolution run (small scale)."""
         config = EvolutionConfig(
-            population_size=10, num_generations=3, elite_size=2, games_per_individual=5, seed=42, early_stopping=False
+            population_size=10,
+            num_generations=3,
+            elite_size=2,
+            games_per_individual=5,
+            seed=42,
+            early_stopping=False,
         )
 
         ga = GeneticAlgorithm(config)
