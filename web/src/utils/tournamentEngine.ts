@@ -14,22 +14,89 @@ import type {
   AgentContribution,
   ScenarioTypeStats,
 } from '../types/teamBuilder';
-import type { Scenario } from '../types';
+import type { Scenario, GameReplay } from '../types';
 import {
   type AgentObservation,
   type Agent,
+  type GameResult,
 } from './browserEngine';
 import { generateScenarioSet } from './scenarioGenerator';
 import type { ScenarioType } from './scenarioGenerator';
 import { BrowserAgent } from './browserAgents';
 import type { AgentArchetype } from '../types/teamBuilder';
 import { createGameEngine, initWasm, isWasmInitialized } from './wasmEngine';
+import { loadGameReplays, saveGameReplays } from './storage';
 
 /**
  * Generate unique ID
  */
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Convert GameResult to GameReplay format for replay viewer
+ */
+function convertToGameReplay(gameResult: GameResult): GameReplay {
+  return {
+    scenario: gameResult.scenario,
+    nights: gameResult.nights,
+  };
+}
+
+/**
+ * Save interesting games from tournament to replay viewer
+ * Saves best, worst, and median scoring games
+ */
+function saveTournamentGamesToReplay(results: ScenarioResult[]): void {
+  if (results.length === 0) return;
+
+  // Sort by score
+  const sorted = [...results].sort((a, b) => b.teamScore - a.teamScore);
+
+  // Select interesting games: best, worst, median, and a few random samples
+  const gamesToSave: GameReplay[] = [];
+
+  // Best game
+  if (sorted[0]?.replayData) {
+    gamesToSave.push(convertToGameReplay(sorted[0].replayData));
+  }
+
+  // Worst game
+  if (sorted[sorted.length - 1]?.replayData) {
+    gamesToSave.push(convertToGameReplay(sorted[sorted.length - 1].replayData));
+  }
+
+  // Median game
+  const medianIdx = Math.floor(sorted.length / 2);
+  if (sorted[medianIdx]?.replayData) {
+    gamesToSave.push(convertToGameReplay(sorted[medianIdx].replayData));
+  }
+
+  // Add 3-5 random samples across the distribution
+  const sampleIndices = [
+    Math.floor(sorted.length * 0.25),
+    Math.floor(sorted.length * 0.75),
+    Math.floor(sorted.length * 0.33),
+    Math.floor(sorted.length * 0.66),
+  ];
+
+  for (const idx of sampleIndices) {
+    if (sorted[idx]?.replayData && gamesToSave.length < 8) {
+      gamesToSave.push(convertToGameReplay(sorted[idx].replayData));
+    }
+  }
+
+  // Load existing replays and append new ones
+  const existingReplays = loadGameReplays();
+  const allReplays = [...existingReplays, ...gamesToSave];
+
+  // Keep only the most recent 50 games to avoid filling localStorage
+  const recentReplays = allReplays.slice(-50);
+
+  saveGameReplays(recentReplays);
+
+  console.log(`💾 Saved ${gamesToSave.length} tournament games to replay viewer`);
 }
 
 /**
@@ -363,6 +430,9 @@ export class TournamentEngine {
     const statistics = calculateStatistics(results);
     const agentContributions = estimateAgentContributions(results, team);
     const scenarioTypePerformance = analyzeScenarioTypes(results);
+
+    // Save interesting games to replay viewer
+    saveTournamentGamesToReplay(results);
 
     return {
       id: generateId(),

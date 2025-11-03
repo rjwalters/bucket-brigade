@@ -4,6 +4,7 @@
  * Displays comprehensive tournament analysis
  */
 
+import { Link } from 'react-router-dom';
 import type { TournamentResult } from '../../types/teamBuilder';
 import { getScenarioTemplate } from '../../utils/scenarioGenerator';
 
@@ -258,6 +259,28 @@ export function TournamentResults({
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Game Replay Info */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">🎬</div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                Sample Games Saved!
+              </h3>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                We've automatically saved some interesting games from this tournament (best, worst, median, and a few random samples).
+                View them in the Game Replay tab to see exactly how your agents performed.
+              </p>
+              <Link
+                to="/replay"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                🎮 View Game Replays →
+              </Link>
+            </div>
           </div>
         </div>
 
