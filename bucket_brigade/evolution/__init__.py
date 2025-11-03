@@ -2,10 +2,12 @@
 
 This module provides genetic algorithms for evolving agent parameters
 through tournament-based fitness evaluation.
+
+By default, uses Rust-backed fitness evaluation for 100x speedup.
 """
 
+from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
 from .fitness import (
-    FitnessEvaluator,
     create_fitness_function,
     multi_objective_fitness,
     robustness_fitness,

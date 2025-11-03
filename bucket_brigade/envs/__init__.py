@@ -11,11 +11,12 @@ if TYPE_CHECKING:
     pass
 
 try:
-    from .puffer_env import (
-        PufferBucketBrigade,
-        PufferBucketBrigadeVectorized,
-        make_env,
-        make_vectorized_env,
+    # Use Rust-backed PufferLib environment for 100x speedup
+    from .puffer_env_rust import (
+        RustPufferBucketBrigade as PufferBucketBrigade,
+        RustPufferBucketBrigadeVectorized as PufferBucketBrigadeVectorized,
+        make_rust_env as make_env,
+        make_rust_vectorized_env as make_vectorized_env,
     )
 except ImportError:
     # PufferLib not available, skip these imports
