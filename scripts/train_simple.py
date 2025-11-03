@@ -164,6 +164,16 @@ def train_ppo(
         advantages = torch.FloatTensor(advantages)
         returns = advantages + torch.FloatTensor(values_np)
 
+        # Compute explained variance (how well value function predicts returns)
+        with torch.no_grad():
+            returns_var = returns.var()
+            if returns_var > 1e-8:
+                values_tensor = torch.FloatTensor(values_np)
+                residual_var = (returns - values_tensor).var()
+                explained_var = 1 - (residual_var / returns_var)
+            else:
+                explained_var = torch.tensor(0.0)
+
         # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
@@ -190,11 +200,19 @@ def train_ppo(
             log_probs_new = torch.stack(log_probs_new).sum(0)
             entropy = torch.stack(entropies).mean()
 
+            # Compute KL divergence (measure of policy change)
+            with torch.no_grad():
+                kl_div = (log_probs_old - log_probs_new).mean()
+
             # PPO loss
             ratio = torch.exp(log_probs_new - log_probs_old)
             surr1 = ratio * advantages
             surr2 = torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon) * advantages
             policy_loss = -torch.min(surr1, surr2).mean()
+
+            # Compute clip fraction (percentage of advantages clipped by PPO)
+            with torch.no_grad():
+                clip_fraction = ((ratio < 1 - clip_epsilon) | (ratio > 1 + clip_epsilon)).float().mean()
 
             # Value loss
             value_loss = nn.functional.mse_loss(values_pred.squeeze(), returns)
@@ -215,6 +233,9 @@ def train_ppo(
             writer.add_scalar("train/entropy", entropy.item(), global_step)
             writer.add_scalar("train/total_loss", loss.item(), global_step)
             writer.add_scalar("train/grad_norm", grad_norm.item(), global_step)
+            writer.add_scalar("train/kl_divergence", kl_div.item(), global_step)
+            writer.add_scalar("train/clip_fraction", clip_fraction.item(), global_step)
+            writer.add_scalar("train/explained_variance", explained_var.item(), global_step)
             if episode_rewards:
                 writer.add_scalar("episode/mean_reward", np.mean(episode_rewards), global_step)
                 writer.add_scalar("episode/max_reward", np.max(episode_rewards), global_step)
