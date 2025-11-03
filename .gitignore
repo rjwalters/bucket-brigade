@@ -237,3 +237,6 @@ agents/
 
 # TensorBoard logs
 runs/
+
+# Experiment tracking database
+data/experiments.db
