@@ -1,8 +1,8 @@
 {
   "scenario": "deceptive_calm",
   "config": {
-    "population_size": 20,
-    "num_generations": 10,
+    "population_size": 50,
+    "num_generations": 50,
     "elite_size": 5,
     "selection_strategy": "tournament",
     "crossover_strategy": "uniform",
@@ -11,107 +11,114 @@
     "mutation_rate": 0.1,
     "mutation_scale": 0.1,
     "fitness_type": "mean_reward",
-    "games_per_individual": 5,
+    "games_per_individual": 20,
     "seed": null
   },
   "generations": [
     {
       "generation": 0,
-      "best_fitness": -1.3,
-      "mean_fitness": -4.289999999999999,
-      "std_fitness": 1.4959612294441325,
-      "diversity": 1.2702440961411126
+      "best_fitness": -2.5,
+      "mean_fitness": -4.484,
+      "std_fitness": 1.0763103641608214,
+      "diversity": 1.2526218919608059
     },
     {
       "generation": 1,
-      "best_fitness": 0.3,
-      "mean_fitness": -4.01,
-      "std_fitness": 1.853078519653174,
-      "diversity": 1.1763039016274806
+      "best_fitness": -2.6,
+      "mean_fitness": -4.534,
+      "std_fitness": 0.9713619304872927,
+      "diversity": 1.2162874709265763
     },
     {
       "generation": 2,
-      "best_fitness": -1.9,
-      "mean_fitness": -4.090000000000001,
-      "std_fitness": 1.5664928981645592,
-      "diversity": 1.1134122895451402
+      "best_fitness": -2.2,
+      "mean_fitness": -4.4110000000000005,
+      "std_fitness": 0.9771023487844044,
+      "diversity": 1.1713042988256472
     },
     {
       "generation": 3,
-      "best_fitness": -0.1,
-      "mean_fitness": -4.96,
-      "std_fitness": 2.7269763475321893,
-      "diversity": 0.9762121235685958
+      "best_fitness": -2.1,
+      "mean_fitness": -4.532,
+      "std_fitness": 1.1182021284186503,
+      "diversity": 1.06679659023326
     },
     {
       "generation": 4,
-      "best_fitness": 0.7,
-      "mean_fitness": -4.71,
-      "std_fitness": 2.1656176947928736,
-      "diversity": 0.8946873794512422
+      "best_fitness": -2.35,
+      "mean_fitness": -4.337,
+      "std_fitness": 1.05141856555798,
+      "diversity": 1.0951856031503429
     },
     {
       "generation": 5,
-      "best_fitness": -0.1,
-      "mean_fitness": -4.2700000000000005,
-      "std_fitness": 2.1847425477616347,
-      "diversity": 0.7651929497945354
+      "best_fitness": -2.45,
+      "mean_fitness": -4.391,
+      "std_fitness": 1.241075743055193,
+      "diversity": 1.1122449393485785
     },
     {
       "generation": 6,
-      "best_fitness": 0.1,
-      "mean_fitness": -3.28,
-      "std_fitness": 1.7491712323268984,
-      "diversity": 0.7083644379893796
+      "best_fitness": -1.95,
+      "mean_fitness": -4.44,
+      "std_fitness": 1.0322305943925514,
+      "diversity": 1.0953502328612135
     },
     {
       "generation": 7,
-      "best_fitness": 0.5,
-      "mean_fitness": -4.709999999999999,
-      "std_fitness": 2.510358540129278,
-      "diversity": 0.599918259726099
+      "best_fitness": -2.1,
+      "mean_fitness": -4.413,
+      "std_fitness": 1.1547211784669058,
+      "diversity": 1.0073797932137905
     },
     {
       "generation": 8,
-      "best_fitness": -0.9,
-      "mean_fitness": -4.9399999999999995,
-      "std_fitness": 2.1564786110694443,
-      "diversity": 0.49060120009119557
+      "best_fitness": -2.75,
+      "mean_fitness": -4.468000000000001,
+      "std_fitness": 1.0001879823313216,
+      "diversity": 0.9591978307641406
     },
     {
       "generation": 9,
-      "best_fitness": -0.3,
-      "mean_fitness": -3.8899999999999997,
-      "std_fitness": 2.131173385719707,
-      "diversity": 0.5562675901889174
+      "best_fitness": -2.2,
+      "mean_fitness": -4.454000000000001,
+      "std_fitness": 1.0779536168128943,
+      "diversity": 0.8820528587313945
     },
     {
-      "generation": 9,
-      "best_fitness": -0.5,
-      "mean_fitness": -4.279999999999999,
-      "std_fitness": 1.837280599146467,
-      "diversity": 0.6625389344812221
+      "generation": 10,
+      "best_fitness": -1.75,
+      "mean_fitness": -4.3839999999999995,
+      "std_fitness": 0.9729563196773018,
+      "diversity": 0.9018414498673594
+    },
+    {
+      "generation": 10,
+      "best_fitness": -2.6,
+      "mean_fitness": -4.413,
+      "std_fitness": 0.9487786886308102,
+      "diversity": 0.8868495612621767
     }
   ],
   "best_agent": {
-    "generation": 10,
-    "fitness": -0.5,
+    "generation": 11,
+    "fitness": -2.6,
     "genome": [
-      0.38933631777763367,
+      0.2752518355846405,
+      0.10730843991041183,
       1.0,
-      0.40967458486557007,
-      0.38370494905453345,
-      0.15417349338531494,
-      0.6691702604293823,
-      0.2453285282798436,
-      0.34259355068206787,
-      0.3244436004039221,
-      0.49276456236839294
+      0.0,
+      0.2395540028810501,
+      0.09145677834749222,
+      0.22717955708503723,
+      0.22329966973306783,
+      0.5343073606491089,
+      0.4297611117362976
     ]
   },
   "convergence": {
-    "converged": false,
-    "generation": null,
-    "elapsed_time": 17.718322038650513
+    "converged": true,
+    "generation": 10,
+    "elapsed_time": 307.789302110672
   }
 }

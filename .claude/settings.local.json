@@ -82,7 +82,12 @@
       "Bash(timeout 30 .venv/bin/python:*)",
       "Bash(timeout 10 .venv/bin/python:*)",
       "Bash(do echo \"=== Processing $scenario ===\" .venv/bin/python experiments/scripts/run_scenario_research.py $scenario --quick --skip-nash)",
-      "Bash(web/.gitignore)"
+      "Bash(web/.gitignore)",
+      "Bash(source:*)",
+      "Bash(then .venv/bin/python --version)",
+      "Bash(.venv/bin/pip:*)",
+      "Bash(else echo \"No .venv, trying uv\")",
+      "Bash(uv --version:*)"
     ],
     "deny": [],
     "ask": []
