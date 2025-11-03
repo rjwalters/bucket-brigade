@@ -143,6 +143,7 @@ const GameReplay: React.FC = () => {
             onPrev={handlePrevNight}
             onNext={handleNextNight}
             onSpeedChange={handleSpeedChange}
+            nights={selectedGame.nights}
           />
 
           {/* Game Visualization and Info */}

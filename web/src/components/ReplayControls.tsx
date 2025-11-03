@@ -1,5 +1,6 @@
-import React from 'react';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw, Clock } from 'lucide-react';
+import type { GameNight } from '../types';
 
 interface ReplayControlsProps {
   currentNight: number;
@@ -11,6 +12,7 @@ interface ReplayControlsProps {
   onPrev: () => void;
   onNext: () => void;
   onSpeedChange: (speed: number) => void;
+  nights?: GameNight[]; // Optional: for showing fire event markers
   className?: string;
 }
 
@@ -24,8 +26,11 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   onPrev,
   onNext,
   onSpeedChange,
+  nights,
   className = ''
 }) => {
+  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
+
   const speedOptions = [
     { label: '0.5x', value: 2000, multiplier: 0.5 },
     { label: '1x', value: 1000, multiplier: 1 },
@@ -35,23 +40,94 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
 
   const progressPercentage = totalNights > 0 ? ((currentNight + 1) / totalNights) * 100 : 0;
 
+  // Calculate elapsed time based on current night
+  // Assuming each night represents 1 day (24 hours)
+  useEffect(() => {
+    setElapsedTime(currentNight * 24 * 3600); // Convert days to seconds
+  }, [currentNight]);
+
+  // Tick the clock when playing
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const currentMultiplier = speedOptions.find(opt => opt.value === speed)?.multiplier || 1;
+    // Update clock every 100ms, advancing by time proportional to speed
+    const interval = setInterval(() => {
+      setElapsedTime(prev => prev + (0.1 * currentMultiplier * 24 * 3600)); // 0.1s real time = fraction of a day
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, speed]);
+
+  // Format elapsed time as D:HH:MM:SS
+  const formatElapsedTime = (seconds: number): string => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${days}d ${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Find nights where fires occurred (any house became burning)
+  const fireEventNights = nights ? nights.reduce((acc, night, index) => {
+    // Check if any house is burning (state = 1) in this night
+    const hasFire = night.houses.some(house => house === 1);
+    if (hasFire && index > 0) {
+      // Check if this is a NEW fire (wasn't burning in previous night)
+      const prevNight = nights[index - 1];
+      const newFires = night.houses.some((house, houseIndex) =>
+        house === 1 && prevNight.houses[houseIndex] !== 1
+      );
+      if (newFires) {
+        acc.push(index);
+      }
+    } else if (hasFire && index === 0) {
+      acc.push(index);
+    }
+    return acc;
+  }, [] as number[]) : [];
+
   return (
     <div className={`replay-controls bg-white rounded-lg shadow-md p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Playback Controls</h3>
-        <div className="text-sm text-gray-600">
-          Night {currentNight + 1} of {totalNights}
+        <div className="flex items-center space-x-4">
+          {/* Elapsed Time Clock */}
+          <div className="flex items-center space-x-2 text-sm bg-gray-100 px-3 py-1 rounded-full">
+            <Clock className="w-4 h-4 text-gray-600" />
+            <span className="font-mono font-semibold text-gray-900">
+              {formatElapsedTime(elapsedTime)}
+            </span>
+          </div>
+          <div className="text-sm text-gray-600">
+            Night {currentNight + 1} of {totalNights}
+          </div>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="mb-4">
+      {/* Progress Bar with Fire Event Markers */}
+      <div className="mb-4 relative">
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
           <div
             className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300 ease-out"
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
+        {/* Fire event markers */}
+        {fireEventNights.map((nightIndex) => {
+          const markerPosition = ((nightIndex + 1) / totalNights) * 100;
+          return (
+            <div
+              key={`fire-${nightIndex}`}
+              className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+              style={{ left: `${markerPosition}%` }}
+              title={`Fire event at night ${nightIndex + 1}`}
+            >
+              <div className="absolute -top-1 -left-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Control Buttons */}
