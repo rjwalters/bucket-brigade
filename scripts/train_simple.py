@@ -106,6 +106,8 @@ def train_ppo(
     max_grad_norm=0.5,
     eval_interval=10000,
     writer=None,
+    experiment_session=None,
+    experiment_run_id=None,
 ):
     """Train the policy using PPO."""
 
@@ -221,6 +223,18 @@ def train_ppo(
                 writer.add_scalar("episode/min_reward", np.min(episode_rewards), global_step)
             writer.add_scalar("train/learning_rate", optimizer.param_groups[0]["lr"], global_step)
 
+        # Experiment tracking
+        if experiment_session is not None and experiment_run_id is not None and global_step % eval_interval == 0:
+            from bucket_brigade.db.experiments import log_training_metric
+            avg_reward_val = float(np.mean(episode_rewards)) if episode_rewards else None
+            log_training_metric(
+                experiment_session,
+                experiment_run_id,
+                global_step,
+                avg_reward=avg_reward_val,
+                episode_length=None,
+            )
+
         # Logging
         if global_step % eval_interval == 0:
             elapsed = time.time() - start_time
@@ -280,6 +294,17 @@ def main():
         default=None,
         help="Name for TensorBoard run (default: auto-generated with timestamp)",
     )
+    parser.add_argument(
+        "--track",
+        action="store_true",
+        help="Enable experiment tracking to database",
+    )
+    parser.add_argument(
+        "--experiments-db",
+        type=str,
+        default=None,
+        help="Path to experiments database (default: data/experiments.db)",
+    )
 
     args = parser.parse_args()
 
@@ -332,6 +357,40 @@ def main():
     writer.add_text("hyperparameters/batch_size", str(args.batch_size))
     writer.add_text("hyperparameters/seed", str(args.seed))
 
+    # Initialize experiment tracking
+    experiment_session = None
+    experiment_run = None
+    if args.track:
+        from bucket_brigade.db.experiments import (
+            init_experiments_db,
+            create_experiment_run,
+            complete_experiment_run,
+        )
+
+        print(f"🗄️  Initializing experiment tracking...")
+        experiment_session = init_experiments_db(args.experiments_db)
+
+        # Create experiment run
+        hyperparameters = {
+            "scenario": args.scenario,
+            "num_opponents": args.num_opponents,
+            "num_steps": args.num_steps,
+            "batch_size": args.batch_size,
+            "hidden_size": args.hidden_size,
+            "learning_rate": args.lr,
+            "seed": args.seed,
+        }
+
+        experiment_run = create_experiment_run(
+            experiment_session,
+            run_name=args.run_name,
+            scenario=args.scenario,
+            hyperparameters=hyperparameters,
+            model_path=args.save_path,
+        )
+
+        print(f"✅ Created experiment run: {experiment_run.run_name} (ID: {experiment_run.id})")
+
     # Train
     try:
         policy = train_ppo(
@@ -341,10 +400,21 @@ def main():
             num_steps=args.num_steps,
             batch_size=args.batch_size,
             writer=writer,
+            experiment_session=experiment_session,
+            experiment_run_id=experiment_run.id if experiment_run else None,
         )
     finally:
         writer.close()
         print("📊 TensorBoard logs saved")
+
+        # Complete experiment tracking
+        if args.track and experiment_run:
+            final_stats = {
+                "training_completed": True,
+            }
+            complete_experiment_run(experiment_session, experiment_run.id, final_stats)
+            experiment_session.close()
+            print(f"✅ Experiment tracking completed")
 
     # Save model
     Path(args.save_path).parent.mkdir(parents=True, exist_ok=True)

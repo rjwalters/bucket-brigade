@@ -132,3 +132,111 @@ class AgentMetadata(Base):
 
     def __repr__(self):
         return f"<AgentMetadata(agent_id={self.agent_id}, version='{self.version}')>"
+
+
+class ExperimentRun(Base):
+    """
+    Tracks individual RL training runs with hyperparameters and results.
+
+    Attributes:
+        id: Unique run identifier
+        run_name: Human-readable name (auto-generated: scenario_timestamp)
+        scenario: Scenario name used for training
+        started_at: Training start timestamp
+        completed_at: Training completion timestamp (null if incomplete)
+        hyperparameters: JSON dict of training hyperparameters
+        final_stats: JSON dict of final training statistics
+        model_path: Path to saved model file
+    """
+
+    __tablename__ = "experiment_runs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    run_name = Column(String(255), nullable=False, unique=True, index=True)
+    scenario = Column(String(100), nullable=False, index=True)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    completed_at = Column(DateTime, nullable=True)
+    hyperparameters = Column(JSON, nullable=True)
+    final_stats = Column(JSON, nullable=True)
+    model_path = Column(String(512), nullable=True)
+
+    # Relationships
+    training_metrics = relationship(
+        "TrainingMetric", back_populates="run", cascade="all, delete-orphan"
+    )
+    evaluation_results = relationship(
+        "EvaluationResult", back_populates="run", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<ExperimentRun(id={self.id}, name='{self.run_name}', scenario='{self.scenario}')>"
+
+
+class TrainingMetric(Base):
+    """
+    Time-series metrics collected during training.
+
+    Attributes:
+        id: Unique metric identifier
+        run_id: Foreign key to experiment_runs table
+        step: Training step number
+        avg_reward: Average reward at this step
+        episode_length: Average episode length at this step
+        timestamp: When metric was recorded
+    """
+
+    __tablename__ = "training_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    run_id = Column(
+        Integer,
+        ForeignKey("experiment_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    step = Column(Integer, nullable=False, index=True)
+    avg_reward = Column(JSON, nullable=True)
+    episode_length = Column(JSON, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    run = relationship("ExperimentRun", back_populates="training_metrics")
+
+    def __repr__(self):
+        return f"<TrainingMetric(id={self.id}, run_id={self.run_id}, step={self.step})>"
+
+
+class EvaluationResult(Base):
+    """
+    Evaluation results for trained models on different scenarios.
+
+    Attributes:
+        id: Unique result identifier
+        run_id: Foreign key to experiment_runs table
+        eval_scenario: Scenario used for evaluation
+        mean_reward: Mean reward across evaluation episodes
+        std_reward: Standard deviation of rewards
+        num_episodes: Number of evaluation episodes
+        evaluated_at: When evaluation was performed
+    """
+
+    __tablename__ = "evaluation_results"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    run_id = Column(
+        Integer,
+        ForeignKey("experiment_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    eval_scenario = Column(String(100), nullable=False, index=True)
+    mean_reward = Column(JSON, nullable=False)
+    std_reward = Column(JSON, nullable=False)
+    num_episodes = Column(Integer, nullable=False)
+    evaluated_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    # Relationships
+    run = relationship("ExperimentRun", back_populates="evaluation_results")
+
+    def __repr__(self):
+        return f"<EvaluationResult(id={self.id}, run_id={self.run_id}, scenario='{self.eval_scenario}')>"

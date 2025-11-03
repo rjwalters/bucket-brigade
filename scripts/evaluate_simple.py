@@ -87,6 +87,17 @@ def main():
         default="default",
         help="Scenario name for evaluation (e.g., 'default', 'trivial_cooperation')",
     )
+    parser.add_argument(
+        "--track",
+        action="store_true",
+        help="Enable experiment tracking to database",
+    )
+    parser.add_argument(
+        "--experiments-db",
+        type=str,
+        default=None,
+        help="Path to experiments database (default: data/experiments.db)",
+    )
 
     args = parser.parse_args()
 
@@ -128,15 +139,48 @@ def main():
     )
 
     # Print statistics
+    mean_reward = np.mean(episode_rewards)
+    std_reward = np.std(episode_rewards)
     print(f"\n📊 Evaluation Results:")
-    print(
-        f"   Mean Reward: {np.mean(episode_rewards):.2f} ± {np.std(episode_rewards):.2f}"
-    )
+    print(f"   Mean Reward: {mean_reward:.2f} ± {std_reward:.2f}")
     print(f"   Min Reward: {np.min(episode_rewards):.2f}")
     print(f"   Max Reward: {np.max(episode_rewards):.2f}")
     print(
         f"   Mean Episode Length: {np.mean(episode_lengths):.1f} ± {np.std(episode_lengths):.1f}"
     )
+
+    # Log to experiment tracking if enabled
+    if args.track:
+        from bucket_brigade.db.experiments import (
+            init_experiments_db,
+            find_run_by_model_path,
+            log_evaluation_result,
+        )
+
+        print(f"\n🗄️  Logging evaluation results to database...")
+        experiment_session = init_experiments_db(args.experiments_db)
+
+        # Find the experiment run by model path
+        experiment_run = find_run_by_model_path(experiment_session, args.model_path)
+
+        if experiment_run:
+            log_evaluation_result(
+                experiment_session,
+                experiment_run.id,
+                args.scenario,
+                float(mean_reward),
+                float(std_reward),
+                args.num_episodes,
+            )
+            experiment_session.close()
+            print(
+                f"✅ Logged evaluation for run '{experiment_run.run_name}' on scenario '{args.scenario}'"
+            )
+        else:
+            experiment_session.close()
+            print(
+                f"⚠️  No experiment run found for model: {args.model_path}"
+            )
 
 
 if __name__ == "__main__":
