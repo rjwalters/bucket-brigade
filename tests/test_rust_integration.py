@@ -171,7 +171,9 @@ class TestRustCoreIntegration:
 
             # Check key parameters match
             assert rust_scenario.prob_fire_spreads_to_neighbor == python_scenario.beta
-            assert rust_scenario.prob_solo_agent_extinguishes_fire == python_scenario.kappa
+            assert (
+                rust_scenario.prob_solo_agent_extinguishes_fire == python_scenario.kappa
+            )
             assert rust_scenario.team_reward_house_survives == python_scenario.A
             assert rust_scenario.team_penalty_house_burns == python_scenario.L
             assert rust_scenario.num_agents == python_scenario.num_agents

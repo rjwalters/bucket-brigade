@@ -105,7 +105,10 @@ def generate_scenarios(
 
 
 def run_single_game(
-    agents: List[HeuristicAgent], scenario: Scenario, seed: int = 42, max_steps: int = 100
+    agents: List[HeuristicAgent],
+    scenario: Scenario,
+    seed: int = 42,
+    max_steps: int = 100,
 ) -> Dict[str, Any]:
     """Run a single game with the given agents and scenario."""
     env = BucketBrigadeEnv(scenario)
@@ -202,9 +205,13 @@ def calculate_statistics(results: List[Dict[str, Any]]) -> Dict[str, float]:
     }
 
 
-def display_comparison_table(comparison_results: Dict[str, List[Dict]], statistical_significance: bool = True):
+def display_comparison_table(
+    comparison_results: Dict[str, List[Dict]], statistical_significance: bool = True
+):
     """Display comparison results in a formatted table."""
-    table = Table(title="Team Comparison Results", show_header=True, header_style="bold magenta")
+    table = Table(
+        title="Team Comparison Results", show_header=True, header_style="bold magenta"
+    )
 
     table.add_column("Team", style="cyan", width=30)
     table.add_column("Mean Reward", justify="right", style="green")
@@ -222,7 +229,7 @@ def display_comparison_table(comparison_results: Dict[str, List[Dict]], statisti
             f"{stats['mean_reward']:.2f}",
             f"±{stats['std_reward']:.2f}",
             f"{stats['mean_houses_saved']:.2f}",
-            f"{stats['success_rate']*100:.1f}%",
+            f"{stats['success_rate'] * 100:.1f}%",
         )
 
     console.print(table)
@@ -243,16 +250,24 @@ def display_comparison_table(comparison_results: Dict[str, List[Dict]], statisti
 
         if p_value < 0.05:
             winner = teams[0] if np.mean(rewards1) > np.mean(rewards2) else teams[1]
-            console.print(f"   ✅ [bold green]Significant difference detected (p < 0.05)[/bold green]")
+            console.print(
+                f"   ✅ [bold green]Significant difference detected (p < 0.05)[/bold green]"
+            )
             console.print(f"   🏆 [bold]{winner}[/bold] performs significantly better")
         else:
-            console.print(f"   ⚠️  [yellow]No significant difference (p >= 0.05)[/yellow]")
+            console.print(
+                f"   ⚠️  [yellow]No significant difference (p >= 0.05)[/yellow]"
+            )
 
 
 @app.command()
 def compare(
-    team1: str = typer.Option(..., "--team1", help="First team (comma-separated archetypes)"),
-    team2: str = typer.Option(..., "--team2", help="Second team (comma-separated archetypes)"),
+    team1: str = typer.Option(
+        ..., "--team1", help="First team (comma-separated archetypes)"
+    ),
+    team2: str = typer.Option(
+        ..., "--team2", help="Second team (comma-separated archetypes)"
+    ),
     team3: str = typer.Option(None, "--team3", help="Third team (optional)"),
     team4: str = typer.Option(None, "--team4", help="Fourth team (optional)"),
     scenarios: str = typer.Option(
@@ -264,8 +279,12 @@ def compare(
     count: int = typer.Option(50, "--count", "-c", help="Number of games per team"),
     seed: int = typer.Option(42, "--seed", help="Random seed"),
     output: str = typer.Option(None, "--output", "-o", help="Output file (JSON)"),
-    verbose: bool = typer.Option(True, "--verbose/--quiet", "-v/-q", help="Show progress"),
-    stats: bool = typer.Option(True, "--stats/--no-stats", help="Run statistical significance tests"),
+    verbose: bool = typer.Option(
+        True, "--verbose/--quiet", "-v/-q", help="Show progress"
+    ),
+    stats: bool = typer.Option(
+        True, "--stats/--no-stats", help="Run statistical significance tests"
+    ),
 ):
     """
     Compare multiple teams on the same scenarios.
@@ -285,7 +304,9 @@ def compare(
     for team in teams:
         for archetype in team:
             if archetype.lower() not in ARCHETYPES:
-                console.print(f"[red]Error: Unknown archetype '{archetype}'[/red]", err=True)
+                console.print(
+                    f"[red]Error: Unknown archetype '{archetype}'[/red]", err=True
+                )
                 console.print(f"Available: {', '.join(ARCHETYPES.keys())}", err=True)
                 raise typer.Exit(1)
 
@@ -302,7 +323,9 @@ def compare(
     scenario_types = [s.strip() for s in scenarios.split(",")]
     for scenario_type in scenario_types:
         if scenario_type not in SCENARIO_TYPES:
-            console.print(f"[red]Error: Unknown scenario type '{scenario_type}'[/red]", err=True)
+            console.print(
+                f"[red]Error: Unknown scenario type '{scenario_type}'[/red]", err=True
+            )
             console.print(f"Available: {', '.join(SCENARIO_TYPES.keys())}", err=True)
             raise typer.Exit(1)
 
@@ -324,7 +347,9 @@ def compare(
 
     # Display results
     console.print()
-    display_comparison_table(comparison_results, statistical_significance=stats and len(teams) == 2)
+    display_comparison_table(
+        comparison_results, statistical_significance=stats and len(teams) == 2
+    )
 
     # Save results
     if output:

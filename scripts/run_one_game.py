@@ -51,7 +51,9 @@ def main():
         # Show results
         print(
             "Houses:",
-            "".join(["□" if h == 0 else "🔥" if h == 1 else "💀" for h in obs["houses"]]),
+            "".join(
+                ["□" if h == 0 else "🔥" if h == 1 else "💀" for h in obs["houses"]]
+            ),
         )
         print("Rewards:", rewards)
         print()

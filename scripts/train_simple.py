@@ -220,7 +220,7 @@ def train_ppo(
             )
 
     print(
-        f"\n✅ Training complete! Total time: {(time.time() - start_time)/60:.1f} minutes"
+        f"\n✅ Training complete! Total time: {(time.time() - start_time) / 60:.1f} minutes"
     )
 
     return policy
