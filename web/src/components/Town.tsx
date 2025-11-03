@@ -10,9 +10,9 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
   // Create positions for 10 houses in a circle
   const housePositions = Array.from({ length: 10 }, (_, i) => {
     const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // Start from top
-    const radius = 120; // Distance from center
-    const centerX = 150; // Center of the circle
-    const centerY = 150;
+    const radius = 240; // Distance from center (doubled)
+    const centerX = 300; // Center of the circle (doubled)
+    const centerY = 300;
 
     return {
       x: centerX + radius * Math.cos(angle),
@@ -42,7 +42,7 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
 
   return (
     <div className={`town-visualization ${className}`}>
-      <svg width="300" height="300" className="town-svg">
+      <svg width="600" height="600" className="town-svg">
         {/* Connection lines between houses */}
         {housePositions.map((pos, i) => {
           const nextPos = housePositions[(i + 1) % 10];
@@ -71,7 +71,7 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r="25"
+                r="50"
                 className={`town-house ${getHouseClass(houseState)}`}
                 data-house-index={i}
                 data-house-state={houseState}
@@ -84,18 +84,9 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="town-house-symbol select-none"
+                style={{ fontSize: '2rem' }}
               >
                 {symbol}
-              </text>
-
-              {/* House index label */}
-              <text
-                x={pos.x}
-                y={pos.y + 35}
-                textAnchor="middle"
-                className="town-house-index text-xs text-gray-500 fill-current"
-              >
-                {i}
               </text>
             </g>
           );

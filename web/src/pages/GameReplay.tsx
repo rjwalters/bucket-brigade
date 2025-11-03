@@ -15,6 +15,7 @@ const GameReplay: React.FC = () => {
   const [currentNight, setCurrentNight] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // milliseconds
+  const [phase, setPhase] = useState<'day' | 'night'>('day');
 
   useEffect(() => {
     const loadedGames = loadGameReplays();
@@ -149,7 +150,17 @@ const GameReplay: React.FC = () => {
             {/* Game Visualization */}
             <div className="lg:col-span-2">
               <div className="card">
-                <div className="relative">
+                {/* Day/Night Indicator */}
+                <div className="text-center mb-4 pb-2 border-b border-gray-200">
+                  <div className="text-3xl mb-1">
+                    {phase === 'day' ? '☀️' : '🌙'}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {phase === 'day' ? 'Day: Signaling' : 'Night: Working'}
+                  </div>
+                </div>
+
+                <div className="relative flex justify-center">
                   {/* Town (houses) */}
                   <Town houses={currentNightData.houses} />
 
@@ -158,6 +169,7 @@ const GameReplay: React.FC = () => {
                     locations={currentNightData.locations}
                     signals={currentNightData.signals}
                     actions={currentNightData.actions}
+                    onPhaseChange={setPhase}
                   />
                 </div>
               </div>

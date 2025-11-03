@@ -5,13 +5,15 @@ interface AgentLayerProps {
   signals: number[]; // Agent signals (0=REST, 1=WORK)
   actions: number[][]; // Agent actions [[house, mode], ...]
   className?: string;
+  onPhaseChange?: (phase: 'day' | 'night') => void;
 }
 
 const AgentLayer: React.FC<AgentLayerProps> = ({
   locations,
   signals,
   actions,
-  className = ''
+  className = '',
+  onPhaseChange
 }) => {
   // Day/night phase animation state
   const [phase, setPhase] = useState<'day' | 'night'>('day');
@@ -20,18 +22,46 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
   // Reset animation when locations change (new night)
   useEffect(() => {
     setPhase('day');
+    if (onPhaseChange) onPhaseChange('day');
     setAnimationKey(prev => prev + 1);
 
     // Transition to night phase after day phase animation
     const dayTimer = setTimeout(() => {
       setPhase('night');
+      if (onPhaseChange) onPhaseChange('night');
     }, 1000); // 1 second for day phase
 
     return () => clearTimeout(dayTimer);
-  }, [locations, signals, actions]);
+  }, [locations, signals, actions, onPhaseChange]);
 
-  const centerX = 150;
-  const centerY = 150;
+  const centerX = 300;
+  const centerY = 300;
+
+  // Helper function to get house center position (including "ghost house" at center for day phase)
+  const getHouseCenterPosition = (houseIndex: number): { x: number, y: number } => {
+    if (houseIndex === -1) {
+      // Ghost house at center for day phase signaling
+      return { x: centerX, y: centerY };
+    } else {
+      // Regular houses in a circle
+      const houseAngle = (houseIndex / 10) * 2 * Math.PI - Math.PI / 2;
+      const houseRadius = 240;
+      return {
+        x: centerX + houseRadius * Math.cos(houseAngle),
+        y: centerY + houseRadius * Math.sin(houseAngle)
+      };
+    }
+  };
+
+  // Helper function to get agent position around a house
+  const getAgentPositionAroundHouse = (houseCenterX: number, houseCenterY: number, agentId: number, spotRadius: number): { x: number, y: number } => {
+    // Position agent at one of 10 spots around the house perimeter (36 degrees apart)
+    const spotAngle = (agentId / 10) * 2 * Math.PI;
+    return {
+      x: houseCenterX + spotRadius * Math.cos(spotAngle),
+      y: houseCenterY + spotRadius * Math.sin(spotAngle)
+    };
+  };
 
   // Create positions for agents
   const getAgentPositions = () => {
@@ -48,19 +78,18 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
       let x, y;
 
       if (phase === 'day') {
-        // During day: agents gather at center in a small circle
-        const numAgents = locations.length;
-        const agentAngle = (agentId / numAgents) * 2 * Math.PI;
-        const gatherRadius = 20; // Small circle at center
-        x = centerX + gatherRadius * Math.cos(agentAngle);
-        y = centerY + gatherRadius * Math.sin(agentAngle);
+        // During day: agents gather at center "ghost house" in angular positions
+        const houseCenter = getHouseCenterPosition(-1); // -1 for center ghost house
+        const agentPos = getAgentPositionAroundHouse(houseCenter.x, houseCenter.y, agentId, 35);
+        x = agentPos.x;
+        y = agentPos.y;
       } else {
-        // During night: agents move to their target houses
+        // During night: agents move to their target houses in angular positions
         const targetHouse = actions[agentId] ? actions[agentId][0] : houseIndex;
-        const angle = (targetHouse / 10) * 2 * Math.PI - Math.PI / 2;
-        const houseRadius = 120;
-        x = centerX + houseRadius * Math.cos(angle);
-        y = centerY + houseRadius * Math.sin(angle);
+        const houseCenter = getHouseCenterPosition(targetHouse);
+        const agentPos = getAgentPositionAroundHouse(houseCenter.x, houseCenter.y, agentId, 35);
+        x = agentPos.x;
+        y = agentPos.y;
       }
 
       positions.push({
@@ -97,26 +126,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
 
   return (
     <div className={`agent-layer ${className}`}>
-      <svg width="300" height="300" className="agent-svg absolute inset-0">
-        {/* Day/Night Indicator */}
-        <g>
-          <text
-            x={centerX}
-            y="20"
-            textAnchor="middle"
-            className="text-2xl select-none"
-          >
-            {phase === 'day' ? '☀️' : '🌙'}
-          </text>
-          <text
-            x={centerX}
-            y="38"
-            textAnchor="middle"
-            className="text-xs fill-gray-600"
-          >
-            {phase === 'day' ? 'Day: Signaling' : 'Night: Working'}
-          </text>
-        </g>
+      <svg width="600" height="600" className="agent-svg absolute inset-0">
 
         {agentPositions.map((agent) => (
           <g
@@ -128,7 +138,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
             <circle
               cx={agent.x}
               cy={agent.y}
-              r="8"
+              r="12"
               className="agent-dot fill-blue-500 stroke-white stroke-2 cursor-pointer hover:stroke-blue-300"
               style={{
                 transition: 'cx 0.8s ease-in-out, cy 0.8s ease-in-out',
@@ -141,10 +151,10 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
             {phase === 'day' && (
               <text
                 x={agent.x}
-                y={agent.y - 12}
+                y={agent.y - 18}
                 textAnchor="middle"
-                className={`agent-signal text-sm select-none ${getSignalClass(agent.signal)}`}
-                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out' }}
+                className={`agent-signal select-none ${getSignalClass(agent.signal)}`}
+                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out', fontSize: '1.2rem' }}
               >
                 {getSignalSymbol(agent.signal)}
               </text>
@@ -154,10 +164,10 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
             {phase === 'night' && (
               <text
                 x={agent.x}
-                y={agent.y - 12}
+                y={agent.y - 18}
                 textAnchor="middle"
-                className="text-sm select-none"
-                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out' }}
+                className="select-none"
+                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out', fontSize: '1.2rem' }}
               >
                 {agent.action[1] === 1 ? '🚒' : '😴'}
               </text>
@@ -166,9 +176,9 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
             {/* Agent ID label */}
             <text
               x={agent.x}
-              y={agent.y + 16}
+              y={agent.y + 20}
               textAnchor="middle"
-              className="agent-id text-xs font-medium text-blue-600 fill-current select-none"
+              className="agent-id text-sm font-medium text-blue-600 fill-current select-none"
             >
               {agent.agentId}
             </text>
@@ -180,8 +190,8 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
       <div className="house-info absolute inset-0 pointer-events-none">
         {Object.entries(agentsByHouse).map(([houseIndex, agents]) => {
           const houseAngle = (parseInt(houseIndex) / 10) * 2 * Math.PI - Math.PI / 2;
-          const infoX = 150 + 160 * Math.cos(houseAngle);
-          const infoY = 150 + 160 * Math.sin(houseAngle);
+          const infoX = 300 + 320 * Math.cos(houseAngle);
+          const infoY = 300 + 320 * Math.sin(houseAngle);
 
           const workingAgents = agents.filter(a => a.action[1] === 1);
           const restingAgents = agents.filter(a => a.action[1] === 0);
