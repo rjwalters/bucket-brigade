@@ -127,7 +127,7 @@ export default function TeamBuilder() {
         team,
         {
           teamId: team.id,
-          numScenarios: 100,
+          numScenarios: 1000,
         },
         (progress) => {
           setTournamentProgress(progress);
@@ -170,7 +170,7 @@ export default function TeamBuilder() {
             🔥 Build Your Brigade 🔥
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Compose a team of agents and test them against 100 scenarios
+            Compose a team of agents and test them against 1000 scenarios
           </p>
         </div>
 
@@ -336,7 +336,7 @@ export default function TeamBuilder() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
             <div className="text-3xl mb-2">🏆</div>
             <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              100 Scenarios
+              1000 Scenarios
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Test your team against diverse challenges
