@@ -8,12 +8,11 @@ and generate comprehensive statistical summaries for research analysis.
 import numpy as np
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass, asdict
 
 from bucket_brigade.utils.statistics import (
     confidence_interval,
-    rank_agents_by_performance,
     pearson_correlation,
 )
 

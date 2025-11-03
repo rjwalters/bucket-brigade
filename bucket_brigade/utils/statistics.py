@@ -6,7 +6,7 @@ performance rankings, and significance tests for multi-agent cooperation experim
 """
 
 import numpy as np
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 from scipy import stats
 
 
