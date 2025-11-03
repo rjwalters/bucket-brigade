@@ -135,13 +135,14 @@ def train_ppo(
 
         for _ in range(batch_size):
             with torch.no_grad():
-                actions, log_prob, value = policy.get_action(obs.unsqueeze(0))
+                obs_gpu = obs.unsqueeze(0).to(device)
+                actions, log_prob, value = policy.get_action(obs_gpu)
                 actions_list = [a.item() for a in actions]
 
-            observations.append(obs)
+            observations.append(obs.cpu())
             actions_taken.append(actions_list)
-            log_probs_old.append(log_prob)
-            values.append(value.squeeze())
+            log_probs_old.append(log_prob.cpu() if log_prob is not None else None)
+            values.append(value.squeeze().cpu())
 
             # Step environment
             next_obs, reward, terminated, truncated, info = env.step(actions_list)
@@ -392,11 +393,18 @@ def main():
     obs_dim = env.observation_space.shape[0]
     action_dims = env.action_space.nvec.tolist()
 
+    # Set up device (GPU if available)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"🔧 Using device: {device}", flush=True)
+    if torch.cuda.is_available():
+        print(f"   GPU: {torch.cuda.get_device_name(0)}", flush=True)
+        print(f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB", flush=True)
+
     print(f"🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
-    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size)
+    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(device)
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
     # Initialize TensorBoard writer
