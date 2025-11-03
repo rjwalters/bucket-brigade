@@ -1,0 +1,907 @@
+{
+  "scenario": "greedy_neighbor",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.4,
+    "c": 1.0,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.2,
+    "num_agents": 4
+  },
+  "agents": [
+    {
+      "name": "firefighter",
+      "params": [
+        1.0,
+        0.9,
+        0.5,
+        0.8,
+        0.5,
+        0.7,
+        0.1,
+        0.0,
+        0.0,
+        0.8
+      ]
+    },
+    {
+      "name": "free_rider",
+      "params": [
+        0.7,
+        0.2,
+        0.0,
+        0.9,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.9,
+        0.0
+      ]
+    },
+    {
+      "name": "hero",
+      "params": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "name": "coordinator",
+      "params": [
+        0.9,
+        0.6,
+        0.7,
+        0.6,
+        0.8,
+        1.0,
+        0.05,
+        0.0,
+        0.2,
+        0.6
+      ]
+    },
+    {
+      "name": "liar",
+      "params": [
+        0.1,
+        0.7,
+        0.0,
+        0.9,
+        0.2,
+        0.8,
+        0.3,
+        0.0,
+        0.4,
+        0.2
+      ]
+    }
+  ],
+  "homogeneous_teams": [
+    {
+      "agent_type": "firefighter",
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "firefighter",
+        "firefighter"
+      ],
+      "num_games": 5,
+      "mean_payoff": 64.275,
+      "std_payoff": 32.50648012320005,
+      "games": [
+        {
+          "individual_payoffs": [
+            20.0,
+            46.0,
+            20.0,
+            29.5
+          ],
+          "mean_payoff": 28.875,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            62.0,
+            34.5,
+            36.5,
+            62.5
+          ],
+          "mean_payoff": 48.875,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            30.0,
+            31.5,
+            56.0,
+            48.0
+          ],
+          "mean_payoff": 41.375,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.0,
+            117.0,
+            120.0,
+            117.0
+          ],
+          "mean_payoff": 117.75,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            90.0,
+            92.5,
+            91.5,
+            64.0
+          ],
+          "mean_payoff": 84.5,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "free_rider",
+      "team_composition": [
+        "free_rider",
+        "free_rider",
+        "free_rider",
+        "free_rider"
+      ],
+      "num_games": 5,
+      "mean_payoff": 80.9,
+      "std_payoff": 26.995300516941832,
+      "games": [
+        {
+          "individual_payoffs": [
+            52.5,
+            58.5,
+            80.0,
+            70.0
+          ],
+          "mean_payoff": 65.25,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            68.5,
+            44.0,
+            42.0,
+            71.5
+          ],
+          "mean_payoff": 56.5,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            69.0,
+            93.5,
+            93.5,
+            83.5
+          ],
+          "mean_payoff": 84.875,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            132.0,
+            130.5,
+            135.0,
+            129.0
+          ],
+          "mean_payoff": 131.625,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            54.0,
+            79.0,
+            80.5,
+            51.5
+          ],
+          "mean_payoff": 66.25,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "hero",
+      "team_composition": [
+        "hero",
+        "hero",
+        "hero",
+        "hero"
+      ],
+      "num_games": 5,
+      "mean_payoff": 53.35,
+      "std_payoff": 16.32452143249535,
+      "games": [
+        {
+          "individual_payoffs": [
+            35.0,
+            61.0,
+            35.0,
+            60.0
+          ],
+          "mean_payoff": 47.75,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            49.0,
+            29.0,
+            27.0,
+            55.0
+          ],
+          "mean_payoff": 40.0,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            30.0,
+            30.0,
+            56.0,
+            48.0
+          ],
+          "mean_payoff": 41.0,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.0,
+            91.0,
+            91.0,
+            91.0
+          ],
+          "mean_payoff": 84.5,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            66.0,
+            42.0,
+            66.0,
+            40.0
+          ],
+          "mean_payoff": 53.5,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "coordinator",
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "coordinator",
+        "coordinator"
+      ],
+      "num_games": 5,
+      "mean_payoff": 65.85,
+      "std_payoff": 20.92641870937309,
+      "games": [
+        {
+          "individual_payoffs": [
+            29.0,
+            56.5,
+            30.5,
+            38.5
+          ],
+          "mean_payoff": 38.625,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            56.5,
+            38.0,
+            40.5,
+            62.5
+          ],
+          "mean_payoff": 49.375,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            60.0,
+            92.0,
+            89.0,
+            80.5
+          ],
+          "mean_payoff": 80.375,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.5,
+            77.0,
+            101.5,
+            101.5
+          ],
+          "mean_payoff": 96.875,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            78.0,
+            49.5,
+            78.0,
+            50.5
+          ],
+          "mean_payoff": 64.0,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "liar",
+      "team_composition": [
+        "liar",
+        "liar",
+        "liar",
+        "liar"
+      ],
+      "num_games": 5,
+      "mean_payoff": 58.15,
+      "std_payoff": 8.135723692456622,
+      "games": [
+        {
+          "individual_payoffs": [
+            36.5,
+            58.0,
+            39.5,
+            41.5
+          ],
+          "mean_payoff": 43.875,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.5,
+            47.0,
+            46.5,
+            71.5
+          ],
+          "mean_payoff": 57.625,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            43.5,
+            45.0,
+            74.0,
+            66.0
+          ],
+          "mean_payoff": 57.125,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            57.0,
+            52.5,
+            83.0,
+            74.0
+          ],
+          "mean_payoff": 66.625,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            52.5,
+            79.0,
+            76.0,
+            54.5
+          ],
+          "mean_payoff": 65.5,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    }
+  ],
+  "mixed_teams": [
+    {
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "firefighter",
+        "free_rider"
+      ],
+      "description": "3 Firefighters + 1 Free Rider",
+      "num_games": 5,
+      "mean_payoff": 64.275,
+      "std_payoff": 15.49705617206055,
+      "games": [
+        {
+          "individual_payoffs": [
+            39.0,
+            45.0,
+            66.5,
+            74.5
+          ],
+          "mean_payoff": 56.25,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            49.0,
+            29.0,
+            31.5,
+            73.0
+          ],
+          "mean_payoff": 45.625,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            54.0,
+            81.5,
+            80.0,
+            88.0
+          ],
+          "mean_payoff": 75.875,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.0,
+            65.0,
+            91.0,
+            106.0
+          ],
+          "mean_payoff": 88.25,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            40.5,
+            64.0,
+            64.0,
+            53.0
+          ],
+          "mean_payoff": 55.375,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "coordinator",
+        "free_rider"
+      ],
+      "description": "3 Coordinators + 1 Free Rider",
+      "num_games": 5,
+      "mean_payoff": 68.15,
+      "std_payoff": 32.05477733505569,
+      "games": [
+        {
+          "individual_payoffs": [
+            29.0,
+            55.0,
+            30.5,
+            46.0
+          ],
+          "mean_payoff": 40.125,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            62.5,
+            41.0,
+            40.5,
+            70.0
+          ],
+          "mean_payoff": 53.5,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            40.5,
+            42.0,
+            65.0,
+            64.5
+          ],
+          "mean_payoff": 53.0,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            129.0,
+            130.5,
+            129.0,
+            133.5
+          ],
+          "mean_payoff": 130.5,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            52.5,
+            76.0,
+            74.5,
+            51.5
+          ],
+          "mean_payoff": 63.625,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "hero",
+        "hero",
+        "hero",
+        "free_rider"
+      ],
+      "description": "3 Heroes + 1 Free Rider",
+      "num_games": 5,
+      "mean_payoff": 46.975,
+      "std_payoff": 9.341573743219072,
+      "games": [
+        {
+          "individual_payoffs": [
+            20.0,
+            46.0,
+            20.0,
+            43.0
+          ],
+          "mean_payoff": 32.25,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            49.0,
+            29.0,
+            27.0,
+            70.0
+          ],
+          "mean_payoff": 43.75,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            30.0,
+            30.0,
+            56.0,
+            63.0
+          ],
+          "mean_payoff": 44.75,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            39.0,
+            39.0,
+            65.0,
+            83.0
+          ],
+          "mean_payoff": 56.5,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            66.0,
+            42.0,
+            66.0,
+            56.5
+          ],
+          "mean_payoff": 57.625,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "free_rider",
+        "free_rider"
+      ],
+      "description": "2 Firefighters + 2 Free Riders",
+      "num_games": 5,
+      "mean_payoff": 59.075,
+      "std_payoff": 19.161256482809264,
+      "games": [
+        {
+          "individual_payoffs": [
+            23.0,
+            46.0,
+            35.0,
+            40.0
+          ],
+          "mean_payoff": 36.0,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            63.5,
+            33.0,
+            50.0,
+            73.0
+          ],
+          "mean_payoff": 54.875,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            30.0,
+            30.0,
+            71.0,
+            63.0
+          ],
+          "mean_payoff": 48.5,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.0,
+            92.5,
+            109.0,
+            106.0
+          ],
+          "mean_payoff": 93.125,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            69.0,
+            45.0,
+            81.0,
+            56.5
+          ],
+          "mean_payoff": 62.875,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "liar",
+        "liar"
+      ],
+      "description": "2 Coordinators + 2 Liars",
+      "num_games": 5,
+      "mean_payoff": 56.125,
+      "std_payoff": 17.475339767798506,
+      "games": [
+        {
+          "individual_payoffs": [
+            33.5,
+            55.0,
+            38.0,
+            44.5
+          ],
+          "mean_payoff": 42.75,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            59.5,
+            38.0,
+            39.0,
+            68.5
+          ],
+          "mean_payoff": 51.25,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            67.5,
+            89.0,
+            98.0,
+            86.5
+          ],
+          "mean_payoff": 85.25,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            51.0,
+            49.5,
+            81.5,
+            78.5
+          ],
+          "mean_payoff": 65.125,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            6.0,
+            54.0,
+            55.5,
+            29.5
+          ],
+          "mean_payoff": 36.25,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "firefighter",
+        "coordinator",
+        "hero",
+        "free_rider"
+      ],
+      "description": "Diverse Team",
+      "num_games": 5,
+      "mean_payoff": 61.625,
+      "std_payoff": 9.608264671625152,
+      "games": [
+        {
+          "individual_payoffs": [
+            39.0,
+            57.0,
+            65.0,
+            76.0
+          ],
+          "mean_payoff": 59.25,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            54.0,
+            41.5,
+            32.0,
+            72.0
+          ],
+          "mean_payoff": 49.875,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            57.0,
+            96.5,
+            80.0,
+            83.5
+          ],
+          "mean_payoff": 79.25,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            39.0,
+            51.0,
+            65.0,
+            81.5
+          ],
+          "mean_payoff": 59.125,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            67.5,
+            54.0,
+            66.0,
+            55.0
+          ],
+          "mean_payoff": 60.625,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    }
+  ]
+}

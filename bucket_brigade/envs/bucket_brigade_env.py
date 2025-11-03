@@ -274,7 +274,10 @@ class BucketBrigadeEnv:
         all_safe = np.all(self.houses == self.SAFE)
         all_ruined = np.all(self.houses == self.RUINED)
 
-        return bool(all_safe or all_ruined)
+        # Also end if no fires are burning (game is stable)
+        no_fires = np.sum(self.houses == self.BURNING) == 0
+
+        return bool(all_safe or all_ruined or no_fires)
 
     def _get_observation(self) -> Dict[str, np.ndarray]:
         """Get current observation for all agents."""

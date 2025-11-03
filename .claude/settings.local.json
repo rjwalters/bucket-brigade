@@ -78,7 +78,9 @@
       "Bash(while true)",
       "Bash(do tail -5 logs/training_500k.log)",
       "Bash(break)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(timeout 30 .venv/bin/python:*)",
+      "Bash(timeout 10 .venv/bin/python:*)"
     ],
     "deny": [],
     "ask": []
