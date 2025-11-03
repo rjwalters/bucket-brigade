@@ -42,6 +42,27 @@ class Individual:
         if not np.all((self.genome >= 0) & (self.genome <= 1)):
             raise ValueError("All genome values must be in range [0, 1]")
 
+    def __eq__(self, other: object) -> bool:
+        """Compare individuals by ID to avoid numpy array comparison issues.
+
+        Args:
+            other: Another object to compare with
+
+        Returns:
+            True if other is an Individual with the same ID
+        """
+        if not isinstance(other, Individual):
+            return NotImplemented
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        """Hash by ID for use in sets and dicts.
+
+        Returns:
+            Hash of the individual's ID
+        """
+        return hash(self.id)
+
     def clone(self, new_generation: Optional[int] = None) -> Individual:
         """Create a copy of this individual for mutation or new generation.
 
