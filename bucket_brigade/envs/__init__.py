@@ -44,6 +44,10 @@ from .scenarios import (
     sample_crisis_scenario,
     sample_sparse_work_scenario,
     sample_deception_scenario,
+    # Scenario registry
+    get_scenario_by_name,
+    list_scenarios,
+    SCENARIO_REGISTRY,
 )
 
 __all__ = [
@@ -72,4 +76,8 @@ __all__ = [
     "sample_crisis_scenario",
     "sample_sparse_work_scenario",
     "sample_deception_scenario",
+    # Scenario registry
+    "get_scenario_by_name",
+    "list_scenarios",
+    "SCENARIO_REGISTRY",
 ]

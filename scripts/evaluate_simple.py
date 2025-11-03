@@ -81,6 +81,12 @@ def main():
     )
     parser.add_argument("--render", action="store_true", help="Render the environment")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="default",
+        help="Scenario name for evaluation (e.g., 'default', 'trivial_cooperation')",
+    )
 
     args = parser.parse_args()
 
@@ -105,9 +111,15 @@ def main():
     print(f"   Action dims: {action_dims}")
     print(f"   Hidden size: {hidden_size}")
 
-    # Create environment
-    print(f"\n🎮 Creating environment with {args.num_opponents} opponents")
-    env = PufferBucketBrigade(num_opponents=args.num_opponents)
+    # Create environment with scenario
+    from bucket_brigade.envs import get_scenario_by_name
+
+    print(f"\n🎮 Creating environment")
+    print(f"   Scenario: {args.scenario}")
+    print(f"   Number of opponents: {args.num_opponents}")
+
+    scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
+    env = PufferBucketBrigade(scenario=scenario, num_opponents=args.num_opponents)
 
     # Evaluate
     print(f"\n🔍 Evaluating for {args.num_episodes} episodes...")
