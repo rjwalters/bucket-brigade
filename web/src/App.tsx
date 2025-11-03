@@ -5,6 +5,7 @@ import Rankings from './pages/Rankings';
 import SettingsPage from './pages/Settings';
 import GameReplay from './pages/GameReplay';
 import TeamBuilder from './pages/TeamBuilder';
+import Tournament from './pages/Tournament';
 
 function App() {
   const location = useLocation();
@@ -75,6 +76,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/team-builder" element={<TeamBuilder />} />
+          <Route path="/tournament" element={<Tournament />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/replay/:gameId?" element={<GameReplay />} />
