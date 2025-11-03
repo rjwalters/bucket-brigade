@@ -419,9 +419,7 @@ def get_scenario_by_name(name: str, num_agents: int) -> Scenario:
     """
     if name not in SCENARIO_REGISTRY:
         valid_names = ", ".join(sorted(SCENARIO_REGISTRY.keys()))
-        raise ValueError(
-            f"Unknown scenario '{name}'. Valid options: {valid_names}"
-        )
+        raise ValueError(f"Unknown scenario '{name}'. Valid options: {valid_names}")
 
     return SCENARIO_REGISTRY[name](num_agents)
 
