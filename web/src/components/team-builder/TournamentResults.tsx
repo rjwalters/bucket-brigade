@@ -28,6 +28,17 @@ export function TournamentResults({
     const min = Math.min(...scores);
     const max = Math.max(...scores);
     const range = max - min;
+
+    // Handle edge case where all scores are identical
+    if (range === 0) {
+      const histogram = Array(bins).fill(0);
+      histogram[Math.floor(bins / 2)] = scores.length;
+      return histogram.map((count, i) => ({
+        bin: min + i * (1 / bins), // Small offset for display
+        count,
+      }));
+    }
+
     const binSize = range / bins;
 
     const histogram = Array(bins).fill(0);
@@ -44,7 +55,7 @@ export function TournamentResults({
 
   const scores = result.scenarios.map((s) => s.teamScore);
   const histogram = createHistogram(scores);
-  const maxCount = Math.max(...histogram.map((h) => h.count));
+  const maxCount = Math.max(...histogram.map((h) => h.count), 1); // Ensure at least 1
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
@@ -118,22 +129,28 @@ export function TournamentResults({
             Score Distribution
           </h2>
           <div className="flex items-end gap-2 h-48">
-            {histogram.map((bar, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center">
-                <div
-                  className="w-full bg-blue-500 dark:bg-blue-600 rounded-t transition-all"
-                  style={{
-                    height: `${(bar.count / maxCount) * 100}%`,
-                  }}
-                  title={`${bar.bin.toFixed(0)}-${(bar.bin + (statistics.max - statistics.min) / 10).toFixed(0)}: ${bar.count} games`}
-                />
-                {idx % 2 === 0 && (
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {bar.bin.toFixed(0)}
-                  </div>
-                )}
-              </div>
-            ))}
+            {histogram.map((bar, idx) => {
+              const heightPercent = maxCount > 0 ? (bar.count / maxCount) * 100 : 0;
+              const minHeight = bar.count > 0 ? 4 : 0; // Minimum 4% height for visibility
+              const actualHeight = Math.max(heightPercent, minHeight);
+
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center justify-end" style={{ height: '100%' }}>
+                  <div
+                    className="w-full bg-blue-500 dark:bg-blue-600 rounded-t transition-all hover:bg-blue-600 dark:hover:bg-blue-500"
+                    style={{
+                      height: `${actualHeight}%`,
+                    }}
+                    title={`${bar.bin.toFixed(0)}-${(bar.bin + (statistics.max - statistics.min) / 10).toFixed(0)}: ${bar.count} games`}
+                  />
+                  {idx % 2 === 0 && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 whitespace-nowrap">
+                      {bar.bin.toFixed(0)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-2">
             <div>Min: {statistics.min.toFixed(1)}</div>
