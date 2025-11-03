@@ -62,3 +62,8 @@
 - name: loom:urgent
   description: Critical/blocking issue requiring immediate attention
   color: "DC2626"  # red-600
+
+# Community Contributions
+- name: agent-submission
+  description: Community agent configuration submission
+  color: "8B5CF6"  # violet-500

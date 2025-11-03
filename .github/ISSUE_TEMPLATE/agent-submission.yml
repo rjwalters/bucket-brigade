@@ -1,0 +1,136 @@
+---
+name: "Agent Submission"
+description: >-
+  Submit a high-performing agent configuration discovered in tournaments
+labels: ["agent-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Submit a High-Performing Agent Configuration**
+
+        Share your successful agent configurations with the community!
+        After running browser-based tournaments and discovering effective
+        strategies, submit your agents to help build a curated roster of
+        proven performers.
+
+        **Requirements**:
+        - Agent must have been tested in at least 20 tournament games
+        - Performance threshold: >55% win rate OR top 25% score
+        - Agent must have valid parameters (all values 0.0-1.0)
+
+  - type: input
+    id: agent_name
+    attributes:
+      label: "Agent Name"
+      description: "A descriptive name for this agent configuration"
+      placeholder: "e.g., Heroic Coordinator, Tactical Free Rider"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: archetype
+    attributes:
+      label: "Base Archetype"
+      description: "Which archetype is this agent based on or most similar to?"
+      options:
+        - Firefighter
+        - Coordinator
+        - Hero
+        - Strategist
+        - Free Rider
+        - Opportunist
+        - Cautious
+        - Liar
+        - Maverick
+        - Random
+        - Custom
+    validations:
+      required: true
+
+  - type: textarea
+    id: parameters
+    attributes:
+      label: "Agent Parameters"
+      description: "All 10 agent parameters (copy from tournament results)"
+      placeholder: |
+        honesty_bias: 0.85
+        work_tendency: 0.90
+        neighbor_help_bias: 0.70
+        own_house_priority: 0.40
+        risk_aversion: 0.50
+        coordination_weight: 0.70
+        exploration_rate: 0.10
+        fatigue_memory: 0.50
+        rest_reward_bias: 0.10
+        altruism_factor: 0.80
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: "Tournament Performance"
+      description: "Performance statistics from tournament testing"
+      placeholder: |
+        Win Rate: 72% (36/50 games)
+        Average Score: 45.2
+        Average Contribution: +8.3
+        Games Played: 50
+        Scenarios Tested: greedy_neighbor, chain_reaction
+    validations:
+      required: true
+
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: "Tested Scenarios"
+      description: >-
+        Which scenarios was this agent tested in?
+        Include win/loss records if available
+      placeholder: |
+        - Greedy Neighbor: 32-18 (64% win rate)
+        - Chain Reaction: 28-22 (56% win rate)
+        - Sparse Heroics: 15-10 (60% win rate)
+    validations:
+      required: true
+
+  - type: textarea
+    id: tags
+    attributes:
+      label: "Tags"
+      description: "Descriptive tags for this agent (comma-separated)"
+      placeholder: "cooperative, reliable, defensive, aggressive"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Strategy Notes"
+      description: >-
+        Optional notes about when this agent performs well
+        and strategy insights
+      placeholder: |
+        This agent excels in scenarios with high cooperation requirements.
+        Works well with other honest signalers.
+        Struggles in sparse fire scenarios where rest is optimal.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: "Submission Checklist"
+      description: "Confirm your submission meets these requirements"
+      options:
+        - label: "Agent has been tested in at least 20 games"
+          required: true
+        - label: "Performance meets threshold (>55% win rate OR top 25% score)"
+          required: true
+        - label: "All parameters are valid (0.0-1.0 range)"
+          required: true
+        - label: "Performance data is accurate and from actual tournaments"
+          required: true
+        - label: "This is not a duplicate submission"
+          required: true
