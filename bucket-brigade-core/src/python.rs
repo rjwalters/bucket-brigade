@@ -67,86 +67,96 @@ pub struct PyScenario {
 impl PyScenario {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (beta, kappa, a, l, c, rho_ignite, n_min, p_spark, n_spark, num_agents, owned_house_value=100.0, neighbor_house_value=50.0))]
     fn new(
-        fire_spread_prob: f32,
-        extinguish_efficiency: f32,
-        team_reward_per_house: f32,
-        team_penalty_per_house: f32,
-        work_cost_per_night: f32,
-        initial_fire_fraction: f32,
+        prob_fire_spreads_to_neighbor: f32,
+        prob_solo_agent_extinguishes_fire: f32,
+        prob_house_catches_fire: f32,
+        team_reward_house_survives: f32,
+        team_penalty_house_burns: f32,
+        cost_to_work_one_night: f32,
         min_nights: u32,
-        spontaneous_ignition_prob: f32,
-        spontaneous_ignition_nights: u32,
         num_agents: usize,
-        owned_house_value: f32,
-        neighbor_house_value: f32,
+        reward_own_house_survives: f32,
+        reward_other_house_survives: f32,
+        penalty_own_house_burns: f32,
+        penalty_other_house_burns: f32,
     ) -> Self {
         Self {
             inner: Scenario {
-                fire_spread_prob,
-                extinguish_efficiency,
-                team_reward_per_house,
-                team_penalty_per_house,
-                work_cost_per_night,
-                initial_fire_fraction,
+                prob_fire_spreads_to_neighbor,
+                prob_solo_agent_extinguishes_fire,
+                prob_house_catches_fire,
+                team_reward_house_survives,
+                team_penalty_house_burns,
+                cost_to_work_one_night,
                 min_nights,
-                spontaneous_ignition_prob,
-                spontaneous_ignition_nights,
                 num_agents,
-                owned_house_value,
-                neighbor_house_value,
+                reward_own_house_survives,
+                reward_other_house_survives,
+                penalty_own_house_burns,
+                penalty_other_house_burns,
             },
         }
     }
 
     #[getter]
-    fn fire_spread_prob(&self) -> f32 {
-        self.inner.fire_spread_prob
+    fn prob_fire_spreads_to_neighbor(&self) -> f32 {
+        self.inner.prob_fire_spreads_to_neighbor
     }
+
     #[getter]
-    fn extinguish_efficiency(&self) -> f32 {
-        self.inner.extinguish_efficiency
+    fn prob_solo_agent_extinguishes_fire(&self) -> f32 {
+        self.inner.prob_solo_agent_extinguishes_fire
     }
+
     #[getter]
-    fn team_reward_per_house(&self) -> f32 {
-        self.inner.team_reward_per_house
+    fn prob_house_catches_fire(&self) -> f32 {
+        self.inner.prob_house_catches_fire
     }
+
     #[getter]
-    fn team_penalty_per_house(&self) -> f32 {
-        self.inner.team_penalty_per_house
+    fn team_reward_house_survives(&self) -> f32 {
+        self.inner.team_reward_house_survives
     }
+
     #[getter]
-    fn work_cost_per_night(&self) -> f32 {
-        self.inner.work_cost_per_night
+    fn team_penalty_house_burns(&self) -> f32 {
+        self.inner.team_penalty_house_burns
     }
+
     #[getter]
-    fn initial_fire_fraction(&self) -> f32 {
-        self.inner.initial_fire_fraction
+    fn cost_to_work_one_night(&self) -> f32 {
+        self.inner.cost_to_work_one_night
     }
+
     #[getter]
     fn min_nights(&self) -> u32 {
         self.inner.min_nights
     }
-    #[getter]
-    fn spontaneous_ignition_prob(&self) -> f32 {
-        self.inner.spontaneous_ignition_prob
-    }
-    #[getter]
-    fn spontaneous_ignition_nights(&self) -> u32 {
-        self.inner.spontaneous_ignition_nights
-    }
+
     #[getter]
     fn num_agents(&self) -> usize {
         self.inner.num_agents
     }
+
     #[getter]
-    fn owned_house_value(&self) -> f32 {
-        self.inner.owned_house_value
+    fn reward_own_house_survives(&self) -> f32 {
+        self.inner.reward_own_house_survives
     }
+
     #[getter]
-    fn neighbor_house_value(&self) -> f32 {
-        self.inner.neighbor_house_value
+    fn reward_other_house_survives(&self) -> f32 {
+        self.inner.reward_other_house_survives
+    }
+
+    #[getter]
+    fn penalty_own_house_burns(&self) -> f32 {
+        self.inner.penalty_own_house_burns
+    }
+
+    #[getter]
+    fn penalty_other_house_burns(&self) -> f32 {
+        self.inner.penalty_other_house_burns
     }
 }
 
