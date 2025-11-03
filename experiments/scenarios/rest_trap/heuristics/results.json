@@ -1,0 +1,2887 @@
+{
+  "scenario": "rest_trap",
+  "parameters": {
+    "beta": 0.05,
+    "kappa": 0.95,
+    "c": 0.2,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.1,
+    "num_agents": 4
+  },
+  "agents": [
+    {
+      "name": "firefighter",
+      "params": [
+        1.0,
+        0.9,
+        0.5,
+        0.8,
+        0.5,
+        0.7,
+        0.1,
+        0.0,
+        0.0,
+        0.8
+      ]
+    },
+    {
+      "name": "free_rider",
+      "params": [
+        0.7,
+        0.2,
+        0.0,
+        0.9,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.9,
+        0.0
+      ]
+    },
+    {
+      "name": "hero",
+      "params": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "name": "coordinator",
+      "params": [
+        0.9,
+        0.6,
+        0.7,
+        0.6,
+        0.8,
+        1.0,
+        0.05,
+        0.0,
+        0.2,
+        0.6
+      ]
+    },
+    {
+      "name": "liar",
+      "params": [
+        0.1,
+        0.7,
+        0.0,
+        0.9,
+        0.2,
+        0.8,
+        0.3,
+        0.0,
+        0.4,
+        0.2
+      ]
+    }
+  ],
+  "homogeneous_teams": [
+    {
+      "agent_type": "firefighter",
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "firefighter",
+        "firefighter"
+      ],
+      "num_games": 20,
+      "mean_payoff": 99.37625216245651,
+      "std_payoff": 17.422441773460832,
+      "games": [
+        {
+          "individual_payoffs": [
+            122.40000247955322,
+            124.10000228881836,
+            122.40000247955322,
+            121.40000247955322
+          ],
+          "mean_payoff": 122.5750024318695,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            97.40000247955322,
+            111.40000247955322,
+            112.10000228881836,
+            112.10000228881836
+          ],
+          "mean_payoff": 108.25000238418579,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            54.40000247955322,
+            91.10000228881836,
+            90.40000247955322,
+            91.10000228881836
+          ],
+          "mean_payoff": 81.75000238418579,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            127.40000247955322,
+            128.10000228881836,
+            127.40000247955322
+          ],
+          "mean_payoff": 127.5750024318695,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.10000228881836,
+            101.10000228881836,
+            101.10000228881836,
+            74.40000247955322
+          ],
+          "mean_payoff": 94.67500233650208,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            109.10000228881836,
+            90.10000228881836,
+            108.10000228881836,
+            108.10000228881836
+          ],
+          "mean_payoff": 103.85000228881836,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.80000114440918,
+            81.8000009059906,
+            91.10000228881836,
+            90.40000247955322
+          ],
+          "mean_payoff": 82.27500170469284,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            110.40000247955322,
+            109.40000247955322,
+            110.10000228881836,
+            94.10000228881836
+          ],
+          "mean_payoff": 106.00000238418579,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            71.40000224113464,
+            97.40000247955322,
+            94.40000224113464,
+            96.40000247955322
+          ],
+          "mean_payoff": 89.90000236034393,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            122.10000228881836,
+            120.40000247955322,
+            119.40000247955322,
+            116.10000228881836
+          ],
+          "mean_payoff": 119.50000238418579,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.40000247955322,
+            104.50000190734863,
+            78.40000247955322,
+            103.10000228881836
+          ],
+          "mean_payoff": 97.10000228881836,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            90.40000247955322,
+            81.10000133514404,
+            90.40000247955322,
+            64.40000128746033
+          ],
+          "mean_payoff": 81.5750018954277,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            95.10000228881836,
+            67.40000176429749,
+            93.40000247955322,
+            88.10000157356262
+          ],
+          "mean_payoff": 86.00000202655792,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            99.40000247955322,
+            100.8000020980835,
+            98.40000247955322,
+            73.8000020980835
+          ],
+          "mean_payoff": 93.10000228881836,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            118.10000228881836,
+            121.40000247955322,
+            122.40000247955322,
+            121.40000247955322
+          ],
+          "mean_payoff": 120.8250024318695,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            116.10000228881836,
+            116.40000247955322,
+            109.10000228881836,
+            116.10000228881836
+          ],
+          "mean_payoff": 114.42500233650208,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            85.10000228881836,
+            85.10000228881836,
+            59.100000619888306,
+            69.1000006198883
+          ],
+          "mean_payoff": 74.60000145435333,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            112.40000247955322,
+            113.8000020980835,
+            113.10000228881836,
+            99.8000020980835
+          ],
+          "mean_payoff": 109.77500224113464,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            114.10000228881836,
+            114.8000020980835,
+            115.8000020980835,
+            101.40000247955322
+          ],
+          "mean_payoff": 111.52500224113464,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            75.10000133514404,
+            51.100000619888306,
+            64.40000128746033,
+            58.40000057220459
+          ],
+          "mean_payoff": 62.250000953674316,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "free_rider",
+      "team_composition": [
+        "free_rider",
+        "free_rider",
+        "free_rider",
+        "free_rider"
+      ],
+      "num_games": 20,
+      "mean_payoff": 81.59375042617322,
+      "std_payoff": 14.017328338769941,
+      "games": [
+        {
+          "individual_payoffs": [
+            65.7000002861023,
+            80.40000057220459,
+            56.299999952316284,
+            82.3000009059906
+          ],
+          "mean_payoff": 71.17500042915344,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            93.00000095367432,
+            83.10000014305115,
+            67.7000002861023,
+            94.40000033378601
+          ],
+          "mean_payoff": 84.55000042915344,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            62.10000038146973,
+            98.80000019073486,
+            96.70000076293945,
+            98.80000019073486
+          ],
+          "mean_payoff": 89.10000038146973,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            109.80000019073486,
+            81.70000076293945,
+            108.40000057220459,
+            109.10000038146973
+          ],
+          "mean_payoff": 102.25000047683716,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.40000057220459,
+            108.80000019073486,
+            109.5,
+            81.40000057220459
+          ],
+          "mean_payoff": 102.02500033378601,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            82.30000114440918,
+            36.40000057220459,
+            85.40000057220459,
+            83.70000076293945
+          ],
+          "mean_payoff": 71.95000076293945,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.70000076293945,
+            122.10000038146973,
+            121.40000057220459,
+            119.30000114440918
+          ],
+          "mean_payoff": 117.87500071525574,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            66.40000033378601,
+            93.10000038146973,
+            78.70000052452087,
+            93.10000038146973
+          ],
+          "mean_payoff": 82.82500040531158,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            53.10000038146973,
+            87.80000019073486,
+            89.70000052452087,
+            91.10000038146973
+          ],
+          "mean_payoff": 80.4250003695488,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            62.700000047683716,
+            91.10000038146973,
+            88.00000071525574,
+            71.30000042915344
+          ],
+          "mean_payoff": 78.27500039339066,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            58.799999952316284,
+            82.00000095367432,
+            57.99999976158142,
+            82.70000076293945
+          ],
+          "mean_payoff": 70.37500035762787,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            98.10000038146973,
+            87.40000033378601,
+            97.40000057220459,
+            72.09999990463257
+          ],
+          "mean_payoff": 88.75000029802322,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            51.5,
+            50.09999990463257,
+            73.3000009059906,
+            73.5
+          ],
+          "mean_payoff": 62.10000020265579,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.10000038146973,
+            67.60000014305115,
+            67.70000004768372,
+            89.00000095367432
+          ],
+          "mean_payoff": 78.85000038146973,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            83.40000057220459,
+            83.40000057220459,
+            82.00000095367432,
+            34.10000038146973
+          ],
+          "mean_payoff": 70.7250006198883,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            71.70000052452087,
+            79.70000076293945,
+            51.70000076293945,
+            76.40000009536743
+          ],
+          "mean_payoff": 69.8750005364418,
+          "saved_houses": 5,
+          "ruined_houses": 5,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.40000057220459,
+            92.10000038146973,
+            64.00000023841858,
+            74.00000023841858
+          ],
+          "mean_payoff": 80.37500035762787,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            97.5,
+            96.80000019073486,
+            94.70000076293945,
+            58.10000038146973
+          ],
+          "mean_payoff": 86.77500033378601,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            86.40000033378601,
+            95.70000076293945,
+            94.30000114440918,
+            70.7000002861023
+          ],
+          "mean_payoff": 86.77500063180923,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            62.40000057220459,
+            44.69999980926514,
+            48.09999990463257,
+            72.10000014305115
+          ],
+          "mean_payoff": 56.82500010728836,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "hero",
+      "team_composition": [
+        "hero",
+        "hero",
+        "hero",
+        "hero"
+      ],
+      "num_games": 20,
+      "mean_payoff": 95.90000207722187,
+      "std_payoff": 23.097889941443114,
+      "games": [
+        {
+          "individual_payoffs": [
+            59.40000033378601,
+            73.40000200271606,
+            51.40000033378601,
+            77.40000200271606
+          ],
+          "mean_payoff": 65.40000116825104,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            126.40000247955322,
+            125.40000247955322,
+            125.40000247955322,
+            126.40000247955322
+          ],
+          "mean_payoff": 125.90000247955322,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            106.40000247955322,
+            116.40000247955322,
+            116.40000247955322,
+            116.40000247955322
+          ],
+          "mean_payoff": 113.90000247955322,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            127.40000247955322,
+            127.40000247955322,
+            127.40000247955322
+          ],
+          "mean_payoff": 127.40000247955322,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            101.40000247955322,
+            100.40000247955322,
+            100.40000247955322,
+            74.40000247955322
+          ],
+          "mean_payoff": 94.15000247955322,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            81.40000247955322,
+            103.40000247955322,
+            104.40000247955322,
+            103.40000247955322
+          ],
+          "mean_payoff": 98.15000247955322,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            126.40000247955322,
+            126.40000247955322,
+            126.40000247955322
+          ],
+          "mean_payoff": 126.65000247955322,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            119.40000247955322,
+            113.40000247955322,
+            119.40000247955322,
+            120.40000247955322
+          ],
+          "mean_payoff": 118.15000247955322,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            82.40000247955322,
+            100.40000224113464,
+            102.40000224113464,
+            102.40000224113464
+          ],
+          "mean_payoff": 96.90000230073929,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            110.40000247955322,
+            97.40000224113464,
+            107.40000224113464,
+            110.40000247955322
+          ],
+          "mean_payoff": 106.40000236034393,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            50.39999961853027,
+            76.40000247955322,
+            52.39999961853027,
+            76.40000247955322
+          ],
+          "mean_payoff": 63.90000104904175,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            90.40000247955322,
+            80.40000128746033,
+            90.40000247955322,
+            64.40000128746033
+          ],
+          "mean_payoff": 81.40000188350677,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            94.40000247955322,
+            67.40000176429749,
+            93.40000247955322,
+            87.40000176429749
+          ],
+          "mean_payoff": 85.65000212192535,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            83.40000247955322,
+            63.40000009536743,
+            61.40000009536743,
+            83.40000247955322
+          ],
+          "mean_payoff": 72.90000128746033,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            76.40000247955322,
+            76.40000247955322,
+            76.40000247955322,
+            26.400002479553223
+          ],
+          "mean_payoff": 63.90000247955322,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            109.40000247955322,
+            103.40000176429749,
+            102.40000176429749,
+            110.40000247955322
+          ],
+          "mean_payoff": 106.40000212192535,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            84.40000247955322,
+            84.40000247955322,
+            58.40000057220459,
+            68.40000057220459
+          ],
+          "mean_payoff": 73.9000015258789,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            126.40000247955322,
+            126.40000247955322,
+            126.40000247955322,
+            127.40000247955322
+          ],
+          "mean_payoff": 126.65000247955322,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            113.40000247955322,
+            113.40000247955322,
+            114.40000247955322,
+            101.40000247955322
+          ],
+          "mean_payoff": 110.65000247955322,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            56.40000057220459,
+            46.40000057220459,
+            73.40000128746033,
+            62.40000128746033
+          ],
+          "mean_payoff": 59.65000092983246,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "coordinator",
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "coordinator",
+        "coordinator"
+      ],
+      "num_games": 20,
+      "mean_payoff": 99.33125103116035,
+      "std_payoff": 18.835251127501547,
+      "games": [
+        {
+          "individual_payoffs": [
+            106.00000095367432,
+            106.70000076293945,
+            78.30000114440918,
+            104.30000114440918
+          ],
+          "mean_payoff": 98.82500100135803,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            96.30000114440918,
+            99.9000015258789,
+            75.00000047683716,
+            101.00000095367432
+          ],
+          "mean_payoff": 93.05000102519989,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            79.60000133514404,
+            104.60000133514404,
+            106.70000076293945,
+            106.00000095367432
+          ],
+          "mean_payoff": 99.22500109672546,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            133.00000095367432,
+            133.00000095367432,
+            133.00000095367432,
+            132.30000114440918
+          ],
+          "mean_payoff": 132.82500100135803,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            106.30000114440918,
+            105.30000114440918,
+            104.60000133514404,
+            80.00000095367432
+          ],
+          "mean_payoff": 99.05000114440918,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            69.0,
+            89.60000133514404,
+            73.70000052452087,
+            91.00000095367432
+          ],
+          "mean_payoff": 80.82500070333481,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.00000095367432,
+            118.60000133514404,
+            120.00000095367432,
+            118.60000133514404
+          ],
+          "mean_payoff": 116.30000114440918,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.50000143051147,
+            109.60000133514404,
+            110.30000114440918,
+            95.00000047683716
+          ],
+          "mean_payoff": 104.60000109672546,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            119.60000133514404,
+            114.00000071525574,
+            116.00000071525574,
+            119.30000114440918
+          ],
+          "mean_payoff": 117.22500097751617,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            51.30000019073486,
+            63.30000066757202,
+            75.90000081062317,
+            63.90000057220459
+          ],
+          "mean_payoff": 63.60000056028366,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.30000114440918,
+            108.00000095367432,
+            83.30000114440918,
+            107.30000114440918
+          ],
+          "mean_payoff": 101.47500109672546,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            132.00000095367432,
+            131.60000133514404,
+            131.30000114440918,
+            131.30000114440918
+          ],
+          "mean_payoff": 131.55000114440918,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            100.70000076293945,
+            70.90000104904175,
+            96.9000015258789,
+            90.20000100135803
+          ],
+          "mean_payoff": 89.67500108480453,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.60000133514404,
+            108.60000133514404,
+            86.30000114440918,
+            107.60000133514404
+          ],
+          "mean_payoff": 102.52500128746033,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            82.70000076293945,
+            83.40000057220459,
+            82.70000076293945,
+            32.000000953674316
+          ],
+          "mean_payoff": 70.20000076293945,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.50000190734863,
+            126.70000076293945,
+            125.60000133514404,
+            123.60000133514404
+          ],
+          "mean_payoff": 123.35000133514404,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            104.60000133514404,
+            103.9000015258789,
+            79.30000114440918,
+            104.20000171661377
+          ],
+          "mean_payoff": 98.00000143051147,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            106.00000095367432,
+            105.30000114440918,
+            106.70000076293945,
+            81.00000095367432
+          ],
+          "mean_payoff": 99.75000095367432,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.70000076293945,
+            105.00000095367432,
+            103.60000133514404,
+            77.60000133514404
+          ],
+          "mean_payoff": 98.47500109672546,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            78.60000085830688,
+            53.90000057220459,
+            68.60000085830688,
+            63.30000042915344
+          ],
+          "mean_payoff": 66.10000067949295,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "agent_type": "liar",
+      "team_composition": [
+        "liar",
+        "liar",
+        "liar",
+        "liar"
+      ],
+      "num_games": 20,
+      "mean_payoff": 78.6787504196167,
+      "std_payoff": 20.569951332125815,
+      "games": [
+        {
+          "individual_payoffs": [
+            65.69999980926514,
+            79.70000076293945,
+            58.39999985694885,
+            85.10000038146973
+          ],
+          "mean_payoff": 72.22500020265579,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            94.40000057220459,
+            83.80000019073486,
+            68.40000057220459,
+            96.5
+          ],
+          "mean_payoff": 85.77500033378601,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            60.000000953674316,
+            97.40000057220459,
+            96.70000076293945,
+            97.40000057220459
+          ],
+          "mean_payoff": 87.87500071525574,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.70000076293945,
+            82.40000057220459,
+            105.60000133514404,
+            109.10000038146973
+          ],
+          "mean_payoff": 101.20000076293945,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.40000057220459,
+            108.10000038146973,
+            106.00000095367432,
+            81.40000057220459
+          ],
+          "mean_payoff": 100.9750006198883,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            67.09999990463257,
+            17.700000762939453,
+            47.00000023841858,
+            66.40000009536743
+          ],
+          "mean_payoff": 49.55000025033951,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            72.10000038146973,
+            88.10000014305115,
+            96.00000095367432,
+            99.5
+          ],
+          "mean_payoff": 88.9250003695488,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            64.40000009536743,
+            87.60000109672546,
+            75.10000014305115,
+            91.10000038146973
+          ],
+          "mean_payoff": 79.55000042915344,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            79.10000038146973,
+            104.40000057220459,
+            100.70000076293945,
+            102.70000076293945
+          ],
+          "mean_payoff": 96.7250006198883,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            109.40000057220459,
+            99.10000038146973,
+            107.60000109672546,
+            105.10000038146973
+          ],
+          "mean_payoff": 105.30000060796738,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            58.09999990463257,
+            84.10000038146973,
+            58.700000047683716,
+            83.40000057220459
+          ],
+          "mean_payoff": 71.07500022649765,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            96.70000076293945,
+            88.79999995231628,
+            98.10000038146973,
+            72.10000014305115
+          ],
+          "mean_payoff": 88.92500030994415,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            50.09999990463257,
+            48.700000047683716,
+            75.40000057220459,
+            70.00000095367432
+          ],
+          "mean_payoff": 61.0500003695488,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            23.40000009536743,
+            24.0,
+            28.100000143051147,
+            20.09999990463257
+          ],
+          "mean_payoff": 23.900000035762787,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            84.10000038146973,
+            82.00000095367432,
+            84.80000019073486,
+            34.10000038146973
+          ],
+          "mean_payoff": 71.25000047683716,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            94.40000033378601,
+            101.10000038146973,
+            87.70000052452087,
+            87.70000076293945
+          ],
+          "mean_payoff": 92.72500050067902,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.40000057220459,
+            91.40000057220459,
+            66.80000019073486,
+            75.40000009536743
+          ],
+          "mean_payoff": 81.25000035762787,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            95.40000057220459,
+            96.10000038146973,
+            95.40000057220459,
+            58.80000019073486
+          ],
+          "mean_payoff": 86.42500042915344,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            86.40000033378601,
+            97.10000038146973,
+            96.40000057220459,
+            71.40000057220459
+          ],
+          "mean_payoff": 87.82500046491623,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            36.000000953674316,
+            34.09999990463257,
+            34.69999980926514,
+            59.40000057220459
+          ],
+          "mean_payoff": 41.05000030994415,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        }
+      ]
+    }
+  ],
+  "mixed_teams": [
+    {
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "firefighter",
+        "free_rider"
+      ],
+      "description": "3 Firefighters + 1 Free Rider",
+      "num_games": 20,
+      "mean_payoff": 101.7350016862154,
+      "std_payoff": 18.66413105842706,
+      "games": [
+        {
+          "individual_payoffs": [
+            93.40000176429749,
+            99.40000247955322,
+            100.10000228881836,
+            85.7000002861023
+          ],
+          "mean_payoff": 94.65000170469284,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            120.40000247955322,
+            119.40000247955322,
+            119.40000247955322,
+            120.40000057220459
+          ],
+          "mean_payoff": 119.90000200271606,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            128.10000228881836,
+            126.10000228881836,
+            125.40000247955322,
+            130.30000114440918
+          ],
+          "mean_payoff": 127.47500205039978,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            128.10000228881836,
+            127.40000247955322,
+            127.40000247955322,
+            134.4000005722046
+          ],
+          "mean_payoff": 129.32500195503235,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.50000190734863,
+            101.10000228881836,
+            100.40000247955322,
+            82.80000019073486
+          ],
+          "mean_payoff": 96.95000171661377,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            82.10000228881836,
+            104.10000228881836,
+            105.10000228881836,
+            108.30000114440918
+          ],
+          "mean_payoff": 99.90000200271606,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.10000109672546,
+            81.10000109672546,
+            91.10000228881836,
+            97.40000057220459
+          ],
+          "mean_payoff": 83.67500126361847,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            111.10000228881836,
+            109.40000247955322,
+            110.10000228881836,
+            101.10000038146973
+          ],
+          "mean_payoff": 107.92500185966492,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            94.10000228881836,
+            109.10000228881836,
+            109.10000228881836,
+            114.00000095367432
+          ],
+          "mean_payoff": 106.57500195503235,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.10000205039978,
+            91.40000176429749,
+            103.40000224113464,
+            103.7000002861023
+          ],
+          "mean_payoff": 100.40000158548355,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            50.39999961853027,
+            76.40000247955322,
+            52.39999961853027,
+            84.80000019073486
+          ],
+          "mean_payoff": 66.00000047683716,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.10000228881836,
+            127.40000247955322,
+            127.10000228881836,
+            132.70000076293945
+          ],
+          "mean_payoff": 128.57500195503235,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            100.40000247955322,
+            74.10000228881836,
+            99.40000247955322,
+            106.00000095367432
+          ],
+          "mean_payoff": 94.97500205039978,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            105.50000190734863,
+            105.10000228881836,
+            82.8000020980835,
+            110.40000057220459
+          ],
+          "mean_payoff": 100.95000171661377,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.40000247955322,
+            121.40000247955322,
+            123.10000228881836,
+            129.10000038146973
+          ],
+          "mean_payoff": 122.75000190734863,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.8000020980835,
+            107.40000247955322,
+            96.1000018119812,
+            110.40000033378601
+          ],
+          "mean_payoff": 105.67500168085098,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            85.10000228881836,
+            85.8000020980835,
+            60.50000047683716,
+            74.00000023841858
+          ],
+          "mean_payoff": 76.3500012755394,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            100.40000247955322,
+            100.40000247955322,
+            101.8000020980835,
+            82.40000057220459
+          ],
+          "mean_payoff": 96.25000190734863,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            114.10000228881836,
+            114.10000228881836,
+            114.40000247955322,
+            108.40000057220459
+          ],
+          "mean_payoff": 112.75000190734863,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            74.40000128746033,
+            51.100000619888306,
+            64.40000128746033,
+            64.69999980926514
+          ],
+          "mean_payoff": 63.650000751018524,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "coordinator",
+        "free_rider"
+      ],
+      "description": "3 Coordinators + 1 Free Rider",
+      "num_games": 20,
+      "mean_payoff": 107.42000095844269,
+      "std_payoff": 16.212922420925757,
+      "games": [
+        {
+          "individual_payoffs": [
+            106.00000095367432,
+            103.9000015258789,
+            77.60000133514404,
+            106.40000057220459
+          ],
+          "mean_payoff": 98.47500109672546,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.70000076293945,
+            117.00000095367432,
+            117.00000095367432,
+            118.40000057220459
+          ],
+          "mean_payoff": 114.02500081062317,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            133.00000095367432,
+            131.00000095367432,
+            131.00000095367432,
+            131.00000095367432
+          ],
+          "mean_payoff": 131.50000095367432,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            133.70000076293945,
+            133.70000076293945,
+            132.30000114440918,
+            132.30000114440918
+          ],
+          "mean_payoff": 133.00000095367432,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            107.70000076293945,
+            105.30000114440918,
+            106.00000095367432,
+            80.70000076293945
+          ],
+          "mean_payoff": 99.9250009059906,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            84.9000015258789,
+            107.60000133514404,
+            108.60000133514404,
+            111.80000019073486
+          ],
+          "mean_payoff": 103.22500109672546,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            133.00000095367432,
+            131.30000114440918,
+            129.9000015258789,
+            132.00000095367432
+          ],
+          "mean_payoff": 131.55000114440918,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            113.20000171661377,
+            114.30000114440918,
+            114.30000114440918,
+            100.40000057220459
+          ],
+          "mean_payoff": 110.55000114440918,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            77.60000133514404,
+            105.70000076293945,
+            105.00000095367432,
+            105.40000057220459
+          ],
+          "mean_payoff": 98.4250009059906,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            109.10000038146973,
+            113.90000128746033,
+            115.9000015258789,
+            117.70000076293945
+          ],
+          "mean_payoff": 114.1500009894371,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.00000095367432,
+            105.20000171661377,
+            81.20000171661377,
+            109.40000057220459
+          ],
+          "mean_payoff": 100.95000123977661,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            93.9000015258789,
+            86.69999980926514,
+            97.40000057220459,
+            71.40000009536743
+          ],
+          "mean_payoff": 87.35000050067902,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            98.60000133514404,
+            71.60000085830688,
+            97.60000133514404,
+            95.80000019073486
+          ],
+          "mean_payoff": 90.90000092983246,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.30000114440918,
+            108.60000133514404,
+            84.9000015258789,
+            109.00000095367432
+          ],
+          "mean_payoff": 102.70000123977661,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            121.60000133514404,
+            127.00000095367432,
+            128.00000095367432,
+            127.70000076293945
+          ],
+          "mean_payoff": 126.07500100135803,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.3000009059906,
+            107.00000071525574,
+            91.50000143051147,
+            103.79999995231628
+          ],
+          "mean_payoff": 101.15000075101852,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            106.00000095367432,
+            104.60000133514404,
+            79.30000114440918,
+            108.40000057220459
+          ],
+          "mean_payoff": 99.57500100135803,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.30000114440918,
+            118.00000095367432,
+            118.70000076293945,
+            104.70000076293945
+          ],
+          "mean_payoff": 114.6750009059906,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            116.9000015258789,
+            124.30000114440918,
+            123.60000133514404,
+            127.40000057220459
+          ],
+          "mean_payoff": 123.05000114440918,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            79.30000042915344,
+            54.600000619888306,
+            69.30000042915344,
+            65.40000033378601
+          ],
+          "mean_payoff": 67.1500004529953,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "hero",
+        "hero",
+        "hero",
+        "free_rider"
+      ],
+      "description": "3 Heroes + 1 Free Rider",
+      "num_games": 20,
+      "mean_payoff": 89.57000154331327,
+      "std_payoff": 25.20752494572575,
+      "games": [
+        {
+          "individual_payoffs": [
+            100.40000247955322,
+            100.40000247955322,
+            73.40000247955322,
+            106.40000057220459
+          ],
+          "mean_payoff": 95.15000200271606,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.40000200271606,
+            96.40000247955322,
+            69.40000200271606,
+            103.10000038146973
+          ],
+          "mean_payoff": 90.07500171661377,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            125.40000247955322,
+            125.40000247955322,
+            132.4000005722046
+          ],
+          "mean_payoff": 127.65000200271606,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            127.40000247955322,
+            127.40000247955322,
+            134.4000005722046
+          ],
+          "mean_payoff": 129.15000200271606,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            101.40000247955322,
+            100.40000247955322,
+            100.40000247955322,
+            82.10000038146973
+          ],
+          "mean_payoff": 96.07500195503235,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            63.40000033378601,
+            85.40000247955322,
+            67.40000033378601,
+            93.10000038146973
+          ],
+          "mean_payoff": 77.32500088214874,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.40000247955322,
+            114.40000247955322,
+            114.40000247955322,
+            120.00000095367432
+          ],
+          "mean_payoff": 112.8000020980835,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            101.40000200271606,
+            105.40000247955322,
+            105.40000247955322,
+            96.40000057220459
+          ],
+          "mean_payoff": 102.15000188350677,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            45.40000247955322,
+            79.40000200271606,
+            83.40000200271606,
+            89.70000052452087
+          ],
+          "mean_payoff": 74.47500175237656,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            86.40000128746033,
+            77.40000200271606,
+            95.40000176429749,
+            102.40000033378601
+          ],
+          "mean_payoff": 90.40000134706497,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            50.39999961853027,
+            76.40000247955322,
+            52.39999961853027,
+            84.10000038146973
+          ],
+          "mean_payoff": 65.82500052452087,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            116.40000247955322,
+            106.40000247955322,
+            116.40000247955322,
+            124.10000038146973
+          ],
+          "mean_payoff": 115.82500195503235,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            47.39999961853027,
+            44.39999961853027,
+            70.40000200271606,
+            74.10000038146973
+          ],
+          "mean_payoff": 59.075000405311584,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            16.399999856948853,
+            18.40000009536743,
+            20.40000009536743,
+            18.00000023841858
+          ],
+          "mean_payoff": 18.300000071525574,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.40000247955322,
+            101.40000247955322,
+            77.40000247955322,
+            108.40000057220459
+          ],
+          "mean_payoff": 97.40000200271606,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.40000128746033,
+            73.40000182390213,
+            45.400001764297485,
+            78.5
+          ],
+          "mean_payoff": 65.67500121891499,
+          "saved_houses": 5,
+          "ruined_houses": 5,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            100.40000247955322,
+            100.40000247955322,
+            74.40000247955322,
+            108.40000057220459
+          ],
+          "mean_payoff": 95.90000200271606,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            112.40000247955322,
+            112.40000247955322,
+            112.40000247955322,
+            104.70000076293945
+          ],
+          "mean_payoff": 110.47500205039978,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            75.40000128746033,
+            85.40000200271606,
+            85.40000200271606,
+            60.30000042915344
+          ],
+          "mean_payoff": 76.62500143051147,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            96.40000247955322,
+            85.40000104904175,
+            96.40000247955322,
+            86.00000023841858
+          ],
+          "mean_payoff": 91.0500015616417,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "firefighter",
+        "firefighter",
+        "free_rider",
+        "free_rider"
+      ],
+      "description": "2 Firefighters + 2 Free Riders",
+      "num_games": 20,
+      "mean_payoff": 88.76625109985471,
+      "std_payoff": 23.837371515728393,
+      "games": [
+        {
+          "individual_payoffs": [
+            63.40000033378601,
+            83.10000228881836,
+            61.0,
+            87.00000095367432
+          ],
+          "mean_payoff": 73.62500089406967,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            92.10000228881836,
+            85.10000157356262,
+            71.70000004768372,
+            99.80000019073486
+          ],
+          "mean_payoff": 87.17500102519989,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            128.10000228881836,
+            125.40000247955322,
+            132.4000005722046,
+            133.80000019073486
+          ],
+          "mean_payoff": 129.92500138282776,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            128.8000020980835,
+            128.10000228881836,
+            134.4000005722046,
+            134.4000005722046
+          ],
+          "mean_payoff": 131.42500138282776,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            101.40000247955322,
+            100.40000247955322,
+            108.10000038146973,
+            79.30000114440918
+          ],
+          "mean_payoff": 97.30000162124634,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            59.40000033378601,
+            12.10000228881836,
+            49.09999990463257,
+            66.39999985694885
+          ],
+          "mean_payoff": 46.75000059604645,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.10000228881836,
+            116.50000190734863,
+            120.70000076293945,
+            121.40000057220459
+          ],
+          "mean_payoff": 115.42500138282776,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            59.40000081062317,
+            85.40000247955322,
+            78.0,
+            91.70000076293945
+          ],
+          "mean_payoff": 78.62500101327896,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            115.40000247955322,
+            109.80000162124634,
+            116.70000076293945,
+            122.80000019073486
+          ],
+          "mean_payoff": 116.17500126361847,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            57.100000858306885,
+            83.40000200271606,
+            89.40000009536743,
+            72.7000002861023
+          ],
+          "mean_payoff": 75.65000081062317,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.40000247955322,
+            102.40000247955322,
+            85.40000057220459,
+            108.70000076293945
+          ],
+          "mean_payoff": 99.72500157356262,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            91.10000228881836,
+            81.10000109672546,
+            95.30000114440918,
+            70.70000052452087
+          ],
+          "mean_payoff": 84.55000126361847,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            47.39999961853027,
+            45.09999966621399,
+            77.40000033378601,
+            73.40000033378601
+          ],
+          "mean_payoff": 60.82499998807907,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            83.40000247955322,
+            64.09999990463257,
+            67.0,
+            90.40000057220459
+          ],
+          "mean_payoff": 76.2250007390976,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            76.40000247955322,
+            76.40000247955322,
+            83.40000057220459,
+            33.40000057220459
+          ],
+          "mean_payoff": 67.4000015258789,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            65.40000128746033,
+            73.40000182390213,
+            53.10000038146973,
+            75.00000047683716
+          ],
+          "mean_payoff": 66.72500099241734,
+          "saved_houses": 5,
+          "ruined_houses": 5,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            85.10000228881836,
+            85.8000020980835,
+            65.40000009536743,
+            76.10000014305115
+          ],
+          "mean_payoff": 78.10000115633011,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            112.40000247955322,
+            112.40000247955322,
+            120.10000038146973,
+            106.10000038146973
+          ],
+          "mean_payoff": 112.75000143051147,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            113.40000247955322,
+            115.50000190734863,
+            120.00000095367432,
+            108.40000057220459
+          ],
+          "mean_payoff": 114.32500147819519,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            56.40000057220459,
+            46.40000057220459,
+            79.7000002861023,
+            68.00000047683716
+          ],
+          "mean_payoff": 62.62500047683716,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "coordinator",
+        "coordinator",
+        "liar",
+        "liar"
+      ],
+      "description": "2 Coordinators + 2 Liars",
+      "num_games": 20,
+      "mean_payoff": 91.30750069096685,
+      "std_payoff": 22.1100065002793,
+      "games": [
+        {
+          "individual_payoffs": [
+            100.40000033378601,
+            105.00000095367432,
+            107.10000038146973,
+            85.70000052452087
+          ],
+          "mean_payoff": 99.55000054836273,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            92.30000066757202,
+            78.90000128746033,
+            67.00000023841858,
+            94.40000033378601
+          ],
+          "mean_payoff": 83.15000063180923,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            78.9000015258789,
+            106.70000076293945,
+            108.10000038146973,
+            108.80000019073486
+          ],
+          "mean_payoff": 100.62500071525574,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            133.70000076293945,
+            131.60000133514404,
+            135.10000038146973,
+            133.00000095367432
+          ],
+          "mean_payoff": 133.35000085830688,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            106.30000114440918,
+            104.60000133514404,
+            106.70000076293945,
+            82.80000019073486
+          ],
+          "mean_payoff": 100.10000085830688,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            81.60000133514404,
+            34.30000114440918,
+            85.40000057220459,
+            83.70000076293945
+          ],
+          "mean_payoff": 71.25000095367432,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            70.70000052452087,
+            86.70000052452087,
+            96.00000095367432,
+            98.10000038146973
+          ],
+          "mean_payoff": 87.87500059604645,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            116.00000095367432,
+            114.30000114440918,
+            116.40000057220459,
+            101.80000019073486
+          ],
+          "mean_payoff": 112.12500071525574,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            125.00000095367432,
+            118.00000095367432,
+            125.70000076293945,
+            124.70000076293945
+          ],
+          "mean_payoff": 123.35000085830688,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            51.30000042915344,
+            64.00000047683716,
+            80.10000014305115,
+            66.70000052452087
+          ],
+          "mean_payoff": 65.52500039339066,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            78.60000133514404,
+            103.9000015258789,
+            107.70000076293945,
+            107.40000057220459
+          ],
+          "mean_payoff": 99.40000104904175,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            122.70000076293945,
+            112.00000095367432,
+            122.70000076293945,
+            124.10000038146973
+          ],
+          "mean_payoff": 120.37500071525574,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            46.59999990463257,
+            48.0,
+            74.70000076293945,
+            71.40000057220459
+          ],
+          "mean_payoff": 60.17500030994415,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            38.60000014305115,
+            39.90000009536743,
+            64.40000057220459,
+            38.10000014305115
+          ],
+          "mean_payoff": 45.25000023841858,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            105.20000171661377,
+            107.00000095367432,
+            85.80000019073486,
+            109.10000038146973
+          ],
+          "mean_payoff": 101.77500081062317,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            72.40000009536743,
+            77.60000067949295,
+            51.70000076293945,
+            77.10000038146973
+          ],
+          "mean_payoff": 69.70000047981739,
+          "saved_houses": 5,
+          "ruined_houses": 5,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            90.00000095367432,
+            87.9000015258789,
+            66.10000014305115,
+            74.70000004768372
+          ],
+          "mean_payoff": 79.67500066757202,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            92.60000133514404,
+            91.9000015258789,
+            94.70000076293945,
+            57.40000057220459
+          ],
+          "mean_payoff": 84.15000104904175,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            110.9000015258789,
+            113.00000095367432,
+            106.30000066757202,
+            103.10000038146973
+          ],
+          "mean_payoff": 108.32500088214874,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            87.9000015258789,
+            63.200000524520874,
+            94.5,
+            76.09999990463257
+          ],
+          "mean_payoff": 80.42500048875809,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        }
+      ]
+    },
+    {
+      "team_composition": [
+        "firefighter",
+        "coordinator",
+        "hero",
+        "free_rider"
+      ],
+      "description": "Diverse Team",
+      "num_games": 20,
+      "mean_payoff": 104.14750145375729,
+      "std_payoff": 21.124905437531314,
+      "games": [
+        {
+          "individual_payoffs": [
+            106.40000247955322,
+            109.60000133514404,
+            105.40000247955322,
+            91.00000095367432
+          ],
+          "mean_payoff": 103.1000018119812,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            126.40000247955322,
+            129.60000133514404,
+            125.40000247955322,
+            132.70000076293945
+          ],
+          "mean_payoff": 128.52500176429749,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            108.50000190734863,
+            122.70000076293945,
+            116.40000247955322,
+            120.60000133514404
+          ],
+          "mean_payoff": 117.05000162124634,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.40000247955322,
+            135.10000038146973,
+            127.40000247955322,
+            133.70000076293945
+          ],
+          "mean_payoff": 130.9000015258789,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            52.39999961853027,
+            80.60000133514404,
+            76.40000247955322,
+            56.69999980926514
+          ],
+          "mean_payoff": 66.52500081062317,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            127.8000020980835,
+            129.20000171661377,
+            125.40000247955322,
+            133.10000038146973
+          ],
+          "mean_payoff": 128.87500166893005,
+          "saved_houses": 10,
+          "ruined_houses": 0,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            102.40000247955322,
+            120.00000095367432,
+            114.40000247955322,
+            119.30000114440918
+          ],
+          "mean_payoff": 114.02500176429749,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            120.10000228881836,
+            117.60000133514404,
+            119.40000247955322,
+            129.5
+          ],
+          "mean_payoff": 121.6500015258789,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            119.40000247955322,
+            118.00000095367432,
+            119.40000247955322,
+            126.80000019073486
+          ],
+          "mean_payoff": 120.9000015258789,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.10000205039978,
+            96.30000066757202,
+            103.40000224113464,
+            105.10000038146973
+          ],
+          "mean_payoff": 101.97500133514404,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            103.8000020980835,
+            107.30000114440918,
+            78.40000247955322,
+            109.40000057220459
+          ],
+          "mean_payoff": 99.72500157356262,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.10000228881836,
+            112.00000095367432,
+            116.40000247955322,
+            121.30000114440918
+          ],
+          "mean_payoff": 116.70000171661377,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            117.40000247955322,
+            123.70000076293945,
+            117.40000247955322,
+            117.40000057220459
+          ],
+          "mean_payoff": 118.97500157356262,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            81.40000247955322,
+            65.90000057220459,
+            80.40000247955322,
+            61.39999985694885
+          ],
+          "mean_payoff": 72.27500134706497,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            104.50000190734863,
+            109.10000038146973,
+            77.40000247955322,
+            108.40000057220459
+          ],
+          "mean_payoff": 99.85000133514404,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            71.40000128746033,
+            81.60000109672546,
+            55.40000128746033,
+            87.40000033378601
+          ],
+          "mean_payoff": 73.95000100135803,
+          "saved_houses": 6,
+          "ruined_houses": 4,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            85.10000228881836,
+            87.9000015258789,
+            58.40000057220459,
+            77.5
+          ],
+          "mean_payoff": 77.22500109672546,
+          "saved_houses": 8,
+          "ruined_houses": 2,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            113.10000228881836,
+            117.30000114440918,
+            112.40000247955322,
+            106.10000038146973
+          ],
+          "mean_payoff": 112.22500157356262,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            113.40000247955322,
+            116.20000171661377,
+            114.40000247955322,
+            109.10000038146973
+          ],
+          "mean_payoff": 113.27500176429749,
+          "saved_houses": 9,
+          "ruined_houses": 1,
+          "nights_played": 13
+        },
+        {
+          "individual_payoffs": [
+            75.10000109672546,
+            56.00000047683716,
+            64.40000128746033,
+            65.40000009536743
+          ],
+          "mean_payoff": 65.2250007390976,
+          "saved_houses": 7,
+          "ruined_houses": 3,
+          "nights_played": 13
+        }
+      ]
+    }
+  ]
+}

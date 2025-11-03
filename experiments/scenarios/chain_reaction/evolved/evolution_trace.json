@@ -1,0 +1,117 @@
+{
+  "scenario": "chain_reaction",
+  "config": {
+    "population_size": 20,
+    "num_generations": 10,
+    "elite_size": 5,
+    "selection_strategy": "tournament",
+    "crossover_strategy": "uniform",
+    "crossover_rate": 0.7,
+    "mutation_strategy": "gaussian",
+    "mutation_rate": 0.1,
+    "mutation_scale": 0.1,
+    "fitness_type": "mean_reward",
+    "games_per_individual": 5,
+    "seed": null
+  },
+  "generations": [
+    {
+      "generation": 0,
+      "best_fitness": -0.9,
+      "mean_fitness": -4.96,
+      "std_fitness": 2.278683830635571,
+      "diversity": 1.3018127369253258
+    },
+    {
+      "generation": 1,
+      "best_fitness": -1.5,
+      "mean_fitness": -5.11,
+      "std_fitness": 1.8638401218988714,
+      "diversity": 1.3342571702907347
+    },
+    {
+      "generation": 2,
+      "best_fitness": -0.1,
+      "mean_fitness": -4.500000000000001,
+      "std_fitness": 2.0765355763867857,
+      "diversity": 1.3639015702784385
+    },
+    {
+      "generation": 3,
+      "best_fitness": -1.5,
+      "mean_fitness": -4.45,
+      "std_fitness": 1.7639444435695812,
+      "diversity": 1.3343387979768022
+    },
+    {
+      "generation": 4,
+      "best_fitness": -2.5,
+      "mean_fitness": -5.529999999999999,
+      "std_fitness": 1.6867424225411534,
+      "diversity": 1.4605707858306327
+    },
+    {
+      "generation": 5,
+      "best_fitness": -1.1,
+      "mean_fitness": -4.959999999999999,
+      "std_fitness": 1.8698663053812161,
+      "diversity": 1.4439334447984962
+    },
+    {
+      "generation": 6,
+      "best_fitness": 0.3,
+      "mean_fitness": -3.7700000000000005,
+      "std_fitness": 2.3154049321878882,
+      "diversity": 1.3228085853906053
+    },
+    {
+      "generation": 7,
+      "best_fitness": -0.7,
+      "mean_fitness": -4.66,
+      "std_fitness": 2.147184202624451,
+      "diversity": 1.2050430597570494
+    },
+    {
+      "generation": 8,
+      "best_fitness": -0.5,
+      "mean_fitness": -4.950000000000001,
+      "std_fitness": 2.3228215600859228,
+      "diversity": 1.1264229476297516
+    },
+    {
+      "generation": 9,
+      "best_fitness": 0.7,
+      "mean_fitness": -3.75,
+      "std_fitness": 1.9696446379994539,
+      "diversity": 1.212483814166476
+    },
+    {
+      "generation": 9,
+      "best_fitness": -1.9,
+      "mean_fitness": -5.21,
+      "std_fitness": 1.7781732199085667,
+      "diversity": 1.23959830148228
+    }
+  ],
+  "best_agent": {
+    "generation": 10,
+    "fitness": -1.9,
+    "genome": [
+      0.28335046768188477,
+      0.42864770413423653,
+      0.831150233745575,
+      0.610755163563718,
+      0.8296320073367707,
+      0.8633829708692186,
+      0.18908766657875412,
+      0.0,
+      1.0,
+      0.9066137671470642
+    ]
+  },
+  "convergence": {
+    "converged": true,
+    "generation": 9,
+    "elapsed_time": 22.46826982498169
+  }
+}

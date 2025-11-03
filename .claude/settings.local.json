@@ -80,7 +80,8 @@
       "Bash(break)",
       "Bash(tree:*)",
       "Bash(timeout 30 .venv/bin/python:*)",
-      "Bash(timeout 10 .venv/bin/python:*)"
+      "Bash(timeout 10 .venv/bin/python:*)",
+      "Bash(do echo \"=== Processing $scenario ===\" .venv/bin/python experiments/scripts/run_scenario_research.py $scenario --quick --skip-nash)"
     ],
     "deny": [],
     "ask": []
