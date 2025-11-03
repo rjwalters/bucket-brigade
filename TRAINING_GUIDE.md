@@ -148,6 +148,9 @@ tensorboard --logdir runs/
   - `train/total_loss` - Combined loss
   - `train/grad_norm` - Gradient magnitude
   - `train/learning_rate` - Current learning rate
+  - `train/kl_divergence` - Policy change magnitude (should be small, 0.001-0.1)
+  - `train/clip_fraction` - Percentage of clipped advantages (5-30% typical)
+  - `train/explained_variance` - Value function quality (approaches 1.0 when good)
 
 - **Episode Metrics** (when episodes complete):
   - `episode/mean_reward` - Average reward over last 100 episodes

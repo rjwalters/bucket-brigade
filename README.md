@@ -21,10 +21,11 @@ The result? Endless fascinating dynamics of **trust, deception, coordination, an
 
 ## 🎯 Research Goals
 
-- **Estimate each agent's marginal contribution** to team performance
-- **Compare cooperation strategies** across diverse scenarios
-- **Rank agents fairly** using advanced statistical methods
-- **Understand emergent behaviors** in multi-agent systems
+- **Run large-scale tournaments** with diverse teams and scenarios (1000+ games)
+- **Extract individual policy performance** with statistical validation
+- **Evolve optimal heuristic agents** through evolutionary algorithms
+- **Train neural network policies** using PufferLib/PPO reinforcement learning
+- **Understand cooperation dynamics** through scenario analysis and agent ranking
 
 ---
 
@@ -45,18 +46,15 @@ bucket-brigade/
 │ ├── agents/                 # Heuristic + learned agents
 │ │ ├── agent_base.py
 │ │ ├── heuristic_agent.py
-│ │ ├── agent_loader.py
-│ │ ├── agent_template.py
 │ │ └── __init__.py
 │ │
-│ ├── orchestration/          # Ranking + batch orchestration
+│ ├── orchestration/          # Statistical analysis + ranking
 │ │ ├── ranking_model.py
+│ │ ├── summary.py            # Statistical summary generation
 │ │ └── __init__.py
 │ │
-│ ├── data/                   # Results + replays
-│ │ └── replays/
-│ │
-│ ├── utils/                  # Shared utilities
+│ ├── utils/                  # Statistical utilities
+│ │ ├── statistics.py         # Confidence intervals, Shapley values, etc.
 │ │ └── __init__.py
 │ │
 │ └── visualizer_api/         # Replay export / web bridge
@@ -77,8 +75,10 @@ bucket-brigade/
 │
 ├── scripts/                   # CLI + experiment runners
 │ ├── run_one_game.py
-│ ├── run_batch.py
-│ └── analyze_rankings.py
+│ ├── run_batch.py            # With --generate-summary flag
+│ ├── analyze_summaries.py    # Statistical analysis CLI
+│ ├── evolve_agents.py        # Evolutionary optimization
+│ └── train_simple.py         # RL training with PufferLib
 │
 ├── tests/                     # Unit tests (pytest)
 │ ├── test_environment.py
@@ -88,8 +88,8 @@ bucket-brigade/
 │
 └── web/                       # Front-end visualizer (TypeScript)
 ├── src/
-│   ├── components/           # GameBoard, ReplayControls, GameInfo
-│   ├── pages/                # Dashboard, GameReplay, Rankings, Settings
+│   ├── components/           # Town, AgentLayer, GameAnalysis
+│   ├── pages/                # SimpleDashboard, GameReplay, Settings
 │   ├── types/                # TypeScript definitions
 │   ├── utils/                # Storage utilities
 │   └── main.tsx              # App entry point
@@ -168,15 +168,14 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 | ✅ 7 | **Rust core engine** | `bucket-brigade-core/` - 10-20x faster |
 | ✅ 8 | **PufferLib integration** | Train learned policies with PPO - see [TRAINING_GUIDE.md](TRAINING_GUIDE.md) |
 
-### 🚧 Phase 1: Backend Infrastructure (Tournament System)
-| Issue | Goal | Status |
+### 🚧 Phase 1: Statistical Validation & Analysis
+| Feature | Goal | Status |
 |-------|------|--------|
-| [#4](../../issues/4) | PostgreSQL schema & Agent Registry | 📋 Planned |
-| [#5](../../issues/5) | Job Queue with priority support | 📋 Planned |
-| [#6](../../issues/6) | Tournament Coordinator with adaptive sampling | 📋 Planned |
-| [#7](../../issues/7) | Worker Pool for parallel execution | 📋 Planned |
-| [#8](../../issues/8) | Ranking Service with periodic re-computation | 🚫 Blocked |
-| [#9](../../issues/9) | Web API for live rankings & history | 🚫 Blocked |
+| Statistical summaries | Generate aggregate statistics from 1000+ game replays | ✅ Complete |
+| Confidence intervals | Parametric and bootstrap CI for team performance | ✅ Complete |
+| Agent contributions | Shapley value estimation for individual impact | ✅ Complete |
+| Significance tests | Mann-Whitney and Welch's t-test for comparisons | ✅ Complete |
+| Analysis CLI | Tools for comparing experiments and ranking teams | ✅ Complete |
 
 ### 🤖 Phase 2: RL Training Enhancements
 | Issue | Goal | Status |
