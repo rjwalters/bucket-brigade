@@ -199,43 +199,49 @@ impl BucketBrigade {
         }
     }
 
-    fn compute_rewards(&mut self, actions: &[Action], prev_houses: &[HouseState]) -> Vec<f32> {
-        // Count outcomes
-        let saved_houses = self.houses.iter().filter(|&&h| h == 0).count() as f32;
-        let ruined_houses = self.houses.iter().filter(|&&h| h == 2).count() as f32;
-
-        // Team reward
-        let team_reward =
-            self.scenario.a * (saved_houses / 10.0) - self.scenario.l * (ruined_houses / 10.0);
-
+    fn compute_rewards(&mut self, actions: &[Action], _prev_houses: &[HouseState]) -> Vec<f32> {
+        // Only compute per-step work/rest costs
+        // House-based rewards are computed at game end
         actions
             .iter()
-            .enumerate()
-            .map(|(agent_idx, action)| {
-                let mut reward = 0.0;
-
-                // Work/rest cost
+            .map(|action| {
+                // Work/rest cost only
                 if action[1] == 1 {
-                    reward -= self.scenario.c; // Work cost
+                    -self.scenario.c // Work cost
                 } else {
-                    reward += 0.5; // Rest reward
+                    0.5 // Rest reward
                 }
-
-                // Ownership bonus/penalty
-                let owned_house = agent_idx % 10;
-                if prev_houses[owned_house] == 0 && self.houses[owned_house] == 0 {
-                    reward += 1.0; // Bonus for keeping house safe
-                }
-                if self.houses[owned_house] == 2 {
-                    reward -= 2.0; // Penalty for ruined house
-                }
-
-                // Team reward share
-                reward += 0.1 * team_reward;
-
-                reward
             })
             .collect()
+    }
+
+    fn compute_final_rewards(&self) -> Vec<f32> {
+        // Compute final rewards based on house outcomes at game end
+        let mut rewards = vec![0.0; self.scenario.num_agents];
+
+        for agent_idx in 0..self.scenario.num_agents {
+            let owned_house = agent_idx % 10;
+            let left_neighbor = if owned_house == 0 { 9 } else { owned_house - 1 };
+            let right_neighbor = (owned_house + 1) % 10;
+
+            // Reward for owned house outcome
+            match self.houses[owned_house] {
+                0 => rewards[agent_idx] += self.scenario.a_own,    // Saved
+                2 => rewards[agent_idx] -= self.scenario.a_own,    // Ruined (symmetric penalty)
+                _ => {},                                            // Burning (no reward/penalty)
+            }
+
+            // Rewards for neighbor houses
+            for &neighbor in &[left_neighbor, right_neighbor] {
+                match self.houses[neighbor] {
+                    0 => rewards[agent_idx] += self.scenario.a_neighbor,  // Saved
+                    2 => rewards[agent_idx] -= self.scenario.a_neighbor,  // Ruined (symmetric penalty)
+                    _ => {},                                                // Burning (no reward/penalty)
+                }
+            }
+        }
+
+        rewards
     }
 
     fn check_termination(&self) -> bool {
@@ -284,7 +290,8 @@ impl BucketBrigade {
     }
 
     pub fn get_result(&self) -> GameResult {
-        let agent_scores =
+        // Sum up per-step rewards from trajectory
+        let mut agent_scores =
             self.trajectory
                 .iter()
                 .fold(vec![0.0; self.scenario.num_agents], |mut acc, night| {
@@ -293,6 +300,12 @@ impl BucketBrigade {
                     }
                     acc
                 });
+
+        // Add final rewards based on house outcomes
+        let final_rewards = self.compute_final_rewards();
+        for (i, &final_reward) in final_rewards.iter().enumerate() {
+            agent_scores[i] += final_reward;
+        }
 
         let final_score = agent_scores.iter().sum();
 
@@ -661,8 +674,17 @@ mod tests {
         let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
         let result = engine.step(&actions);
 
-        // Each agent should get ownership bonus for their house staying safe
-        assert!(result.rewards.iter().all(|&r| r > 0.0), "Agents should get ownership bonus");
+        // Per-step rewards should only reflect work/rest costs
+        // All agents resting, so should get +0.5
+        assert!(result.rewards.iter().all(|&r| r == 0.5), "Agents should get rest reward only");
+
+        // Complete the game and check final rewards
+        engine.done = true;
+        let game_result = engine.get_result();
+
+        // All agents should have positive final scores (ownership bonus for safe houses + neighbor bonuses)
+        assert!(game_result.agent_scores.iter().all(|&s| s > 0.0),
+                "All agents should have positive scores with all houses safe");
     }
 
     #[test]
@@ -677,7 +699,19 @@ mod tests {
         let actions = vec![[5, 0], [5, 0], [5, 0], [5, 0]];
         let result = engine.step(&actions);
 
-        // Agent 0 should have a penalty for ruined house
-        assert!(result.rewards[0] < result.rewards[1], "Agent 0 should have penalty for ruined house");
+        // Per-step rewards should be equal (only work/rest costs)
+        // All agents resting, so should get +0.5
+        assert_eq!(result.rewards[0], 0.5, "Agent 0 should have rest reward");
+        assert_eq!(result.rewards[1], 0.5, "Agent 1 should have rest reward");
+        assert_eq!(result.rewards[0], result.rewards[1], "Per-step rewards should be equal");
+
+        // Complete the game and check final rewards
+        engine.done = true;
+        let game_result = engine.get_result();
+
+        // Agent 0 should have penalty for ruined owned house (house 0)
+        // Agent 1's house (house 1) is safe, so they get bonus
+        assert!(game_result.agent_scores[0] < game_result.agent_scores[1],
+                "Agent 0 should have lower final score due to ruined house penalty");
     }
 }

@@ -67,6 +67,7 @@ pub struct PyScenario {
 impl PyScenario {
     #[new]
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (beta, kappa, a, l, c, rho_ignite, n_min, p_spark, n_spark, num_agents, a_own=100.0, a_neighbor=50.0))]
     fn new(
         beta: f32,
         kappa: f32,
@@ -78,6 +79,8 @@ impl PyScenario {
         p_spark: f32,
         n_spark: u32,
         num_agents: usize,
+        a_own: f32,
+        a_neighbor: f32,
     ) -> Self {
         Self {
             inner: Scenario {
@@ -91,6 +94,8 @@ impl PyScenario {
                 p_spark,
                 n_spark,
                 num_agents,
+                a_own,
+                a_neighbor,
             },
         }
     }
@@ -134,6 +139,14 @@ impl PyScenario {
     #[getter]
     fn num_agents(&self) -> usize {
         self.inner.num_agents
+    }
+    #[getter]
+    fn a_own(&self) -> f32 {
+        self.inner.a_own
+    }
+    #[getter]
+    fn a_neighbor(&self) -> f32 {
+        self.inner.a_neighbor
     }
 }
 
