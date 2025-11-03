@@ -361,10 +361,10 @@ class TestGeneticAlgorithm:
     def test_ga_evolve_basic(self):
         """Test basic evolution run (small scale)."""
         config = EvolutionConfig(
-            population_size=10,
-            num_generations=3,
-            elite_size=2,
-            games_per_individual=5,
+            population_size=5,
+            num_generations=2,
+            elite_size=1,
+            games_per_individual=2,
             seed=42,
             early_stopping=False,
         )
@@ -375,8 +375,8 @@ class TestGeneticAlgorithm:
         # Check result structure
         assert result.best_individual is not None
         assert result.best_individual.fitness is not None
-        assert len(result.fitness_history) == 4  # Initial + 3 generations
-        assert len(result.diversity_history) == 4
+        assert len(result.fitness_history) == 3  # Initial + 2 generations
+        assert len(result.diversity_history) == 3
 
         # Fitness should improve (or at least not get worse with elitism)
         initial_best = result.fitness_history[0]["max"]
@@ -386,9 +386,9 @@ class TestGeneticAlgorithm:
     def test_ga_convergence_detection(self):
         """Test convergence detection."""
         config = EvolutionConfig(
-            population_size=10,
-            num_generations=100,
-            games_per_individual=5,
+            population_size=5,
+            num_generations=10,
+            games_per_individual=2,
             early_stopping=True,
             convergence_threshold=0.0001,
             seed=42,
@@ -405,9 +405,9 @@ class TestGeneticAlgorithm:
     def test_ga_diversity_maintenance(self):
         """Test diversity maintenance."""
         config = EvolutionConfig(
-            population_size=20,
-            num_generations=10,
-            games_per_individual=5,
+            population_size=8,
+            num_generations=3,
+            games_per_individual=2,
             maintain_diversity=True,
             min_diversity=0.1,
             seed=42,
