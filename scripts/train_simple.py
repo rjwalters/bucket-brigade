@@ -307,8 +307,10 @@ def train_ppo(
 
 
 def main():
+    print("🔍 DEBUG: Starting train_simple.py main()", flush=True)
     import argparse
 
+    print("🔍 DEBUG: Parsing arguments", flush=True)
     parser = argparse.ArgumentParser(description="Train Bucket Brigade policy with PPO")
     parser.add_argument(
         "--num-opponents", type=int, default=2, help="Number of opponent agents"
@@ -358,6 +360,7 @@ def main():
     )
 
     args = parser.parse_args()
+    print(f"🔍 DEBUG: Arguments parsed. Steps={args.num_steps}, Scenario={args.scenario}", flush=True)
 
     # Handle --list-scenarios
     if args.list_scenarios:
@@ -369,13 +372,15 @@ def main():
         return
 
     # Set seeds
+    print(f"🔍 DEBUG: Setting random seeds", flush=True)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
     # Create environment with scenario
+    print(f"🔍 DEBUG: Importing scenario functions", flush=True)
     from bucket_brigade.envs import get_scenario_by_name
 
-    print(f"🎮 Creating environment with scenario: {args.scenario}")
+    print(f"🎮 Creating environment with scenario: {args.scenario}", flush=True)
     print(f"   Number of opponents: {args.num_opponents}")
 
     scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
