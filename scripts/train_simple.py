@@ -384,13 +384,15 @@ def main():
     print(f"   Number of opponents: {args.num_opponents}")
 
     scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
+    print(f"🔍 DEBUG: Got scenario, creating environment...", flush=True)
     env = PufferBucketBrigade(scenario=scenario, num_opponents=args.num_opponents)
+    print(f"🔍 DEBUG: Environment created!", flush=True)
 
     # Create policy
     obs_dim = env.observation_space.shape[0]
     action_dims = env.action_space.nvec.tolist()
 
-    print(f"🧠 Creating policy network")
+    print(f"🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
