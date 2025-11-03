@@ -1,5 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { existsSync } from 'fs'
+import { resolve } from 'path'
+
+// Check if WASM package exists
+const wasmPkgPath = resolve(__dirname, '../bucket-brigade-core/pkg')
+const hasWasm = existsSync(wasmPkgPath)
+
+console.log(`🦀 Rust WASM package: ${hasWasm ? '✅ Available' : '⚠️  Not found - using JS fallback'}`)
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -34,7 +42,7 @@ export default defineConfig({
     exclude: ['bucket-brigade-core']
   },
   resolve: {
-    alias: {
+    alias: hasWasm ? {} : {
       // Provide a stub for the WASM module if it doesn't exist
       '../../../bucket-brigade-core/pkg/bucket_brigade_core': '/src/utils/wasmStub.ts'
     }
