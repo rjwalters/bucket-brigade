@@ -82,7 +82,7 @@ const GameReplay: React.FC = () => {
           <p className="text-gray-600 mb-6">
             You need to upload game replay data first. Run batch experiments and import the results.
           </p>
-          <Link to="/" className="btn-primary">
+          <Link to="/" className="btn-primary inline-flex items-center">
             <Home className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Link>
@@ -96,7 +96,7 @@ const GameReplay: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Game Replay</h1>
-        <Link to="/" className="btn-secondary">
+        <Link to="/" className="btn-secondary inline-flex items-center">
           <Home className="w-4 h-4 mr-2" />
           Dashboard
         </Link>

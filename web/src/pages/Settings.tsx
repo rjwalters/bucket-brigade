@@ -191,7 +191,7 @@ const Settings: React.FC = () => {
               />
               <button
                 onClick={() => gameFileRef.current?.click()}
-                className="btn-primary"
+                className="btn-primary inline-flex items-center"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload JSON
@@ -217,7 +217,7 @@ const Settings: React.FC = () => {
               />
               <button
                 onClick={() => resultFileRef.current?.click()}
-                className="btn-primary"
+                className="btn-primary inline-flex items-center"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload CSV
@@ -241,7 +241,7 @@ const Settings: React.FC = () => {
             </div>
             <button
               onClick={exportData}
-              className="btn-secondary"
+              className="btn-secondary inline-flex items-center"
             >
               <Download className="w-4 h-4 mr-2" />
               Export
