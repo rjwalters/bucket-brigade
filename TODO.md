@@ -20,11 +20,11 @@ Longer training (500K-1M steps) should allow the policy to:
 
 ### ✅ Completed
 
-1. **MCP Remote SSH Server** - Built and committed to main
+1. **MCP Remote SSH Server** - Built and committed
    - `mcp-server/` - TypeScript MCP server for remote SSH access
-   - `.mcp.json` - MCP configuration (FIXED: was using wrong file)
+   - `.mcp.json` - MCP configuration at project root
    - Tools: `remote_bash`, `remote_bash_output`, `remote_file_read`
-   - Target: `rwalters-sandbox-1` (GPU machine)
+   - Target: Remote GPU machine via SSH
 
 2. **Training Infrastructure**
    - GPU/CUDA support verified in training scripts
@@ -32,28 +32,43 @@ Longer training (500K-1M steps) should allow the policy to:
    - Auto-flush for real-time log visibility
    - Verbose debug output
 
-3. **MCP Configuration Fix**
-   - ❌ Previous attempt used wrong file: `.claude/mcp_settings.json`
-   - ✅ **FIXED**: Created correct `.mcp.json` file at project root
-   - ✅ Updated documentation to reflect correct configuration
-   - ✅ Committed changes to both main and feature/issue-10 branches
-   - **Root cause**: Claude Code uses `.mcp.json`, not `.claude/mcp_settings.json`
+3. **MCP Configuration Evolution**
+   - ❌ Initial attempt: Wrong file `.claude/mcp_settings.json`
+   - ✅ Fix #1: Created correct `.mcp.json` file at project root
+   - ✅ Fix #2: Added `.env` support for easier SSH configuration
+   - ✅ **Current**: `.env` file + setup script for convenience
+   - **Benefits**: No hardcoded paths, works with SkyPilot port forwarding
+
+4. **.env Configuration System**
+   - `.env.example` - Template with detailed instructions
+   - `.env` - Local configuration (gitignored)
+   - `scripts/setup-mcp-env.sh` - Auto-configure from SSH config
+   - `MCP_SETUP.md` - Comprehensive setup guide
+   - Supports SkyPilot clusters with port forwarding
 
 ### ⏳ Next Steps - AFTER RESTART
 
-**🚨 CRITICAL: Start Claude Code in the worktree directory:**
+**🚨 SETUP REQUIRED BEFORE RESTART:**
 ```bash
+# 1. Configure SSH connection (if not done)
+./scripts/setup-mcp-env.sh
+
+# 2. Restart Claude Code from project directory
+exit
 cd /Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-10
+claude
 ```
 
+**After restart:**
+
 1. **Verify MCP tools loaded** - Try using `remote_bash` tool
-2. **If NOT loaded** - See `RESTART_INSTRUCTIONS.md` for troubleshooting
+2. **If NOT loaded** - See `MCP_SETUP.md` for troubleshooting
 3. **Once loaded** - Follow `TEST_PLAN.md`:
    - Test basic connectivity
    - Check GPU availability (`nvidia-smi`)
    - Pull latest code on remote
-   - Start 500K training run
-   - Monitor progress
+   - Start 500K training run with `run_in_background: true`
+   - Monitor progress regularly
 4. **After 500K completes** - Run 1M training if results are good
 5. **Evaluate models** and compare performance metrics
 6. **Document findings** and optimal training duration
@@ -112,11 +127,15 @@ ssh rwalters-sandbox-1 "tail -100 /workspace/bucket-brigade/logs/training_500000
 
 - `scripts/train_simple.py` - Training script with GPU support
 - `scripts/sandbox.sh` - Remote training orchestration
-- `mcp-server/` - MCP Remote SSH server
+- `scripts/setup-mcp-env.sh` - Auto-configure .env from SSH config
+- `mcp-server/` - MCP Remote SSH server (TypeScript)
+- `.mcp.json` - MCP server configuration
+- `.env.example` - Template for SSH connection settings
+- `.env` - Local SSH configuration (gitignored)
+- `MCP_SETUP.md` - **Complete MCP setup and troubleshooting guide**
 - `TEST_PLAN.md` - Testing checklist for MCP server
-- `.mcp.json` - MCP configuration (correct file location)
-- `SANDBOX_GUIDE.md` - **Complete guide for working with remote environments**
-- `RESTART_INSTRUCTIONS.md` - Troubleshooting guide for MCP setup
+- `AGENT_PROMPT.md` - Quick start guide for new sessions
+- `SANDBOX_GUIDE.md` - Complete guide for working with remote environments
 
 ## Related Issues
 
@@ -125,5 +144,6 @@ ssh rwalters-sandbox-1 "tail -100 /workspace/bucket-brigade/logs/training_500000
 
 ---
 
-**Status**: Waiting for Claude Code restart to load MCP server
+**Status**: Ready for restart - .env configuration complete
 **Last Updated**: 2025-11-03
+**Branch**: `feature/issue-10`

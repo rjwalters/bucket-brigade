@@ -25,11 +25,27 @@ Great! Skip to **"Your Workflow"** section below.
 
 ### If MCP Tools DON'T Work ❌
 
-Something went wrong with the MCP server loading. Read `RESTART_INSTRUCTIONS.md` for troubleshooting steps. The most common issues are:
+Something went wrong with the MCP server loading. The most common issues are:
 
-1. **Wrong directory**: You must start Claude Code from `/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-10`
-2. **Config issue**: Check `.claude/mcp_settings.json` has `${PWD}` in the path
-3. **Server not built**: Verify `mcp-server/dist/index.js` exists
+1. **Wrong directory**: You must start Claude Code from the project root with `.mcp.json`
+2. **Missing .env**: Run `./scripts/setup-mcp-env.sh` to configure SSH connection
+3. **Config issue**: Check `.mcp.json` exists and has `${PWD}/mcp-server/dist/index.js`
+4. **Server not built**: Run `pnpm build` to compile the MCP server
+
+**Quick fix:**
+```bash
+# 1. Create .env with your SSH settings
+./scripts/setup-mcp-env.sh
+
+# 2. Restart Claude Code
+exit
+claude
+
+# 3. Test connection
+remote_bash({command: "hostname"})
+```
+
+See `MCP_SETUP.md` for detailed troubleshooting steps.
 
 ## Your Workflow (Once MCP Tools Work)
 
@@ -123,10 +139,11 @@ Create a summary in `TRAINING_RESULTS.md`:
 
 ## Key Files Reference
 
+- **`MCP_SETUP.md`**: MCP server setup and configuration guide
 - **`TEST_PLAN.md`**: Detailed testing procedures
 - **`SANDBOX_GUIDE.md`**: How the remote sandbox works
-- **`RESTART_INSTRUCTIONS.md`**: Troubleshooting if MCP tools don't load
-- **`.claude/mcp_settings.json`**: MCP configuration
+- **`.env.example`**: Template for SSH connection settings
+- **`.mcp.json`**: MCP server configuration
 - **`TODO.md`**: Overall issue tracking
 
 ## Remote Machine Details

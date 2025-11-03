@@ -2,46 +2,43 @@
 
 ## Current Status
 
-✅ **MCP Server committed to main branch** - Available at `mcp-server/`
-✅ **MCP configuration in place** - `.claude/mcp_settings.json`
-✅ **Server built** - `mcp-server/dist/index.js` exists
-⏳ **Requires Claude Code restart** - To load MCP tools
+✅ **MCP Server built** - Available at `mcp-server/dist/index.js`
+✅ **MCP configuration** - `.mcp.json` loads server automatically
+✅ **.env support** - SSH connection configured via `.env` file
+⏳ **Requires Claude Code restart** - To load MCP tools with new .env
 
-## ⚠️ IMPORTANT: Restart Required
+## ⚠️ IMPORTANT: Setup & Restart Required
 
-**You must restart Claude Code** for the MCP server to load. After restart:
-- The MCP tools will be available: `remote_bash`, `remote_bash_output`, `remote_file_read`
-- Claude can directly manage GPU training on `rwalters-sandbox-1`
-- Follow the test cases below to verify everything works
+### 1. Configure SSH Connection
 
-📖 **See `SANDBOX_GUIDE.md` for complete usage patterns and best practices**
-
-## Setup Steps
-
-### 1. MCP Configuration (Already Done ✅)
-
-Edit `~/.config/claude-code/mcp_settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "remote-ssh": {
-      "command": "node",
-      "args": ["/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-10/mcp-server/dist/index.js"],
-      "env": {
-        "SSH_HOST": "rwalters-sandbox-1",
-        "SSH_PORT": "22"
-      }
-    }
-  }
-}
+**Option A: Automatic (Recommended)**
+```bash
+./scripts/setup-mcp-env.sh
 ```
 
-**Note:** Using `rwalters-sandbox-1` as the SSH host (no user@ prefix since it's in your SSH config).
+**Option B: Manual**
+```bash
+# Copy template
+cp .env.example .env
+
+# Get your SSH settings (for SkyPilot)
+ssh -G <your-cluster-name> | grep -E "^(hostname|port|user)"
+
+# Edit .env with your values
+vim .env
+```
+
+See `MCP_SETUP.md` for detailed configuration instructions.
 
 ### 2. Restart Claude Code
 
-The MCP server will load automatically when Claude Code starts.
+After creating `.env`, restart Claude Code:
+```bash
+exit
+claude
+```
+
+The MCP server will load automatically and connect using `.env` settings.
 
 ### 3. Verify MCP Server is Loaded
 
@@ -49,6 +46,8 @@ In a new Claude Code session, check that you have access to these tools:
 - `remote_bash`
 - `remote_bash_output`
 - `remote_file_read`
+
+📖 **See `MCP_SETUP.md` for setup details and `SANDBOX_GUIDE.md` for usage patterns**
 
 ## Test Cases
 
