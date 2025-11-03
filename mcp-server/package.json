@@ -1,6 +1,6 @@
 {
   "name": "@bucket-brigade/mcp-remote-ssh",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for remote SSH command execution",
   "type": "module",
   "main": "dist/index.js",
@@ -21,12 +21,10 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
-    "dotenv": "^17.2.3",
-    "ssh2": "^1.15.0"
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/ssh2": "^1.15.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
