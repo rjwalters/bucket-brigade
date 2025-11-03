@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "remote-ssh": {
+      "command": "node",
+      "args": ["mcp-server/dist/index.js"],
+      "env": {
+        "SSH_HOST": "rwalters-sandbox-1",
+        "SSH_PORT": "22"
+      }
+    }
+  }
+}
