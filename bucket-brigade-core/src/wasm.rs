@@ -94,6 +94,8 @@ impl WasmScenario {
         p_spark: f32,
         n_spark: u32,
         num_agents: usize,
+        a_own: Option<f32>,
+        a_neighbor: Option<f32>,
     ) -> WasmScenario {
         Self {
             inner: Scenario {
@@ -107,6 +109,8 @@ impl WasmScenario {
                 p_spark,
                 n_spark,
                 num_agents,
+                a_own: a_own.unwrap_or(100.0),
+                a_neighbor: a_neighbor.unwrap_or(50.0),
             },
         }
     }
