@@ -1,0 +1,30 @@
+{
+  "name": "greedy_neighbor",
+  "description": "Social dilemma with high work cost creating free-riding incentive",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.4,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 1.0,
+    "rho_ignite": 0.2,
+    "N_min": 12,
+    "p_spark": 0.02,
+    "N_spark": 12,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires spread slowly, but helping neighbors costs valuable rest time. Selfish agents can rely on others to work. The high work cost (c=1.0) creates a classic social dilemma between cooperation and free-riding.",
+  "research_questions": [
+    "What cooperation rate emerges in Nash equilibrium?",
+    "Can evolution find the Nash mixed strategy?",
+    "At what work cost does cooperation collapse?",
+    "How do free riders perform in mixed populations?"
+  ]
+}

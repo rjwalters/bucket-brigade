@@ -74,7 +74,11 @@
       "Bash(maturin develop:*)",
       "Bash(do echo \"=== PR #$pr_num ===\" gh pr view $pr_num --json body --jq '.body')",
       "Bash(sqlite3:*)",
-      "Bash(logs/training_500k.log)"
+      "Bash(logs/training_500k.log)",
+      "Bash(while true)",
+      "Bash(do tail -5 logs/training_500k.log)",
+      "Bash(break)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
