@@ -164,16 +164,6 @@ def train_ppo(
         advantages = torch.FloatTensor(advantages)
         returns = advantages + torch.FloatTensor(values_np)
 
-        # Compute explained variance (how well value function predicts returns)
-        with torch.no_grad():
-            returns_var = returns.var()
-            if returns_var > 1e-8:
-                values_tensor = torch.FloatTensor(values_np)
-                residual_var = (returns - values_tensor).var()
-                explained_var = 1 - (residual_var / returns_var)
-            else:
-                explained_var = torch.tensor(0.0)
-
         # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
@@ -186,6 +176,15 @@ def train_ppo(
         for epoch in range(num_epochs):
             # Forward pass
             action_logits, values_pred = policy(obs_batch)
+
+            # Compute explained variance (how well value function predicts returns)
+            with torch.no_grad():
+                returns_var = returns.var()
+                if returns_var > 1e-8:
+                    residual_var = (returns - values_pred.squeeze()).var()
+                    explained_var = 1 - (residual_var / returns_var)
+                else:
+                    explained_var = torch.tensor(0.0)
 
             # Compute log probs for taken actions
             log_probs_new = []
@@ -202,7 +201,7 @@ def train_ppo(
 
             # Compute KL divergence (measure of policy change)
             with torch.no_grad():
-                kl_div = (log_probs_old - log_probs_new).mean()
+                kl_div = (log_probs_old.exp() * (log_probs_old - log_probs_new)).mean()
 
             # PPO loss
             ratio = torch.exp(log_probs_new - log_probs_old)
