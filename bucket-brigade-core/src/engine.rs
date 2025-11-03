@@ -74,7 +74,7 @@ impl BucketBrigade {
         self.trajectory = Vec::new();
 
         // Initialize fires
-        let num_burning = (self.scenario.rho_ignite * 10.0).round() as usize;
+        let num_burning = (self.scenario.initial_fire_fraction * 10.0).round() as usize;
         let mut burn_indices = std::collections::HashSet::new();
         while burn_indices.len() < num_burning {
             burn_indices.insert(self.rng.randint(0, 10));
@@ -115,7 +115,7 @@ impl BucketBrigade {
 
         // 6. Spark phase (if active)
         // New fires ignite (visible next turn)
-        if self.night < self.scenario.n_spark {
+        if self.night < self.scenario.spontaneous_ignition_nights {
             self.spark_fires();
         }
 
@@ -151,7 +151,7 @@ impl BucketBrigade {
                 .count();
 
             // Probability of extinguishing
-            let p_extinguish = 1.0 - (-self.scenario.kappa * workers_here as f32).exp();
+            let p_extinguish = 1.0 - (-self.scenario.extinguish_efficiency * workers_here as f32).exp();
 
             if self.rng.random() < p_extinguish {
                 self.houses[house_idx] = 0;
@@ -174,7 +174,7 @@ impl BucketBrigade {
             ];
 
             for &neighbor in &neighbors {
-                if self.houses[neighbor] == 0 && self.rng.random() < self.scenario.beta {
+                if self.houses[neighbor] == 0 && self.rng.random() < self.scenario.fire_spread_prob {
                     new_houses[neighbor] = 1;
                 }
             }
@@ -193,7 +193,7 @@ impl BucketBrigade {
 
     fn spark_fires(&mut self) {
         for house_idx in 0..10 {
-            if self.houses[house_idx] == 0 && self.rng.random() < self.scenario.p_spark {
+            if self.houses[house_idx] == 0 && self.rng.random() < self.scenario.spontaneous_ignition_prob {
                 self.houses[house_idx] = 1;
             }
         }
@@ -207,7 +207,7 @@ impl BucketBrigade {
             .map(|action| {
                 // Work/rest cost only
                 if action[1] == 1 {
-                    -self.scenario.c // Work cost
+                    -self.scenario.work_cost_per_night // Work cost
                 } else {
                     0.5 // Rest reward
                 }
@@ -226,16 +226,16 @@ impl BucketBrigade {
 
             // Reward for owned house outcome
             match self.houses[owned_house] {
-                0 => rewards[agent_idx] += self.scenario.a_own,    // Saved
-                2 => rewards[agent_idx] -= self.scenario.a_own,    // Ruined (symmetric penalty)
+                0 => rewards[agent_idx] += self.scenario.owned_house_value,    // Saved
+                2 => rewards[agent_idx] -= self.scenario.owned_house_value,    // Ruined (symmetric penalty)
                 _ => {},                                            // Burning (no reward/penalty)
             }
 
             // Rewards for neighbor houses
             for &neighbor in &[left_neighbor, right_neighbor] {
                 match self.houses[neighbor] {
-                    0 => rewards[agent_idx] += self.scenario.a_neighbor,  // Saved
-                    2 => rewards[agent_idx] -= self.scenario.a_neighbor,  // Ruined (symmetric penalty)
+                    0 => rewards[agent_idx] += self.scenario.neighbor_house_value,  // Saved
+                    2 => rewards[agent_idx] -= self.scenario.neighbor_house_value,  // Ruined (symmetric penalty)
                     _ => {},                                                // Burning (no reward/penalty)
                 }
             }
@@ -245,7 +245,7 @@ impl BucketBrigade {
     }
 
     fn check_termination(&self) -> bool {
-        if self.night < self.scenario.n_min {
+        if self.night < self.scenario.min_nights {
             return false;
         }
 
@@ -273,15 +273,15 @@ impl BucketBrigade {
             houses: self.houses.clone(),
             last_actions: self.last_actions.clone(),
             scenario_info: vec![
-                self.scenario.beta,
-                self.scenario.kappa,
-                self.scenario.a,
-                self.scenario.l,
-                self.scenario.c,
-                self.scenario.rho_ignite,
-                self.scenario.n_min as f32,
-                self.scenario.p_spark,
-                self.scenario.n_spark as f32,
+                self.scenario.fire_spread_prob,
+                self.scenario.extinguish_efficiency,
+                self.scenario.team_reward_per_house,
+                self.scenario.team_penalty_per_house,
+                self.scenario.work_cost_per_night,
+                self.scenario.initial_fire_fraction,
+                self.scenario.min_nights as f32,
+                self.scenario.spontaneous_ignition_prob,
+                self.scenario.spontaneous_ignition_nights as f32,
                 self.scenario.num_agents as f32,
             ],
             agent_id,
@@ -425,7 +425,7 @@ mod tests {
     #[test]
     fn test_fire_extinguishing() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.kappa = 10.0; // Very high extinguish efficiency
+        scenario.extinguish_efficiency = 10.0; // Very high extinguish efficiency
         let mut engine = BucketBrigade::new(scenario, Some(42));
 
         // Find a burning house
@@ -450,8 +450,8 @@ mod tests {
     #[test]
     fn test_fire_spreads_to_neighbors() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.beta = 1.0; // 100% spread probability
-        scenario.kappa = 0.0; // No extinguishing
+        scenario.fire_spread_prob = 1.0; // 100% spread probability
+        scenario.extinguish_efficiency = 0.0; // No extinguishing
 
         let mut engine = BucketBrigade::new(scenario, Some(100));
 
@@ -488,8 +488,8 @@ mod tests {
     #[test]
     fn test_spark_fires() {
         let mut scenario = SCENARIOS.get("early_containment").unwrap().clone();
-        scenario.p_spark = 1.0; // 100% spark probability for testing
-        scenario.n_spark = 5; // Sparks for first 5 nights
+        scenario.spontaneous_ignition_prob = 1.0; // 100% spark probability for testing
+        scenario.spontaneous_ignition_nights = 5; // Sparks for first 5 nights
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
 
@@ -509,8 +509,8 @@ mod tests {
     #[test]
     fn test_no_sparks_after_duration() {
         let mut scenario = SCENARIOS.get("early_containment").unwrap().clone();
-        scenario.p_spark = 1.0;
-        scenario.n_spark = 2; // Only 2 nights of sparks
+        scenario.spontaneous_ignition_prob = 1.0;
+        scenario.spontaneous_ignition_nights = 2; // Only 2 nights of sparks
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
         engine.houses = vec![0; 10];
@@ -532,7 +532,7 @@ mod tests {
     #[test]
     fn test_termination_all_safe() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.n_min = 0; // Allow immediate termination
+        scenario.min_nights = 0; // Allow immediate termination
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
         engine.houses = vec![0; 10]; // All safe
@@ -546,7 +546,7 @@ mod tests {
     #[test]
     fn test_termination_all_ruined() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.n_min = 0;
+        scenario.min_nights = 0;
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
         engine.houses = vec![2; 10]; // All ruined
@@ -560,7 +560,7 @@ mod tests {
     #[test]
     fn test_minimum_nights_prevents_early_termination() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.n_min = 5; // Require at least 5 nights
+        scenario.min_nights = 5; // Require at least 5 nights
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
         engine.houses = vec![0; 10]; // All safe
@@ -651,7 +651,7 @@ mod tests {
     #[should_panic(expected = "Game is already finished")]
     fn test_step_after_done_panics() {
         let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-        scenario.n_min = 0;
+        scenario.min_nights = 0;
 
         let mut engine = BucketBrigade::new(scenario, Some(42));
         engine.houses = vec![0; 10];

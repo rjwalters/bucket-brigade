@@ -15,7 +15,7 @@ try:
 
     # Test scenario loading
     scenario = SCENARIOS["trivial_cooperation"]
-    print(f"✅ Loaded scenario: {scenario.beta}, {scenario.kappa}")
+    print(f"✅ Loaded scenario: {scenario.fire_spread_prob}, {scenario.extinguish_efficiency}")
 
     # Test environment creation
     env = BucketBrigade(scenario)

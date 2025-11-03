@@ -170,8 +170,8 @@ class TestRustCoreIntegration:
             rust_scenario = SCENARIOS[name]
 
             # Check key parameters match
-            assert rust_scenario.beta == python_scenario.beta
-            assert rust_scenario.kappa == python_scenario.kappa
-            assert rust_scenario.a == python_scenario.A
-            assert rust_scenario.l == python_scenario.L
+            assert rust_scenario.fire_spread_prob == python_scenario.beta
+            assert rust_scenario.extinguish_efficiency == python_scenario.kappa
+            assert rust_scenario.team_reward_per_house == python_scenario.A
+            assert rust_scenario.team_penalty_per_house == python_scenario.L
             assert rust_scenario.num_agents == python_scenario.num_agents

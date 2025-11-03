@@ -67,86 +67,86 @@ pub struct PyScenario {
 impl PyScenario {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (beta, kappa, a, l, c, rho_ignite, n_min, p_spark, n_spark, num_agents, a_own=100.0, a_neighbor=50.0))]
+    #[pyo3(signature = (beta, kappa, a, l, c, rho_ignite, n_min, p_spark, n_spark, num_agents, owned_house_value=100.0, neighbor_house_value=50.0))]
     fn new(
-        beta: f32,
-        kappa: f32,
-        a: f32,
-        l: f32,
-        c: f32,
-        rho_ignite: f32,
-        n_min: u32,
-        p_spark: f32,
-        n_spark: u32,
+        fire_spread_prob: f32,
+        extinguish_efficiency: f32,
+        team_reward_per_house: f32,
+        team_penalty_per_house: f32,
+        work_cost_per_night: f32,
+        initial_fire_fraction: f32,
+        min_nights: u32,
+        spontaneous_ignition_prob: f32,
+        spontaneous_ignition_nights: u32,
         num_agents: usize,
-        a_own: f32,
-        a_neighbor: f32,
+        owned_house_value: f32,
+        neighbor_house_value: f32,
     ) -> Self {
         Self {
             inner: Scenario {
-                beta,
-                kappa,
-                a,
-                l,
-                c,
-                rho_ignite,
-                n_min,
-                p_spark,
-                n_spark,
+                fire_spread_prob,
+                extinguish_efficiency,
+                team_reward_per_house,
+                team_penalty_per_house,
+                work_cost_per_night,
+                initial_fire_fraction,
+                min_nights,
+                spontaneous_ignition_prob,
+                spontaneous_ignition_nights,
                 num_agents,
-                a_own,
-                a_neighbor,
+                owned_house_value,
+                neighbor_house_value,
             },
         }
     }
 
     #[getter]
-    fn beta(&self) -> f32 {
-        self.inner.beta
+    fn fire_spread_prob(&self) -> f32 {
+        self.inner.fire_spread_prob
     }
     #[getter]
-    fn kappa(&self) -> f32 {
-        self.inner.kappa
+    fn extinguish_efficiency(&self) -> f32 {
+        self.inner.extinguish_efficiency
     }
     #[getter]
-    fn a(&self) -> f32 {
-        self.inner.a
+    fn team_reward_per_house(&self) -> f32 {
+        self.inner.team_reward_per_house
     }
     #[getter]
-    fn l(&self) -> f32 {
-        self.inner.l
+    fn team_penalty_per_house(&self) -> f32 {
+        self.inner.team_penalty_per_house
     }
     #[getter]
-    fn c(&self) -> f32 {
-        self.inner.c
+    fn work_cost_per_night(&self) -> f32 {
+        self.inner.work_cost_per_night
     }
     #[getter]
-    fn rho_ignite(&self) -> f32 {
-        self.inner.rho_ignite
+    fn initial_fire_fraction(&self) -> f32 {
+        self.inner.initial_fire_fraction
     }
     #[getter]
-    fn n_min(&self) -> u32 {
-        self.inner.n_min
+    fn min_nights(&self) -> u32 {
+        self.inner.min_nights
     }
     #[getter]
-    fn p_spark(&self) -> f32 {
-        self.inner.p_spark
+    fn spontaneous_ignition_prob(&self) -> f32 {
+        self.inner.spontaneous_ignition_prob
     }
     #[getter]
-    fn n_spark(&self) -> u32 {
-        self.inner.n_spark
+    fn spontaneous_ignition_nights(&self) -> u32 {
+        self.inner.spontaneous_ignition_nights
     }
     #[getter]
     fn num_agents(&self) -> usize {
         self.inner.num_agents
     }
     #[getter]
-    fn a_own(&self) -> f32 {
-        self.inner.a_own
+    fn owned_house_value(&self) -> f32 {
+        self.inner.owned_house_value
     }
     #[getter]
-    fn a_neighbor(&self) -> f32 {
-        self.inner.a_neighbor
+    fn neighbor_house_value(&self) -> f32 {
+        self.inner.neighbor_house_value
     }
 }
 
