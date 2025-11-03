@@ -5,6 +5,8 @@
  * of agents and test them against randomized scenarios.
  */
 
+import type { RadarProfile } from '../utils/agentRadarChart';
+
 /**
  * Agent behavioral parameters (0-1 scale)
  */
@@ -53,6 +55,17 @@ export interface AgentArchetype {
   strategyNotes: string[];
   /** Whether parameters randomize each game */
   isRandomized?: boolean;
+  /** Radar chart profile for visual comparison */
+  radarProfile?: RadarProfile;
+  /** Additional metadata for enhanced display */
+  metadata?: {
+    /** Top strengths for this agent */
+    strengths?: string[];
+    /** Known weaknesses */
+    weaknesses?: string[];
+    /** Filter tags (e.g., "cooperative", "honest", "deceptive") */
+    tags?: string[];
+  };
 }
 
 /**

@@ -5,10 +5,13 @@
  */
 
 import type { AgentArchetype } from '../../types/teamBuilder';
+import { AgentRadarChartCompact } from './AgentRadarChart';
+import type { RadarProfile } from '../../utils/agentRadarChart';
 
 interface AgentCardProps {
   position: number;
   archetype: AgentArchetype | null;
+  radarProfile?: RadarProfile;
   onClick: () => void;
   isSelected?: boolean;
 }
@@ -75,7 +78,13 @@ export function AgentCard({ position, archetype, onClick, isSelected = false }: 
 /**
  * Large version for modal display
  */
-export function AgentCardLarge({ archetype }: { archetype: AgentArchetype }) {
+export function AgentCardLarge({
+  archetype,
+  radarProfile,
+}: {
+  archetype: AgentArchetype;
+  radarProfile?: RadarProfile;
+}) {
   return (
     <div
       className="relative p-6 rounded-xl border-4 shadow-lg"
@@ -89,12 +98,16 @@ export function AgentCardLarge({ archetype }: { archetype: AgentArchetype }) {
         <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
           {archetype.name}
         </h3>
-        <p
-          className="text-sm italic font-medium mb-4"
-          style={{ color: archetype.color }}
-        >
+        <p className="text-sm italic font-medium mb-4" style={{ color: archetype.color }}>
           "{archetype.tagline}"
         </p>
+
+        {/* Mini radar chart */}
+        {radarProfile && (
+          <div className="my-6 flex justify-center">
+            <AgentRadarChartCompact archetype={archetype} radarProfile={radarProfile} />
+          </div>
+        )}
       </div>
     </div>
   );
