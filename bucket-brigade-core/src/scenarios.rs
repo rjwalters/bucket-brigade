@@ -3,22 +3,31 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
     // Fire dynamics
+    #[serde(alias = "beta")]
     pub prob_fire_spreads_to_neighbor: f32,  // Probability fire spreads to adjacent house
+    #[serde(alias = "kappa")]
     pub prob_solo_agent_extinguishes_fire: f32,  // Probability one agent extinguishes fire
+    #[serde(alias = "rho_ignite", alias = "p_spark")]
     pub prob_house_catches_fire: f32,  // Probability house catches fire each night
 
     // Team scoring (collective outcome)
+    #[serde(alias = "a")]
     pub team_reward_house_survives: f32,  // Team reward for each house that survives
+    #[serde(alias = "l")]
     pub team_penalty_house_burns: f32,    // Team penalty for each house that burns
 
     // Individual rewards (ownership-based, for future use in issue #52)
+    #[serde(alias = "a_own")]
     pub reward_own_house_survives: f32,      // Individual reward when own house survives
+    #[serde(alias = "a_neighbor")]
     pub reward_other_house_survives: f32,    // Individual reward when other house survives
     pub penalty_own_house_burns: f32,        // Individual penalty when own house burns
     pub penalty_other_house_burns: f32,      // Individual penalty when other house burns
 
     // Costs and structure
+    #[serde(alias = "c")]
     pub cost_to_work_one_night: f32,  // Cost incurred when agent chooses to work
+    #[serde(alias = "n_min")]
     pub min_nights: u32,              // Minimum nights before game can end
     pub num_agents: usize,            // Number of agents in game
 }
@@ -201,5 +210,60 @@ mod tests {
                 "Scenario '{}' should have positive penalty for ruined houses", name
             );
         }
+    }
+
+    #[test]
+    fn test_backward_compatible_deserialization() {
+        // Old JSON format with terse names (using rho_ignite variant)
+        let old_json_rho = r#"{
+            "beta": 0.25,
+            "kappa": 0.5,
+            "a": 100.0,
+            "l": 100.0,
+            "c": 0.5,
+            "rho_ignite": 0.2,
+            "n_min": 12,
+            "num_agents": 4,
+            "a_own": 100.0,
+            "a_neighbor": 50.0,
+            "penalty_own_house_burns": 0.0,
+            "penalty_other_house_burns": 0.0
+        }"#;
+
+        // Should deserialize successfully
+        let scenario: Scenario = serde_json::from_str(old_json_rho).unwrap();
+
+        // Verify values mapped correctly
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
+        assert_eq!(scenario.team_reward_house_survives, 100.0);
+        assert_eq!(scenario.team_penalty_house_burns, 100.0);
+        assert_eq!(scenario.cost_to_work_one_night, 0.5);
+        assert_eq!(scenario.prob_house_catches_fire, 0.2);
+        assert_eq!(scenario.min_nights, 12);
+        assert_eq!(scenario.num_agents, 4);
+        assert_eq!(scenario.reward_own_house_survives, 100.0);
+        assert_eq!(scenario.reward_other_house_survives, 50.0);
+
+        // Also test p_spark variant
+        let old_json_p_spark = r#"{
+            "beta": 0.15,
+            "kappa": 0.7,
+            "a": 150.0,
+            "l": 75.0,
+            "c": 1.0,
+            "p_spark": 0.03,
+            "n_min": 10,
+            "num_agents": 6,
+            "a_own": 125.0,
+            "a_neighbor": 75.0,
+            "penalty_own_house_burns": 10.0,
+            "penalty_other_house_burns": 5.0
+        }"#;
+
+        let scenario2: Scenario = serde_json::from_str(old_json_p_spark).unwrap();
+        assert_eq!(scenario2.prob_house_catches_fire, 0.03);
+        assert_eq!(scenario2.prob_fire_spreads_to_neighbor, 0.15);
+        assert_eq!(scenario2.num_agents, 6);
     }
 }
