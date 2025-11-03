@@ -104,7 +104,7 @@ def train_ppo(
     value_coef=0.5,
     entropy_coef=0.01,
     max_grad_norm=0.5,
-    eval_interval=10000,
+    eval_interval=1000,  # Changed from 10000 to 1000 for more frequent updates
     writer=None,
     experiment_session=None,
     experiment_run_id=None,
