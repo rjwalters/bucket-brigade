@@ -45,7 +45,7 @@ def run_game(agents: List, scenario, seed: int = None) -> Dict[str, Any]:
         "mean_payoff": float(np.mean(total_rewards)),
         "saved_houses": int(np.sum(obs["houses"] == 0)),
         "ruined_houses": int(np.sum(obs["houses"] == 2)),
-        "nights_played": env.night
+        "nights_played": env.night,
     }
 
 
@@ -88,10 +88,7 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
         game_results = []
         for game_idx in range(num_games):
             # Create team of 4 identical agents
-            agents = [
-                create_archetype_agent(agent_name, i)
-                for i in range(4)
-            ]
+            agents = [create_archetype_agent(agent_name, i) for i in range(4)]
 
             result = run_game(agents, scenario, seed=game_idx)
             game_results.append(result)
@@ -103,14 +100,16 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
         mean_payoff = np.mean([r["mean_payoff"] for r in game_results])
         std_payoff = np.std([r["mean_payoff"] for r in game_results])
 
-        homogeneous_results.append({
-            "agent_type": agent_name,
-            "team_composition": [agent_name] * 4,
-            "num_games": num_games,
-            "mean_payoff": float(mean_payoff),
-            "std_payoff": float(std_payoff),
-            "games": game_results
-        })
+        homogeneous_results.append(
+            {
+                "agent_type": agent_name,
+                "team_composition": [agent_name] * 4,
+                "num_games": num_games,
+                "mean_payoff": float(mean_payoff),
+                "std_payoff": float(std_payoff),
+                "games": game_results,
+            }
+        )
 
         print(f"✓ Mean: {mean_payoff:.2f} ± {std_payoff:.2f}")
 
@@ -122,14 +121,21 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
 
     test_teams = [
         # 3 cooperators + 1 defector
-        (["firefighter", "firefighter", "firefighter", "free_rider"], "3 Firefighters + 1 Free Rider"),
-        (["coordinator", "coordinator", "coordinator", "free_rider"], "3 Coordinators + 1 Free Rider"),
+        (
+            ["firefighter", "firefighter", "firefighter", "free_rider"],
+            "3 Firefighters + 1 Free Rider",
+        ),
+        (
+            ["coordinator", "coordinator", "coordinator", "free_rider"],
+            "3 Coordinators + 1 Free Rider",
+        ),
         (["hero", "hero", "hero", "free_rider"], "3 Heroes + 1 Free Rider"),
-
         # 2-2 split
-        (["firefighter", "firefighter", "free_rider", "free_rider"], "2 Firefighters + 2 Free Riders"),
+        (
+            ["firefighter", "firefighter", "free_rider", "free_rider"],
+            "2 Firefighters + 2 Free Riders",
+        ),
         (["coordinator", "coordinator", "liar", "liar"], "2 Coordinators + 2 Liars"),
-
         # Diverse teams
         (["firefighter", "coordinator", "hero", "free_rider"], "Diverse Team"),
     ]
@@ -150,14 +156,16 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
         mean_payoff = np.mean([r["mean_payoff"] for r in game_results])
         std_payoff = np.std([r["mean_payoff"] for r in game_results])
 
-        mixed_results.append({
-            "team_composition": team_composition,
-            "description": description,
-            "num_games": num_games,
-            "mean_payoff": float(mean_payoff),
-            "std_payoff": float(std_payoff),
-            "games": game_results
-        })
+        mixed_results.append(
+            {
+                "team_composition": team_composition,
+                "description": description,
+                "num_games": num_games,
+                "mean_payoff": float(mean_payoff),
+                "std_payoff": float(std_payoff),
+                "games": game_results,
+            }
+        )
 
         print(f"✓ Mean: {mean_payoff:.2f} ± {std_payoff:.2f}")
 
@@ -176,8 +184,7 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
             "num_agents": scenario.num_agents,
         },
         "agents": [
-            {"name": name, "params": params.tolist()}
-            for name, params in agent_types
+            {"name": name, "params": params.tolist()} for name, params in agent_types
         ],
         "homogeneous_teams": homogeneous_results,
         "mixed_teams": mixed_results,
@@ -200,22 +207,20 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
     print()
     print("Homogeneous Teams (Best to Worst):")
     sorted_homogeneous = sorted(
-        homogeneous_results,
-        key=lambda x: x["mean_payoff"],
-        reverse=True
+        homogeneous_results, key=lambda x: x["mean_payoff"], reverse=True
     )
     for i, result in enumerate(sorted_homogeneous):
-        print(f"  {i+1}. {result['agent_type'].title()}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}")
+        print(
+            f"  {i + 1}. {result['agent_type'].title()}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
+        )
 
     print()
     print("Mixed Teams (Best to Worst):")
-    sorted_mixed = sorted(
-        mixed_results,
-        key=lambda x: x["mean_payoff"],
-        reverse=True
-    )
+    sorted_mixed = sorted(mixed_results, key=lambda x: x["mean_payoff"], reverse=True)
     for i, result in enumerate(sorted_mixed):
-        print(f"  {i+1}. {result['description']}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}")
+        print(
+            f"  {i + 1}. {result['description']}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
+        )
 
     return results
 
@@ -223,8 +228,12 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
 def main():
     parser = argparse.ArgumentParser(description="Analyze heuristic agents")
     parser.add_argument("scenario", type=str, help="Scenario name")
-    parser.add_argument("--num-games", type=int, default=100, help="Number of games per team")
-    parser.add_argument("--output-dir", type=Path, default=None, help="Output directory")
+    parser.add_argument(
+        "--num-games", type=int, default=100, help="Number of games per team"
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Output directory"
+    )
 
     args = parser.parse_args()
 

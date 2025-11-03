@@ -76,7 +76,9 @@ def create_comparison_table(
     return df
 
 
-def create_agent_contribution_table(summaries: List[StatisticalSummary]) -> pd.DataFrame:
+def create_agent_contribution_table(
+    summaries: List[StatisticalSummary],
+) -> pd.DataFrame:
     """
     Create a table showing individual agent contributions across all experiments.
 
@@ -137,7 +139,9 @@ def compare_teams_pairwise(summaries: List[StatisticalSummary]) -> pd.DataFrame:
                     "reward_diff": comparison["reward_difference"],
                     "reward_diff_pct": f"{comparison['reward_difference_percent']:.1f}%",
                     "success_diff": f"{comparison['success_rate_difference'] * 100:.1f}%",
-                    "ci_overlap": "Yes" if comparison["confidence_intervals_overlap"] else "No",
+                    "ci_overlap": "Yes"
+                    if comparison["confidence_intervals_overlap"]
+                    else "No",
                 }
                 rows.append(row)
 
@@ -303,7 +307,9 @@ def compare(
         else:
             typer.echo("\n✓ Summary B is significantly better than Summary A")
     else:
-        typer.echo("\n⚠ Confidence intervals overlap - difference may not be significant")
+        typer.echo(
+            "\n⚠ Confidence intervals overlap - difference may not be significant"
+        )
 
 
 @app.command()

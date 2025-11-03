@@ -2,6 +2,7 @@
 """
 Test Rust-backed fitness evaluator for evolution module.
 """
+
 import time
 import numpy as np
 from bucket_brigade.evolution import FitnessEvaluator, Individual

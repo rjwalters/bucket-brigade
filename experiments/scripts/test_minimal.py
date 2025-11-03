@@ -5,6 +5,7 @@ Minimal test to debug the hanging issue.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
@@ -47,6 +48,7 @@ try:
 except Exception as e:
     print(f"\n   ERROR during agent.act(): {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 
@@ -58,6 +60,7 @@ try:
 except Exception as e:
     print(f"\n   ERROR during env.step(): {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 

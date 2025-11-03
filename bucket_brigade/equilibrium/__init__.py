@@ -11,7 +11,9 @@ Main components:
 - NashVerifier: Verification of Nash equilibrium properties
 """
 
-from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator as PayoffEvaluator
+from bucket_brigade.equilibrium.payoff_evaluator_rust import (
+    RustPayoffEvaluator as PayoffEvaluator,
+)
 from bucket_brigade.equilibrium.best_response import compute_best_response
 from bucket_brigade.equilibrium.double_oracle import DoubleOracle, NashEquilibrium
 

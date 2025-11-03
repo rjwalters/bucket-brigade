@@ -2,6 +2,7 @@
 """
 Test Rust-backed payoff evaluator - should be FAST!
 """
+
 import time
 import numpy as np
 from bucket_brigade.envs.scenarios import greedy_neighbor_scenario

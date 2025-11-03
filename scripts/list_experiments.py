@@ -25,7 +25,9 @@ def list_all_runs(session):
         print("No experiment runs found.")
         return
 
-    print(f"\n{'ID':<6} {'Run Name':<40} {'Scenario':<20} {'Started':<20} {'Status':<10}")
+    print(
+        f"\n{'ID':<6} {'Run Name':<40} {'Scenario':<20} {'Started':<20} {'Status':<10}"
+    )
     print("=" * 100)
 
     for run in runs:
@@ -40,7 +42,11 @@ def list_all_runs(session):
 
 def show_run_details(session, run_name):
     """Show detailed information about a specific run."""
-    run = session.query(ExperimentRun).filter(ExperimentRun.run_name.like(f"%{run_name}%")).first()
+    run = (
+        session.query(ExperimentRun)
+        .filter(ExperimentRun.run_name.like(f"%{run_name}%"))
+        .first()
+    )
 
     if not run:
         print(f"No run found matching: {run_name}")
@@ -148,7 +154,9 @@ def compare_runs(session, scenario):
         return
 
     print(f"\n📊 Comparing runs for scenario: {scenario}")
-    print(f"\n{'Run Name':<40} {'Final Reward':<15} {'Steps':<10} {'LR':<8} {'Batch':<8}")
+    print(
+        f"\n{'Run Name':<40} {'Final Reward':<15} {'Steps':<10} {'LR':<8} {'Batch':<8}"
+    )
     print("=" * 85)
 
     for run in runs:
@@ -164,17 +172,27 @@ def compare_runs(session, scenario):
         if final_metric and final_metric.avg_reward is not None:
             final_reward = f"{final_metric.avg_reward:.2f}"
 
-        steps = run.hyperparameters.get("num_steps", "N/A") if run.hyperparameters else "N/A"
-        lr = run.hyperparameters.get("learning_rate", "N/A") if run.hyperparameters else "N/A"
-        batch = run.hyperparameters.get("batch_size", "N/A") if run.hyperparameters else "N/A"
+        steps = (
+            run.hyperparameters.get("num_steps", "N/A")
+            if run.hyperparameters
+            else "N/A"
+        )
+        lr = (
+            run.hyperparameters.get("learning_rate", "N/A")
+            if run.hyperparameters
+            else "N/A"
+        )
+        batch = (
+            run.hyperparameters.get("batch_size", "N/A")
+            if run.hyperparameters
+            else "N/A"
+        )
 
         print(f"{run.run_name:<40} {final_reward:<15} {steps:<10} {lr:<8} {batch:<8}")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Query experiment tracking database"
-    )
+    parser = argparse.ArgumentParser(description="Query experiment tracking database")
     parser.add_argument(
         "--experiments-db",
         type=str,

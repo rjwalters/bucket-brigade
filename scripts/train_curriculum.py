@@ -241,9 +241,15 @@ def train_stage_ppo(
             writer.add_scalar("train/total_loss", loss.item(), global_step)
             writer.add_scalar("train/grad_norm", grad_norm.item(), global_step)
             if episode_rewards:
-                writer.add_scalar("episode/mean_reward", np.mean(episode_rewards), global_step)
-                writer.add_scalar("episode/max_reward", np.max(episode_rewards), global_step)
-                writer.add_scalar("episode/min_reward", np.min(episode_rewards), global_step)
+                writer.add_scalar(
+                    "episode/mean_reward", np.mean(episode_rewards), global_step
+                )
+                writer.add_scalar(
+                    "episode/max_reward", np.max(episode_rewards), global_step
+                )
+                writer.add_scalar(
+                    "episode/min_reward", np.min(episode_rewards), global_step
+                )
 
     return global_step, np.mean(episode_rewards) if episode_rewards else 0
 
@@ -310,7 +316,8 @@ class CurriculumTrainer:
 
         # Create initial environment to get observation/action space
         initial_scenario = get_scenario_by_name(
-            self.curriculum[0]["name"], num_agents=self.curriculum[0]["num_opponents"] + 1
+            self.curriculum[0]["name"],
+            num_agents=self.curriculum[0]["num_opponents"] + 1,
         )
         initial_env = PufferBucketBrigade(
             scenario=initial_scenario,
@@ -333,16 +340,18 @@ class CurriculumTrainer:
 
         # Train through curriculum stages
         for stage_idx, stage in enumerate(self.curriculum):
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"📚 Stage {stage_idx + 1}/{len(self.curriculum)}: {stage['name']}")
             print(f"   {stage['description']}")
             print(f"   Steps: {stage['steps']:,}")
             print(f"   Opponents: {stage['num_opponents']}")
             print(f"   Progression threshold: {stage['progression_threshold']:.2f}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
             # Create environment for this stage
-            scenario = get_scenario_by_name(stage["name"], num_agents=stage["num_opponents"] + 1)
+            scenario = get_scenario_by_name(
+                stage["name"], num_agents=stage["num_opponents"] + 1
+            )
             env = PufferBucketBrigade(
                 scenario=scenario,
                 num_opponents=stage["num_opponents"],
@@ -374,8 +383,12 @@ class CurriculumTrainer:
             print(f"   Duration: {stage_duration / 60:.1f} minutes")
 
             # Log stage completion
-            writer.add_scalar(f"curriculum/stage_{stage_idx}_eval", eval_reward, global_step)
-            writer.add_scalar(f"curriculum/stage_{stage_idx}_train", final_reward, global_step)
+            writer.add_scalar(
+                f"curriculum/stage_{stage_idx}_eval", eval_reward, global_step
+            )
+            writer.add_scalar(
+                f"curriculum/stage_{stage_idx}_train", final_reward, global_step
+            )
 
             # Save stage checkpoint
             output_dir = Path("models") / run_name
@@ -395,18 +408,29 @@ class CurriculumTrainer:
             print(f"   💾 Saved checkpoint: {stage_path}")
 
             # Check if we should advance (adaptive progression)
-            if eval_reward < stage["progression_threshold"] and stage_idx < len(self.curriculum) - 1:
-                print(f"   ⚠️  Warning: Performance below threshold ({eval_reward:.2f} < {stage['progression_threshold']:.2f})")
-                print(f"   Continuing to next stage anyway (human approval recommended)")
+            if (
+                eval_reward < stage["progression_threshold"]
+                and stage_idx < len(self.curriculum) - 1
+            ):
+                print(
+                    f"   ⚠️  Warning: Performance below threshold ({eval_reward:.2f} < {stage['progression_threshold']:.2f})"
+                )
+                print(
+                    f"   Continuing to next stage anyway (human approval recommended)"
+                )
 
         # Final evaluation across all scenarios
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("🎯 Final Evaluation Across All Scenarios")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         for stage_idx, stage in enumerate(self.curriculum):
-            scenario = get_scenario_by_name(stage["name"], num_agents=stage["num_opponents"] + 1)
-            env = PufferBucketBrigade(scenario=scenario, num_opponents=stage["num_opponents"])
+            scenario = get_scenario_by_name(
+                stage["name"], num_agents=stage["num_opponents"] + 1
+            )
+            env = PufferBucketBrigade(
+                scenario=scenario, num_opponents=stage["num_opponents"]
+            )
             eval_reward = evaluate_policy(policy, env, num_episodes=30)
             print(f"   {stage['name']:20s}: {eval_reward:.2f}")
             writer.add_scalar(f"final_eval/{stage['name']}", eval_reward, global_step)
@@ -424,12 +448,12 @@ class CurriculumTrainer:
         )
 
         total_duration = time.time() - start_time
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"🎓 Curriculum Training Complete!")
         print(f"   Total duration: {total_duration / 60:.1f} minutes")
         print(f"   Final model: {final_path}")
         print(f"   TensorBoard: runs/{run_name}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         writer.close()
 

@@ -213,7 +213,11 @@ def train_ppo(
 
             # Compute clip fraction (percentage of advantages clipped by PPO)
             with torch.no_grad():
-                clip_fraction = ((ratio < 1 - clip_epsilon) | (ratio > 1 + clip_epsilon)).float().mean()
+                clip_fraction = (
+                    ((ratio < 1 - clip_epsilon) | (ratio > 1 + clip_epsilon))
+                    .float()
+                    .mean()
+                )
 
             # Value loss
             value_loss = nn.functional.mse_loss(values_pred.squeeze(), returns)
@@ -236,17 +240,34 @@ def train_ppo(
             writer.add_scalar("train/grad_norm", grad_norm.item(), global_step)
             writer.add_scalar("train/kl_divergence", kl_div.item(), global_step)
             writer.add_scalar("train/clip_fraction", clip_fraction.item(), global_step)
-            writer.add_scalar("train/explained_variance", explained_var.item(), global_step)
+            writer.add_scalar(
+                "train/explained_variance", explained_var.item(), global_step
+            )
             if episode_rewards:
-                writer.add_scalar("episode/mean_reward", np.mean(episode_rewards), global_step)
-                writer.add_scalar("episode/max_reward", np.max(episode_rewards), global_step)
-                writer.add_scalar("episode/min_reward", np.min(episode_rewards), global_step)
-            writer.add_scalar("train/learning_rate", optimizer.param_groups[0]["lr"], global_step)
+                writer.add_scalar(
+                    "episode/mean_reward", np.mean(episode_rewards), global_step
+                )
+                writer.add_scalar(
+                    "episode/max_reward", np.max(episode_rewards), global_step
+                )
+                writer.add_scalar(
+                    "episode/min_reward", np.min(episode_rewards), global_step
+                )
+            writer.add_scalar(
+                "train/learning_rate", optimizer.param_groups[0]["lr"], global_step
+            )
 
         # Experiment tracking
-        if experiment_session is not None and experiment_run_id is not None and global_step % eval_interval == 0:
+        if (
+            experiment_session is not None
+            and experiment_run_id is not None
+            and global_step % eval_interval == 0
+        ):
             from bucket_brigade.db.experiments import log_training_metric
-            avg_reward_val = float(np.mean(episode_rewards)) if episode_rewards else None
+
+            avg_reward_val = (
+                float(np.mean(episode_rewards)) if episode_rewards else None
+            )
             log_training_metric(
                 experiment_session,
                 experiment_run_id,
@@ -331,6 +352,7 @@ def main():
     # Handle --list-scenarios
     if args.list_scenarios:
         from bucket_brigade.envs import list_scenarios
+
         print("Available scenarios:")
         for name in list_scenarios():
             print(f"  - {name}")
@@ -409,7 +431,9 @@ def main():
             model_path=args.save_path,
         )
 
-        print(f"✅ Created experiment run: {experiment_run.run_name} (ID: {experiment_run.id})")
+        print(
+            f"✅ Created experiment run: {experiment_run.run_name} (ID: {experiment_run.id})"
+        )
 
     # Train
     try:

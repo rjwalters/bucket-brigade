@@ -57,7 +57,9 @@ def compute_strategy_distance(strategy1: np.ndarray, strategy2: np.ndarray) -> f
     return float(np.linalg.norm(strategy1 - strategy2))
 
 
-def run_tournament(strategies: Dict[str, np.ndarray], scenario, num_games: int = 20) -> Dict[str, float]:
+def run_tournament(
+    strategies: Dict[str, np.ndarray], scenario, num_games: int = 20
+) -> Dict[str, float]:
     """Run head-to-head tournament between strategies."""
 
     print(f"Running tournament with {len(strategies)} strategies...")
@@ -95,7 +97,7 @@ def run_tournament(strategies: Dict[str, np.ndarray], scenario, num_games: int =
         results[name] = {
             "mean_payoff": float(mean_payoff),
             "std_payoff": float(std_payoff),
-            "payoffs": payoffs
+            "payoffs": payoffs,
         }
 
         print(f"Mean: {mean_payoff:.2f} ± {std_payoff:.2f} ✓")
@@ -154,7 +156,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
     if all_results["nash"] is not None:
         nash_strategies = all_results["nash"]["equilibrium"]["strategy_pool"]
         for i, strat in enumerate(nash_strategies):
-            strategies[f"nash_strategy_{i+1}"] = np.array(strat["genome"])
+            strategies[f"nash_strategy_{i + 1}"] = np.array(strat["genome"])
 
     print("=" * 80)
     print("Strategies in Tournament")
@@ -197,14 +199,14 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
 
     # Rank by performance
     ranked = sorted(
-        tournament_results.items(),
-        key=lambda x: x[1]["mean_payoff"],
-        reverse=True
+        tournament_results.items(), key=lambda x: x[1]["mean_payoff"], reverse=True
     )
 
     print("Performance Ranking:")
     for i, (name, result) in enumerate(ranked):
-        print(f"  {i+1}. {name:20s}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}")
+        print(
+            f"  {i + 1}. {name:20s}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
+        )
 
     print()
 
@@ -229,7 +231,9 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
             if abs(gap) < 5.0:
                 print("  → Evolution found near-Nash strategy!")
             elif gap > 0:
-                print("  → Evolution outperformed Nash (possible exploitation of homogeneous opponents)")
+                print(
+                    "  → Evolution outperformed Nash (possible exploitation of homogeneous opponents)"
+                )
             else:
                 print("  → Nash outperformed evolution")
 
@@ -238,7 +242,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
     # Strategy similarity
     if all_results["nash"] is not None and len(nash_strategies) > 0:
         closest_nash = None
-        min_distance = float('inf')
+        min_distance = float("inf")
 
         for name, dist in distances.items():
             if name.startswith("evolved_vs_nash_"):
@@ -255,17 +259,18 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
     # Prepare output
     comparison_results = {
         "scenario": scenario_name,
-        "strategies": {
-            name: genome.tolist()
-            for name, genome in strategies.items()
-        },
+        "strategies": {name: genome.tolist() for name, genome in strategies.items()},
         "tournament": tournament_results,
         "distances": distances,
         "ranking": [
-            {"name": name, "mean_payoff": result["mean_payoff"], "std_payoff": result["std_payoff"]}
+            {
+                "name": name,
+                "mean_payoff": result["mean_payoff"],
+                "std_payoff": result["std_payoff"],
+            }
             for name, result in ranked
         ],
-        "insights": {}
+        "insights": {},
     }
 
     # Add insights
@@ -273,7 +278,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
         comparison_results["insights"]["evolution_vs_nash"] = {
             "evolved_payoff": float(evolved_payoff),
             "best_nash_payoff": float(best_nash_payoff) if nash_payoffs else None,
-            "gap": float(gap) if nash_payoffs else None
+            "gap": float(gap) if nash_payoffs else None,
         }
 
     # Save results
@@ -293,7 +298,9 @@ def main():
     parser = argparse.ArgumentParser(description="Compare analysis methods")
     parser.add_argument("scenario", type=str, help="Scenario name")
     parser.add_argument("--num-games", type=int, default=20, help="Games per strategy")
-    parser.add_argument("--output-dir", type=Path, default=None, help="Output directory")
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Output directory"
+    )
 
     args = parser.parse_args()
 

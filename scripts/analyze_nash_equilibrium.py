@@ -220,7 +220,9 @@ def main():
     # Print results
     print_header("Nash Equilibrium Results")
 
-    print(f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}")
+    print(
+        f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}"
+    )
     print(f"Iterations: {equilibrium.iterations}")
     print(f"Expected Payoff: {equilibrium.payoff:.2f}")
     print(f"Support Size: {len(equilibrium.distribution)}")
@@ -301,12 +303,16 @@ def main():
     # Summary
     print_header("Summary")
     print(f"Scenario: {args.scenario}")
-    print(f"Nash Equilibrium Type: {'Pure' if len(equilibrium.distribution) == 1 else 'Mixed'}")
+    print(
+        f"Nash Equilibrium Type: {'Pure' if len(equilibrium.distribution) == 1 else 'Mixed'}"
+    )
     print(f"Expected Payoff: {equilibrium.payoff:.2f}")
     print(f"Convergence: {equilibrium.iterations} iterations")
     print()
     print("The equilibrium represents a stable strategic configuration where")
-    print("no agent can improve their expected payoff by unilaterally changing strategy.")
+    print(
+        "no agent can improve their expected payoff by unilaterally changing strategy."
+    )
     print()
     print("=" * 80)
 

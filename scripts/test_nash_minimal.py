@@ -68,10 +68,12 @@ print("\n" + "-" * 80)
 print("Payoff Matrix (2x2 game)")
 print("-" * 80)
 
-payoff_matrix = np.array([
-    [ff_vs_ff, ff_vs_fr],
-    [fr_vs_ff, fr_vs_fr],
-])
+payoff_matrix = np.array(
+    [
+        [ff_vs_ff, ff_vs_fr],
+        [fr_vs_ff, fr_vs_fr],
+    ]
+)
 
 print("\n                  vs Firefighter    vs Free Rider")
 print(f"Firefighter:      {ff_vs_ff:10.2f}      {ff_vs_fr:10.2f}")
@@ -121,7 +123,9 @@ if distribution[0] > 0.95:
 elif distribution[1] > 0.95:
     print("\n✓ Pure strategy equilibrium: FREE RIDE")
 else:
-    print(f"\n✓ Mixed strategy equilibrium: {distribution[0]:.0%}/{distribution[1]:.0%} mix")
+    print(
+        f"\n✓ Mixed strategy equilibrium: {distribution[0]:.0%}/{distribution[1]:.0%} mix"
+    )
 
 expected_payoff = distribution @ payoff_matrix @ distribution
 print(f"\nExpected equilibrium payoff: {expected_payoff:.2f}")

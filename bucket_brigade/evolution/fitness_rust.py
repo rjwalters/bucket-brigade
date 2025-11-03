@@ -52,11 +52,11 @@ def _heuristic_action(theta, obs, agent_id, rng):
         owned_house = agent_id % 10
 
         # Prioritize owned house if burning
-        if obs['houses'][owned_house] == 1 and rng.random() < own_house_priority:
+        if obs["houses"][owned_house] == 1 and rng.random() < own_house_priority:
             house = owned_house
         else:
             # Choose a burning house
-            burning = [i for i, h in enumerate(obs['houses']) if h == 1]
+            burning = [i for i, h in enumerate(obs["houses"]) if h == 1]
             if burning:
                 house = rng.choice(burning)
             else:
@@ -104,9 +104,9 @@ def _run_rust_game(args):
         # Get observation
         obs = game.get_observation(0)
         obs_dict = {
-            'houses': obs.houses,
-            'signals': obs.signals,
-            'locations': obs.locations,
+            "houses": obs.houses,
+            "signals": obs.signals,
+            "locations": obs.locations,
         }
 
         # Get action from heuristic
@@ -147,7 +147,9 @@ class RustFitnessEvaluator:
             parallel: Whether to use parallel execution
             num_workers: Number of worker processes (default: cpu_count())
         """
-        self.scenario = scenario if scenario is not None else default_scenario(num_agents=1)
+        self.scenario = (
+            scenario if scenario is not None else default_scenario(num_agents=1)
+        )
         self.games_per_individual = games_per_individual
         self.seed = seed
         self.rng = np.random.RandomState(seed)
@@ -166,15 +168,14 @@ class RustFitnessEvaluator:
         """
         # Generate seeds for games
         if self.seed is not None:
-            seeds = [self.rng.randint(0, 2**31 - 1) for _ in range(self.games_per_individual)]
+            seeds = [
+                self.rng.randint(0, 2**31 - 1) for _ in range(self.games_per_individual)
+            ]
         else:
             seeds = [None] * self.games_per_individual
 
         # Prepare arguments (pass Python scenario, not Rust - can't pickle Rust objects)
-        args_list = [
-            (individual.genome, self.scenario, seed)
-            for seed in seeds
-        ]
+        args_list = [(individual.genome, self.scenario, seed) for seed in seeds]
 
         if self.parallel:
             # Parallel execution
@@ -206,7 +207,10 @@ class RustFitnessEvaluator:
             all_args = []
             for individual in unevaluated:
                 if self.seed is not None:
-                    seeds = [self.rng.randint(0, 2**31 - 1) for _ in range(self.games_per_individual)]
+                    seeds = [
+                        self.rng.randint(0, 2**31 - 1)
+                        for _ in range(self.games_per_individual)
+                    ]
                 else:
                     seeds = [None] * self.games_per_individual
 
@@ -220,7 +224,7 @@ class RustFitnessEvaluator:
             # Assign fitness values
             idx = 0
             for individual in unevaluated:
-                individual_rewards = all_rewards[idx:idx + self.games_per_individual]
+                individual_rewards = all_rewards[idx : idx + self.games_per_individual]
                 individual.fitness = float(np.mean(individual_rewards))
                 idx += self.games_per_individual
         else:

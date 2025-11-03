@@ -44,10 +44,10 @@ def _heuristic_action(theta, obs_dict, agent_id, rng):
 
     if rng.random() < work_tendency * (1 - rest_reward_bias):
         owned_house = agent_id % 10
-        if obs_dict['houses'][owned_house] == 1 and rng.random() < own_house_priority:
+        if obs_dict["houses"][owned_house] == 1 and rng.random() < own_house_priority:
             house = owned_house
         else:
-            burning = [i for i, h in enumerate(obs_dict['houses']) if h == 1]
+            burning = [i for i, h in enumerate(obs_dict["houses"]) if h == 1]
             if burning:
                 house = rng.choice(burning)
             else:
@@ -146,22 +146,24 @@ class RustPufferBucketBrigade(gym.Env):
         # Get initial observation from Rust env
         rust_obs = self.env.get_observation(0)
         obs_dict = {
-            'houses': np.array(rust_obs.houses),
-            'signals': np.array(rust_obs.signals),
-            'locations': np.array(rust_obs.locations),
-            'last_actions': np.zeros((self.num_agents, 2)),  # No actions yet
-            'scenario_info': np.array([
-                self.python_scenario.beta,
-                self.python_scenario.kappa,
-                self.python_scenario.p_spark,
-                self.python_scenario.A,
-                self.python_scenario.L,
-                self.python_scenario.c,
-                self.python_scenario.N_min,
-                float(self.num_agents),
-                0.0,  # Padding
-                0.0,  # Padding
-            ]),
+            "houses": np.array(rust_obs.houses),
+            "signals": np.array(rust_obs.signals),
+            "locations": np.array(rust_obs.locations),
+            "last_actions": np.zeros((self.num_agents, 2)),  # No actions yet
+            "scenario_info": np.array(
+                [
+                    self.python_scenario.beta,
+                    self.python_scenario.kappa,
+                    self.python_scenario.p_spark,
+                    self.python_scenario.A,
+                    self.python_scenario.L,
+                    self.python_scenario.c,
+                    self.python_scenario.N_min,
+                    float(self.num_agents),
+                    0.0,  # Padding
+                    0.0,  # Padding
+                ]
+            ),
         }
         self._last_obs = obs_dict
 
@@ -191,11 +193,11 @@ class RustPufferBucketBrigade(gym.Env):
         # Get observations for all agents
         rust_obs = self.env.get_observation(0)
         obs_dict = {
-            'houses': np.array(rust_obs.houses),
-            'signals': np.array(rust_obs.signals),
-            'locations': np.array(rust_obs.locations),
-            'last_actions': np.array(all_actions),
-            'scenario_info': self._last_obs['scenario_info'],  # Reuse
+            "houses": np.array(rust_obs.houses),
+            "signals": np.array(rust_obs.signals),
+            "locations": np.array(rust_obs.locations),
+            "last_actions": np.array(all_actions),
+            "scenario_info": self._last_obs["scenario_info"],  # Reuse
         }
         self._last_obs = obs_dict
 

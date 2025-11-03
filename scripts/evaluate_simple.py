@@ -178,9 +178,7 @@ def main():
             )
         else:
             experiment_session.close()
-            print(
-                f"⚠️  No experiment run found for model: {args.model_path}"
-            )
+            print(f"⚠️  No experiment run found for model: {args.model_path}")
 
 
 if __name__ == "__main__":

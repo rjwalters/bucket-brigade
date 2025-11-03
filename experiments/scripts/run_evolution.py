@@ -28,7 +28,7 @@ def run_evolution(
     num_generations: int = 200,
     games_per_individual: int = 20,
     snapshot_interval: int = 10,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ):
     """Run evolutionary algorithm to discover optimal strategies."""
 
@@ -73,9 +73,15 @@ def run_evolution(
     print(f"  Generations:      {config.num_generations}")
     print(f"  Elite size:       {config.elite_size}")
     print(f"  Selection:        {config.selection_strategy}")
-    print(f"  Crossover:        {config.crossover_strategy} (rate={config.crossover_rate})")
-    print(f"  Mutation:         {config.mutation_strategy} (rate={config.mutation_rate})")
-    print(f"  Fitness:          {config.fitness_type} ({config.games_per_individual} games)")
+    print(
+        f"  Crossover:        {config.crossover_strategy} (rate={config.crossover_rate})"
+    )
+    print(
+        f"  Mutation:         {config.mutation_strategy} (rate={config.mutation_rate})"
+    )
+    print(
+        f"  Fitness:          {config.fitness_type} ({config.games_per_individual} games)"
+    )
     print(f"  Seed:             {config.seed}")
     print()
 
@@ -99,7 +105,7 @@ def run_evolution(
             "games_per_individual": config.games_per_individual,
             "seed": config.seed,
         },
-        "generations": []
+        "generations": [],
     }
 
     def progress_callback(generation: int, population) -> None:
@@ -116,13 +122,15 @@ def run_evolution(
         )
 
         # Record generation stats
-        evolution_trace["generations"].append({
-            "generation": generation,
-            "best_fitness": float(stats['max']),
-            "mean_fitness": float(stats['mean']),
-            "std_fitness": float(stats['std']),
-            "diversity": float(diversity)
-        })
+        evolution_trace["generations"].append(
+            {
+                "generation": generation,
+                "best_fitness": float(stats["max"]),
+                "mean_fitness": float(stats["mean"]),
+                "std_fitness": float(stats["std"]),
+                "diversity": float(diversity),
+            }
+        )
 
         # Save snapshot every N generations
         if generation % snapshot_interval == 0:
@@ -133,16 +141,18 @@ def run_evolution(
             snapshot_data = {
                 "generation": generation,
                 "population_size": len(population.individuals),
-                "best_fitness": float(stats['max']),
-                "mean_fitness": float(stats['mean']),
+                "best_fitness": float(stats["max"]),
+                "mean_fitness": float(stats["mean"]),
                 "diversity": float(diversity),
                 "individuals": [
                     {
                         "genome": ind.genome.tolist(),
-                        "fitness": float(ind.fitness) if ind.fitness is not None else None
+                        "fitness": float(ind.fitness)
+                        if ind.fitness is not None
+                        else None,
                     }
                     for ind in population.individuals[:10]  # Save top 10
-                ]
+                ],
             }
 
             with open(snapshot_dir / "snapshot.json", "w") as f:
@@ -163,20 +173,31 @@ def run_evolution(
     print("Evolution Complete!")
     print("=" * 80)
     print(f"Time elapsed: {elapsed_time:.1f}s")
-    print(f"Converged at generation: {result.converged_at if result.converged_at is not None else 'N/A'}")
+    print(
+        f"Converged at generation: {result.converged_at if result.converged_at is not None else 'N/A'}"
+    )
     print()
     print("Best Individual:")
     print(f"  Fitness: {result.best_individual.fitness:.2f}")
     print(f"  Generation: {result.best_individual.generation}")
-    print(f"  Genome: [{', '.join([f'{x:.3f}' for x in result.best_individual.genome])}]")
+    print(
+        f"  Genome: [{', '.join([f'{x:.3f}' for x in result.best_individual.genome])}]"
+    )
     print()
 
     # Analyze best strategy
     genome = result.best_individual.genome
     param_names = [
-        "honesty", "work_tendency", "neighbor_help", "own_priority",
-        "risk_aversion", "coordination", "exploration", "fatigue_memory",
-        "rest_bias", "altruism"
+        "honesty",
+        "work_tendency",
+        "neighbor_help",
+        "own_priority",
+        "risk_aversion",
+        "coordination",
+        "exploration",
+        "fatigue_memory",
+        "rest_bias",
+        "altruism",
     ]
 
     print("Best Strategy Parameters:")
@@ -188,18 +209,20 @@ def run_evolution(
     print()
 
     # Save results
-    evolution_trace.update({
-        "best_agent": {
-            "generation": result.best_individual.generation,
-            "fitness": float(result.best_individual.fitness),
-            "genome": result.best_individual.genome.tolist()
-        },
-        "convergence": {
-            "converged": result.converged_at is not None,
-            "generation": result.converged_at,
-            "elapsed_time": elapsed_time
+    evolution_trace.update(
+        {
+            "best_agent": {
+                "generation": result.best_individual.generation,
+                "fitness": float(result.best_individual.fitness),
+                "genome": result.best_individual.genome.tolist(),
+            },
+            "convergence": {
+                "converged": result.converged_at is not None,
+                "generation": result.converged_at,
+                "elapsed_time": elapsed_time,
+            },
         }
-    })
+    )
 
     # Save evolution trace
     trace_file = output_dir / "evolution_trace.json"
@@ -209,16 +232,19 @@ def run_evolution(
     # Save best agent separately
     best_agent_file = output_dir / "best_agent.json"
     with open(best_agent_file, "w") as f:
-        json.dump({
-            "scenario": scenario_name,
-            "fitness": float(result.best_individual.fitness),
-            "generation": result.best_individual.generation,
-            "genome": result.best_individual.genome.tolist(),
-            "parameters": {
-                name: float(value)
-                for name, value in zip(param_names, genome)
-            }
-        }, f, indent=2)
+        json.dump(
+            {
+                "scenario": scenario_name,
+                "fitness": float(result.best_individual.fitness),
+                "generation": result.best_individual.generation,
+                "genome": result.best_individual.genome.tolist(),
+                "parameters": {
+                    name: float(value) for name, value in zip(param_names, genome)
+                },
+            },
+            f,
+            indent=2,
+        )
 
     print("✅ Results saved:")
     print(f"   Evolution trace: {trace_file}")
@@ -232,11 +258,17 @@ def main():
     parser = argparse.ArgumentParser(description="Run evolutionary optimization")
     parser.add_argument("scenario", type=str, help="Scenario name")
     parser.add_argument("--population", type=int, default=100, help="Population size")
-    parser.add_argument("--generations", type=int, default=200, help="Number of generations")
+    parser.add_argument(
+        "--generations", type=int, default=200, help="Number of generations"
+    )
     parser.add_argument("--games", type=int, default=20, help="Games per individual")
-    parser.add_argument("--snapshot-interval", type=int, default=10, help="Snapshot every N generations")
+    parser.add_argument(
+        "--snapshot-interval", type=int, default=10, help="Snapshot every N generations"
+    )
     parser.add_argument("--seed", type=int, default=None, help="Random seed")
-    parser.add_argument("--output-dir", type=Path, default=None, help="Output directory")
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Output directory"
+    )
 
     args = parser.parse_args()
 
@@ -251,7 +283,7 @@ def main():
         num_generations=args.generations,
         games_per_individual=args.games,
         snapshot_interval=args.snapshot_interval,
-        seed=args.seed
+        seed=args.seed,
     )
 
 

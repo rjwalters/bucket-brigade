@@ -76,7 +76,7 @@ def compute_nash_equilibrium(
     max_iterations: int = 50,
     epsilon: float = 0.01,
     seed: Optional[int] = 42,
-    verbose: bool = True
+    verbose: bool = True,
 ):
     """Compute Nash equilibrium using Double Oracle algorithm."""
 
@@ -129,7 +129,9 @@ def compute_nash_equilibrium(
     print("Nash Equilibrium Results")
     print("=" * 80)
     print()
-    print(f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}")
+    print(
+        f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}"
+    )
     print(f"Iterations: {equilibrium.iterations}")
     print(f"Expected Payoff: {equilibrium.payoff:.2f}")
     print(f"Support Size: {len(equilibrium.distribution)}")
@@ -150,9 +152,16 @@ def compute_nash_equilibrium(
 
     strategy_details = []
     param_names = [
-        "honesty", "work_tendency", "neighbor_help", "own_priority",
-        "risk_aversion", "coordination", "exploration", "fatigue_memory",
-        "rest_bias", "altruism"
+        "honesty",
+        "work_tendency",
+        "neighbor_help",
+        "own_priority",
+        "risk_aversion",
+        "coordination",
+        "exploration",
+        "fatigue_memory",
+        "rest_bias",
+        "altruism",
     ]
 
     for idx, (strategy_idx, probability) in enumerate(sorted_strategies):
@@ -173,15 +182,19 @@ def compute_nash_equilibrium(
 
         print()
 
-        strategy_details.append({
-            "index": int(strategy_idx),
-            "probability": float(probability),
-            "classification": classification,
-            "closest_archetype": closest,
-            "archetype_distance": float(distances[closest]),
-            "parameters": {name: float(value) for name, value in zip(param_names, strategy)},
-            "genome": strategy.tolist()
-        })
+        strategy_details.append(
+            {
+                "index": int(strategy_idx),
+                "probability": float(probability),
+                "classification": classification,
+                "closest_archetype": closest,
+                "archetype_distance": float(distances[closest]),
+                "parameters": {
+                    name: float(value) for name, value in zip(param_names, strategy)
+                },
+                "genome": strategy.tolist(),
+            }
+        )
 
     # Game-theoretic interpretation
     print("=" * 80)
@@ -236,28 +249,27 @@ def compute_nash_equilibrium(
             "num_simulations": num_simulations,
             "max_iterations": max_iterations,
             "epsilon": epsilon,
-            "seed": seed
+            "seed": seed,
         },
         "equilibrium": {
             "type": equilibrium_type,
             "support_size": len(equilibrium.distribution),
             "expected_payoff": float(equilibrium.payoff),
             "distribution": {
-                int(idx): float(prob)
-                for idx, prob in equilibrium.distribution.items()
+                int(idx): float(prob) for idx, prob in equilibrium.distribution.items()
             },
-            "strategy_pool": strategy_details
+            "strategy_pool": strategy_details,
         },
         "convergence": {
             "converged": equilibrium.converged,
             "iterations": equilibrium.iterations,
-            "elapsed_time": elapsed_time
+            "elapsed_time": elapsed_time,
         },
         "interpretation": {
             "equilibrium_type": equilibrium_type,
             "cooperation_rate": float(cooperative_prob),
-            "free_riding_rate": float(free_riding_prob)
-        }
+            "free_riding_rate": float(free_riding_prob),
+        },
     }
 
     # Save results
@@ -274,11 +286,25 @@ def compute_nash_equilibrium(
 def main():
     parser = argparse.ArgumentParser(description="Compute Nash equilibrium")
     parser.add_argument("scenario", type=str, help="Scenario name")
-    parser.add_argument("--simulations", type=int, default=1000, help="Simulations per payoff evaluation")
-    parser.add_argument("--max-iterations", type=int, default=50, help="Maximum Double Oracle iterations")
-    parser.add_argument("--epsilon", type=float, default=0.01, help="Convergence threshold")
+    parser.add_argument(
+        "--simulations",
+        type=int,
+        default=1000,
+        help="Simulations per payoff evaluation",
+    )
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=50,
+        help="Maximum Double Oracle iterations",
+    )
+    parser.add_argument(
+        "--epsilon", type=float, default=0.01, help="Convergence threshold"
+    )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--output-dir", type=Path, default=None, help="Output directory")
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Output directory"
+    )
     parser.add_argument("--quiet", action="store_true", help="Reduce output verbosity")
 
     args = parser.parse_args()
@@ -294,7 +320,7 @@ def main():
         max_iterations=args.max_iterations,
         epsilon=args.epsilon,
         seed=args.seed,
-        verbose=not args.quiet
+        verbose=not args.quiet,
     )
 
 

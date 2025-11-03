@@ -5,6 +5,7 @@ Should complete in under 30 seconds.
 """
 
 import numpy as np
+
 print("Starting ultra-minimal Nash equilibrium test...")
 
 from bucket_brigade.envs.scenarios import trivial_cooperation_scenario

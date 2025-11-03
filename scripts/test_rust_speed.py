@@ -2,6 +2,7 @@
 """
 Quick test to show Rust core speed.
 """
+
 import time
 import bucket_brigade_core as core
 
@@ -26,18 +27,20 @@ for i in range(num_sims):
 
     while not game.is_done():
         # Random actions for all agents
-        actions = [[game.rng.gen_range(0, 10), game.rng.gen_range(0, 2)]
-                   for _ in range(scenario.num_agents)]
+        actions = [
+            [game.rng.gen_range(0, 10), game.rng.gen_range(0, 2)]
+            for _ in range(scenario.num_agents)
+        ]
         game.step(actions)
 
     if (i + 1) % 10 == 0:
         elapsed = time.time() - start
         rate = (i + 1) / elapsed
-        print(f"  Completed {i+1}/{num_sims} simulations ({rate:.1f} sims/sec)")
+        print(f"  Completed {i + 1}/{num_sims} simulations ({rate:.1f} sims/sec)")
 
 elapsed = time.time() - start
 print(f"\n✓ Completed {num_sims} simulations in {elapsed:.2f} seconds")
-print(f"  Rate: {num_sims/elapsed:.1f} simulations/second")
-print(f"  Time per simulation: {elapsed/num_sims*1000:.1f} ms")
+print(f"  Rate: {num_sims / elapsed:.1f} simulations/second")
+print(f"  Time per simulation: {elapsed / num_sims * 1000:.1f} ms")
 
 print("\nThis is the speed we should be getting with Rust!")

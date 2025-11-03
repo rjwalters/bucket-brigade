@@ -55,7 +55,9 @@ def init_experiments_db(db_path: Optional[str] = None) -> Session:
     return SessionLocal()
 
 
-def get_experiments_session(db_path: Optional[str] = None) -> Generator[Session, None, None]:
+def get_experiments_session(
+    db_path: Optional[str] = None,
+) -> Generator[Session, None, None]:
     """
     Get a database session for experiment tracking.
 
@@ -206,7 +208,9 @@ def log_evaluation_result(
     return result
 
 
-def find_run_by_model_path(session: Session, model_path: str) -> Optional[ExperimentRun]:
+def find_run_by_model_path(
+    session: Session, model_path: str
+) -> Optional[ExperimentRun]:
     """
     Find an experiment run by its model path.
 
@@ -217,4 +221,8 @@ def find_run_by_model_path(session: Session, model_path: str) -> Optional[Experi
     Returns:
         ExperimentRun instance if found, None otherwise
     """
-    return session.query(ExperimentRun).filter(ExperimentRun.model_path == model_path).first()
+    return (
+        session.query(ExperimentRun)
+        .filter(ExperimentRun.model_path == model_path)
+        .first()
+    )

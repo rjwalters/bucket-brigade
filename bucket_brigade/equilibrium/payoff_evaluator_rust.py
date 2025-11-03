@@ -48,11 +48,11 @@ def _heuristic_action(theta, obs, agent_id, rng):
         owned_house = agent_id % 10
 
         # Prioritize owned house if burning
-        if obs['houses'][owned_house] == 1 and rng.random() < own_house_priority:
+        if obs["houses"][owned_house] == 1 and rng.random() < own_house_priority:
             house = owned_house
         else:
             # Choose a burning house
-            burning = [i for i, h in enumerate(obs['houses']) if h == 1]
+            burning = [i for i, h in enumerate(obs["houses"]) if h == 1]
             if burning:
                 house = rng.choice(burning)
             else:
@@ -101,9 +101,9 @@ def _run_rust_simulation(args):
             obs = game.get_observation(agent_id)
             # Convert to dict format for heuristic
             obs_dict = {
-                'houses': obs.houses,
-                'signals': obs.signals,
-                'locations': obs.locations,
+                "houses": obs.houses,
+                "signals": obs.signals,
+                "locations": obs.locations,
             }
             observations.append(obs_dict)
 
@@ -178,14 +178,15 @@ class RustPayoffEvaluator:
         """
         # Generate seeds
         if self.seed is not None:
-            seeds = [self.rng.randint(0, 2**31 - 1) for _ in range(self.num_simulations)]
+            seeds = [
+                self.rng.randint(0, 2**31 - 1) for _ in range(self.num_simulations)
+            ]
         else:
             seeds = [None] * self.num_simulations
 
         # Prepare arguments (pass Python scenario, not Rust - can't pickle Rust objects)
         args_list = [
-            (theta_focal, theta_opponents, self.scenario, seed)
-            for seed in seeds
+            (theta_focal, theta_opponents, self.scenario, seed) for seed in seeds
         ]
 
         if self.parallel:

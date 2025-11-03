@@ -72,7 +72,8 @@ def run_scenario_research(
             ".venv/bin/python",
             "experiments/scripts/analyze_heuristics.py",
             scenario_name,
-            "--num-games", str(heuristic_games)
+            "--num-games",
+            str(heuristic_games),
         ]
         if not run_command(cmd, "Step 1/4: Heuristics Analysis"):
             success = False
@@ -83,9 +84,12 @@ def run_scenario_research(
             ".venv/bin/python",
             "experiments/scripts/run_evolution.py",
             scenario_name,
-            "--population", str(evolution_pop),
-            "--generations", str(evolution_gens),
-            "--games", str(evolution_games)
+            "--population",
+            str(evolution_pop),
+            "--generations",
+            str(evolution_gens),
+            "--games",
+            str(evolution_games),
         ]
         if not run_command(cmd, "Step 2/4: Evolutionary Optimization"):
             success = False
@@ -96,8 +100,10 @@ def run_scenario_research(
             ".venv/bin/python",
             "experiments/scripts/compute_nash.py",
             scenario_name,
-            "--simulations", str(nash_sims),
-            "--max-iterations", str(nash_iters)
+            "--simulations",
+            str(nash_sims),
+            "--max-iterations",
+            str(nash_iters),
         ]
         if not run_command(cmd, "Step 3/4: Nash Equilibrium Computation"):
             success = False
@@ -108,7 +114,8 @@ def run_scenario_research(
             ".venv/bin/python",
             "experiments/scripts/run_comparison.py",
             scenario_name,
-            "--num-games", str(comparison_games)
+            "--num-games",
+            str(comparison_games),
         ]
         if not run_command(cmd, "Step 4/4: Cross-Method Comparison"):
             success = False
@@ -138,31 +145,54 @@ def main():
         "scenario",
         nargs="?",
         type=str,
-        help="Scenario name (or use --all for all scenarios)"
+        help="Scenario name (or use --all for all scenarios)",
     )
     parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Run research for all scenarios"
+        "--all", action="store_true", help="Run research for all scenarios"
     )
 
     # Skip options
-    parser.add_argument("--skip-heuristics", action="store_true", help="Skip heuristics analysis")
+    parser.add_argument(
+        "--skip-heuristics", action="store_true", help="Skip heuristics analysis"
+    )
     parser.add_argument("--skip-evolution", action="store_true", help="Skip evolution")
-    parser.add_argument("--skip-nash", action="store_true", help="Skip Nash equilibrium")
-    parser.add_argument("--skip-comparison", action="store_true", help="Skip comparison")
+    parser.add_argument(
+        "--skip-nash", action="store_true", help="Skip Nash equilibrium"
+    )
+    parser.add_argument(
+        "--skip-comparison", action="store_true", help="Skip comparison"
+    )
 
     # Configuration
-    parser.add_argument("--heuristic-games", type=int, default=100, help="Games for heuristics")
-    parser.add_argument("--evolution-pop", type=int, default=100, help="Evolution population size")
-    parser.add_argument("--evolution-gens", type=int, default=200, help="Evolution generations")
-    parser.add_argument("--evolution-games", type=int, default=20, help="Games per individual in evolution")
-    parser.add_argument("--nash-sims", type=int, default=1000, help="Simulations per Nash evaluation")
-    parser.add_argument("--nash-iters", type=int, default=50, help="Max Nash iterations")
-    parser.add_argument("--comparison-games", type=int, default=20, help="Games for comparison")
+    parser.add_argument(
+        "--heuristic-games", type=int, default=100, help="Games for heuristics"
+    )
+    parser.add_argument(
+        "--evolution-pop", type=int, default=100, help="Evolution population size"
+    )
+    parser.add_argument(
+        "--evolution-gens", type=int, default=200, help="Evolution generations"
+    )
+    parser.add_argument(
+        "--evolution-games",
+        type=int,
+        default=20,
+        help="Games per individual in evolution",
+    )
+    parser.add_argument(
+        "--nash-sims", type=int, default=1000, help="Simulations per Nash evaluation"
+    )
+    parser.add_argument(
+        "--nash-iters", type=int, default=50, help="Max Nash iterations"
+    )
+    parser.add_argument(
+        "--comparison-games", type=int, default=20, help="Games for comparison"
+    )
 
     # Quick mode (reduced parameters for testing)
-    parser.add_argument("--quick", action="store_true", help="Quick mode (reduced parameters)")
+    parser.add_argument(
+        "--quick", action="store_true", help="Quick mode (reduced parameters)"
+    )
 
     args = parser.parse_args()
 
