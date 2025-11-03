@@ -119,7 +119,11 @@ class TestCooperativeStrategies:
         )
 
         # Check if difference is substantial (at least 20% better)
-        percent_improvement = (mean_coop - mean_non_coop) / abs(mean_non_coop) if mean_non_coop != 0 else float('inf')
+        percent_improvement = (
+            (mean_coop - mean_non_coop) / abs(mean_non_coop)
+            if mean_non_coop != 0
+            else float("inf")
+        )
 
         assert percent_improvement > 0.2 or mean_coop > mean_non_coop + 50, (
             f"Cooperative team should substantially outperform non-cooperative. "
@@ -173,9 +177,7 @@ class TestSelfishStrategiesExcel:
 
         # Lazy/cautious team (works selectively)
         lazy_team = ["cautious", "free_rider", "cautious"]
-        lazy_rewards = run_games(
-            lazy_team, rest_trap_scenario, num_games=50, seed=42
-        )
+        lazy_rewards = run_games(lazy_team, rest_trap_scenario, num_games=50, seed=42)
 
         mean_lazy = np.mean(lazy_rewards)
         mean_overwork = np.mean(overwork_rewards)
@@ -188,12 +190,14 @@ class TestSelfishStrategiesExcel:
         assert mean_lazy > mean_overwork * 0.60, (
             f"Lazy team should be reasonably competitive in Rest Trap. "
             f"Lazy: {mean_lazy:.2f}, Overwork: {mean_overwork:.2f}, "
-            f"Ratio: {mean_lazy/mean_overwork:.2%}"
+            f"Ratio: {mean_lazy / mean_overwork:.2%}"
         )
 
         # Print victory message if lazy actually wins
         if mean_lazy > mean_overwork:
-            print(f"\n✓ Lazy team wins Rest Trap: {mean_lazy:.2f} > {mean_overwork:.2f}")
+            print(
+                f"\n✓ Lazy team wins Rest Trap: {mean_lazy:.2f} > {mean_overwork:.2f}"
+            )
 
     def test_greedy_neighbor_selfish_strategies(self):
         """
@@ -209,7 +213,9 @@ class TestSelfishStrategiesExcel:
 
         # Mixed team with some selfish agents
         mixed_team = ["firefighter", "free_rider", "opportunist"]
-        mixed_rewards = run_games(mixed_team, greedy_neighbor_scenario, num_games=30, seed=42)
+        mixed_rewards = run_games(
+            mixed_team, greedy_neighbor_scenario, num_games=30, seed=42
+        )
 
         mean_coop = np.mean(cooperative_rewards)
         mean_mixed = np.mean(mixed_rewards)
@@ -219,7 +225,7 @@ class TestSelfishStrategiesExcel:
         assert mean_mixed > mean_coop * 0.4, (
             f"In Greedy Neighbor scenario, selfish strategies should be viable (not terrible). "
             f"Cooperative: {mean_coop:.2f}, Mixed: {mean_mixed:.2f}, "
-            f"Ratio: {mean_mixed/mean_coop:.2%}"
+            f"Ratio: {mean_mixed / mean_coop:.2%}"
         )
 
     def test_rest_trap_cautious_performs_well(self):
@@ -232,7 +238,9 @@ class TestSelfishStrategiesExcel:
         hero_rewards = run_games(hero_team, rest_trap_scenario, num_games=30, seed=42)
 
         cautious_team = ["cautious", "cautious", "cautious"]
-        cautious_rewards = run_games(cautious_team, rest_trap_scenario, num_games=30, seed=42)
+        cautious_rewards = run_games(
+            cautious_team, rest_trap_scenario, num_games=30, seed=42
+        )
 
         mean_hero = np.mean(hero_rewards)
         mean_cautious = np.mean(cautious_rewards)
@@ -261,7 +269,9 @@ class TestArchetypeSpecializations:
 
         # Random baseline
         random_team = ["cautious", "liar", "opportunist"]  # Diverse but suboptimal mix
-        random_rewards = run_games(random_team, early_containment_scenario, num_games=30, seed=42)
+        random_rewards = run_games(
+            random_team, early_containment_scenario, num_games=30, seed=42
+        )
 
         mean_strategist = np.mean(strategist_rewards)
         mean_random = np.mean(random_rewards)
@@ -277,7 +287,9 @@ class TestArchetypeSpecializations:
         since they always work and have minimal exploration.
         """
         hero_team = ["hero", "hero", "hero"]
-        hero_rewards = run_games(hero_team, early_containment_scenario, num_games=30, seed=42)
+        hero_rewards = run_games(
+            hero_team, early_containment_scenario, num_games=30, seed=42
+        )
 
         # Calculate coefficient of variation (std / mean)
         hero_cv = np.std(hero_rewards) / np.mean(hero_rewards)
@@ -302,7 +314,9 @@ def test_team_diversity_matters():
 
     # Diverse team
     diverse_team = ["firefighter", "coordinator", "hero"]
-    diverse_rewards = run_games(diverse_team, early_containment_scenario, num_games=30, seed=42)
+    diverse_rewards = run_games(
+        diverse_team, early_containment_scenario, num_games=30, seed=42
+    )
 
     # The rewards should be measurably different
     # (This doesn't test which is better, just that composition matters)
@@ -329,11 +343,15 @@ def test_sparse_heroics_rewards_efficiency():
     """
     # Efficient mixed team
     efficient_team = ["strategist", "coordinator", "firefighter"]
-    efficient_rewards = run_games(efficient_team, sparse_heroics_scenario, num_games=30, seed=42)
+    efficient_rewards = run_games(
+        efficient_team, sparse_heroics_scenario, num_games=30, seed=42
+    )
 
     # Overworking team
     overwork_team = ["hero", "hero", "hero"]
-    overwork_rewards = run_games(overwork_team, sparse_heroics_scenario, num_games=30, seed=42)
+    overwork_rewards = run_games(
+        overwork_team, sparse_heroics_scenario, num_games=30, seed=42
+    )
 
     mean_efficient = np.mean(efficient_rewards)
     mean_overwork = np.mean(overwork_rewards)
