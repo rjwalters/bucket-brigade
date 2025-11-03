@@ -12,7 +12,6 @@ import {
 import { initWasm, isWasmInitialized } from '../utils/wasmEngine';
 
 const Tournament: React.FC = () => {
-  const [wasmReady, setWasmReady] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<keyof typeof SCENARIOS>('trivial_cooperation');
   const [userAgentCode, setUserAgentCode] = useState(`// Your agent function
 // Input: obs (observation object)
@@ -52,15 +51,11 @@ return function(obs) {
     if (!isWasmInitialized()) {
       initWasm()
         .then(() => {
-          setWasmReady(true);
           console.log('✅ WASM ready for tournaments');
         })
         .catch((error) => {
           console.warn('⚠️  WASM failed to load, using JS engine:', error);
-          setWasmReady(false); // Use JS fallback
         });
-    } else {
-      setWasmReady(true);
     }
   }, []);
 

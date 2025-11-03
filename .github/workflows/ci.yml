@@ -23,8 +23,25 @@ jobs:
       run: uv venv
     - name: Install dependencies
       run: uv pip install -e .[dev]
+    - name: Install test annotation plugin
+      run: uv pip install pytest-github-actions-annotate-failures
     - name: Run tests
-      run: uv run pytest --cov=bucket_brigade --cov-report=xml
+      run: |
+        uv run pytest \
+          --cov=bucket_brigade \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --cov-fail-under=80 \
+          -v \
+          --tb=short \
+          | tee pytest-output.txt
+
+        # Generate GitHub summary
+        echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        tail -50 pytest-output.txt >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
