@@ -45,6 +45,11 @@ jobs:
       - name: Build WASM package
         run: cd bucket-brigade-core && wasm-pack build --target web
 
+      - name: Copy research data to web public
+        run: |
+          mkdir -p web/public/research
+          cp -r experiments/scenarios web/public/research/
+
       - name: Install dependencies
         run: cd web && pnpm install --frozen-lockfile
 
