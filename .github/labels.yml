@@ -41,6 +41,10 @@
   description: PR approved by Judge, ready for human to merge
   color: "3B82F6"  # blue-500
 
+- name: loom:changes-requested
+  description: PR requires changes before approval (Judge has requested revisions)
+  color: "F59E0B"  # amber-500 (matches other in-progress states)
+
 # Agent Proposal Labels
 - name: loom:architect
   description: Architect proposal awaiting user approval
