@@ -64,7 +64,15 @@
       "Bash(make build-wasm:*)",
       "WebFetch(domain:rjwalters.github.io)",
       "Bash(VITE_BASE_PATH=/bucket-brigade/ pnpm run build:*)",
-      "Bash(export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1)"
+      "Bash(export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1)",
+      "Bash(uv lock:*)",
+      "Bash(make lint:*)",
+      "Bash(wait)",
+      "Bash(else echo \"No .venv found, checking for uv\")",
+      "Bash(make lint-python:*)",
+      "Bash(maturin build:*)",
+      "Bash(maturin develop:*)",
+      "Bash(do echo \"=== PR #$pr_num ===\" gh pr view $pr_num --json body --jq '.body')"
     ],
     "deny": [],
     "ask": []
