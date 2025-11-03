@@ -88,17 +88,20 @@ train() {
         exit 1
     fi
 
-    # Check if .venv exists, if not run setup
+    # Check if .venv exists and has required dependencies
+    local need_setup=false
+
     if [ ! -d "$PROJECT_ROOT/.venv" ]; then
         echo "⚠️  Virtual environment not found. Setting up first..."
-        setup_environment
+        need_setup=true
+    elif ! "$PROJECT_ROOT/.venv/bin/python" -c "import torch, tensorboard" 2>/dev/null; then
+        echo "⚠️  Missing critical dependencies. Re-running setup..."
+        need_setup=true
     else
         echo "✅ Using existing virtual environment"
     fi
 
-    # Verify critical dependencies
-    if ! "$PROJECT_ROOT/.venv/bin/python" -c "import torch, tensorboard" 2>/dev/null; then
-        echo "⚠️  Missing critical dependencies. Re-running setup..."
+    if [ "$need_setup" = true ]; then
         setup_environment
     fi
 
