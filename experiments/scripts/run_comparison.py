@@ -106,7 +106,9 @@ def run_tournament(
     return results
 
 
-def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20) -> None:
+def run_comparison(
+    scenario_name: str, output_dir: Path, num_games: int = 20
+) -> Dict[str, Any]:
     """Compare all analysis methods for a scenario."""
 
     print(f"Running comparison analysis for scenario: {scenario_name}")
@@ -277,7 +279,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20) ->
 
     # Add insights
     if all_results["nash"] is not None:
-        comparison_results["insights"]["evolution_vs_nash"] = {
+        comparison_results["insights"]["evolution_vs_nash"] = {  # type: ignore[index]
             "evolved_payoff": float(evolved_payoff),
             "best_nash_payoff": float(best_nash_payoff) if nash_payoffs else None,
             "gap": float(gap) if nash_payoffs else None,

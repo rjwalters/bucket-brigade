@@ -44,7 +44,7 @@ class HeuristicAgent(AgentBase):
         self.altruism_factor = params[9]  # Willingness to help others (0-1)
 
         # Internal state
-        self.last_action = None
+        self.last_action: Optional[tuple[int, int]] = None
 
     def reset(self) -> None:
         """Reset agent state between games."""

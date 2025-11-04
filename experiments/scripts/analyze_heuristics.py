@@ -10,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Optional
 import numpy as np
 
 # Add parent directory to path for imports
@@ -53,7 +53,7 @@ def run_game(
 
 def analyze_heuristics(
     scenario_name: str, output_dir: Path, num_games: int = 100
-) -> None:
+) -> Dict[str, Any]:
     """Run tournament with heuristic archetypes."""
 
     print(f"Analyzing heuristics for scenario: {scenario_name}")

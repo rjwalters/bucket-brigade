@@ -301,7 +301,9 @@ def create_fitness_function(
             "games_per_scenario", num_games // len(scenarios)
         )
         return lambda ind: robustness_fitness(
-            ind, scenarios=scenarios, num_games_per_scenario=games_per_scenario
+            ind,
+            scenarios=scenarios,
+            num_games_per_scenario=games_per_scenario,  # type: ignore[arg-type]
         )
 
     elif fitness_type == "multi_objective":
@@ -309,7 +311,10 @@ def create_fitness_function(
             "weights", {"reward": 1.0, "win_rate": 1.0, "efficiency": 0.5}
         )
         return lambda ind: multi_objective_fitness(
-            ind, scenario=scenario, num_games=num_games, weights=weights
+            ind,
+            scenario=scenario,
+            num_games=num_games,
+            weights=weights,  # type: ignore[arg-type]
         )
 
     else:
