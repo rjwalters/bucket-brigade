@@ -451,3 +451,131 @@ class TestUtilityFunctions:
 
         for ind1, ind2 in zip(pop1, pop2):
             assert np.all(ind1.genome == ind2.genome)
+
+
+class TestParallelEvaluation:
+    """Test parallel fitness evaluation."""
+
+    def test_parallel_vs_sequential_fitness(self):
+        """Test that parallel and sequential evaluation give equivalent results."""
+        from bucket_brigade.evolution.fitness import FitnessEvaluator
+
+        # Create test population
+        pop = create_random_population(size=5, generation=0, seed=42)
+
+        # Sequential evaluation
+        evaluator_seq = FitnessEvaluator(
+            games_per_individual=3, seed=100, num_workers=1
+        )
+        pop_seq = Population([ind.clone(new_generation=0) for ind in pop])
+        evaluator_seq.evaluate_population(pop_seq, parallel=False)
+
+        # Parallel evaluation with same seed
+        evaluator_par = FitnessEvaluator(
+            games_per_individual=3, seed=100, num_workers=2
+        )
+        pop_par = Population([ind.clone(new_generation=0) for ind in pop])
+        evaluator_par.evaluate_population(pop_par, parallel=True)
+
+        # Results should be very close (within Monte Carlo variance)
+        for ind_seq, ind_par in zip(pop_seq, pop_par):
+            assert ind_seq.fitness is not None
+            assert ind_par.fitness is not None
+            # Allow for some variance due to random game outcomes
+            # But with same seed, should be identical
+            assert abs(ind_seq.fitness - ind_par.fitness) < 0.1
+
+    def test_parallel_evaluation_respects_num_workers(self):
+        """Test that num_workers parameter is respected."""
+        from bucket_brigade.evolution.fitness import FitnessEvaluator
+
+        evaluator = FitnessEvaluator(games_per_individual=2, num_workers=4)
+        assert evaluator.num_workers == 4
+
+        # Test default (should be cpu_count)
+        evaluator_default = FitnessEvaluator(games_per_individual=2)
+        from multiprocessing import cpu_count
+
+        assert evaluator_default.num_workers == cpu_count()
+
+    def test_parallel_evaluation_single_individual(self):
+        """Test that single individual falls back to sequential."""
+        from bucket_brigade.evolution.fitness import FitnessEvaluator
+
+        pop = create_random_population(size=1, generation=0, seed=42)
+        evaluator = FitnessEvaluator(games_per_individual=2, seed=100, num_workers=4)
+        evaluator.evaluate_population(pop, parallel=True)
+
+        assert pop[0].fitness is not None
+
+    def test_parallel_evaluation_empty_population(self):
+        """Test handling of already-evaluated population."""
+        from bucket_brigade.evolution.fitness import FitnessEvaluator
+
+        pop = create_random_population(size=3, generation=0, seed=42)
+        evaluator = FitnessEvaluator(games_per_individual=2, seed=100)
+
+        # Evaluate once
+        evaluator.evaluate_population(pop, parallel=True)
+        original_fitnesses = [ind.fitness for ind in pop]
+
+        # Evaluate again (should skip already-evaluated individuals)
+        evaluator.evaluate_population(pop, parallel=True)
+        new_fitnesses = [ind.fitness for ind in pop]
+
+        # Fitness values should be unchanged
+        for orig, new in zip(original_fitnesses, new_fitnesses):
+            assert orig == new
+
+    def test_ga_with_parallel_config(self):
+        """Test GeneticAlgorithm with parallel configuration."""
+        config = EvolutionConfig(
+            population_size=4,
+            num_generations=2,
+            games_per_individual=2,
+            parallel=True,
+            num_workers=2,
+            seed=42,
+            early_stopping=False,
+        )
+
+        ga = GeneticAlgorithm(config)
+        result = ga.evolve()
+
+        assert result.best_individual is not None
+        assert result.best_individual.fitness is not None
+        assert len(result.fitness_history) == 3  # Initial + 2 generations
+
+    def test_ga_with_sequential_config(self):
+        """Test GeneticAlgorithm with sequential (no parallel) configuration."""
+        config = EvolutionConfig(
+            population_size=4,
+            num_generations=2,
+            games_per_individual=2,
+            parallel=False,
+            seed=42,
+            early_stopping=False,
+        )
+
+        ga = GeneticAlgorithm(config)
+        result = ga.evolve()
+
+        assert result.best_individual is not None
+        assert result.best_individual.fitness is not None
+        assert len(result.fitness_history) == 3  # Initial + 2 generations
+
+    def test_parallel_with_scenario(self):
+        """Test parallel evaluation with custom scenario."""
+        from bucket_brigade.envs.scenarios import default_scenario
+        from bucket_brigade.evolution.fitness import FitnessEvaluator
+
+        scenario = default_scenario(num_agents=1)
+        pop = create_random_population(size=3, generation=0, seed=42)
+
+        evaluator = FitnessEvaluator(
+            scenario=scenario, games_per_individual=2, seed=100, num_workers=2
+        )
+        evaluator.evaluate_population(pop, parallel=True)
+
+        for ind in pop:
+            assert ind.fitness is not None

@@ -220,6 +220,18 @@ def main():
         help="Games per individual for fitness evaluation (default: 20)",
     )
 
+    # Parallelization
+    parser.add_argument(
+        "--no-parallel",
+        action="store_true",
+        help="Disable parallel fitness evaluation (sequential mode)",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        help="Number of parallel workers (default: cpu_count)",
+    )
+
     # Diversity
     parser.add_argument(
         "--no-diversity-maintenance",
@@ -285,6 +297,8 @@ def main():
         adaptive_final_rate=args.adaptive_final_rate,
         fitness_type=args.fitness_type,
         games_per_individual=args.games_per_individual,
+        parallel=not args.no_parallel,
+        num_workers=args.num_workers,
         maintain_diversity=not args.no_diversity_maintenance,
         min_diversity=args.min_diversity,
         early_stopping=not args.no_early_stopping,
@@ -304,6 +318,9 @@ def main():
     print(
         f"  Fitness: {config.fitness_type} ({config.games_per_individual} games/individual)"
     )
+    parallel_mode = "parallel" if config.parallel else "sequential"
+    workers_info = f", {config.num_workers} workers" if config.num_workers else ", auto workers"
+    print(f"  Evaluation: {parallel_mode}{workers_info if config.parallel else ''}")
     print(f"  Seed: {config.seed}")
     print()
 
