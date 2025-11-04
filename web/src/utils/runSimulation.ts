@@ -97,7 +97,10 @@ export async function runGameSimulation(
   return {
     scenario: engineScenario,
     nights: result.nights,
-    archetypes: team.archetypes
+    archetypes: team.archetypes,
+    timestamp: new Date().toISOString(),
+    teamName: team.name,
+    scenarioName: scenario.name
   };
 }
 

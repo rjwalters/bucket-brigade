@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Home, Loader2 } from 'lucide-react';
+import { Home, Loader2, X, Trash2, Download } from 'lucide-react';
 import type { GameReplay } from '../types';
 import { loadGameReplays, saveGameReplays } from '../utils/storage';
 import { runGameBatch } from '../utils/runSimulation';
@@ -159,6 +159,41 @@ const GameReplayPage: React.FC = () => {
     setIsPlaying(false);
   }, []);
 
+  const handleDeleteGame = useCallback((index: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent selecting the game when deleting
+    const updatedGames = games.filter((_, i) => i !== index);
+    saveGameReplays(updatedGames);
+    setGames(updatedGames);
+
+    // If we deleted the selected game, select another or none
+    if (selectedGame === games[index]) {
+      if (updatedGames.length > 0) {
+        setSelectedGame(updatedGames[0]);
+      } else {
+        setSelectedGame(null);
+      }
+    }
+  }, [games, selectedGame]);
+
+  const handleDeleteAll = useCallback(() => {
+    if (window.confirm('Are you sure you want to delete all game replays? This cannot be undone.')) {
+      saveGameReplays([]);
+      setGames([]);
+      setSelectedGame(null);
+    }
+  }, []);
+
+  const handleExportAll = useCallback(() => {
+    const dataStr = JSON.stringify(games, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bucket-brigade-replays-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [games]);
+
   // Show loading screen during simulation
   if (isSimulating) {
     const progress = simulationProgress.total > 0
@@ -221,27 +256,69 @@ const GameReplayPage: React.FC = () => {
 
       {/* Game Selection */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Select Game</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {games.map((game, index) => (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Game Replays ({games.length})</h2>
+          <div className="flex gap-2">
             <button
-              key={index}
-              onClick={() => handleGameSelect(game)}
-              className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                selectedGame === game
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+              onClick={handleExportAll}
+              disabled={games.length === 0}
+              className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Export all games as JSON"
             >
-              <div className="font-medium text-gray-900 dark:text-gray-100">Game #{index}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {game.nights.length} nights • {game.scenario.num_agents} agents
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                β={game.scenario.beta.toFixed(2)} • κ={game.scenario.kappa.toFixed(2)}
-              </div>
+              <Download className="w-4 h-4" />
+              Export All
             </button>
-          ))}
+            <button
+              onClick={handleDeleteAll}
+              disabled={games.length === 0}
+              className="btn-secondary flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Delete all game replays"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete All
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {games.map((game, index) => {
+            const timestamp = game.timestamp ? new Date(game.timestamp) : null;
+            const teamName = game.teamName || 'Unknown Team';
+            const scenarioName = game.scenarioName || 'Custom Scenario';
+
+            return (
+              <div
+                key={index}
+                onClick={() => handleGameSelect(game)}
+                className={`relative p-4 rounded-lg border-2 cursor-pointer text-left transition-colors ${
+                  selectedGame === game
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                {/* Delete button */}
+                <button
+                  onClick={(e) => handleDeleteGame(index, e)}
+                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  title="Delete this replay"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Game info */}
+                <div className="font-medium text-gray-900 dark:text-gray-100 pr-6">{teamName}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{scenarioName}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  {timestamp ? timestamp.toLocaleString() : 'No timestamp'}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  {game.nights.length} nights • {game.scenario.num_agents} agents
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  β={game.scenario.beta.toFixed(2)} • κ={game.scenario.kappa.toFixed(2)}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

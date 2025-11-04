@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, Play, Settings, FlaskConical, Github, Sun, Moon } from 'lucide-react';
+import { Flame, Play, FlaskConical, Github, Sun, Moon } from 'lucide-react';
 import SimpleDashboard from './pages/SimpleDashboard';
-import SettingsPage from './pages/Settings';
 import GameReplay from './pages/GameReplay';
 import ScenarioResearch from './pages/ScenarioResearch';
 import { useTheme } from './contexts/ThemeContext';
@@ -16,7 +15,6 @@ function App() {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     if (path.startsWith('/replay')) return 'replay';
     if (path === '/research') return 'research';
-    if (path === '/settings') return 'settings';
     return 'dashboard';
   };
 
@@ -25,8 +23,7 @@ function App() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Flame, path: '/' },
     { id: 'replay', label: 'Game Replay', icon: Play, path: '/replay' },
-    { id: 'research', label: 'Research', icon: FlaskConical, path: '/research' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
+    { id: 'research', label: 'Research', icon: FlaskConical, path: '/research' }
   ];
 
   return (
@@ -90,7 +87,6 @@ function App() {
           <Route path="/" element={<SimpleDashboard />} />
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/research" element={<ScenarioResearch />} />
-          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/replay/:gameId?" element={<GameReplay />} />
         </Routes>
       </main>

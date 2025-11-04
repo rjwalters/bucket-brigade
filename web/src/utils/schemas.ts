@@ -44,6 +44,9 @@ export const GameReplaySchema = z.object({
     stdErrFinalScore: z.number(),
     numGames: z.number().int().positive(),
   }).optional(),
+  timestamp: z.string().optional(), // ISO timestamp when game was run
+  teamName: z.string().optional(), // Descriptive team name
+  scenarioName: z.string().optional(), // Scenario identifier
 }).refine((data) => {
   // Validate that all nights have the correct number of agents
   const numAgents = data.scenario.num_agents;
