@@ -5,10 +5,11 @@ RL algorithms and curriculum learning strategies.
 """
 
 from .curriculum import CurriculumStage, CurriculumTrainer
-from .networks import PolicyNetwork
+from .networks import PolicyNetwork, compute_gae
 
 __all__ = [
     "PolicyNetwork",
     "CurriculumTrainer",
     "CurriculumStage",
+    "compute_gae",
 ]
