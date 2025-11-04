@@ -1,0 +1,70 @@
+{
+  "scenario": "greedy_neighbor",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.4,
+    "c": 1.0,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.2,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle",
+    "num_simulations": 200,
+    "max_iterations": 50,
+    "epsilon": 0.01,
+    "seed": 42
+  },
+  "equilibrium": {
+    "type": "pure",
+    "support_size": 1,
+    "expected_payoff": 58.775,
+    "distribution": {
+      "4": 1.0
+    },
+    "strategy_pool": [
+      {
+        "index": 4,
+        "probability": 1.0,
+        "classification": "Coordinator",
+        "closest_archetype": "Coordinator",
+        "archetype_distance": 4.34408782907411e-06,
+        "parameters": {
+          "honesty": 0.9000002301553957,
+          "work_tendency": 0.6000009206215826,
+          "neighbor_help": 0.700000690466187,
+          "own_priority": 0.6000009206215826,
+          "risk_aversion": 0.8000004603107914,
+          "coordination": 0.9999976984460434,
+          "exploration": 0.05000218647625878,
+          "fatigue_memory": 2.3015539566046633e-06,
+          "rest_bias": 0.1999995396892087,
+          "altruism": 0.6000009206215826
+        },
+        "genome": [
+          0.9000002301553957,
+          0.6000009206215826,
+          0.700000690466187,
+          0.6000009206215826,
+          0.8000004603107914,
+          0.9999976984460434,
+          0.05000218647625878,
+          2.3015539566046633e-06,
+          0.1999995396892087,
+          0.6000009206215826
+        ]
+      }
+    ]
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 2,
+    "elapsed_time": 641.4406609535217
+  },
+  "interpretation": {
+    "equilibrium_type": "pure",
+    "cooperation_rate": 1.0,
+    "free_riding_rate": 0.0
+  }
+}

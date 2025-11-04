@@ -1,0 +1,102 @@
+{
+  "scenario": "trivial_cooperation",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.9,
+    "c": 0.5,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.1,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle",
+    "num_simulations": 200,
+    "max_iterations": 50,
+    "epsilon": 0.01,
+    "seed": 42
+  },
+  "equilibrium": {
+    "type": "mixed",
+    "support_size": 2,
+    "expected_payoff": 108.77628371802214,
+    "distribution": {
+      "4": 0.9302987197724069,
+      "5": 0.06970128022759325
+    },
+    "strategy_pool": [
+      {
+        "index": 4,
+        "probability": 0.9302987197724069,
+        "classification": "Free Rider",
+        "closest_archetype": "Free Rider",
+        "archetype_distance": 2.9299753728821567e-07,
+        "parameters": {
+          "honesty": 0.7000000379141723,
+          "work_tendency": 0.20000010743981217,
+          "neighbor_help": 2.570708960401543e-08,
+          "own_priority": 0.9000000139306837,
+          "risk_aversion": 1.4329647113686809e-07,
+          "coordination": 0.0,
+          "exploration": 0.10000011907550513,
+          "fatigue_memory": 1.3661332512609006e-07,
+          "rest_bias": 0.8999999974089545,
+          "altruism": 1.364883587374508e-07
+        },
+        "genome": [
+          0.7000000379141723,
+          0.20000010743981217,
+          2.570708960401543e-08,
+          0.9000000139306837,
+          1.4329647113686809e-07,
+          0.0,
+          0.10000011907550513,
+          1.3661332512609006e-07,
+          0.8999999974089545,
+          1.364883587374508e-07
+        ]
+      },
+      {
+        "index": 5,
+        "probability": 0.06970128022759325,
+        "classification": "Free Rider",
+        "closest_archetype": "Free Rider",
+        "archetype_distance": 3.1460396442983727e-06,
+        "parameters": {
+          "honesty": 0.7000004938882637,
+          "work_tendency": 0.1999996649296722,
+          "neighbor_help": 1.8455404318221585e-08,
+          "own_priority": 0.8999985977802218,
+          "risk_aversion": 1.6371064560523942e-06,
+          "coordination": 3.8454063893827334e-08,
+          "exploration": 0.10000146090452859,
+          "fatigue_memory": 9.807621902344144e-08,
+          "rest_bias": 0.9000001333257113,
+          "altruism": 1.6527473486465554e-06
+        },
+        "genome": [
+          0.7000004938882637,
+          0.1999996649296722,
+          1.8455404318221585e-08,
+          0.8999985977802218,
+          1.6371064560523942e-06,
+          3.8454063893827334e-08,
+          0.10000146090452859,
+          9.807621902344144e-08,
+          0.9000001333257113,
+          1.6527473486465554e-06
+        ]
+      }
+    ]
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 3,
+    "elapsed_time": 2189.457311630249
+  },
+  "interpretation": {
+    "equilibrium_type": "mixed",
+    "cooperation_rate": 0.0,
+    "free_riding_rate": 1.0
+  }
+}
