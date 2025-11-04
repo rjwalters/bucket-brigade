@@ -87,7 +87,7 @@ def test_performance_comparison():
         use_full_rust=False,
     )
     start = time.time()
-    _ = evaluator_python.evaluate_symmetric_payoff(theta, theta)
+    payoff_python = evaluator_python.evaluate_symmetric_payoff(theta, theta)
     time_python = time.time() - start
     print(f"Python version: {time_python:.3f}s")
 
@@ -100,7 +100,7 @@ def test_performance_comparison():
         use_full_rust=True,
     )
     start = time.time()
-    _ = evaluator_rust.evaluate_symmetric_payoff(theta, theta)
+    payoff_rust = evaluator_rust.evaluate_symmetric_payoff(theta, theta)
     time_rust = time.time() - start
     print(f"Rust version: {time_rust:.3f}s")
 
