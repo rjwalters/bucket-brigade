@@ -1,0 +1,15 @@
+Scenario: early_containment
+Population Size: 500
+Generations: 5000
+Converged At: 4
+
+Best Individual:
+  Fitness: -2.5000
+  Generation: 5
+  Genome: [0.5561997294425964, 0.9650819897651672, 0.33996562209346404, 0.43610385060310364, 0.6464653287507826, 0.6258923195493242, 0.0, 0.1495422186850882, 0.06527856444334114, 0.6740577079633547]
+
+Final Population Stats:
+  Best: -2.5000
+  Mean: -4.3217
+  Std:  0.7530
+  Diversity: 1.2641

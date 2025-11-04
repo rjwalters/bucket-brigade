@@ -1,0 +1,15 @@
+Scenario: chain_reaction
+Population Size: 500
+Generations: 5000
+Converged At: 7
+
+Best Individual:
+  Fitness: -1.9750
+  Generation: 8
+  Genome: [1.0, 0.6784180402755737, 0.7893991163694636, 0.6507967710494995, 0.47297526954049246, 0.6400909949919765, 0.008102302359129426, 0.33677008748054504, 0.2691218243433707, 0.11939864886984128]
+
+Final Population Stats:
+  Best: -1.9750
+  Mean: -4.3056
+  Std:  0.7570
+  Diversity: 1.1856

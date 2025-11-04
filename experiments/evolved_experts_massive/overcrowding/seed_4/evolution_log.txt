@@ -1,0 +1,15 @@
+Scenario: overcrowding
+Population Size: 500
+Generations: 5000
+Converged At: 20
+
+Best Individual:
+  Fitness: -0.4750
+  Generation: 21
+  Genome: [1.0, 0.5249101519584656, 0.1647375077009201, 0.04192576940854836, 0.7449213343580545, 0.5717733148986086, 0.0, 0.0, 0.08621017086072069, 0.8000211460784911]
+
+Final Population Stats:
+  Best: -0.4750
+  Mean: -2.9719
+  Std:  0.8262
+  Diversity: 0.6519
