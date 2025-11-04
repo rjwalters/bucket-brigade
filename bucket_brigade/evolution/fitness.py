@@ -184,16 +184,16 @@ class FitnessEvaluator:
         scenario_dict = None
         if self.scenario is not None:
             scenario_dict = {
+                "beta": self.scenario.beta,
+                "kappa": self.scenario.kappa,
+                "A": self.scenario.A,
+                "L": self.scenario.L,
+                "c": self.scenario.c,
+                "rho_ignite": self.scenario.rho_ignite,
+                "N_min": self.scenario.N_min,
+                "p_spark": self.scenario.p_spark,
+                "N_spark": self.scenario.N_spark,
                 "num_agents": self.scenario.num_agents,
-                "num_houses": self.scenario.num_houses,
-                "initial_fires": self.scenario.initial_fires,
-                "fire_spread_chance": self.scenario.fire_spread_chance,
-                "max_nights": self.scenario.max_nights,
-                "reward_per_house_saved": self.scenario.reward_per_house_saved,
-                "penalty_per_house_ruined": self.scenario.penalty_per_house_ruined,
-                "effort_cost": self.scenario.effort_cost,
-                "scenario_name": self.scenario.scenario_name,
-                "observation_radius": self.scenario.observation_radius,
             }
 
         # Prepare arguments for parallel evaluation
