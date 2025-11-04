@@ -170,7 +170,6 @@ dev = [
 ]
 rl = [
     { name = "gymnasium" },
-    { name = "pettingzoo" },
     { name = "psutil" },
     { name = "pufferlib" },
     { name = "tensorboard" },
@@ -186,7 +185,6 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=0.900" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "pandas", specifier = ">=2.0.0" },
-    { name = "pettingzoo", marker = "extra == 'rl'", specifier = ">=1.24.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.15.0" },
     { name = "psutil", marker = "extra == 'rl'", specifier = ">=5.9.0" },
     { name = "pufferlib", marker = "extra == 'rl'", specifier = ">=3.0.0,<4.0.0" },
