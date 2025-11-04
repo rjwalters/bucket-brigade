@@ -58,8 +58,8 @@ def compute_strategy_distance(strategy1: np.ndarray, strategy2: np.ndarray) -> f
 
 
 def run_tournament(
-    strategies: Dict[str, np.ndarray], scenario, num_games: int = 20
-) -> Dict[str, float]:
+    strategies: Dict[str, np.ndarray], scenario: object, num_games: int = 20
+) -> Dict[str, Dict[str, object]]:
     """Run head-to-head tournament between strategies."""
 
     print(f"Running tournament with {len(strategies)} strategies...")
@@ -106,7 +106,7 @@ def run_tournament(
     return results
 
 
-def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
+def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20) -> None:
     """Compare all analysis methods for a scenario."""
 
     print(f"Running comparison analysis for scenario: {scenario_name}")
@@ -199,22 +199,22 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
 
     # Rank by performance
     ranked = sorted(
-        tournament_results.items(), key=lambda x: x[1]["mean_payoff"], reverse=True
+        tournament_results.items(), key=lambda x: float(x[1]["mean_payoff"]), reverse=True  # type: ignore[arg-type]
     )
 
     print("Performance Ranking:")
     for i, (name, result) in enumerate(ranked):
         print(
-            f"  {i + 1}. {name:20s}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
+            f"  {i + 1}. {name:20s}: {float(result['mean_payoff']):.2f} ± {float(result['std_payoff']):.2f}"  # type: ignore[arg-type]
         )
 
     print()
 
     # Evolved vs Nash
     if all_results["nash"] is not None:
-        evolved_payoff = tournament_results["evolved"]["mean_payoff"]
+        evolved_payoff = float(tournament_results["evolved"]["mean_payoff"])  # type: ignore[arg-type]
         nash_payoffs = [
-            result["mean_payoff"]
+            float(result["mean_payoff"])  # type: ignore[arg-type]
             for name, result in tournament_results.items()
             if name.startswith("nash_strategy_")
         ]
@@ -265,8 +265,8 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
         "ranking": [
             {
                 "name": name,
-                "mean_payoff": result["mean_payoff"],
-                "std_payoff": result["std_payoff"],
+                "mean_payoff": result["mean_payoff"],  # type: ignore[typeddict-item]
+                "std_payoff": result["std_payoff"],  # type: ignore[typeddict-item]
             }
             for name, result in ranked
         ],
@@ -294,7 +294,7 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20):
     return comparison_results
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Compare analysis methods")
     parser.add_argument("scenario", type=str, help="Scenario name")
     parser.add_argument("--num-games", type=int, default=20, help="Games per strategy")

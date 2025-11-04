@@ -16,7 +16,7 @@ from ..envs.scenarios import Scenario, default_scenario
 from .population import Individual
 
 
-def _convert_scenario_to_rust(scenario: Scenario):
+def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario."""
     return core.Scenario(
         prob_fire_spreads_to_neighbor=scenario.beta,
@@ -35,7 +35,7 @@ def _convert_scenario_to_rust(scenario: Scenario):
     )
 
 
-def _heuristic_action(theta, obs, agent_id, rng):
+def _heuristic_action(theta: np.ndarray, obs: object, agent_id: int, rng: object) -> list[int]:
     """
     Simplified heuristic action selection based on parameters.
 
@@ -71,7 +71,7 @@ def _heuristic_action(theta, obs, agent_id, rng):
     return [house, mode]
 
 
-def _run_rust_game(args):
+def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
     """
     Run a single game using Rust core.
 
@@ -187,7 +187,7 @@ class RustFitnessEvaluator:
 
         return float(np.mean(episode_rewards))
 
-    def evaluate_population(self, population, parallel: bool = None):
+    def evaluate_population(self, population: object, parallel: bool | None = None) -> None:
         """
         Evaluate all individuals in a population.
 

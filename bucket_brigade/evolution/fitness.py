@@ -275,7 +275,7 @@ def create_fitness_function(
     fitness_type: str = "mean_reward",
     scenario: Optional[Scenario] = None,
     num_games: int = 20,
-    **kwargs,
+    **kwargs: dict[str, object],
 ) -> Callable[[Individual], float]:
     """Create a fitness function with specified configuration.
 

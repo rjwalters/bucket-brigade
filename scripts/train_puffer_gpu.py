@@ -145,17 +145,25 @@ def train_ppo_vectorized(
         minibatch_size = min(4096, batch_size)  # Default GPU-friendly size
 
     if batch_size % minibatch_size != 0:
-        print(f"⚠️  Warning: batch_size ({batch_size}) not divisible by minibatch_size ({minibatch_size})")
+        print(
+            f"⚠️  Warning: batch_size ({batch_size}) not divisible by minibatch_size ({minibatch_size})"
+        )
 
     print(f"🚀 Starting high-throughput vectorized training")
-    print(f"📊 Num envs: {num_envs}, Steps/env: {num_steps_per_env}, Batch: {batch_size:,}")
+    print(
+        f"📊 Num envs: {num_envs}, Steps/env: {num_steps_per_env}, Batch: {batch_size:,}"
+    )
     print(f"🎯 Minibatch size: {minibatch_size:,} (GPU batches)")
     print(f"🔧 Device: {device}")
     print(f"⚡ Target: {num_steps:,} total steps")
 
     # Storage for rollout data
-    obs_buffer = torch.zeros((num_steps_per_env, num_envs) + single_observation_space.shape).to(device)
-    actions_buffer = torch.zeros((num_steps_per_env, num_envs, len(single_action_space.nvec))).to(device)
+    obs_buffer = torch.zeros(
+        (num_steps_per_env, num_envs) + single_observation_space.shape
+    ).to(device)
+    actions_buffer = torch.zeros(
+        (num_steps_per_env, num_envs, len(single_action_space.nvec))
+    ).to(device)
     logprobs_buffer = torch.zeros((num_steps_per_env, num_envs)).to(device)
     rewards_buffer = torch.zeros((num_steps_per_env, num_envs)).to(device)
     dones_buffer = torch.zeros((num_steps_per_env, num_envs)).to(device)
@@ -214,8 +222,14 @@ def train_ppo_vectorized(
                 else:
                     nextnonterminal = 1.0 - dones_buffer[t + 1]
                     nextvalues = values_buffer[t + 1]
-                delta = rewards_buffer[t] + gamma * nextvalues * nextnonterminal - values_buffer[t]
-                advantages[t] = lastgaelam = delta + gamma * gae_lambda * nextnonterminal * lastgaelam
+                delta = (
+                    rewards_buffer[t]
+                    + gamma * nextvalues * nextnonterminal
+                    - values_buffer[t]
+                )
+                advantages[t] = lastgaelam = (
+                    delta + gamma * gae_lambda * nextnonterminal * lastgaelam
+                )
             returns = advantages + values_buffer
 
         # Flatten the batch
@@ -248,15 +262,21 @@ def train_ppo_vectorized(
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
                     old_approx_kl = (-logratio).mean()
                     approx_kl = ((ratio - 1) - logratio).mean()
-                    clipfracs += [((ratio - 1.0).abs() > clip_epsilon).float().mean().item()]
+                    clipfracs += [
+                        ((ratio - 1.0).abs() > clip_epsilon).float().mean().item()
+                    ]
 
                 mb_advantages = b_advantages[mb_inds]
                 if len(mb_advantages) > 1:  # Avoid division by zero with single sample
-                    mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
+                    mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+                        mb_advantages.std() + 1e-8
+                    )
 
                 # Policy loss
                 pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon)
+                pg_loss2 = -mb_advantages * torch.clamp(
+                    ratio, 1 - clip_epsilon, 1 + clip_epsilon
+                )
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
                 # Value loss
@@ -279,7 +299,9 @@ def train_ppo_vectorized(
             writer.add_scalar("train/approx_kl", approx_kl.item(), global_step)
             writer.add_scalar("train/clipfrac", np.mean(clipfracs), global_step)
             if episode_rewards:
-                writer.add_scalar("episode/mean_reward", np.mean(episode_rewards), global_step)
+                writer.add_scalar(
+                    "episode/mean_reward", np.mean(episode_rewards), global_step
+                )
 
         if global_step % eval_interval == 0:
             elapsed = time.time() - start_time
@@ -289,23 +311,23 @@ def train_ppo_vectorized(
             eta_minutes = eta_seconds / 60
 
             print(
-                f"\n{'='*60}\n"
-                f"📊 Step {global_step:,}/{num_steps:,} ({100*global_step/num_steps:.1f}%)\n"
+                f"\n{'=' * 60}\n"
+                f"📊 Step {global_step:,}/{num_steps:,} ({100 * global_step / num_steps:.1f}%)\n"
                 f"   Avg Reward: {avg_reward:.2f} | Episodes: {len(episode_rewards)}\n"
-                f"   FPS: {fps:.0f} | Elapsed: {elapsed/60:.1f}m | ETA: {eta_minutes:.1f}m\n"
+                f"   FPS: {fps:.0f} | Elapsed: {elapsed / 60:.1f}m | ETA: {eta_minutes:.1f}m\n"
                 f"   Policy Loss: {pg_loss.item():.4f} | Value Loss: {v_loss.item():.4f}\n"
-                f"{'='*60}\n",
-                flush=True
+                f"{'=' * 60}\n",
+                flush=True,
             )
 
     print(
-        f"\n{'='*60}\n"
+        f"\n{'=' * 60}\n"
         f"✅ Training complete!\n"
         f"   Total time: {(time.time() - start_time) / 60:.1f} minutes\n"
         f"   Final avg reward: {np.mean(episode_rewards) if episode_rewards else 0:.2f}\n"
         f"   Total episodes: {len(episode_rewards)}\n"
-        f"{'='*60}\n",
-        flush=True
+        f"{'=' * 60}\n",
+        flush=True,
     )
 
     return policy
@@ -314,13 +336,30 @@ def train_ppo_vectorized(
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Train Bucket Brigade policy with vectorized PPO")
-    parser.add_argument("--num-envs", type=int, default=8, help="Number of parallel environments")
-    parser.add_argument("--num-opponents", type=int, default=3, help="Number of opponent agents")
-    parser.add_argument("--num-steps", type=int, default=100000, help="Total training steps")
-    parser.add_argument("--batch-size", type=int, default=2048, help="Batch size for training")
-    parser.add_argument("--minibatch-size", type=int, default=None, help="Minibatch size for GPU (default: 4096)")
-    parser.add_argument("--hidden-size", type=int, default=128, help="Hidden layer size")
+    parser = argparse.ArgumentParser(
+        description="Train Bucket Brigade policy with vectorized PPO"
+    )
+    parser.add_argument(
+        "--num-envs", type=int, default=8, help="Number of parallel environments"
+    )
+    parser.add_argument(
+        "--num-opponents", type=int, default=3, help="Number of opponent agents"
+    )
+    parser.add_argument(
+        "--num-steps", type=int, default=100000, help="Total training steps"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=2048, help="Batch size for training"
+    )
+    parser.add_argument(
+        "--minibatch-size",
+        type=int,
+        default=None,
+        help="Minibatch size for GPU (default: 4096)",
+    )
+    parser.add_argument(
+        "--hidden-size", type=int, default=128, help="Hidden layer size"
+    )
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument(
@@ -390,7 +429,10 @@ def main():
     print(f"🔧 Using device: {device}", flush=True)
     if torch.cuda.is_available():
         print(f"   GPU: {torch.cuda.get_device_name(0)}", flush=True)
-        print(f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB", flush=True)
+        print(
+            f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB",
+            flush=True,
+        )
 
     # Create vectorized environment
     print(f"🎮 Creating {args.num_envs} vectorized environments...", flush=True)
@@ -422,7 +464,9 @@ def main():
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
-    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(device)
+    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(
+        device
+    )
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
     # Initialize TensorBoard

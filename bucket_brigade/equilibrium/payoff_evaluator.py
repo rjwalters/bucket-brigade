@@ -13,7 +13,7 @@ from bucket_brigade.envs.scenarios import Scenario
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
 
 
-def _run_single_simulation(args):
+def _run_single_simulation(args: tuple[np.ndarray, np.ndarray, Scenario, int]) -> float:
     """
     Run a single simulation episode. Helper function for parallel execution.
 
@@ -132,7 +132,7 @@ class PayoffEvaluator:
             with Pool(processes=self.num_workers) as pool:
                 episode_rewards = pool.map(_run_single_simulation, args_list)
 
-            return np.mean(episode_rewards)
+            return float(np.mean(episode_rewards))
         else:
             # Sequential execution (original implementation)
             total_reward = 0.0

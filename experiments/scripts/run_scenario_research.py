@@ -47,7 +47,7 @@ def run_scenario_research(
     nash_sims: int = 1000,
     nash_iters: int = 50,
     comparison_games: int = 20,
-):
+) -> bool:
     """Run full research pipeline for a scenario."""
 
     print("=" * 80)
@@ -135,7 +135,7 @@ def run_scenario_research(
     return success
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run complete research pipeline for scenarios"
     )

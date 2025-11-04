@@ -45,7 +45,7 @@ def setup_distributed():
 
         if is_master:
             print(f"🌐 Distributed training initialized: {world_size} GPUs")
-            print(f"   Rank {rank}/{world_size-1}, Device: {device}")
+            print(f"   Rank {rank}/{world_size - 1}, Device: {device}")
 
         return {
             "distributed": True,
@@ -79,12 +79,24 @@ def main():
     from torch.utils.tensorboard import SummaryWriter
     import time
 
-    parser = argparse.ArgumentParser(description="Multi-GPU training for Bucket Brigade")
-    parser.add_argument("--num-envs-per-gpu", type=int, default=32, help="Environments per GPU")
-    parser.add_argument("--num-opponents", type=int, default=3, help="Number of opponents")
-    parser.add_argument("--num-steps", type=int, default=10000000, help="Total training steps")
-    parser.add_argument("--batch-size-per-gpu", type=int, default=4096, help="Batch size per GPU")
-    parser.add_argument("--hidden-size", type=int, default=128, help="Hidden layer size")
+    parser = argparse.ArgumentParser(
+        description="Multi-GPU training for Bucket Brigade"
+    )
+    parser.add_argument(
+        "--num-envs-per-gpu", type=int, default=32, help="Environments per GPU"
+    )
+    parser.add_argument(
+        "--num-opponents", type=int, default=3, help="Number of opponents"
+    )
+    parser.add_argument(
+        "--num-steps", type=int, default=10000000, help="Total training steps"
+    )
+    parser.add_argument(
+        "--batch-size-per-gpu", type=int, default=4096, help="Batch size per GPU"
+    )
+    parser.add_argument(
+        "--hidden-size", type=int, default=128, help="Hidden layer size"
+    )
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument(
@@ -94,7 +106,9 @@ def main():
         help="Path to save model",
     )
     parser.add_argument("--scenario", type=str, default="default", help="Scenario name")
-    parser.add_argument("--run-name", type=str, default=None, help="TensorBoard run name")
+    parser.add_argument(
+        "--run-name", type=str, default=None, help="TensorBoard run name"
+    )
 
     args = parser.parse_args()
 
@@ -113,7 +127,9 @@ def main():
         print(f"🔧 Using device: {device}")
         if torch.cuda.is_available():
             print(f"   GPU: {torch.cuda.get_device_name(device)}")
-            print(f"   Memory: {torch.cuda.get_device_properties(device).total_memory / 1e9:.1f} GB")
+            print(
+                f"   Memory: {torch.cuda.get_device_properties(device).total_memory / 1e9:.1f} GB"
+            )
 
     # Calculate per-GPU configuration
     num_envs = args.num_envs_per_gpu
@@ -149,7 +165,9 @@ def main():
         print(f"   Observation dim: {obs_dim}")
         print(f"   Action dims: {action_dims}")
 
-    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(device)
+    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(
+        device
+    )
 
     # Wrap with DistributedDataParallel if using multiple GPUs
     if dist_info["distributed"]:
@@ -163,7 +181,9 @@ def main():
     writer = None
     if is_master:
         if args.run_name is None:
-            args.run_name = f"multi_gpu_{world_size}x_{args.scenario}_{int(time.time())}"
+            args.run_name = (
+                f"multi_gpu_{world_size}x_{args.scenario}_{int(time.time())}"
+            )
         writer = SummaryWriter(f"runs/{args.run_name}")
         print(f"📊 TensorBoard logging to: runs/{args.run_name}")
 

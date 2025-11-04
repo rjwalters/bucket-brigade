@@ -87,7 +87,9 @@
       "Bash(then .venv/bin/python --version)",
       "Bash(.venv/bin/pip:*)",
       "Bash(else echo \"No .venv, trying uv\")",
-      "Bash(uv --version:*)"
+      "Bash(uv --version:*)",
+      "mcp__remote-ssh__remote_bash",
+      "mcp__remote-ssh__remote_file_read"
     ],
     "deny": [],
     "ask": []

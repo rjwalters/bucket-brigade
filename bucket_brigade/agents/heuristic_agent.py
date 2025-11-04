@@ -46,7 +46,7 @@ class HeuristicAgent(AgentBase):
         # Internal state
         self.last_action = None
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset agent state between games."""
         self.last_action = None
 
@@ -87,7 +87,7 @@ class HeuristicAgent(AgentBase):
             house_choice, mode_choice = self.last_action
 
         # Store for next time
-        self.last_action = (house_choice, mode_choice)
+        self.last_action: tuple[int, int] | None = (house_choice, mode_choice)
 
         return np.array([house_choice, mode_choice], dtype=np.int8)
 
@@ -112,7 +112,7 @@ class HeuristicAgent(AgentBase):
         # Adjust for rest preference
         intent *= 1.0 - self.rest_reward_bias
 
-        return np.clip(intent, 0.0, 1.0)
+        return float(np.clip(intent, 0.0, 1.0))
 
     def _choose_signal(self, work_intent: float) -> int:
         """Choose whether to signal WORK or REST."""

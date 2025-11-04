@@ -7,7 +7,7 @@ including individual genomes, fitness tracking, and lineage recording.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Iterator, Optional
 from uuid import uuid4
 
 import numpy as np
@@ -139,7 +139,7 @@ class Population:
         """Get individual by index."""
         return self.individuals[index]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Individual]:
         """Iterate over individuals."""
         return iter(self.individuals)
 
@@ -168,7 +168,7 @@ class Population:
         """
         # Filter out individuals without fitness
         evaluated = [ind for ind in self.individuals if ind.fitness is not None]
-        evaluated.sort(key=lambda ind: ind.fitness, reverse=True)
+        evaluated.sort(key=lambda ind: ind.fitness if ind.fitness is not None else 0.0, reverse=True)
         return evaluated[:n]
 
     def get_fitness_stats(self) -> dict[str, float]:

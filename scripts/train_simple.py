@@ -292,22 +292,22 @@ def train_ppo(
             eta_minutes = eta_seconds / 60
 
             print(
-                f"\n{'='*60}\n"
-                f"📊 Step {global_step:,}/{num_steps:,} ({100*global_step/num_steps:.1f}%)\n"
+                f"\n{'=' * 60}\n"
+                f"📊 Step {global_step:,}/{num_steps:,} ({100 * global_step / num_steps:.1f}%)\n"
                 f"   Avg Reward: {avg_reward:.2f} | Episodes: {len(episode_rewards)}\n"
-                f"   FPS: {fps:.0f} | Elapsed: {elapsed/60:.1f}m | ETA: {eta_minutes:.1f}m\n"
-                f"{'='*60}\n",
-                flush=True
+                f"   FPS: {fps:.0f} | Elapsed: {elapsed / 60:.1f}m | ETA: {eta_minutes:.1f}m\n"
+                f"{'=' * 60}\n",
+                flush=True,
             )
 
     print(
-        f"\n{'='*60}\n"
+        f"\n{'=' * 60}\n"
         f"✅ Training complete!\n"
         f"   Total time: {(time.time() - start_time) / 60:.1f} minutes\n"
         f"   Final avg reward: {np.mean(episode_rewards) if episode_rewards else 0:.2f}\n"
         f"   Total episodes: {len(episode_rewards)}\n"
-        f"{'='*60}\n",
-        flush=True
+        f"{'=' * 60}\n",
+        flush=True,
     )
 
     return policy
@@ -367,7 +367,10 @@ def main():
     )
 
     args = parser.parse_args()
-    print(f"🔍 DEBUG: Arguments parsed. Steps={args.num_steps}, Scenario={args.scenario}", flush=True)
+    print(
+        f"🔍 DEBUG: Arguments parsed. Steps={args.num_steps}, Scenario={args.scenario}",
+        flush=True,
+    )
 
     # Handle --list-scenarios
     if args.list_scenarios:
@@ -404,13 +407,18 @@ def main():
     print(f"🔧 Using device: {device}", flush=True)
     if torch.cuda.is_available():
         print(f"   GPU: {torch.cuda.get_device_name(0)}", flush=True)
-        print(f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB", flush=True)
+        print(
+            f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB",
+            flush=True,
+        )
 
     print(f"🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
-    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(device)
+    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(
+        device
+    )
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
     # Initialize TensorBoard writer

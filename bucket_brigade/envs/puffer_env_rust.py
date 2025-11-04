@@ -18,7 +18,7 @@ from ..agents import create_random_agent, create_archetype_agent
 logger = logging.getLogger(__name__)
 
 
-def _convert_scenario_to_rust(scenario: Scenario):
+def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario."""
     return core.Scenario(
         prob_fire_spreads_to_neighbor=scenario.beta,
@@ -36,7 +36,7 @@ def _convert_scenario_to_rust(scenario: Scenario):
     )
 
 
-def _heuristic_action(theta, obs_dict, agent_id, rng):
+def _heuristic_action(theta: np.ndarray, obs_dict: dict[str, np.ndarray], agent_id: int, rng: np.random.Generator) -> np.ndarray:
     """Simplified heuristic action selection for opponent agents."""
     work_tendency = theta[1]
     own_house_priority = theta[3]
@@ -102,13 +102,16 @@ class RustPufferBucketBrigade(gym.Env):
         self.rust_scenario = _convert_scenario_to_rust(scenario)
 
         # Initialize Rust environment
-        self.env = None  # Will be created in reset()
+        self.env: core.BucketBrigade | None = None  # Will be created in reset()
 
         # RNG for heuristic decisions
         self.rng = np.random.RandomState()
 
         # Create opponent agents (will be refreshed each episode)
         self.opponent_agents: List[Any] = []
+
+        # Track last observation
+        self._last_obs: dict[str, np.ndarray] | None = None
 
         # PufferLib observation/action spaces
         obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10

@@ -10,7 +10,7 @@ from multiprocessing import Pool, cpu_count
 import bucket_brigade_core as core
 
 
-def _convert_scenario_to_rust(scenario):
+def _convert_scenario_to_rust(scenario: object) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario."""
     # Map Python scenario parameters to Rust parameter names
     return core.Scenario(
@@ -30,7 +30,7 @@ def _convert_scenario_to_rust(scenario):
     )
 
 
-def _heuristic_action(theta, obs, agent_id, rng):
+def _heuristic_action(theta: np.ndarray, obs: object, agent_id: int, rng: object) -> list[int]:
     """
     Simplified heuristic action selection based on parameters.
 

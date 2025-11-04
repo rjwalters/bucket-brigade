@@ -158,4 +158,4 @@ def compute_expected_payoff(
     Returns:
         Expected payoff
     """
-    return focal_dist @ payoff_matrix @ opponent_dist
+    return float(focal_dist @ payoff_matrix @ opponent_dist)
