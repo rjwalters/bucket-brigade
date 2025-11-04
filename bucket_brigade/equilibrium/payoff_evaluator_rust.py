@@ -149,7 +149,8 @@ def _run_full_rust_simulation(args):
     rust_scenario = _convert_scenario_to_rust(python_scenario)
 
     # Run entire episode in Rust - single function call
-    return core.run_heuristic_episode(
+    # Use focal-optimized function for Nash equilibrium computation
+    return core.run_heuristic_episode_focal(
         rust_scenario,
         theta_focal.tolist(),
         theta_opponents.tolist(),
