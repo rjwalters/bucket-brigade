@@ -131,3 +131,117 @@ class PolicyNetwork(nn.Module):
         log_prob = torch.stack(log_probs).sum(0) if log_probs else None
 
         return actions, log_prob, value
+
+    def get_action_and_value(
+        self, x: torch.Tensor, action: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Get actions and values in batch-compatible format.
+
+        This method is designed for batch processing during training, particularly
+        for GPU-accelerated environments. It computes actions, log probabilities,
+        entropy, and values in a format compatible with vectorized training loops.
+
+        Args:
+            x: Observation tensor of shape (batch_size, obs_dim)
+            action: Optional action tensor of shape (batch_size, num_action_dims)
+                for computing log probabilities of given actions. If None, samples
+                new actions (default: None)
+
+        Returns:
+            Tuple containing:
+                - Actions tensor of shape (batch_size, num_action_dims)
+                - Log probabilities of shape (batch_size,)
+                - Entropy of shape (batch_size,)
+                - Value estimates of shape (batch_size,)
+
+        Example:
+            >>> policy = PolicyNetwork(obs_dim=42, action_dims=[10, 2])
+            >>> obs_batch = torch.randn(16, 42)
+            >>> actions, log_probs, entropy, values = policy.get_action_and_value(obs_batch)
+            >>> actions.shape
+            torch.Size([16, 2])
+            >>> log_probs.shape
+            torch.Size([16,])
+        """
+        action_logits, value = self.forward(x)
+
+        actions = []
+        log_probs = []
+        entropies = []
+
+        for i, logits in enumerate(action_logits):
+            probs = torch.softmax(logits, dim=-1)
+            dist = torch.distributions.Categorical(probs)
+
+            if action is None:
+                # Sample new actions
+                a = dist.sample()
+            else:
+                # Use provided actions
+                a = action[:, i]
+
+            actions.append(a)
+            log_probs.append(dist.log_prob(a))
+            entropies.append(dist.entropy())
+
+        return (
+            torch.stack(actions, dim=1),  # [batch_size, num_action_dims]
+            torch.stack(log_probs, dim=1).sum(dim=1),  # [batch_size]
+            torch.stack(entropies, dim=1).mean(dim=1),  # [batch_size]
+            value.squeeze(-1),  # [batch_size]
+        )
+
+
+def compute_gae(
+    rewards: List[float],
+    values: List[float],
+    dones: List[bool],
+    gamma: float = 0.99,
+    gae_lambda: float = 0.95,
+) -> List[float]:
+    """Compute Generalized Advantage Estimation.
+
+    GAE provides a way to reduce variance in policy gradient estimates while
+    maintaining low bias. It's a technique for computing advantage estimates
+    that balances between Monte Carlo and TD estimates.
+
+    Args:
+        rewards: List of rewards for each timestep
+        values: List of value estimates for each timestep
+        dones: List of done flags indicating episode termination
+        gamma: Discount factor for future rewards (default: 0.99)
+        gae_lambda: Lambda parameter controlling bias-variance tradeoff
+            (default: 0.95). λ=0 gives TD advantage, λ=1 gives Monte Carlo
+
+    Returns:
+        List of advantage estimates, same length as rewards
+
+    Example:
+        >>> rewards = [1.0, 2.0, 3.0]
+        >>> values = [0.5, 1.5, 2.5]
+        >>> dones = [False, False, True]
+        >>> advantages = compute_gae(rewards, values, dones)
+        >>> len(advantages)
+        3
+
+    Reference:
+        "High-Dimensional Continuous Control Using Generalized Advantage Estimation"
+        Schulman et al., 2016
+    """
+    advantages = []
+    gae = 0
+
+    for t in reversed(range(len(rewards))):
+        if t == len(rewards) - 1:
+            next_value = 0
+        else:
+            next_value = values[t + 1]
+
+        # Compute TD error: δ_t = r_t + γV(s_{t+1}) - V(s_t)
+        delta = rewards[t] + gamma * next_value * (1 - dones[t]) - values[t]
+
+        # Compute GAE: A_t = δ_t + (γλ)δ_{t+1} + (γλ)²δ_{t+2} + ...
+        gae = delta + gamma * gae_lambda * (1 - dones[t]) * gae
+        advantages.insert(0, gae)
+
+    return advantages
