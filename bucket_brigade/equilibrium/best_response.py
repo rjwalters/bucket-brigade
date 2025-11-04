@@ -79,20 +79,20 @@ def compute_best_response_global(
     scenario: Scenario,
     num_simulations: int = 1000,
     seed: Optional[int] = None,
-    maxiter: int = 50,
+    maxiter: int = 20,  # Reduced default from 50 to 20
 ) -> tuple[np.ndarray, float]:
     """
     Compute best response using global optimization.
 
     Uses differential evolution for more robust global optimization,
-    avoiding local optima. Slower but more reliable than local methods.
+    avoiding local optima. Optimized with parallelization and early stopping.
 
     Args:
         theta_opponents: Opponent strategy parameters
         scenario: Game scenario
         num_simulations: Number of Monte Carlo rollouts
         seed: Random seed for reproducibility
-        maxiter: Maximum iterations for differential evolution
+        maxiter: Maximum iterations for differential evolution (default: 20)
 
     Returns:
         Tuple of (best_response_strategy, expected_payoff)
@@ -114,14 +114,31 @@ def compute_best_response_global(
     # Bounds: all parameters in [0, 1]
     bounds = [(0.0, 1.0) for _ in range(10)]
 
-    # Global optimization
+    # Early stopping callback
+    best_values = []
+
+    def convergence_callback(xk, convergence=0):
+        """Stop early if no improvement in last 5 iterations."""
+        current_value = objective(xk)
+        best_values.append(current_value)
+        if len(best_values) >= 5:
+            recent_improvement = min(best_values[-5:]) - best_values[-1]
+            if abs(recent_improvement) < 0.01:
+                return True
+        return False
+
+    # Global optimization with adaptive early stopping and parallelization
     result = differential_evolution(
         objective,
         bounds=bounds,
         seed=seed,
         maxiter=maxiter,
         polish=True,
-        workers=1,  # Single worker for reproducibility
+        workers=4,  # Parallelize for speed
+        updating='deferred',
+        callback=convergence_callback,
+        atol=0.01,
+        tol=0.001,
     )
 
     best_response = result.x
@@ -174,14 +191,33 @@ def compute_best_response_to_mixture(
     bounds = [(0.0, 1.0) for _ in range(10)]
 
     if method == "global":
-        # Global optimization
+        # Early stopping callback for adaptive convergence
+        best_values = []
+
+        def convergence_callback(xk, convergence=0):
+            """Stop early if no improvement in last 5 iterations."""
+            current_value = objective(xk)
+            best_values.append(current_value)
+
+            # Check if converged (no improvement in last 5 iterations)
+            if len(best_values) >= 5:
+                recent_improvement = min(best_values[-5:]) - best_values[-1]
+                if abs(recent_improvement) < 0.01:  # Converged
+                    return True
+            return False
+
+        # Global optimization with adaptive early stopping and parallelization
         result = differential_evolution(
             objective,
             bounds=bounds,
             seed=seed,
-            maxiter=50,
+            maxiter=20,  # Reduced from 50 for faster convergence
             polish=True,
-            workers=1,
+            workers=4,  # Parallelize across 4 cores (48 cores / 12 scenarios)
+            updating='deferred',  # Batch updates for better parallelization
+            callback=convergence_callback,
+            atol=0.01,  # Absolute tolerance for convergence
+            tol=0.001,  # Relative tolerance for convergence
         )
     else:
         # Local optimization from multiple starting points
