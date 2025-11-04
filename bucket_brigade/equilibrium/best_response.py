@@ -123,7 +123,7 @@ def compute_best_response_global(
         maxiter=maxiter,
         polish=True,
         workers=1,  # Sequential to avoid pickling issues
-        updating='immediate',
+        updating="immediate",
         atol=0.01,
         tol=0.005,
     )
@@ -188,7 +188,7 @@ def compute_best_response_to_mixture(
             maxiter=15,  # Reduced from 50 for faster convergence
             polish=True,
             workers=1,  # Sequential to avoid pickling issues; Rust provides parallelization
-            updating='immediate',
+            updating="immediate",
             atol=0.01,  # Absolute tolerance for convergence
             tol=0.005,  # Relative tolerance for convergence
         )
