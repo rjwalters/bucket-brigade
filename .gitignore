@@ -243,3 +243,4 @@ data/experiments.db
 
 # Evolution experiment outputs
 experiments/evolved_experts/
+experiments/hyperparameter_tuning/

@@ -38,6 +38,7 @@ rl = [
     "tensorboard>=2.13.0",
     "psutil>=5.9.0",
     "pettingzoo>=1.24.0",
+    "optuna>=3.0.0",
 ]
 
 [tool.setuptools.packages.find]
