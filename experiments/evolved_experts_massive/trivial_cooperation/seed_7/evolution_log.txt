@@ -1,0 +1,15 @@
+Scenario: trivial_cooperation
+Population Size: 500
+Generations: 5000
+Converged At: 8
+
+Best Individual:
+  Fitness: -1.9250
+  Generation: 9
+  Genome: [0.5737351179122925, 0.6117056012153625, 0.34321868419647217, 0.11192402243614197, 0.991089349860659, 0.38473334487724903, 0.03986719869791172, 0.36762580275535583, 0.1617465773519557, 0.6443394422531128]
+
+Final Population Stats:
+  Best: -1.9250
+  Mean: -4.0788
+  Std:  0.8376
+  Diversity: 1.1752

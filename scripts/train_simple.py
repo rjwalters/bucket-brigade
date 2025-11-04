@@ -20,77 +20,7 @@ import time
 from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade.envs.puffer_env import PufferBucketBrigade
-
-
-class PolicyNetwork(nn.Module):
-    """Simple policy network for discrete action spaces."""
-
-    def __init__(self, obs_dim, action_dims, hidden_size=64):
-        super().__init__()
-
-        self.shared = nn.Sequential(
-            nn.Linear(obs_dim, hidden_size),
-            nn.ReLU(),
-            nn.Linear(hidden_size, hidden_size),
-            nn.ReLU(),
-        )
-
-        # Separate heads for each action dimension
-        self.action_heads = nn.ModuleList(
-            [nn.Linear(hidden_size, dim) for dim in action_dims]
-        )
-
-        # Value head
-        self.value_head = nn.Linear(hidden_size, 1)
-
-    def forward(self, x):
-        features = self.shared(x)
-
-        # Get logits for each action dimension
-        action_logits = [head(features) for head in self.action_heads]
-
-        # Get value
-        value = self.value_head(features)
-
-        return action_logits, value
-
-    def get_action(self, x, deterministic=False):
-        action_logits, value = self.forward(x)
-
-        actions = []
-        log_probs = []
-
-        for logits in action_logits:
-            probs = torch.softmax(logits, dim=-1)
-
-            if deterministic:
-                action = torch.argmax(probs, dim=-1)
-            else:
-                dist = torch.distributions.Categorical(probs)
-                action = dist.sample()
-                log_probs.append(dist.log_prob(action))
-
-            actions.append(action)
-
-        return actions, torch.stack(log_probs).sum(0) if log_probs else None, value
-
-
-def compute_gae(rewards, values, dones, gamma=0.99, gae_lambda=0.95):
-    """Compute Generalized Advantage Estimation."""
-    advantages = []
-    gae = 0
-
-    for t in reversed(range(len(rewards))):
-        if t == len(rewards) - 1:
-            next_value = 0
-        else:
-            next_value = values[t + 1]
-
-        delta = rewards[t] + gamma * next_value * (1 - dones[t]) - values[t]
-        gae = delta + gamma * gae_lambda * (1 - dones[t]) * gae
-        advantages.insert(0, gae)
-
-    return advantages
+from bucket_brigade.training import PolicyNetwork, compute_gae
 
 
 def train_ppo(

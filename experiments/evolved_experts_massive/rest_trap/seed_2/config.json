@@ -1,0 +1,16 @@
+{
+  "scenario": "rest_trap",
+  "population_size": 500,
+  "num_generations": 5000,
+  "elite_size": 5,
+  "selection_strategy": "tournament",
+  "crossover_strategy": "uniform",
+  "crossover_rate": 0.7,
+  "mutation_strategy": "gaussian",
+  "mutation_rate": 0.1,
+  "mutation_scale": 0.1,
+  "fitness_type": "custom",
+  "games_per_individual": 40,
+  "seed": 2,
+  "converged_at": 5
+}

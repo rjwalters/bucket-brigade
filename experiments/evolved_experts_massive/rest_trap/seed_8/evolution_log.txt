@@ -1,0 +1,15 @@
+Scenario: rest_trap
+Population Size: 500
+Generations: 5000
+Converged At: 24
+
+Best Individual:
+  Fitness: -0.3500
+  Generation: 25
+  Genome: [1.0, 0.4917613332602075, 0.31124475922436956, 0.0, 0.9502371257826775, 0.0, 0.0, 0.11136192297853262, 0.08209607693343758, 0.00914761036631992]
+
+Final Population Stats:
+  Best: -0.3500
+  Mean: -2.6090
+  Std:  0.8837
+  Diversity: 0.6090

@@ -1,0 +1,15 @@
+Scenario: deceptive_calm
+Population Size: 500
+Generations: 5000
+Converged At: 6
+
+Best Individual:
+  Fitness: -2.4250
+  Generation: 7
+  Genome: [0.291133838830959, 0.19442056119441986, 0.4354252517223358, 0.5612037729721449, 0.40386155247688293, 0.18068243723258443, 0.0, 0.013426430587135775, 0.2443722034894702, 0.8879958899653593]
+
+Final Population Stats:
+  Best: -2.4250
+  Mean: -4.3325
+  Std:  0.7394
+  Diversity: 1.2743
