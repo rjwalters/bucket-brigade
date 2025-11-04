@@ -6,6 +6,7 @@ import numpy as np
 from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator
 from bucket_brigade.envs.scenarios import Scenario
 
+
 def test_rust_vs_python_heuristic():
     """Test that Rust and Python heuristics produce similar results."""
     # Create a simple test scenario
@@ -57,6 +58,7 @@ def test_rust_vs_python_heuristic():
 
     print("✓ Test passed!")
 
+
 def test_performance_comparison():
     """Quick performance comparison."""
     import time
@@ -106,6 +108,7 @@ def test_performance_comparison():
     print(f"Speedup: {speedup:.1f}x")
 
     print("✓ Performance test complete!")
+
 
 if __name__ == "__main__":
     print("Testing Rust heuristic implementation...\n")

@@ -44,15 +44,17 @@ def analyze_equilibrium_type(results: Dict[str, Any]) -> pd.DataFrame:
 
     for scenario, result in results.items():
         eq = result["equilibrium"]
-        data.append({
-            "scenario": scenario,
-            "type": eq["type"],
-            "support_size": eq["support_size"],
-            "expected_payoff": eq["expected_payoff"],
-            "iterations": result["convergence"]["iterations"],
-            "converged": result["convergence"]["converged"],
-            "elapsed_time": result["convergence"]["elapsed_time"],
-        })
+        data.append(
+            {
+                "scenario": scenario,
+                "type": eq["type"],
+                "support_size": eq["support_size"],
+                "expected_payoff": eq["expected_payoff"],
+                "iterations": result["convergence"]["iterations"],
+                "converged": result["convergence"]["converged"],
+                "elapsed_time": result["convergence"]["elapsed_time"],
+            }
+        )
 
     return pd.DataFrame(data)
 
@@ -63,12 +65,14 @@ def analyze_cooperation_rates(results: Dict[str, Any]) -> pd.DataFrame:
 
     for scenario, result in results.items():
         interp = result["interpretation"]
-        data.append({
-            "scenario": scenario,
-            "cooperation_rate": interp["cooperation_rate"],
-            "free_riding_rate": interp["free_riding_rate"],
-            "equilibrium_type": interp["equilibrium_type"],
-        })
+        data.append(
+            {
+                "scenario": scenario,
+                "cooperation_rate": interp["cooperation_rate"],
+                "free_riding_rate": interp["free_riding_rate"],
+                "equilibrium_type": interp["equilibrium_type"],
+            }
+        )
 
     return pd.DataFrame(data)
 
@@ -123,14 +127,16 @@ def generate_markdown_report(
     pure_count = (eq_types["type"] == "pure").sum()
     mixed_count = (eq_types["type"] == "mixed").sum()
 
-    lines.extend([
-        f"- **Pure equilibria:** {pure_count}/{len(results)} scenarios",
-        f"- **Mixed equilibria:** {mixed_count}/{len(results)} scenarios",
-        f"- **Average support size:** {eq_types['support_size'].mean():.2f}",
-        f"- **Average convergence time:** {eq_types['elapsed_time'].mean():.1f}s",
-        f"- **Convergence rate:** {(eq_types['converged'].sum() / len(results) * 100):.1f}%",
-        "",
-    ])
+    lines.extend(
+        [
+            f"- **Pure equilibria:** {pure_count}/{len(results)} scenarios",
+            f"- **Mixed equilibria:** {mixed_count}/{len(results)} scenarios",
+            f"- **Average support size:** {eq_types['support_size'].mean():.2f}",
+            f"- **Average convergence time:** {eq_types['elapsed_time'].mean():.1f}s",
+            f"- **Convergence rate:** {(eq_types['converged'].sum() / len(results) * 100):.1f}%",
+            "",
+        ]
+    )
 
     # Scenarios by type
     if pure_count > 0:
@@ -144,26 +150,30 @@ def generate_markdown_report(
         lines.append("")
 
     # Cooperation analysis
-    lines.extend([
-        "## Cooperation Analysis",
-        "",
-        coop_rates.to_markdown(index=False),
-        "",
-        "### Cooperation Patterns",
-        "",
-        f"- **Highest cooperation:** {coop_rates.loc[coop_rates['cooperation_rate'].idxmax(), 'scenario']} "
-        f"({coop_rates['cooperation_rate'].max():.1%})",
-        f"- **Lowest cooperation:** {coop_rates.loc[coop_rates['cooperation_rate'].idxmin(), 'scenario']} "
-        f"({coop_rates['cooperation_rate'].min():.1%})",
-        f"- **Average cooperation:** {coop_rates['cooperation_rate'].mean():.1%}",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Cooperation Analysis",
+            "",
+            coop_rates.to_markdown(index=False),
+            "",
+            "### Cooperation Patterns",
+            "",
+            f"- **Highest cooperation:** {coop_rates.loc[coop_rates['cooperation_rate'].idxmax(), 'scenario']} "
+            f"({coop_rates['cooperation_rate'].max():.1%})",
+            f"- **Lowest cooperation:** {coop_rates.loc[coop_rates['cooperation_rate'].idxmin(), 'scenario']} "
+            f"({coop_rates['cooperation_rate'].min():.1%})",
+            f"- **Average cooperation:** {coop_rates['cooperation_rate'].mean():.1%}",
+            "",
+        ]
+    )
 
     # Strategy distributions
-    lines.extend([
-        "## Strategy Distributions",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Strategy Distributions",
+            "",
+        ]
+    )
 
     for scenario in sorted(results.keys()):
         lines.append(f"### {scenario}")
@@ -179,26 +189,32 @@ def generate_markdown_report(
 
         if len(dist) == 1:
             s = dist[0]
-            lines.append(f"Pure strategy: **{s['classification']}** "
-                        f"(closest to {s['closest_archetype']}, distance={s['archetype_distance']:.3f})")
+            lines.append(
+                f"Pure strategy: **{s['classification']}** "
+                f"(closest to {s['closest_archetype']}, distance={s['archetype_distance']:.3f})"
+            )
         else:
             lines.append("Mixed strategy distribution:")
             lines.append("")
             for i, s in enumerate(dist, 1):
-                lines.append(f"{i}. **{s['classification']}** "
-                           f"({s['probability']:.1%}) - "
-                           f"closest to {s['closest_archetype']} "
-                           f"(distance={s['archetype_distance']:.3f})")
+                lines.append(
+                    f"{i}. **{s['classification']}** "
+                    f"({s['probability']:.1%}) - "
+                    f"closest to {s['closest_archetype']} "
+                    f"(distance={s['archetype_distance']:.3f})"
+                )
 
         lines.append("")
 
     # Cross-scenario insights
-    lines.extend([
-        "## Cross-Scenario Insights",
-        "",
-        "### Parameter-Equilibrium Relationships",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Cross-Scenario Insights",
+            "",
+            "### Parameter-Equilibrium Relationships",
+            "",
+        ]
+    )
 
     # Collect scenario parameters
     param_data = []
@@ -206,14 +222,16 @@ def generate_markdown_report(
         params = result["parameters"]
         eq = result["equilibrium"]
         interp = result["interpretation"]
-        param_data.append({
-            "scenario": scenario,
-            "beta": params["beta"],
-            "kappa": params["kappa"],
-            "c": params["c"],
-            "type": eq["type"],
-            "cooperation": interp["cooperation_rate"],
-        })
+        param_data.append(
+            {
+                "scenario": scenario,
+                "beta": params["beta"],
+                "kappa": params["kappa"],
+                "c": params["c"],
+                "type": eq["type"],
+                "cooperation": interp["cooperation_rate"],
+            }
+        )
 
     param_df = pd.DataFrame(param_data)
 
@@ -222,26 +240,40 @@ def generate_markdown_report(
         # High work cost scenarios
         high_cost = param_df[param_df["c"] > param_df["c"].median()]
         if len(high_cost) > 0:
-            lines.append(f"**High work cost scenarios (c > {param_df['c'].median():.2f}):**")
-            lines.append(f"- Average cooperation: {high_cost['cooperation'].mean():.1%}")
-            lines.append(f"- Pure equilibria: {(high_cost['type'] == 'pure').sum()}/{len(high_cost)}")
+            lines.append(
+                f"**High work cost scenarios (c > {param_df['c'].median():.2f}):**"
+            )
+            lines.append(
+                f"- Average cooperation: {high_cost['cooperation'].mean():.1%}"
+            )
+            lines.append(
+                f"- Pure equilibria: {(high_cost['type'] == 'pure').sum()}/{len(high_cost)}"
+            )
             lines.append("")
 
         # High spread scenarios
         high_spread = param_df[param_df["beta"] > param_df["beta"].median()]
         if len(high_spread) > 0:
-            lines.append(f"**High fire spread scenarios (β > {param_df['beta'].median():.2f}):**")
-            lines.append(f"- Average cooperation: {high_spread['cooperation'].mean():.1%}")
-            lines.append(f"- Pure equilibria: {(high_spread['type'] == 'pure').sum()}/{len(high_spread)}")
+            lines.append(
+                f"**High fire spread scenarios (β > {param_df['beta'].median():.2f}):**"
+            )
+            lines.append(
+                f"- Average cooperation: {high_spread['cooperation'].mean():.1%}"
+            )
+            lines.append(
+                f"- Pure equilibria: {(high_spread['type'] == 'pure').sum()}/{len(high_spread)}"
+            )
             lines.append("")
 
     # Design recommendations
-    lines.extend([
-        "## Design Recommendations",
-        "",
-        "Based on Nash equilibrium analysis:",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Design Recommendations",
+            "",
+            "Based on Nash equilibrium analysis:",
+            "",
+        ]
+    )
 
     # Scenario-specific recommendations
     if "greedy_neighbor" in results:
@@ -249,52 +281,64 @@ def generate_markdown_report(
         lines.append(f"1. **Greedy Neighbor Scenario** (cooperation: {gr_coop:.1%})")
         lines.append("   - High work cost creates free-riding incentive")
         if gr_coop < 0.5:
-            lines.append("   - Consider mechanisms to incentivize cooperation (rewards, punishment)")
+            lines.append(
+                "   - Consider mechanisms to incentivize cooperation (rewards, punishment)"
+            )
         lines.append("")
 
     avg_coop = coop_rates["cooperation_rate"].mean()
-    lines.extend([
-        f"2. **Overall Cooperation** (average: {avg_coop:.1%})",
-        f"   - {'Moderate' if 0.4 < avg_coop < 0.6 else 'High' if avg_coop >= 0.6 else 'Low'} "
-        f"cooperation across scenarios",
-    ])
+    lines.extend(
+        [
+            f"2. **Overall Cooperation** (average: {avg_coop:.1%})",
+            f"   - {'Moderate' if 0.4 < avg_coop < 0.6 else 'High' if avg_coop >= 0.6 else 'Low'} "
+            f"cooperation across scenarios",
+        ]
+    )
 
     if avg_coop < 0.5:
         lines.append("   - Game parameters may favor free-riding; consider rebalancing")
 
-    lines.extend([
-        "",
-        "3. **Equilibrium Diversity**",
-    ])
+    lines.extend(
+        [
+            "",
+            "3. **Equilibrium Diversity**",
+        ]
+    )
 
     if mixed_count > pure_count:
-        lines.append("   - Predominance of mixed equilibria indicates strategic tension")
+        lines.append(
+            "   - Predominance of mixed equilibria indicates strategic tension"
+        )
         lines.append("   - No dominant strategy across most scenarios")
         lines.append("   - Agents must randomize to remain unpredictable")
     else:
-        lines.append("   - Predominance of pure equilibria indicates clear optimal strategies")
+        lines.append(
+            "   - Predominance of pure equilibria indicates clear optimal strategies"
+        )
         lines.append("   - Game parameters may need tuning for strategic depth")
 
-    lines.extend([
-        "",
-        "## Future Work",
-        "",
-        "1. **Compare with evolved agents** (Issue #84)",
-        "   - Do evolved strategies converge to Nash equilibria?",
-        "   - Measure strategy divergence between theory and practice",
-        "",
-        "2. **Robustness analysis**",
-        "   - Test equilibrium stability to parameter perturbations",
-        "   - Identify critical parameter thresholds",
-        "",
-        "3. **Mechanism design**",
-        "   - Design incentives to improve equilibrium outcomes",
-        "   - Reduce price of anarchy where applicable",
-        "",
-        "---",
-        "",
-        "*Analysis generated using Double Oracle algorithm with 2000 simulations per evaluation.*",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Future Work",
+            "",
+            "1. **Compare with evolved agents** (Issue #84)",
+            "   - Do evolved strategies converge to Nash equilibria?",
+            "   - Measure strategy divergence between theory and practice",
+            "",
+            "2. **Robustness analysis**",
+            "   - Test equilibrium stability to parameter perturbations",
+            "   - Identify critical parameter thresholds",
+            "",
+            "3. **Mechanism design**",
+            "   - Design incentives to improve equilibrium outcomes",
+            "   - Reduce price of anarchy where applicable",
+            "",
+            "---",
+            "",
+            "*Analysis generated using Double Oracle algorithm with 2000 simulations per evaluation.*",
+        ]
+    )
 
     return "\n".join(lines)
 

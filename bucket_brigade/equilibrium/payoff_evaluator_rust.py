@@ -224,7 +224,9 @@ class RustPayoffEvaluator:
         ]
 
         # Choose simulation function based on mode
-        sim_func = _run_full_rust_simulation if self.use_full_rust else _run_rust_simulation
+        sim_func = (
+            _run_full_rust_simulation if self.use_full_rust else _run_rust_simulation
+        )
 
         if self.parallel:
             # Parallel execution
