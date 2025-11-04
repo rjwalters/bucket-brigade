@@ -100,7 +100,21 @@
       "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/pytest bucket_brigade/equilibrium/tests/ -v -x)",
       "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/pytest:*)",
       "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/maturin develop:*)",
-      "Bash(make build-rust:*)"
+      "Bash(make build-rust:*)",
+      "Bash(timeout 120 uv run:*)",
+      "Bash(timeout 120 .venv/bin/python scripts/tune_hyperparameters.py --scenario easy --num-steps 5000 --n-trials 2 --seed 42)",
+      "Bash(.gitignore)",
+      "Bash(.env)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(do echo -n \"$field: \")",
+      "Bash(do echo -n \"$dep: \")",
+      "Bash(ssh -G:*)",
+      "Bash(./scripts/setup-mcp-env.sh:*)",
+      "Bash(sky status:*)",
+      "Bash(ssh:*)",
+      "Bash(VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.venv PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

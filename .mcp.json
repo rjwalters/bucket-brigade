@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "remote-ssh": {
-      "command": "node",
-      "args": ["${PWD}/mcp-server/dist/index.js"]
-    }
-  }
-}
