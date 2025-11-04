@@ -1,6 +1,9 @@
+use crate::agents::HeuristicAgent;
 use crate::{AgentObservation, BucketBrigade, Scenario};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use rand::SeedableRng;
+use rand_pcg::Pcg64;
 
 /// Python-compatible Bucket Brigade environment
 #[pyclass]
@@ -297,6 +300,131 @@ impl PyGameResult {
     }
 }
 
+/// Run a complete heuristic episode with arbitrary agent team compositions.
+///
+/// This is the generalized version that supports heterogeneous teams where
+/// each agent can have different strategy parameters.
+///
+/// # Arguments
+/// * `scenario` - Game scenario parameters
+/// * `agent_params` - List of 10-parameter vectors, one per agent
+/// * `seed` - Random seed for reproducibility
+///
+/// # Returns
+/// Vector of cumulative rewards for all agents
+#[pyfunction]
+#[pyo3(signature = (scenario, agent_params, seed))]
+fn run_heuristic_episode(
+    scenario: PyScenario,
+    agent_params: Vec<Vec<f64>>,
+    seed: u64,
+) -> PyResult<Vec<f64>> {
+    // Validate agent count
+    let num_agents = scenario.num_agents();
+    if agent_params.len() != num_agents {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Expected {} agent parameter vectors for scenario, got {}",
+            num_agents,
+            agent_params.len()
+        )));
+    }
+
+    // Convert and validate parameter vectors
+    let mut agents = Vec::new();
+    for (id, params) in agent_params.iter().enumerate() {
+        if params.len() != 10 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Agent {} has {} parameters, expected 10",
+                id,
+                params.len()
+            )));
+        }
+        let params_array: [f64; 10] = params
+            .as_slice()
+            .try_into()
+            .map_err(|_| pyo3::exceptions::PyValueError::new_err("Failed to convert parameters"))?;
+        agents.push(HeuristicAgent::new(id, &format!("agent_{}", id), params_array));
+    }
+
+    // Create game
+    let mut game = BucketBrigade::new(scenario.inner, Some(seed));
+
+    // Create RNG for heuristic decisions
+    let mut rng = Pcg64::seed_from_u64(seed);
+
+    // Run episode
+    let mut step_count = 0;
+    const MAX_STEPS: u32 = 100;
+
+    while step_count < MAX_STEPS {
+        // Get observations for all agents
+        let observations: Vec<AgentObservation> = (0..num_agents)
+            .map(|id| game.get_observation(id))
+            .collect();
+
+        // Get actions from heuristic agents
+        let actions: Vec<[u8; 2]> = observations
+            .iter()
+            .enumerate()
+            .map(|(id, obs)| agents[id].select_action(obs, &mut rng))
+            .collect();
+
+        // Step the game
+        let result = game.step(&actions);
+
+        // Check if done
+        if result.done {
+            break;
+        }
+
+        step_count += 1;
+    }
+
+    // Return rewards for all agents
+    let final_result = game.get_result();
+    Ok(final_result
+        .agent_scores
+        .iter()
+        .map(|&r| r as f64)
+        .collect())
+}
+
+/// Run a heuristic episode optimized for Nash equilibrium computation.
+///
+/// This is a specialized version for Nash equilibrium where we have one "focal"
+/// agent vs N-1 identical "opponent" agents. Returns only the focal agent's reward.
+/// This function wraps the generalized `run_heuristic_episode` for backward compatibility.
+///
+/// # Arguments
+/// * `scenario` - Game scenario parameters
+/// * `theta_focal` - Strategy parameters for focal agent (agent 0)
+/// * `theta_opponents` - Strategy parameters for opponent agents (agents 1+)
+/// * `seed` - Random seed for reproducibility
+///
+/// # Returns
+/// Cumulative reward for the focal agent (agent 0)
+#[pyfunction]
+#[pyo3(signature = (scenario, theta_focal, theta_opponents, seed))]
+fn run_heuristic_episode_focal(
+    scenario: PyScenario,
+    theta_focal: Vec<f64>,
+    theta_opponents: Vec<f64>,
+    seed: u64,
+) -> PyResult<f64> {
+    // Build agent_params vector: focal agent + N-1 opponent agents
+    let num_agents = scenario.num_agents();
+    let mut agent_params = vec![theta_focal];
+    for _ in 1..num_agents {
+        agent_params.push(theta_opponents.clone());
+    }
+
+    // Call the generalized function
+    let rewards = run_heuristic_episode(scenario, agent_params, seed)?;
+
+    // Return only focal agent reward
+    Ok(rewards[0])
+}
+
 #[pymodule]
 fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyBucketBrigade>()?;
@@ -304,6 +432,10 @@ fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyAgentObservation>()?;
     m.add_class::<PyGameState>()?;
     m.add_class::<PyGameResult>()?;
+
+    // Add functions
+    m.add_function(wrap_pyfunction!(run_heuristic_episode, m)?)?;
+    m.add_function(wrap_pyfunction!(run_heuristic_episode_focal, m)?)?;
 
     // Add scenarios
     let scenarios = PyDict::new_bound(m.py());

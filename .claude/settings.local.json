@@ -90,9 +90,23 @@
       "Bash(uv --version:*)",
       "mcp__remote-ssh__remote_bash",
       "mcp__remote-ssh__remote_file_read",
-      "mcp__remote-ssh__remote_bash_output"
+      "mcp__remote-ssh__remote_bash_output",
+      "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo test:*)",
+      "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop:*)",
+      "Bash(timeout 30 uv run:*)",
+      "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 /Users/rwalters/GitHub/bucket-brigade/.venv/bin/maturin develop:*)",
+      "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.venv maturin develop:*)",
+      "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/python:*)",
+      "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/pytest bucket_brigade/equilibrium/tests/ -v -x)",
+      "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/pytest:*)",
+      "Bash(/Users/rwalters/GitHub/bucket-brigade/.venv/bin/maturin develop:*)",
+      "Bash(make build-rust:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "remote-ssh"
+  ]
 }

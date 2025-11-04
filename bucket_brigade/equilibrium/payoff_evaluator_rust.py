@@ -130,6 +130,34 @@ def _run_rust_simulation(args):
     return episode_reward
 
 
+def _run_full_rust_simulation(args):
+    """
+    Run a single simulation entirely in Rust (no Python boundary crossings).
+
+    This is the optimized version that eliminates the ~50-100 Python/Rust
+    boundary crossings per episode by running the entire episode in Rust.
+
+    Args:
+        args: Tuple of (theta_focal, theta_opponents, python_scenario, seed)
+
+    Returns:
+        Episode reward for focal agent
+    """
+    theta_focal, theta_opponents, python_scenario, seed = args
+
+    # Convert to Rust scenario in worker
+    rust_scenario = _convert_scenario_to_rust(python_scenario)
+
+    # Run entire episode in Rust - single function call
+    # Use focal-optimized function for Nash equilibrium computation
+    return core.run_heuristic_episode_focal(
+        rust_scenario,
+        theta_focal.tolist(),
+        theta_opponents.tolist(),
+        seed,
+    )
+
+
 class RustPayoffEvaluator:
     """
     Fast payoff evaluator using Rust core.
@@ -144,6 +172,7 @@ class RustPayoffEvaluator:
         seed: Optional[int] = None,
         parallel: bool = True,
         num_workers: Optional[int] = None,
+        use_full_rust: bool = True,
     ):
         """
         Initialize Rust-backed payoff evaluator.
@@ -154,6 +183,8 @@ class RustPayoffEvaluator:
             seed: Random seed for reproducibility
             parallel: Whether to use parallel execution
             num_workers: Number of worker processes (default: cpu_count())
+            use_full_rust: If True, runs entire episode in Rust (fastest).
+                          If False, uses Python heuristic (legacy mode).
         """
         self.scenario = scenario
         self.rust_scenario = _convert_scenario_to_rust(scenario)
@@ -162,6 +193,7 @@ class RustPayoffEvaluator:
         self.rng = np.random.RandomState(seed)
         self.parallel = parallel
         self.num_workers = num_workers if num_workers is not None else cpu_count()
+        self.use_full_rust = use_full_rust
 
     def evaluate_symmetric_payoff(
         self,
@@ -191,13 +223,18 @@ class RustPayoffEvaluator:
             (theta_focal, theta_opponents, self.scenario, seed) for seed in seeds
         ]
 
+        # Choose simulation function based on mode
+        sim_func = (
+            _run_full_rust_simulation if self.use_full_rust else _run_rust_simulation
+        )
+
         if self.parallel:
             # Parallel execution
             with Pool(processes=self.num_workers) as pool:
-                episode_rewards = pool.map(_run_rust_simulation, args_list)
+                episode_rewards = pool.map(sim_func, args_list)
         else:
             # Sequential execution
-            episode_rewards = [_run_rust_simulation(args) for args in args_list]
+            episode_rewards = [sim_func(args) for args in args_list]
 
         return np.mean(episode_rewards)
 

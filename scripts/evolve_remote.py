@@ -37,10 +37,12 @@ from bucket_brigade.evolution import (
 # Try to import Rust evaluator, fall back to Python if unavailable
 try:
     from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
+
     RUST_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
     print(f"⚠️  Rust evaluator not available ({e}), using Python implementation")
     from bucket_brigade.evolution.fitness import FitnessEvaluator
+
     RUST_AVAILABLE = False
 
 from bucket_brigade.envs.scenarios import default_scenario
@@ -95,7 +97,9 @@ class RemoteEvolutionRunner:
         with open(self.log_file, "a") as f:
             f.write(message + "\n")
 
-    def save_checkpoint(self, generation: int, population: Population, ga: GeneticAlgorithm):
+    def save_checkpoint(
+        self, generation: int, population: Population, ga: GeneticAlgorithm
+    ):
         """Save checkpoint for resuming later.
 
         Args:
@@ -121,8 +125,12 @@ class RemoteEvolutionRunner:
                 "seed": self.config.seed,
             },
             "population": population.to_dict(),
-            "best_fitness_history": ga.fitness_history if hasattr(ga, 'fitness_history') else [],
-            "diversity_history": ga.diversity_history if hasattr(ga, 'diversity_history') else [],
+            "best_fitness_history": ga.fitness_history
+            if hasattr(ga, "fitness_history")
+            else [],
+            "diversity_history": ga.diversity_history
+            if hasattr(ga, "diversity_history")
+            else [],
         }
 
         checkpoint_path = self.output_dir / f"checkpoint_gen{generation:04d}.json"
@@ -131,7 +139,9 @@ class RemoteEvolutionRunner:
 
         self._log(f"💾 Checkpoint saved: {checkpoint_path}")
 
-    def progress_callback(self, generation: int, population: Population, ga: GeneticAlgorithm):
+    def progress_callback(
+        self, generation: int, population: Population, ga: GeneticAlgorithm
+    ):
         """Progress callback with logging and checkpointing.
 
         Args:
@@ -167,7 +177,9 @@ class RemoteEvolutionRunner:
         # Note: Rust fitness evaluator will be used automatically if available
         # (imported via evolution.__init__.py as FitnessEvaluator)
         if RUST_AVAILABLE:
-            self._log(f"✅ Using Rust fitness evaluator with {self.num_workers} workers")
+            self._log(
+                f"✅ Using Rust fitness evaluator with {self.num_workers} workers"
+            )
         else:
             self._log(f"⚠️  Using Python fitness evaluator (slower, no parallel)")
 
@@ -192,7 +204,7 @@ class RemoteEvolutionRunner:
         self._log("=" * 80)
         self._log("Evolution Complete!")
         self._log("=" * 80)
-        self._log(f"Time elapsed: {elapsed_time:.1f}s ({elapsed_time/60:.1f} min)")
+        self._log(f"Time elapsed: {elapsed_time:.1f}s ({elapsed_time / 60:.1f} min)")
         self._log(
             f"Converged at generation: {result.converged_at if result.converged_at is not None else 'N/A'}"
         )
@@ -246,7 +258,9 @@ class RemoteEvolutionRunner:
         return result
 
 
-def load_checkpoint(checkpoint_path: Path) -> tuple[EvolutionConfig, list[Individual], int]:
+def load_checkpoint(
+    checkpoint_path: Path,
+) -> tuple[EvolutionConfig, list[Individual], int]:
     """Load checkpoint to resume evolution.
 
     Args:
@@ -276,8 +290,7 @@ def load_checkpoint(checkpoint_path: Path) -> tuple[EvolutionConfig, list[Indivi
 
     # Load population
     individuals = [
-        Individual.from_dict(ind_data)
-        for ind_data in data["population"]["individuals"]
+        Individual.from_dict(ind_data) for ind_data in data["population"]["individuals"]
     ]
 
     generation = data["generation"]
@@ -415,7 +428,9 @@ def main():
         # Adjust generations to continue from checkpoint
         remaining_generations = config.num_generations - start_generation
         config.num_generations = remaining_generations
-        print(f"Resuming from generation {start_generation}, running {remaining_generations} more generations")
+        print(
+            f"Resuming from generation {start_generation}, running {remaining_generations} more generations"
+        )
     else:
         # Create configuration
         config = EvolutionConfig(
