@@ -43,7 +43,9 @@ def test_heterogeneous_team():
     print(f"Average reward: {np.mean(rewards):.2f}")
 
     # Verify we got rewards for all agents
-    assert len(rewards) == num_agents, f"Expected {num_agents} rewards, got {len(rewards)}"
+    assert len(rewards) == num_agents, (
+        f"Expected {num_agents} rewards, got {len(rewards)}"
+    )
     print("✓ Heterogeneous team test passed!")
 
 
@@ -90,10 +92,14 @@ def test_focal_wrapper():
 
     # Verify it matches the generalized function
     num_agents = scenario.num_agents
-    agent_params = [theta_focal.tolist()] + [theta_opponents.tolist()] * (num_agents - 1)
+    agent_params = [theta_focal.tolist()] + [theta_opponents.tolist()] * (
+        num_agents - 1
+    )
     all_rewards = core.run_heuristic_episode(scenario, agent_params, seed)
 
-    assert abs(focal_reward - all_rewards[0]) < 0.001, "Focal wrapper should match generalized function"
+    assert abs(focal_reward - all_rewards[0]) < 0.001, (
+        "Focal wrapper should match generalized function"
+    )
     print("✓ Focal wrapper test passed!")
 
 
@@ -132,4 +138,6 @@ if __name__ == "__main__":
     except ImportError:
         print("⚠️ Cannot import bucket_brigade_core - Rust module not built yet.")
         print("Run 'make build-rust' first to build the module.")
-        print("\nTests are documented for future validation once build issues are resolved.")
+        print(
+            "\nTests are documented for future validation once build issues are resolved."
+        )

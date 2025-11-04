@@ -248,15 +248,10 @@ class CurriculumTrainer:
                     f"   �  Warning: Performance below threshold "
                     f"({eval_reward:.2f} < {stage.progression_threshold:.2f})"
                 )
-                print(
-                    "   Continuing to next stage anyway "
-                    "(human approval recommended)"
-                )
+                print("   Continuing to next stage anyway (human approval recommended)")
 
         # Final evaluation across all scenarios
-        self._final_evaluation(
-            policy=policy, writer=writer, global_step=global_step
-        )
+        self._final_evaluation(policy=policy, writer=writer, global_step=global_step)
 
         # Save final model
         output_dir = Path("models") / run_name

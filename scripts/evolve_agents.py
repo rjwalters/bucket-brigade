@@ -319,7 +319,9 @@ def main():
         f"  Fitness: {config.fitness_type} ({config.games_per_individual} games/individual)"
     )
     parallel_mode = "parallel" if config.parallel else "sequential"
-    workers_info = f", {config.num_workers} workers" if config.num_workers else ", auto workers"
+    workers_info = (
+        f", {config.num_workers} workers" if config.num_workers else ", auto workers"
+    )
     print(f"  Evaluation: {parallel_mode}{workers_info if config.parallel else ''}")
     print(f"  Seed: {config.seed}")
     print()
