@@ -221,7 +221,6 @@ dev = [
 rl = [
     { name = "gymnasium" },
     { name = "optuna" },
-    { name = "pettingzoo" },
     { name = "plotly" },
     { name = "psutil" },
     { name = "pufferlib" },
@@ -239,7 +238,6 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "optuna", marker = "extra == 'rl'", specifier = ">=3.0.0" },
     { name = "pandas", specifier = ">=2.0.0" },
-    { name = "pettingzoo", marker = "extra == 'rl'", specifier = ">=1.24.0" },
     { name = "plotly", marker = "extra == 'rl'", specifier = ">=5.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.15.0" },
     { name = "psutil", marker = "extra == 'rl'", specifier = ">=5.9.0" },
