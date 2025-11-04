@@ -502,6 +502,407 @@ which claude
 # Install if missing (see Claude Code documentation)
 ```
 
+## Remote Development
+
+This repository supports remote development workflows for running computationally intensive tasks (GPU training, evolution experiments) on remote machines while maintaining local development.
+
+### Why Remote Development?
+
+- **GPU Access**: Train models on machines with CUDA-capable GPUs
+- **Computational Power**: Run evolution experiments faster on high-core-count machines
+- **Long-Running Tasks**: Keep experiments running even when local machine sleeps
+- **Resource Isolation**: Don't bog down local machine with heavy computation
+
+### Architecture
+
+**Simplified Approach**: We use standard SSH + tmux instead of complex tooling like MCP servers. This provides reliability and simplicity.
+
+**Key Components**:
+- **SSH**: Secure connection to remote host
+- **tmux**: Persistent terminal sessions that survive disconnection
+- **uv**: Fast Python package management (works the same remotely)
+- **rsync/git**: Code synchronization between local and remote
+
+### Quick Start
+
+**1. SSH Setup**
+
+Configure SSH connection in `~/.ssh/config`:
+
+```ssh
+Host my-gpu-server
+    HostName 192.168.1.100
+    User rwalters
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+
+# For SkyPilot clusters (with jump host)
+Host my-cluster
+    HostName my-cluster
+    User root
+    ProxyCommand ssh -W %h:%p jump-host
+```
+
+**2. Connect and Setup Environment**
+
+```bash
+# Connect to remote host
+ssh my-gpu-server
+
+# Start persistent tmux session
+tmux new -s dev
+
+# Clone repository (first time only)
+git clone https://github.com/rjwalters/bucket-brigade.git
+cd bucket-brigade
+
+# Setup Python environment
+uv venv
+source .venv/bin/activate  # Linux/macOS
+uv sync --extra rl  # Install dependencies including RL/GPU packages
+
+# Detach from tmux: Ctrl+B, then D
+# Reconnect later: tmux attach -s dev
+```
+
+**3. Run Commands Remotely**
+
+From your local machine:
+
+```bash
+# Run single command
+ssh my-gpu-server "cd bucket-brigade && uv run python scripts/train.py"
+
+# Run in background with tmux
+ssh my-gpu-server "tmux new -d -s training 'cd bucket-brigade && uv sync --extra rl && uv run python scripts/train.py'"
+
+# Check status
+ssh my-gpu-server "tmux ls"
+
+# Attach to session
+ssh my-gpu-server -t "tmux attach -t training"
+```
+
+### Common Workflows
+
+#### Training on GPU
+
+```bash
+# Start training session
+ssh my-gpu-server
+
+# In tmux session
+cd bucket-brigade
+git pull  # Get latest code
+uv sync --extra rl  # Update dependencies
+
+# Run training (logs to file)
+uv run python scripts/train_puffer_gpu.py \
+  --scenario easy \
+  --total-timesteps 1000000 \
+  2>&1 | tee logs/training_$(date +%Y%m%d_%H%M%S).log
+
+# Detach: Ctrl+B, D
+# Training continues in background
+```
+
+#### Evolution Experiments
+
+```bash
+# Run massive evolution sweep
+ssh my-gpu-server
+
+# In tmux
+cd bucket-brigade
+./experiments/scripts/refresh_all_research_auto.sh \
+  POPULATION=200 GENERATIONS=200 \
+  2>&1 | tee research_$(date +%Y%m%d).log
+
+# Check progress
+tail -f research_*.log
+
+# Detach and let it run (takes hours)
+```
+
+#### Interactive Development
+
+For quick iterations, keep a tmux session open:
+
+```bash
+# Terminal 1: SSH connection with tmux
+ssh my-gpu-server -t "tmux attach -t dev || tmux new -s dev"
+
+# Terminal 2: Local Claude Code
+# Make changes locally, push to git
+
+# Back to Terminal 1 (remote tmux):
+git pull
+uv run pytest tests/
+```
+
+### Code Synchronization Strategies
+
+#### Option 1: Git-Based (Recommended)
+
+**Local workflow**:
+```bash
+# Make changes locally
+git add .
+git commit -m "Update training script"
+git push
+```
+
+**Remote workflow**:
+```bash
+# On remote machine
+git pull
+uv sync  # If dependencies changed
+# Run updated code
+```
+
+**Benefits**:
+- Clean history
+- Works with team collaboration
+- Safe (changes reviewed before running remotely)
+
+#### Option 2: Direct rsync (For Quick Testing)
+
+```bash
+# From local machine - sync code to remote
+rsync -avz --exclude='.venv' --exclude='node_modules' \
+  --exclude='.git' --exclude='__pycache__' \
+  ./ my-gpu-server:~/bucket-brigade/
+
+# Sync specific directory
+rsync -avz ./bucket_brigade/ my-gpu-server:~/bucket-brigade/bucket_brigade/
+
+# Sync results back from remote
+rsync -avz my-gpu-server:~/bucket-brigade/experiments/ ./experiments/
+```
+
+**Benefits**:
+- Fast iteration during development
+- No git commits for experimental changes
+
+**Drawbacks**:
+- Can get out of sync
+- No history of changes
+
+#### Option 3: Hybrid Approach
+
+```bash
+# Experimental changes: Use rsync
+rsync -avz ./scripts/train.py my-gpu-server:~/bucket-brigade/scripts/
+
+# Stable changes: Use git
+git add . && git commit && git push
+ssh my-gpu-server "cd bucket-brigade && git pull"
+```
+
+### Managing Remote Sessions
+
+#### tmux Cheat Sheet
+
+```bash
+# Create new session
+tmux new -s session-name
+
+# List sessions
+tmux ls
+
+# Attach to session
+tmux attach -t session-name
+
+# Detach from session: Ctrl+B, D
+
+# Kill session
+tmux kill-session -t session-name
+
+# Create new window: Ctrl+B, C
+# Switch windows: Ctrl+B, 0-9
+# Split pane vertically: Ctrl+B, %
+# Split pane horizontally: Ctrl+B, "
+```
+
+#### Monitor Long-Running Tasks
+
+```bash
+# Run with logging
+uv run python script.py 2>&1 | tee output.log
+
+# Check progress from another terminal
+ssh my-gpu-server "tail -f bucket-brigade/output.log"
+
+# Check GPU usage
+ssh my-gpu-server "nvidia-smi"
+
+# Check CPU/memory
+ssh my-gpu-server "htop"
+```
+
+### SSH Tunneling for Jupyter/TensorBoard
+
+```bash
+# Forward port from remote to local
+ssh -L 8888:localhost:8888 my-gpu-server
+
+# Start Jupyter on remote
+uv run jupyter lab --no-browser --port 8888
+
+# Access on local browser: http://localhost:8888
+
+# TensorBoard
+ssh -L 6006:localhost:6006 my-gpu-server
+uv run tensorboard --logdir=./logs --port 6006
+# Access: http://localhost:6006
+```
+
+### Environment Management
+
+#### Remote Python Environment
+
+```bash
+# Setup (one time)
+ssh my-gpu-server
+cd bucket-brigade
+uv venv
+source .venv/bin/activate
+uv sync --extra rl
+
+# Check what's installed
+uv pip list
+
+# Update dependencies after pyproject.toml changes
+git pull
+uv sync --extra rl
+```
+
+#### Verify GPU Access
+
+```bash
+# Check CUDA availability
+ssh my-gpu-server "cd bucket-brigade && uv run python -c 'import torch; print(torch.cuda.is_available())'"
+
+# Check GPU details
+ssh my-gpu-server "nvidia-smi"
+```
+
+### Retrieving Results
+
+#### Small Files (Logs, Configs)
+
+```bash
+# Copy single file
+scp my-gpu-server:~/bucket-brigade/results.json ./
+
+# Copy logs
+scp my-gpu-server:~/bucket-brigade/logs/*.log ./logs/
+```
+
+#### Large Results (Experiments, Models)
+
+```bash
+# Rsync with compression
+rsync -avz --progress \
+  my-gpu-server:~/bucket-brigade/experiments/scenarios/ \
+  ./experiments/scenarios/
+
+# Archive first, then download
+ssh my-gpu-server "cd bucket-brigade && tar czf results.tar.gz experiments/"
+scp my-gpu-server:~/bucket-brigade/results.tar.gz ./
+tar xzf results.tar.gz
+```
+
+#### Git-Based (Preferred)
+
+```bash
+# On remote machine after experiments complete
+git add experiments/
+git commit -m "experiment: Add results from GPU run"
+git push
+
+# On local machine
+git pull
+```
+
+### Troubleshooting
+
+#### Connection Issues
+
+```bash
+# Test basic connectivity
+ping my-gpu-server
+
+# Test SSH
+ssh -v my-gpu-server  # Verbose output
+
+# Check SSH config
+ssh -G my-gpu-server  # Show resolved config
+```
+
+#### tmux Session Lost
+
+```bash
+# List all sessions
+ssh my-gpu-server "tmux ls"
+
+# Attach to any available session
+ssh my-gpu-server -t "tmux attach"
+
+# If session truly lost, check process
+ssh my-gpu-server "ps aux | grep python"
+```
+
+#### Out of Sync Code
+
+```bash
+# On remote machine
+git status
+git stash  # Save local changes
+git pull
+git stash pop  # Reapply changes
+
+# Or reset to remote
+git fetch origin
+git reset --hard origin/main
+```
+
+#### Disk Space Issues
+
+```bash
+# Check disk usage
+ssh my-gpu-server "df -h"
+
+# Find large directories
+ssh my-gpu-server "du -sh ~/bucket-brigade/* | sort -h"
+
+# Clean up
+ssh my-gpu-server "cd bucket-brigade && rm -rf .venv && uv venv && uv sync"
+```
+
+### Best Practices
+
+1. **Always use tmux** for any long-running tasks
+2. **Log everything** with `2>&1 | tee logfile.log`
+3. **Commit results** via git rather than just copying files
+4. **Monitor GPU usage** with `nvidia-smi` before starting jobs
+5. **Use git branches** for experimental remote work
+6. **Keep .venv synced** with `uv sync` after dependency changes
+7. **Test locally first** before running expensive remote experiments
+
+### Security Notes
+
+- **Never commit credentials** - use environment variables or `.env` files (gitignored)
+- **Use SSH keys** instead of passwords
+- **Set up SSH agent** for easier key management
+- **Restrict SSH config** file permissions: `chmod 600 ~/.ssh/config`
+
+### See Also
+
+- **Remote Execution Guide**: `experiments/REMOTE_EXECUTION.md` - Detailed guide for running research experiments
+- **Training Guide**: `TRAINING_GUIDE.md` - PPO training with PufferLib
+- **Hyperparameter Tuning**: `docs/HYPERPARAMETER_TUNING.md` - Optuna-based tuning guide
+
 ## Resources
 
 ### Loom Documentation
