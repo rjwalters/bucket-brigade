@@ -9,12 +9,13 @@ repos:
       - id: ruff-format
         exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
-    hooks:
-      - id: mypy
-        args: [--ignore-missing-imports]
-        exclude: ^(\.venv|scripts|tests|node_modules|web|bucket_brigade)/
+  # MyPy type checking - disabled in pre-commit, run separately in CI
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.14.1
+  #   hooks:
+  #     - id: mypy
+  #       args: [--ignore-missing-imports]
+  #       exclude: ^(\.venv|scripts|tests|node_modules|web|bucket_brigade)/
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -37,14 +38,15 @@ repos:
         exclude: ^(\.venv|tests|scripts|node_modules|web/node_modules)/
 
   # JavaScript/TypeScript formatting (if biome isn't handling it)
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.39.0
-    hooks:
-      - id: eslint
-        files: \.(js|ts|jsx|tsx)$
-        types: [file]
-        additional_dependencies:
-          - eslint@^8.0.0
-          - "@typescript-eslint/parser@^6.0.0"
-          - "@typescript-eslint/eslint-plugin@^6.0.0"
-        exclude: ^(web)/  # Let biome handle web files
+  # Disabled - let biome handle all JS/TS files
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v9.39.0
+  #   hooks:
+  #     - id: eslint
+  #       files: \.(js|ts|jsx|tsx)$
+  #       types: [file]
+  #       additional_dependencies:
+  #         - eslint@^8.0.0
+  #         - "@typescript-eslint/parser@^6.0.0"
+  #         - "@typescript-eslint/eslint-plugin@^6.0.0"
+  #       exclude: ^(web)/  # Let biome handle web files
