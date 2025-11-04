@@ -198,7 +198,7 @@ class DoubleOracle:
                 strategy_pool=strategy_pool,
                 scenario=self.scenario,
                 num_simulations=self.num_simulations,
-                method="global",
+                method="local",  # Use local optimization for 10x speedup
                 seed=self.seed + iteration if self.seed is not None else None,
             )
 

@@ -19,7 +19,9 @@ class TestPolicyNetwork:
         hidden_size = 64
         batch_size = 16
 
-        policy = PolicyNetwork(obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size)
+        policy = PolicyNetwork(
+            obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+        )
         obs = torch.randn(batch_size, obs_dim)
 
         action_logits, value = policy(obs)
@@ -80,24 +82,26 @@ class TestPolicyNetwork:
         hidden_size = 64
 
         # Create first policy
-        policy1 = PolicyNetwork(obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size)
+        policy1 = PolicyNetwork(
+            obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+        )
         obs = torch.randn(1, obs_dim)
 
         # Save checkpoint
         checkpoint = {
-            'policy_state_dict': policy1.state_dict(),
-            'obs_dim': obs_dim,
-            'action_dims': action_dims,
-            'hidden_size': hidden_size,
+            "policy_state_dict": policy1.state_dict(),
+            "obs_dim": obs_dim,
+            "action_dims": action_dims,
+            "hidden_size": hidden_size,
         }
 
         # Create second policy and load checkpoint
         policy2 = PolicyNetwork(
-            obs_dim=checkpoint['obs_dim'],
-            action_dims=checkpoint['action_dims'],
-            hidden_size=checkpoint['hidden_size']
+            obs_dim=checkpoint["obs_dim"],
+            action_dims=checkpoint["action_dims"],
+            hidden_size=checkpoint["hidden_size"],
         )
-        policy2.load_state_dict(checkpoint['policy_state_dict'])
+        policy2.load_state_dict(checkpoint["policy_state_dict"])
 
         # Verify identical outputs
         with torch.no_grad():

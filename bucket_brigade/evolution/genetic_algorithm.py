@@ -360,7 +360,9 @@ class GeneticAlgorithm:
         population = self.initialize_population(seed_individuals)
 
         # Evaluate initial population
-        self.fitness_evaluator.evaluate_population(population, parallel=self.config.parallel)
+        self.fitness_evaluator.evaluate_population(
+            population, parallel=self.config.parallel
+        )
 
         # Track initial stats
         self.fitness_history.append(population.get_fitness_stats())
@@ -380,7 +382,9 @@ class GeneticAlgorithm:
             population = self.create_next_generation(population)
 
             # Evaluate new individuals
-            self.fitness_evaluator.evaluate_population(population, parallel=self.config.parallel)
+            self.fitness_evaluator.evaluate_population(
+                population, parallel=self.config.parallel
+            )
 
             # Track stats
             self.fitness_history.append(population.get_fitness_stats())

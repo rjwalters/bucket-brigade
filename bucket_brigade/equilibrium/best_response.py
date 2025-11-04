@@ -79,20 +79,20 @@ def compute_best_response_global(
     scenario: Scenario,
     num_simulations: int = 1000,
     seed: Optional[int] = None,
-    maxiter: int = 50,
+    maxiter: int = 20,  # Reduced default from 50 to 20
 ) -> tuple[np.ndarray, float]:
     """
     Compute best response using global optimization.
 
     Uses differential evolution for more robust global optimization,
-    avoiding local optima. Slower but more reliable than local methods.
+    avoiding local optima. Optimized with parallelization and early stopping.
 
     Args:
         theta_opponents: Opponent strategy parameters
         scenario: Game scenario
         num_simulations: Number of Monte Carlo rollouts
         seed: Random seed for reproducibility
-        maxiter: Maximum iterations for differential evolution
+        maxiter: Maximum iterations for differential evolution (default: 20)
 
     Returns:
         Tuple of (best_response_strategy, expected_payoff)
@@ -114,14 +114,18 @@ def compute_best_response_global(
     # Bounds: all parameters in [0, 1]
     bounds = [(0.0, 1.0) for _ in range(10)]
 
-    # Global optimization
+    # Global optimization with tighter convergence tolerances
+    # Note: workers=1 to avoid pickling issues; Rust provides parallelization
     result = differential_evolution(
         objective,
         bounds=bounds,
         seed=seed,
         maxiter=maxiter,
         polish=True,
-        workers=1,  # Single worker for reproducibility
+        workers=1,  # Sequential to avoid pickling issues
+        updating='immediate',
+        atol=0.01,
+        tol=0.005,
     )
 
     best_response = result.x
@@ -174,14 +178,19 @@ def compute_best_response_to_mixture(
     bounds = [(0.0, 1.0) for _ in range(10)]
 
     if method == "global":
-        # Global optimization
+        # Global optimization with reduced maxiter and better convergence tolerances
+        # Note: Using workers=1 to avoid pickling issues with closures
+        # Parallelization happens at the PayoffEvaluator level via Rust
         result = differential_evolution(
             objective,
             bounds=bounds,
             seed=seed,
-            maxiter=50,
+            maxiter=15,  # Reduced from 50 for faster convergence
             polish=True,
-            workers=1,
+            workers=1,  # Sequential to avoid pickling issues; Rust provides parallelization
+            updating='immediate',
+            atol=0.01,  # Absolute tolerance for convergence
+            tol=0.005,  # Relative tolerance for convergence
         )
     else:
         # Local optimization from multiple starting points
