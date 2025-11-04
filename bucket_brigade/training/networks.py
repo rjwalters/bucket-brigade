@@ -62,9 +62,7 @@ class PolicyNetwork(nn.Module):
         # Value estimation head
         self.value_head = nn.Linear(hidden_size, 1)
 
-    def forward(
-        self, x: torch.Tensor
-    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """Forward pass through the network.
 
         Args:
