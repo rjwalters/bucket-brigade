@@ -58,6 +58,29 @@ setup_environment() {
         uv pip install tensorboard
     fi
 
+    # Install Rust if not present
+    if ! command -v rustc &> /dev/null; then
+        echo "🦀 Installing Rust..."
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source "$HOME/.cargo/env"
+    fi
+
+    # Build Rust module with PyO3
+    echo "🔧 Building Rust module (bucket-brigade-core)..."
+    cd bucket-brigade-core
+
+    # Clean any stale build artifacts to avoid cffi/PyO3 conflicts
+    rm -rf target bucket_brigade_core/__pycache__ bucket_brigade_core/bucket_brigade_core
+
+    # Ensure maturin is installed
+    uv pip install maturin
+
+    # Source Rust environment and build with PyO3 feature
+    source "$HOME/.cargo/env"
+    PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+
+    cd ..
+
     # Verify PyTorch installation
     echo ""
     echo "✅ Sandbox environment ready!"
