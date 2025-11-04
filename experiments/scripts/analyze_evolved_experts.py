@@ -83,7 +83,9 @@ def load_seed_data(scenario: str, seed: int, base_dir: Path) -> Dict:
     }
 
 
-def load_scenario_data(scenario: str, base_dir: Path, num_seeds: int = 10) -> List[Dict]:
+def load_scenario_data(
+    scenario: str, base_dir: Path, num_seeds: int = 10
+) -> List[Dict]:
     """Load data for all seeds of a scenario."""
     return [load_seed_data(scenario, seed, base_dir) for seed in range(num_seeds)]
 
@@ -110,18 +112,18 @@ def plot_convergence(scenario: str, seeds_data: List[Dict], output_dir: Path):
         aggregate_stds.append(np.std(gen_means))
 
     generations = list(range(max_gens))
-    ax1.plot(generations, aggregate_means, 'b-', linewidth=2, label='Mean across seeds')
+    ax1.plot(generations, aggregate_means, "b-", linewidth=2, label="Mean across seeds")
     ax1.fill_between(
         generations,
         np.array(aggregate_means) - np.array(aggregate_stds),
         np.array(aggregate_means) + np.array(aggregate_stds),
         alpha=0.2,
-        label='±1 std dev'
+        label="±1 std dev",
     )
 
-    ax1.set_xlabel('Generation')
-    ax1.set_ylabel('Mean Fitness')
-    ax1.set_title(f'{scenario.replace("_", " ").title()} - Mean Fitness Convergence')
+    ax1.set_xlabel("Generation")
+    ax1.set_ylabel("Mean Fitness")
+    ax1.set_title(f"{scenario.replace('_', ' ').title()} - Mean Fitness Convergence")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
@@ -138,17 +140,23 @@ def plot_convergence(scenario: str, seeds_data: List[Dict], output_dir: Path):
         gen_bests = [sd["fitness_history"][gen]["max"] for sd in seeds_data]
         aggregate_best.append(np.mean(gen_bests))
 
-    ax2.plot(list(range(max_gens)), aggregate_best, 'g-', linewidth=2, label='Mean best fitness')
+    ax2.plot(
+        list(range(max_gens)),
+        aggregate_best,
+        "g-",
+        linewidth=2,
+        label="Mean best fitness",
+    )
 
-    ax2.set_xlabel('Generation')
-    ax2.set_ylabel('Best Fitness')
-    ax2.set_title(f'{scenario.replace("_", " ").title()} - Best Fitness Convergence')
+    ax2.set_xlabel("Generation")
+    ax2.set_ylabel("Best Fitness")
+    ax2.set_title(f"{scenario.replace('_', ' ').title()} - Best Fitness Convergence")
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
     output_file = output_dir / f"{scenario}_convergence.png"
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"  ✓ Saved convergence plot: {output_file}")
@@ -209,19 +217,24 @@ def plot_cross_scenario_comparison(all_stats: Dict[str, Dict], output_dir: Path)
     fig, ax = plt.subplots(figsize=(14, 8))
 
     x = np.arange(len(scenarios))
-    ax.bar(x, means, yerr=stds, capsize=5, alpha=0.7, color='steelblue')
+    ax.bar(x, means, yerr=stds, capsize=5, alpha=0.7, color="steelblue")
 
-    ax.set_xlabel('Scenario', fontsize=12)
-    ax.set_ylabel('Mean Best Fitness', fontsize=12)
-    ax.set_title('Cross-Scenario Performance Comparison\n(Mean ± Std Dev across 10 seeds)', fontsize=14)
+    ax.set_xlabel("Scenario", fontsize=12)
+    ax.set_ylabel("Mean Best Fitness", fontsize=12)
+    ax.set_title(
+        "Cross-Scenario Performance Comparison\n(Mean ± Std Dev across 10 seeds)",
+        fontsize=14,
+    )
     ax.set_xticks(x)
-    ax.set_xticklabels([s.replace('_', ' ').title() for s in scenarios], rotation=45, ha='right')
-    ax.grid(True, axis='y', alpha=0.3)
-    ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+    ax.set_xticklabels(
+        [s.replace("_", " ").title() for s in scenarios], rotation=45, ha="right"
+    )
+    ax.grid(True, axis="y", alpha=0.3)
+    ax.axhline(y=0, color="black", linestyle="-", linewidth=0.5)
 
     plt.tight_layout()
     output_file = output_dir / "cross_scenario_comparison.png"
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"  ✓ Saved cross-scenario comparison: {output_file}")
@@ -243,29 +256,39 @@ def plot_strategy_heatmap(all_stats: Dict[str, Dict], output_dir: Path):
     param_matrix = np.array(param_matrix)
 
     fig, ax = plt.subplots(figsize=(12, 10))
-    im = ax.imshow(param_matrix, cmap='RdYlGn', aspect='auto', vmin=0, vmax=1)
+    im = ax.imshow(param_matrix, cmap="RdYlGn", aspect="auto", vmin=0, vmax=1)
 
     # Set ticks
     ax.set_xticks(np.arange(len(PARAM_NAMES)))
     ax.set_yticks(np.arange(len(scenarios)))
-    ax.set_xticklabels(PARAM_NAMES, rotation=45, ha='right')
-    ax.set_yticklabels([s.replace('_', ' ').title() for s in scenarios])
+    ax.set_xticklabels(PARAM_NAMES, rotation=45, ha="right")
+    ax.set_yticklabels([s.replace("_", " ").title() for s in scenarios])
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Parameter Value', rotation=270, labelpad=20)
+    cbar.set_label("Parameter Value", rotation=270, labelpad=20)
 
     # Add text annotations
     for i in range(len(scenarios)):
         for j in range(len(PARAM_NAMES)):
-            ax.text(j, i, f'{param_matrix[i, j]:.2f}',
-                    ha="center", va="center", color="black", fontsize=8)
+            ax.text(
+                j,
+                i,
+                f"{param_matrix[i, j]:.2f}",
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=8,
+            )
 
-    ax.set_title('Evolved Strategy Parameters Across Scenarios\n(Mean across 10 seeds)', fontsize=14)
+    ax.set_title(
+        "Evolved Strategy Parameters Across Scenarios\n(Mean across 10 seeds)",
+        fontsize=14,
+    )
     plt.tight_layout()
 
     output_file = output_dir / "strategy_heatmap.png"
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"  ✓ Saved strategy heatmap: {output_file}")
@@ -292,7 +315,7 @@ def generate_summary_report(all_stats: Dict[str, Dict], output_dir: Path):
     scenarios_sorted = sorted(
         all_stats.keys(),
         key=lambda s: all_stats[s]["final_best_fitness"]["mean"],
-        reverse=True
+        reverse=True,
     )
 
     for scenario in scenarios_sorted:
@@ -303,13 +326,15 @@ def generate_summary_report(all_stats: Dict[str, Dict], output_dir: Path):
             f"{stats['min']:.3f} | {stats['max']:.3f} |"
         )
 
-    report_lines.extend([
-        "",
-        "## Key Findings",
-        "",
-        "### Scenario Difficulty Ranking",
-        "",
-    ])
+    report_lines.extend(
+        [
+            "",
+            "## Key Findings",
+            "",
+            "### Scenario Difficulty Ranking",
+            "",
+        ]
+    )
 
     # Add difficulty analysis
     for rank, scenario in enumerate(scenarios_sorted, 1):
@@ -320,21 +345,28 @@ def generate_summary_report(all_stats: Dict[str, Dict], output_dir: Path):
             f"Mean fitness = {mean_fitness:.3f}"
         )
 
-    report_lines.extend([
-        "",
-        "### Strategy Diversity",
-        "",
-        "Analysis of evolved strategy parameters reveals distinct patterns:",
-        "",
-    ])
+    report_lines.extend(
+        [
+            "",
+            "### Strategy Diversity",
+            "",
+            "Analysis of evolved strategy parameters reveals distinct patterns:",
+            "",
+        ]
+    )
 
     # Find most/least variable parameters
     param_variances = {}
     for param in PARAM_NAMES:
-        values = [all_stats[s]["parameter_statistics"][param]["mean"] for s in scenarios_sorted]
+        values = [
+            all_stats[s]["parameter_statistics"][param]["mean"]
+            for s in scenarios_sorted
+        ]
         param_variances[param] = np.std(values)
 
-    most_variable = sorted(param_variances.items(), key=lambda x: x[1], reverse=True)[:3]
+    most_variable = sorted(param_variances.items(), key=lambda x: x[1], reverse=True)[
+        :3
+    ]
     least_variable = sorted(param_variances.items(), key=lambda x: x[1])[:3]
 
     report_lines.append("**Most variable parameters across scenarios:**")
@@ -346,31 +378,33 @@ def generate_summary_report(all_stats: Dict[str, Dict], output_dir: Path):
     for param, var in least_variable:
         report_lines.append(f"- **{param}**: σ = {var:.3f}")
 
-    report_lines.extend([
-        "",
-        "## Statistical Robustness",
-        "",
-        "All results represent mean ± standard deviation across 10 independent evolution runs with different random seeds.",
-        "Confidence intervals confirm statistical significance of scenario difficulty rankings.",
-        "",
-        "## Visualizations",
-        "",
-        "See generated plots:",
-        "- `cross_scenario_comparison.png` - Performance comparison across all scenarios",
-        "- `strategy_heatmap.png` - Parameter values across scenarios",
-        "- `{scenario}_convergence.png` - Convergence plots for each scenario",
-        "",
-        "## Data Files",
-        "",
-        "- `summary_statistics.json` - Complete statistical analysis",
-        "- `experiments/evolved_experts_massive/` - Raw evolution results (480 files)",
-        "",
-    ])
+    report_lines.extend(
+        [
+            "",
+            "## Statistical Robustness",
+            "",
+            "All results represent mean ± standard deviation across 10 independent evolution runs with different random seeds.",
+            "Confidence intervals confirm statistical significance of scenario difficulty rankings.",
+            "",
+            "## Visualizations",
+            "",
+            "See generated plots:",
+            "- `cross_scenario_comparison.png` - Performance comparison across all scenarios",
+            "- `strategy_heatmap.png` - Parameter values across scenarios",
+            "- `{scenario}_convergence.png` - Convergence plots for each scenario",
+            "",
+            "## Data Files",
+            "",
+            "- `summary_statistics.json` - Complete statistical analysis",
+            "- `experiments/evolved_experts_massive/` - Raw evolution results (480 files)",
+            "",
+        ]
+    )
 
     # Write report
     output_file = output_dir / "ANALYSIS_SUMMARY.md"
-    with open(output_file, 'w') as f:
-        f.write('\n'.join(report_lines))
+    with open(output_file, "w") as f:
+        f.write("\n".join(report_lines))
 
     print(f"  ✓ Saved summary report: {output_file}")
 
@@ -417,7 +451,9 @@ def main():
         all_scenario_data[scenario] = load_scenario_data(
             scenario, args.data_dir, args.num_seeds
         )
-    print(f"✓ Loaded {len(SCENARIOS)} scenarios × {args.num_seeds} seeds = {len(SCENARIOS) * args.num_seeds} runs")
+    print(
+        f"✓ Loaded {len(SCENARIOS)} scenarios × {args.num_seeds} seeds = {len(SCENARIOS) * args.num_seeds} runs"
+    )
     print()
 
     # Compute statistics
@@ -431,7 +467,7 @@ def main():
 
     # Save statistics
     stats_file = args.output_dir / "summary_statistics.json"
-    with open(stats_file, 'w') as f:
+    with open(stats_file, "w") as f:
         json.dump(all_stats, f, indent=2)
     print(f"✓ Saved statistics: {stats_file}")
     print()
