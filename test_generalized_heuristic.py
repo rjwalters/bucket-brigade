@@ -62,7 +62,7 @@ def test_homogeneous_team():
     seed = 42
     rewards = core.run_heuristic_episode(scenario, agent_params, seed)
 
-    print(f"\nHomogeneous team:")
+    print("\nHomogeneous team:")
     print(f"Number of agents: {num_agents}")
     print(f"Rewards: {rewards}")
     print(f"Total team reward: {sum(rewards):.2f}")
@@ -85,7 +85,7 @@ def test_focal_wrapper():
         scenario, theta_focal.tolist(), theta_opponents.tolist(), seed
     )
 
-    print(f"\nFocal wrapper test:")
+    print("\nFocal wrapper test:")
     print(f"Focal agent reward: {focal_reward:.2f}")
 
     # Verify it matches the generalized function
