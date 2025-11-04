@@ -1,6 +1,9 @@
+use crate::agents::HeuristicAgent;
 use crate::{AgentObservation, BucketBrigade, Scenario};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use rand::SeedableRng;
+use rand_pcg::Pcg64;
 
 /// Python-compatible Bucket Brigade environment
 #[pyclass]
@@ -297,6 +300,91 @@ impl PyGameResult {
     }
 }
 
+/// Run a complete heuristic episode entirely in Rust
+///
+/// This function eliminates Python/Rust boundary crossings by running
+/// the entire simulation loop in Rust with heuristic agents.
+///
+/// # Arguments
+/// * `scenario` - Game scenario parameters
+/// * `theta_focal` - Strategy parameters for focal agent (agent 0)
+/// * `theta_opponents` - Strategy parameters for opponent agents (agents 1+)
+/// * `seed` - Random seed for reproducibility
+///
+/// # Returns
+/// Cumulative reward for the focal agent (agent 0)
+#[pyfunction]
+#[pyo3(signature = (scenario, theta_focal, theta_opponents, seed))]
+fn run_heuristic_episode(
+    scenario: PyScenario,
+    theta_focal: Vec<f64>,
+    theta_opponents: Vec<f64>,
+    seed: u64,
+) -> PyResult<f64> {
+    // Convert theta vectors to arrays
+    let focal_params: [f64; 10] = theta_focal
+        .try_into()
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("theta_focal must have 10 elements"))?;
+    let opponent_params: [f64; 10] = theta_opponents
+        .try_into()
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("theta_opponents must have 10 elements"))?;
+
+    // Extract num_agents before moving scenario
+    let num_agents = scenario.num_agents();
+
+    // Create heuristic agents
+    let focal_agent = HeuristicAgent::new(0, "focal", focal_params);
+    let opponent_agents: Vec<HeuristicAgent> = (1..num_agents)
+        .map(|id| HeuristicAgent::new(id, &format!("opponent_{}", id), opponent_params))
+        .collect();
+
+    // Create game
+    let mut game = BucketBrigade::new(scenario.inner, Some(seed));
+
+    // Create RNG for heuristic decisions
+    let mut rng = Pcg64::seed_from_u64(seed);
+
+    // Run episode
+    let mut episode_reward = 0.0;
+    let mut step_count = 0;
+    const MAX_STEPS: u32 = 100;
+
+    while step_count < MAX_STEPS {
+        // Get observations for all agents
+        let observations: Vec<AgentObservation> = (0..num_agents)
+            .map(|id| game.get_observation(id))
+            .collect();
+
+        // Get actions from heuristic agents
+        let actions: Vec<[u8; 2]> = observations
+            .iter()
+            .enumerate()
+            .map(|(id, obs)| {
+                if id == 0 {
+                    focal_agent.select_action(obs, &mut rng)
+                } else {
+                    opponent_agents[id - 1].select_action(obs, &mut rng)
+                }
+            })
+            .collect();
+
+        // Step the game
+        let result = game.step(&actions);
+
+        // Accumulate focal agent reward
+        episode_reward += result.rewards[0] as f64;
+
+        // Check if done
+        if result.done {
+            break;
+        }
+
+        step_count += 1;
+    }
+
+    Ok(episode_reward)
+}
+
 #[pymodule]
 fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyBucketBrigade>()?;
@@ -304,6 +392,9 @@ fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyAgentObservation>()?;
     m.add_class::<PyGameState>()?;
     m.add_class::<PyGameResult>()?;
+
+    // Add functions
+    m.add_function(wrap_pyfunction!(run_heuristic_episode, m)?)?;
 
     // Add scenarios
     let scenarios = PyDict::new_bound(m.py());

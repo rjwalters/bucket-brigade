@@ -12,6 +12,7 @@ from .bucket_brigade_core import (
     PyGameState as GameState,
     PyGameResult as GameResult,
     SCENARIOS,
+    run_heuristic_episode,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "GameState",
     "GameResult",
     "SCENARIOS",
+    "run_heuristic_episode",
 ]
