@@ -87,7 +87,7 @@ class HeuristicAgent(AgentBase):
             house_choice, mode_choice = self.last_action
 
         # Store for next time
-        self.last_action: tuple[int, int] | None = (house_choice, mode_choice)
+        self.last_action = (house_choice, mode_choice)
 
         return np.array([house_choice, mode_choice], dtype=np.int8)
 

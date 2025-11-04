@@ -168,7 +168,10 @@ class Population:
         """
         # Filter out individuals without fitness
         evaluated = [ind for ind in self.individuals if ind.fitness is not None]
-        evaluated.sort(key=lambda ind: ind.fitness if ind.fitness is not None else 0.0, reverse=True)
+        evaluated.sort(
+            key=lambda ind: ind.fitness if ind.fitness is not None else 0.0,
+            reverse=True,
+        )
         return evaluated[:n]
 
     def get_fitness_stats(self) -> dict[str, float]:

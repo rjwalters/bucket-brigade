@@ -36,7 +36,12 @@ def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
     )
 
 
-def _heuristic_action(theta: np.ndarray, obs_dict: dict[str, np.ndarray], agent_id: int, rng: np.random.Generator) -> np.ndarray:
+def _heuristic_action(
+    theta: np.ndarray,
+    obs_dict: dict[str, np.ndarray],
+    agent_id: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
     """Simplified heuristic action selection for opponent agents."""
     work_tendency = theta[1]
     own_house_priority = theta[3]
@@ -102,7 +107,7 @@ class RustPufferBucketBrigade(gym.Env):
         self.rust_scenario = _convert_scenario_to_rust(scenario)
 
         # Initialize Rust environment
-        self.env: core.BucketBrigade | None = None  # Will be created in reset()
+        self.env: Optional[core.BucketBrigade] = None  # Will be created in reset()
 
         # RNG for heuristic decisions
         self.rng = np.random.RandomState()
@@ -111,7 +116,7 @@ class RustPufferBucketBrigade(gym.Env):
         self.opponent_agents: List[Any] = []
 
         # Track last observation
-        self._last_obs: dict[str, np.ndarray] | None = None
+        self._last_obs: Optional[Dict[str, np.ndarray]] = None
 
         # PufferLib observation/action spaces
         obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
@@ -191,6 +196,7 @@ class RustPufferBucketBrigade(gym.Env):
             all_actions.append(opponent_action)
 
         # Step the Rust environment
+        assert self.env is not None, "Environment not initialized"
         rewards_list, done, info = self.env.step(all_actions)
 
         # Get observations for all agents
@@ -200,7 +206,9 @@ class RustPufferBucketBrigade(gym.Env):
             "signals": np.array(rust_obs.signals),
             "locations": np.array(rust_obs.locations),
             "last_actions": np.array(all_actions),
-            "scenario_info": self._last_obs["scenario_info"],  # Reuse
+            "scenario_info": self._last_obs["scenario_info"]
+            if self._last_obs is not None
+            else np.zeros(10),  # Reuse
         }
         self._last_obs = obs_dict
 

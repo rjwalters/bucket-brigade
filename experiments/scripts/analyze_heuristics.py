@@ -28,15 +28,17 @@ from bucket_brigade.agents.archetypes import (
 )
 
 
-def run_game(agents: List[object], scenario: object, seed: int | None = None) -> Dict[str, Any]:
+def run_game(
+    agents: List[Any], scenario: Any, seed: Optional[int] = None
+) -> Dict[str, Any]:
     """Run a single game with given agents."""
-    env = BucketBrigadeEnv(scenario)
+    env = BucketBrigadeEnv(scenario)  # type: ignore[arg-type]
     obs = env.reset(seed=seed)
 
     total_rewards = np.zeros(len(agents))
 
     while not env.done:
-        actions = np.array([agent.act(obs) for agent in agents])
+        actions = np.array([agent.act(obs) for agent in agents])  # type: ignore[attr-defined]
         obs, rewards, dones, info = env.step(actions)
         total_rewards += rewards
 
@@ -49,7 +51,9 @@ def run_game(agents: List[object], scenario: object, seed: int | None = None) ->
     }
 
 
-def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 100) -> None:
+def analyze_heuristics(
+    scenario_name: str, output_dir: Path, num_games: int = 100
+) -> None:
     """Run tournament with heuristic archetypes."""
 
     print(f"Analyzing heuristics for scenario: {scenario_name}")
@@ -207,7 +211,9 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
     print()
     print("Homogeneous Teams (Best to Worst):")
     sorted_homogeneous = sorted(
-        homogeneous_results, key=lambda x: float(x["mean_payoff"]), reverse=True  # type: ignore[arg-type]
+        homogeneous_results,
+        key=lambda x: float(x["mean_payoff"]),
+        reverse=True,  # type: ignore[arg-type]
     )
     for i, result in enumerate(sorted_homogeneous):
         print(
@@ -216,7 +222,9 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
 
     print()
     print("Mixed Teams (Best to Worst):")
-    sorted_mixed = sorted(mixed_results, key=lambda x: float(x["mean_payoff"]), reverse=True)  # type: ignore[arg-type]
+    sorted_mixed = sorted(
+        mixed_results, key=lambda x: float(x["mean_payoff"]), reverse=True
+    )  # type: ignore[arg-type]
     for i, result in enumerate(sorted_mixed):
         print(
             f"  {i + 1}. {result['description']}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"

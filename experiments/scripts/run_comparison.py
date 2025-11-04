@@ -10,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -58,8 +58,8 @@ def compute_strategy_distance(strategy1: np.ndarray, strategy2: np.ndarray) -> f
 
 
 def run_tournament(
-    strategies: Dict[str, np.ndarray], scenario: object, num_games: int = 20
-) -> Dict[str, Dict[str, object]]:
+    strategies: Dict[str, np.ndarray], scenario: Any, num_games: int = 20
+) -> Dict[str, Dict[str, Any]]:
     """Run head-to-head tournament between strategies."""
 
     print(f"Running tournament with {len(strategies)} strategies...")
@@ -80,7 +80,7 @@ def run_tournament(
         # Run games
         payoffs = []
         for game_idx in range(num_games):
-            env = BucketBrigadeEnv(scenario)
+            env = BucketBrigadeEnv(scenario)  # type: ignore[arg-type]
             obs = env.reset(seed=game_idx)
 
             total_rewards = np.zeros(4)
@@ -199,7 +199,9 @@ def run_comparison(scenario_name: str, output_dir: Path, num_games: int = 20) ->
 
     # Rank by performance
     ranked = sorted(
-        tournament_results.items(), key=lambda x: float(x[1]["mean_payoff"]), reverse=True  # type: ignore[arg-type]
+        tournament_results.items(),
+        key=lambda x: float(x[1]["mean_payoff"]),
+        reverse=True,  # type: ignore[arg-type,index]
     )
 
     print("Performance Ranking:")

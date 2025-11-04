@@ -10,6 +10,7 @@ from typing import Optional
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
+from typing import Any
 import bucket_brigade_core as core
 
 from ..envs.scenarios import Scenario, default_scenario
@@ -35,7 +36,9 @@ def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
     )
 
 
-def _heuristic_action(theta: np.ndarray, obs: object, agent_id: int, rng: object) -> list[int]:
+def _heuristic_action(
+    theta: np.ndarray, obs: Any, agent_id: int, rng: Any
+) -> list[int]:
     """
     Simplified heuristic action selection based on parameters.
 
@@ -187,7 +190,9 @@ class RustFitnessEvaluator:
 
         return float(np.mean(episode_rewards))
 
-    def evaluate_population(self, population: object, parallel: bool | None = None) -> None:
+    def evaluate_population(
+        self, population: Any, parallel: Optional[bool] = None
+    ) -> None:
         """
         Evaluate all individuals in a population.
 
@@ -199,7 +204,7 @@ class RustFitnessEvaluator:
 
         if use_parallel:
             # Evaluate entire population in parallel
-            unevaluated = [ind for ind in population if ind.fitness is None]
+            unevaluated = [ind for ind in population if ind.fitness is None]  # type: ignore[attr-defined]
             if not unevaluated:
                 return
 
@@ -215,7 +220,7 @@ class RustFitnessEvaluator:
                     seeds = [None] * self.games_per_individual
 
                 for seed in seeds:
-                    all_args.append((individual.genome, self.scenario, seed))
+                    all_args.append((individual.genome, self.scenario, seed))  # type: ignore[attr-defined]
 
             # Run all games in parallel
             with Pool(processes=self.num_workers) as pool:
@@ -225,10 +230,10 @@ class RustFitnessEvaluator:
             idx = 0
             for individual in unevaluated:
                 individual_rewards = all_rewards[idx : idx + self.games_per_individual]
-                individual.fitness = float(np.mean(individual_rewards))
+                individual.fitness = float(np.mean(individual_rewards))  # type: ignore[attr-defined]
                 idx += self.games_per_individual
         else:
             # Sequential evaluation (original behavior)
-            for individual in population:
-                if individual.fitness is None:
-                    individual.fitness = self.evaluate_individual(individual)
+            for individual in population:  # type: ignore[attr-defined]
+                if individual.fitness is None:  # type: ignore[attr-defined]
+                    individual.fitness = self.evaluate_individual(individual)  # type: ignore[attr-defined]
