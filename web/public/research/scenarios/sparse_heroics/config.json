@@ -1,0 +1,30 @@
+{
+  "name": "sparse_heroics",
+  "description": "Sparse Heroics - few workers can make the difference",
+  "parameters": {
+    "beta": 0.1,
+    "kappa": 0.5,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.8,
+    "rho_ignite": 0.15,
+    "N_min": 20,
+    "p_spark": 0.02,
+    "N_spark": 20,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires spread very slowly (β=0.1) over long games (20 nights minimum), but high work cost (c=0.8) punishes constant vigilance. The optimal strategy requires identifying when heroic action is needed versus when rest is acceptable. A few well-timed interventions beat continuous effort.",
+  "research_questions": [
+    "Can agents learn when to rest versus when to work?",
+    "How many 'hero' agents are needed to succeed?",
+    "Does signaling help coordinate sparse interventions?",
+    "What is the optimal work/rest ratio for this scenario?"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "early_containment",
+  "description": "Early Containment - fires start aggressive but can be stopped early",
+  "parameters": {
+    "beta": 0.35,
+    "kappa": 0.6,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.5,
+    "rho_ignite": 0.3,
+    "N_min": 12,
+    "p_spark": 0.02,
+    "N_spark": 12,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires start aggressively with high spread rate (β=0.35) and many initial fires (30%), but moderate extinguish efficiency (κ=0.6) means coordinated early action can contain them. Delaying response leads to cascading failures across the town.",
+  "research_questions": [
+    "How quickly must agents respond to prevent chain reactions?",
+    "Is early coordination more valuable than distributed coverage?",
+    "Can signaling help agents prioritize burning houses?",
+    "What happens if agents delay to conserve energy for later nights?"
+  ]
+}

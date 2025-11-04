@@ -1,0 +1,30 @@
+{
+  "name": "overcrowding",
+  "description": "Overcrowding - too many workers reduce efficiency",
+  "parameters": {
+    "beta": 0.2,
+    "kappa": 0.3,
+    "A": 50.0,
+    "L": 100.0,
+    "c": 0.6,
+    "rho_ignite": 0.1,
+    "N_min": 12,
+    "p_spark": 0.02,
+    "N_spark": 12,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Low extinguish efficiency (κ=0.3) means diminishing returns from multiple workers at the same fire, while lower rewards (A=50) reduce the value of saving houses. Moderate work cost (c=0.6) punishes inefficient clustering. The challenge is coordinating to avoid overcrowding while still addressing fires.",
+  "research_questions": [
+    "Can agents learn to avoid overcrowding fires?",
+    "What is the optimal team size per fire in this scenario?",
+    "Does signaling help prevent redundant effort?",
+    "How does lower reward affect cooperation incentives?"
+  ]
+}

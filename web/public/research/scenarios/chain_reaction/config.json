@@ -1,0 +1,30 @@
+{
+  "name": "chain_reaction",
+  "description": "Chain Reaction - high spread requires distributed teams",
+  "parameters": {
+    "beta": 0.45,
+    "kappa": 0.6,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.7,
+    "rho_ignite": 0.3,
+    "N_min": 15,
+    "p_spark": 0.03,
+    "N_spark": 15,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires spread rapidly (β=0.45) with many initial fires (30%) and frequent sparks. Moderate work cost (c=0.7) and moderate extinguish efficiency (κ=0.6) create pressure to spread out and prevent chain reactions. Clustering agents on one fire while neighbors burn leads to cascading failures.",
+  "research_questions": [
+    "How should agents distribute across multiple simultaneous fires?",
+    "Is prevention more valuable than extinguishing?",
+    "Can signaling coordinate distributed response?",
+    "What team composition handles chain reactions best?"
+  ]
+}

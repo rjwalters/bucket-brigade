@@ -1,1 +1,7 @@
-/public/research/
+# Ignore research data files but keep config.json
+/public/research/*
+!/public/research/scenarios/
+/public/research/scenarios/*
+!/public/research/scenarios/*/
+/public/research/scenarios/*/*
+!/public/research/scenarios/*/config.json

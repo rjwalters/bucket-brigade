@@ -1,0 +1,30 @@
+{
+  "name": "deceptive_calm",
+  "description": "Deceptive Calm - occasional flare-ups reward honest signaling",
+  "parameters": {
+    "beta": 0.25,
+    "kappa": 0.6,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.4,
+    "rho_ignite": 0.1,
+    "N_min": 20,
+    "p_spark": 0.05,
+    "N_spark": 20,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Long games (20 nights) with few initial fires (10%) but higher spark rate (5%) create periods of calm punctuated by sudden crises. Moderate spread and extinguish rates mean fires are manageable IF agents respond quickly. Honest signaling of fatigue and fire detection becomes critical for coordination.",
+  "research_questions": [
+    "Does honest signaling emerge in variable-threat environments?",
+    "How do agents balance rest during calm periods?",
+    "Can teams learn to detect and respond to flare-ups?",
+    "What role does memory play in this scenario?"
+  ]
+}

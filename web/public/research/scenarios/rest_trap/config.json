@@ -1,0 +1,30 @@
+{
+  "name": "rest_trap",
+  "description": "Rest Trap - fires usually extinguish themselves, but not always",
+  "parameters": {
+    "beta": 0.05,
+    "kappa": 0.95,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.2,
+    "rho_ignite": 0.1,
+    "N_min": 12,
+    "p_spark": 0.02,
+    "N_spark": 12,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires almost never spread (β=0.05) and extinguish very easily (κ=0.95) with minimal work cost (c=0.2). The rational choice seems to be resting, but occasional sparks can catch lazy teams off-guard. This creates a deceptive trap where the optimal strategy is harder than it appears.",
+  "research_questions": [
+    "Do agents learn to rest when fires are minimal?",
+    "How many agents can safely rest without risk?",
+    "Can honest signaling prevent complacency?",
+    "What is the cost of over-caution in this scenario?"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "mixed_motivation",
+  "description": "Mixed Motivation - ownership creates self-interest conflicts",
+  "parameters": {
+    "beta": 0.3,
+    "kappa": 0.5,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.6,
+    "rho_ignite": 0.2,
+    "N_min": 15,
+    "p_spark": 0.03,
+    "N_spark": 15,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Moderate spread rate (β=0.3), extinguish efficiency (κ=0.5), and work cost (c=0.6) create a balanced scenario where ownership bonuses/penalties introduce conflicting motivations. Agents must balance helping neighbors against protecting their own houses, creating opportunities for both cooperation and defection.",
+  "research_questions": [
+    "Do agents prioritize their own houses over team welfare?",
+    "Can cooperation emerge despite selfish incentives?",
+    "What signaling strategies help coordinate mixed motivations?",
+    "How does ownership affect team composition preferences?"
+  ]
+}

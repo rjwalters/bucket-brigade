@@ -1,0 +1,30 @@
+{
+  "name": "trivial_cooperation",
+  "description": "Trivial Cooperation - fires are rare and extinguish easily",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.9,
+    "A": 100.0,
+    "L": 100.0,
+    "c": 0.5,
+    "rho_ignite": 0.1,
+    "N_min": 12,
+    "p_spark": 0.0,
+    "N_spark": 12,
+    "num_agents": 4
+  },
+  "research_config": {
+    "num_heuristic_games": 100,
+    "evolution_generations": 200,
+    "evolution_population": 100,
+    "nash_simulations": 1000,
+    "nash_max_iterations": 50
+  },
+  "story": "Fires are rare and spread slowly with very high extinguish efficiency (κ=0.9). With no spontaneous ignition and low work cost, this scenario makes cooperation the obvious choice. The challenge is minimal, making it ideal for baseline comparisons.",
+  "research_questions": [
+    "Do all agents naturally cooperate when fires are trivial?",
+    "What is the minimum cooperation rate needed for success?",
+    "How much can agents rest without risking failure?",
+    "Does evolution find more efficient strategies than full cooperation?"
+  ]
+}
