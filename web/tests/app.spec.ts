@@ -37,24 +37,25 @@ test.describe('Bucket Brigade Visualizer', () => {
     // Check dashboard is active
     await expect(page.locator('[data-testid="nav-dashboard"]')).toHaveClass(/bg-blue-100/);
 
-    // Navigate to rankings
-    await page.goto('/rankings');
-    await expect(page.locator('text=No Rankings Available')).toBeVisible();
-
     // Navigate to settings
     await page.goto('/settings');
     await expect(page.locator('main h1')).toContainText('Settings');
     await expect(page.locator('text=Data Management')).toBeVisible();
+
+    // Navigate to replay
+    await page.goto('/replay');
+    await expect(page.locator('text=No Games Available')).toBeVisible();
 
     // Navigate back to dashboard
     await page.goto('/dashboard');
     await expect(page.locator('main')).toContainText('Bucket Brigade');
   });
 
-  test('should show empty state when no data', async ({ page }) => {
-    await expect(page.locator('text=No games loaded yet')).toBeVisible();
-    await page.goto('/rankings');
-    await expect(page.locator('text=No Rankings Available')).toBeVisible();
+  test('should show dashboard configuration options', async ({ page }) => {
+    // Dashboard should show team selection
+    await expect(page.locator('h2:has-text("Choose Team")')).toBeVisible();
+    await expect(page.locator('h2:has-text("Choose Scenario")')).toBeVisible();
+    await expect(page.locator('button:has-text("Run Game")')).toBeVisible();
   });
 });
 

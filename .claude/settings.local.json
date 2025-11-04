@@ -114,7 +114,13 @@
       "Bash(sky status:*)",
       "Bash(ssh:*)",
       "Bash(VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.venv PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(while read file)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-115/.venv maturin develop:*)",
+      "Bash(export VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-115/.venv)",
+      "Bash(timeout 60 pnpm test:*)",
+      "Bash(NODE_ENV=production pnpm run build:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, Play, Settings, FlaskConical } from 'lucide-react';
+import { Flame, Play, Settings, FlaskConical, Github } from 'lucide-react';
 import SimpleDashboard from './pages/SimpleDashboard';
 import SettingsPage from './pages/Settings';
 import GameReplay from './pages/GameReplay';
@@ -40,26 +40,37 @@ function App() {
               <h1 className="text-xl font-bold text-gray-900">Bucket Brigade</h1>
               <span className="text-sm text-gray-500">Multi-Agent Cooperation Visualizer</span>
             </div>
-            <nav className="flex space-x-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <Link
-                    key={tab.id}
-                    to={tab.path}
-                    data-testid={`nav-${tab.id}`}
-                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {tab.label}
-                  </Link>
-                );
-              })}
-            </nav>
+            <div className="flex items-center space-x-4">
+              <nav className="flex space-x-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <Link
+                      key={tab.id}
+                      to={tab.path}
+                      data-testid={`nav-${tab.id}`}
+                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <a
+                href="https://github.com/rjwalters/bucket-brigade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                title="View on GitHub"
+              >
+                <Github className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         </div>
       </header>
