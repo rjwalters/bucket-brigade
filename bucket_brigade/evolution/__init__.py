@@ -6,7 +6,12 @@ through tournament-based fitness evaluation.
 By default, uses Rust-backed fitness evaluation for 100x speedup.
 """
 
-from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
+# Try to use Rust evaluator, fall back to Python
+try:
+    from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
+except (ImportError, ModuleNotFoundError):
+    from .fitness import FitnessEvaluator
+
 from .fitness import (
     create_fitness_function,
     multi_objective_fitness,
