@@ -240,3 +240,6 @@ runs/
 
 # Experiment tracking database
 data/experiments.db
+
+# Evolution experiment outputs
+experiments/evolved_experts/
