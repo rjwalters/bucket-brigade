@@ -1,0 +1,15 @@
+Scenario: greedy_neighbor
+Population Size: 500
+Generations: 5000
+Converged At: 4
+
+Best Individual:
+  Fitness: -2.2000
+  Generation: 5
+  Genome: [0.6872723750130538, 0.3144266114872028, 0.4557851552963257, 0.5885717868804932, 0.7310728346706281, 0.40238999858299235, 0.47638946771621704, 0.3539632260799408, 0.17893840372562408, 0.7856390476226807]
+
+Final Population Stats:
+  Best: -2.2000
+  Mean: -4.3562
+  Std:  0.7750
+  Diversity: 1.2950

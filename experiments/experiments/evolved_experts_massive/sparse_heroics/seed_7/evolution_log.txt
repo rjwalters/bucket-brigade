@@ -1,0 +1,15 @@
+Scenario: sparse_heroics
+Population Size: 500
+Generations: 5000
+Converged At: 6
+
+Best Individual:
+  Fitness: -2.4250
+  Generation: 7
+  Genome: [0.8690876426965692, 0.8340179484491467, 0.2265352190474099, 0.6936195684509904, 0.5201337012763034, 0.42591859091241097, 0.0, 0.030367255210876465, 0.9523729681968689, 0.038402754813432693]
+
+Final Population Stats:
+  Best: -2.4250
+  Mean: -4.2368
+  Std:  0.7812
+  Diversity: 1.2460

@@ -1,0 +1,15 @@
+Scenario: easy
+Population Size: 500
+Generations: 5000
+Converged At: 5
+
+Best Individual:
+  Fitness: -1.9750
+  Generation: 6
+  Genome: [1.0, 0.8578143119812012, 0.3372107446193695, 0.048789788227983244, 0.8734564781188965, 0.49095049500465393, 0.23849332332611084, 0.15577583014965057, 0.44212863930023055, 0.4305794942795371]
+
+Final Population Stats:
+  Best: -1.9750
+  Mean: -4.3270
+  Std:  0.7393
+  Diversity: 1.1969
