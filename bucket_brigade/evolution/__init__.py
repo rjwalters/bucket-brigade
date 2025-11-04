@@ -3,21 +3,11 @@
 This module provides genetic algorithms for evolving agent parameters
 through tournament-based fitness evaluation.
 
-By default, uses Rust-backed fitness evaluation for 100x speedup.
+Uses Rust-backed fitness evaluation for 100x speedup.
+Requires bucket_brigade_core Rust module to be built via maturin.
 """
 
-# Try to use Rust evaluator, fall back to Python
-try:
-    from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
-except (ImportError, ModuleNotFoundError):
-    from .fitness import FitnessEvaluator
-
-from .fitness import (
-    create_fitness_function,
-    multi_objective_fitness,
-    robustness_fitness,
-    win_rate_fitness,
-)
+from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
 from .genetic_algorithm import EvolutionConfig, EvolutionResult, GeneticAlgorithm
 from .operators import (
     adaptive_mutation,
@@ -49,10 +39,6 @@ __all__ = [
     "create_random_population",
     # Fitness
     "FitnessEvaluator",
-    "create_fitness_function",
-    "win_rate_fitness",
-    "robustness_fitness",
-    "multi_objective_fitness",
     # Operators
     "tournament_selection",
     "roulette_selection",
