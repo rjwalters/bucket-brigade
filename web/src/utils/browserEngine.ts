@@ -14,7 +14,6 @@ export interface Scenario {
   A: number;         // Reward per saved house
   L: number;         // Penalty per ruined house
   c: number;         // Work cost per night
-  rho_ignite: number; // Initial burn fraction
   N_min: number;     // Minimum nights
   p_spark: number;   // Spark probability
   N_spark: number;   // Spark duration
@@ -107,13 +106,12 @@ export class BrowserBucketBrigade {
     this.rewards = new Array(this.scenario.num_agents).fill(0);
     this.trajectory = [];
 
-    // Initialize fires
-    const num_burning = Math.round(this.scenario.rho_ignite * 10);
-    const burn_indices = new Set<number>();
-    while (burn_indices.size < num_burning) {
-      burn_indices.add(this.rng.randint(0, 10));
+    // Initialize fires - probabilistic per-house
+    for (let house_idx = 0; house_idx < 10; house_idx++) {
+      if (this.rng.random() < this.scenario.p_spark) {
+        this.houses[house_idx] = 1;
+      }
     }
-    burn_indices.forEach(idx => this.houses[idx] = 1);
 
     this.record_night();
   }
@@ -134,15 +132,19 @@ export class BrowserBucketBrigade {
     this.agent_positions = actions.map(action => action[0]);
 
     // 3. Extinguish phase
+    // Agents respond to fires visible at start of turn
     this.extinguish_fires(actions);
 
-    // 4. Spread phase
-    this.spread_fires();
-
-    // 5. Burn-out phase
+    // 4. Burn-out phase
+    // Unextinguished fires become ruined houses
     this.burn_out_houses();
 
-    // 6. Spark phase (if active)
+    // 5. Spread phase
+    // Fires spread to neighbors (visible next turn)
+    this.spread_fires();
+
+    // 6. Spontaneous ignition phase
+    // New fires can ignite on any night (visible next turn)
     if (this.night < this.scenario.N_spark) {
       this.spark_fires();
     }
@@ -290,7 +292,6 @@ export class BrowserBucketBrigade {
         this.scenario.A,
         this.scenario.L,
         this.scenario.c,
-        this.scenario.rho_ignite,
         this.scenario.N_min,
         this.scenario.p_spark,
         this.scenario.N_spark,
@@ -406,7 +407,6 @@ export const SCENARIOS = {
     A: 100,
     L: 100,
     c: 0.5,
-    rho_ignite: 0.1,
     N_min: 12,
     p_spark: 0.0,
     N_spark: 12,
@@ -419,7 +419,6 @@ export const SCENARIOS = {
     A: 100,
     L: 100,
     c: 0.5,
-    rho_ignite: 0.3,
     N_min: 12,
     p_spark: 0.02,
     N_spark: 12,
@@ -432,7 +431,6 @@ export const SCENARIOS = {
     A: 100,
     L: 100,
     c: 1.0,
-    rho_ignite: 0.2,
     N_min: 12,
     p_spark: 0.02,
     N_spark: 12,
@@ -445,7 +443,6 @@ export const SCENARIOS = {
     A: 100,
     L: 100,
     c: 0.5,
-    rho_ignite: 0.2,
     N_min: 12,
     p_spark: 0.02,
     N_spark: 12,

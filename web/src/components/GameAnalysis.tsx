@@ -249,7 +249,6 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
           </div>
           <div>
             <div className="text-gray-600">Initial Fires</div>
-            <div className="font-semibold text-gray-900">{(game.scenario.rho_ignite * 100).toFixed(0)}%</div>
           </div>
           <div>
             <div className="text-gray-600">Work Cost</div>

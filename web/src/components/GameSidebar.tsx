@@ -1,10 +1,13 @@
-import React from 'react';
-import { Scenario, GameNight } from '../types';
+import React, { useState } from 'react';
+import { Scenario, GameNight, GameReplay } from '../types';
+import { AgentDetailModal } from './AgentDetailModal';
 
 interface GameSidebarProps {
   scenario: Scenario;
   currentNightData: GameNight | null;
   allNights: GameNight[];
+  archetypes?: string[];
+  statistics?: GameReplay['statistics'];
   className?: string;
 }
 
@@ -12,8 +15,13 @@ const GameSidebar: React.FC<GameSidebarProps> = ({
   scenario,
   currentNightData,
   allNights,
+  archetypes,
+  statistics,
   className = ''
 }) => {
+  // Modal state
+  const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
+
   // Calculate summary statistics
   const totalNights = allNights.length;
   const finalNight = allNights[allNights.length - 1];
@@ -59,8 +67,6 @@ const GameSidebar: React.FC<GameSidebarProps> = ({
                 <span className="parameter-value font-mono">{scenario.c.toFixed(2)}</span>
               </div>
               <div className="parameter-item">
-                <span className="parameter-label">Initial Burn %:</span>
-                <span className="parameter-value font-mono">{(scenario.rho_ignite * 100).toFixed(0)}%</span>
               </div>
               <div className="parameter-item">
                 <span className="parameter-label">Min Nights:</span>
@@ -141,24 +147,74 @@ const GameSidebar: React.FC<GameSidebarProps> = ({
         {/* Individual Agent Rewards */}
         {Object.keys(totalRewards).length > 0 && (
           <div className="sidebar-section">
-            <h3 className="sidebar-title">Agent Performance</h3>
+            <h3 className="sidebar-title">
+              Agent Performance
+              {statistics && (
+                <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">
+                  (n={statistics.numGames} games)
+                </span>
+              )}
+            </h3>
             <div className="sidebar-content">
               <div className="agent-rewards space-y-2">
                 {Object.entries(totalRewards)
-                  .sort(([,a], [,b]) => b - a)
-                  .map(([agentId, reward]) => (
-                    <div key={agentId} className="agent-reward-item flex justify-between items-center">
-                      <span className="agent-id font-medium">Agent {agentId}:</span>
-                      <span className={`agent-reward font-mono ${
-                        reward >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {reward >= 0 ? '+' : ''}{reward.toFixed(1)}
-                      </span>
-                    </div>
-                  ))}
+                  .sort(([aId, aReward], [bId, bReward]) => {
+                    // Sort by average score if available, otherwise by single game score
+                    const aScore = statistics?.avgAgentScores[parseInt(aId)] ?? aReward;
+                    const bScore = statistics?.avgAgentScores[parseInt(bId)] ?? bReward;
+                    return bScore - aScore;
+                  })
+                  .map(([agentId, reward]) => {
+                    const agentNum = parseInt(agentId);
+                    const archetype = archetypes?.[agentNum];
+                    const avgScore = statistics?.avgAgentScores[agentNum];
+                    const stdErr = statistics?.stdErrAgentScores[agentNum];
+
+                    return (
+                      <button
+                        key={agentId}
+                        onClick={() => archetype && setSelectedArchetype(archetype)}
+                        disabled={!archetype}
+                        className={`agent-reward-item w-full flex justify-between items-center p-2 rounded transition-colors ${
+                          archetype
+                            ? 'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer'
+                            : 'cursor-default'
+                        }`}
+                      >
+                        <div className="flex flex-col items-start">
+                          <span className="agent-id font-medium text-gray-900 dark:text-gray-100">
+                            {archetype ? `${archetype} ${agentId}` : `Agent ${agentId}`}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`agent-reward font-mono ${
+                            (avgScore ?? reward) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {avgScore !== undefined
+                              ? `${avgScore >= 0 ? '+' : ''}${avgScore.toFixed(1)}`
+                              : `${reward >= 0 ? '+' : ''}${reward.toFixed(1)}`}
+                          </span>
+                          {stdErr !== undefined && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ± {stdErr.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           </div>
+        )}
+
+        {/* Agent Detail Modal */}
+        {selectedArchetype && (
+          <AgentDetailModal
+            isOpen={true}
+            onClose={() => setSelectedArchetype(null)}
+            archetypeId={selectedArchetype.toLowerCase()}
+          />
         )}
       </div>
     );

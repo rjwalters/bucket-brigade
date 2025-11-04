@@ -6,6 +6,7 @@ import {
   type EvolutionTrace,
   type BestAgent,
   type ComparisonResults,
+  type NashResults,
 } from '../types/research';
 
 interface ScenarioData {
@@ -15,18 +16,20 @@ interface ScenarioData {
     trace: EvolutionTrace;
     best: BestAgent;
   };
+  nash?: NashResults;
   comparison?: ComparisonResults;
 }
 
 export default function ScenarioResearch() {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioName>('greedy_neighbor');
+  const [activeTab, setActiveTab] = useState<'nash' | 'evolution' | 'heuristics'>('evolution');
   const [data, setData] = useState<ScenarioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadScenarioData(selectedScenario);
-  }, [selectedScenario]);
+  }, [selectedScenario, activeTab]);
 
   const loadScenarioData = async (scenario: ScenarioName) => {
     setLoading(true);
@@ -36,17 +39,29 @@ export default function ScenarioResearch() {
       const basePath = import.meta.env.BASE_URL || '/';
       const scenarioPath = `${basePath}research/scenarios/${scenario}`;
 
-      // Load all available data files
-      const [config, heuristics, evolutionTrace, evolutionBest, comparison] = await Promise.all([
-        fetch(`${scenarioPath}/config.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${scenarioPath}/heuristics/results.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${scenarioPath}/evolved/evolution_trace.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${scenarioPath}/evolved/best_agent.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${scenarioPath}/comparison/comparison.json`).then(r => r.ok ? r.json() : null),
-      ]);
+      // Load config first
+      const config = await fetch(`${scenarioPath}/config.json`).then(r => r.ok ? r.json() : null);
+
+      // Load data based on active tab
+      let nash, heuristics, evolutionTrace, evolutionBest, comparison;
+
+      if (activeTab === 'nash') {
+        nash = await fetch(`${scenarioPath}/nash/results.json`).then(r => r.ok ? r.json() : null);
+      } else if (activeTab === 'evolution') {
+        [evolutionTrace, evolutionBest] = await Promise.all([
+          fetch(`${scenarioPath}/evolved/evolution_trace.json`).then(r => r.ok ? r.json() : null),
+          fetch(`${scenarioPath}/evolved/best_agent.json`).then(r => r.ok ? r.json() : null),
+        ]);
+      } else if (activeTab === 'heuristics') {
+        [heuristics, comparison] = await Promise.all([
+          fetch(`${scenarioPath}/heuristics/results.json`).then(r => r.ok ? r.json() : null),
+          fetch(`${scenarioPath}/comparison/comparison.json`).then(r => r.ok ? r.json() : null),
+        ]);
+      }
 
       setData({
         config,
+        nash,
         heuristics,
         evolution: evolutionTrace && evolutionBest ? { trace: evolutionTrace, best: evolutionBest } : undefined,
         comparison,
@@ -78,24 +93,50 @@ export default function ScenarioResearch() {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Scenario Research</h1>
+  const tabs = [
+  { id: 'nash', label: 'Nash Equilibrium', icon: '🎯' },
+  { id: 'evolution', label: 'Evolution', icon: '🧬' },
+    { id: 'heuristics', label: 'Heuristics', icon: '🧠' },
+  ] as const;
 
-      {/* Scenario Selector */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium mb-2">Select Scenario</label>
-        <select
-          value={selectedScenario}
-          onChange={(e) => setSelectedScenario(e.target.value as ScenarioName)}
-          className="w-full md:w-auto px-4 py-2 border rounded-lg bg-white dark:bg-gray-800"
-        >
-          {SCENARIOS.map((scenario) => (
+  return (
+  <div className="container mx-auto px-4 py-8">
+  <h1 className="text-4xl font-bold mb-8">Scenario Research</h1>
+
+  {/* Scenario Selector */}
+  <div className="mb-8">
+  <label className="block text-sm font-medium mb-2">Select Scenario</label>
+  <select
+  value={selectedScenario}
+  onChange={(e) => setSelectedScenario(e.target.value as ScenarioName)}
+  className="w-full md:w-auto px-4 py-2 border rounded-lg bg-white dark:bg-gray-800"
+  >
+      {SCENARIOS.map((scenario) => (
             <option key={scenario} value={scenario}>
               {scenario.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-8">
+        <nav className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Scenario Overview */}

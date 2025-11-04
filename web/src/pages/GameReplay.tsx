@@ -1,24 +1,107 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Home, Loader2 } from 'lucide-react';
 import type { GameReplay } from '../types';
-import { loadGameReplays } from '../utils/storage';
+import { loadGameReplays, saveGameReplays } from '../utils/storage';
+import { runGameBatch } from '../utils/runSimulation';
 import Town from '../components/Town';
 import AgentLayer from '../components/AgentLayer';
 import ReplayControls from '../components/ReplayControls';
 import GameSidebar from '../components/GameSidebar';
 import GameAnalysis from '../components/GameAnalysis';
 
-const GameReplay: React.FC = () => {
+const GameReplayPage: React.FC = () => {
   const { gameId } = useParams<{ gameId?: string }>();
+  const navigate = useNavigate();
   const [games, setGames] = useState<GameReplay[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameReplay | null>(null);
   const [currentNight, setCurrentNight] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // milliseconds
   const [phase, setPhase] = useState<'day' | 'night'>('day');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationProgress, setSimulationProgress] = useState({ completed: 0, total: 0 });
+  const [simulationStats, setSimulationStats] = useState<any>(null);
 
+  // Run simulation if gameId is 'new'
   useEffect(() => {
+    if (gameId === 'new') {
+      runNewSimulation();
+    } else {
+      loadExistingGames();
+    }
+  }, [gameId]);
+
+  const runNewSimulation = async () => {
+    setIsSimulating(true);
+
+    try {
+      // Load team and scenario from sessionStorage
+      const teamStr = sessionStorage.getItem('selected_team');
+      const scenarioStr = sessionStorage.getItem('selected_scenario');
+
+      if (!teamStr || !scenarioStr) {
+        console.error('No team or scenario selected');
+        navigate('/');
+        return;
+      }
+
+      const team = JSON.parse(teamStr);
+      const scenario = JSON.parse(scenarioStr);
+
+      // Run batch simulation (100 games)
+      const result = await runGameBatch(
+        team,
+        scenario,
+        100,
+        (completed, total) => {
+          setSimulationProgress({ completed, total });
+        }
+      );
+
+      // Save statistics
+      setSimulationStats(result.statistics);
+
+      // Pick a representative game (one close to median performance)
+      const sortedGames = [...result.games].sort((a, b) => {
+        const scoreA = a.nights.reduce((sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0), 0);
+        const scoreB = b.nights.reduce((sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0), 0);
+        return scoreA - scoreB;
+      });
+      const medianGame = sortedGames[Math.floor(sortedGames.length / 2)];
+
+      // Add statistics to the game
+      const gameWithStats = {
+        ...medianGame,
+        statistics: {
+          avgAgentScores: result.statistics.avgAgentScores,
+          stdErrAgentScores: result.statistics.stdErrAgentScores,
+          avgFinalScore: result.statistics.avgFinalScore,
+          stdErrFinalScore: result.statistics.stdErrFinalScore,
+          numGames: result.statistics.numGames
+        }
+      };
+
+      // Save the representative game to localStorage
+      const existingGames = loadGameReplays();
+      const updatedGames = [...existingGames, gameWithStats];
+      saveGameReplays(updatedGames);
+
+      // Display the game
+      setGames(updatedGames);
+      setSelectedGame(gameWithStats);
+      setIsSimulating(false);
+
+      // Navigate to the new game
+      navigate(`/replay/${updatedGames.length - 1}`);
+    } catch (error) {
+      console.error('Simulation failed:', error);
+      setIsSimulating(false);
+      navigate('/');
+    }
+  };
+
+  const loadExistingGames = () => {
     const loadedGames = loadGameReplays();
     setGames(loadedGames);
 
@@ -27,7 +110,7 @@ const GameReplay: React.FC = () => {
     } else if (loadedGames.length > 0) {
       setSelectedGame(loadedGames[0]);
     }
-  }, [gameId]);
+  };
 
   const currentNightData = selectedGame?.nights[currentNight];
 
@@ -76,13 +159,45 @@ const GameReplay: React.FC = () => {
     setIsPlaying(false);
   }, []);
 
-  if (games.length === 0) {
+  // Show loading screen during simulation
+  if (isSimulating) {
+    const progress = simulationProgress.total > 0
+      ? (simulationProgress.completed / simulationProgress.total) * 100
+      : 0;
+
     return (
       <div className="text-center py-12">
         <div className="max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Games Available</h2>
-          <p className="text-gray-600 mb-6">
-            You need to upload game replay data first. Run batch experiments and import the results.
+          <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Running Simulation
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Simulating 100 games to gather statistics...
+          </p>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2">
+            <div
+              className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {simulationProgress.completed} / {simulationProgress.total} games completed
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (games.length === 0 && !isSimulating) {
+    return (
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            No Games Available
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Run a game from the dashboard to see results here.
           </p>
           <Link to="/" className="btn-primary inline-flex items-center">
             <Home className="w-4 h-4 mr-2" />
@@ -97,7 +212,7 @@ const GameReplay: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Game Replay</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Game Replay</h1>
         <Link to="/" className="btn-secondary inline-flex items-center">
           <Home className="w-4 h-4 mr-2" />
           Dashboard
@@ -106,7 +221,7 @@ const GameReplay: React.FC = () => {
 
       {/* Game Selection */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Game</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Select Game</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {games.map((game, index) => (
             <button
@@ -114,15 +229,15 @@ const GameReplay: React.FC = () => {
               onClick={() => handleGameSelect(game)}
               className={`p-4 rounded-lg border-2 text-left transition-colors ${
                 selectedGame === game
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
-              <div className="font-medium text-gray-900">Game #{index}</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-medium text-gray-900 dark:text-gray-100">Game #{index}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 {game.nights.length} nights • {game.scenario.num_agents} agents
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 β={game.scenario.beta.toFixed(2)} • κ={game.scenario.kappa.toFixed(2)}
               </div>
             </button>
@@ -152,19 +267,18 @@ const GameReplay: React.FC = () => {
             {/* Game Visualization */}
             <div className="lg:col-span-2">
               <div className="card">
-                {/* Day/Night Indicator */}
-                <div className="text-center mb-4 pb-2 border-b border-gray-200">
-                  <div className="text-3xl mb-1">
+                <div className="relative flex justify-center">
+                  {/* Day/Night Indicator - Top Right */}
+                  <div className="absolute top-2 right-2 text-3xl z-10">
                     {phase === 'day' ? '☀️' : '🌙'}
                   </div>
-                  <div className="text-sm text-gray-600">
-                    {phase === 'day' ? 'Day: Signaling' : 'Night: Working'}
-                  </div>
-                </div>
 
-                <div className="relative flex justify-center">
                   {/* Town (houses) */}
-                  <Town houses={currentNightData.houses} />
+                  <Town
+                    houses={currentNightData.houses}
+                    numAgents={selectedGame.scenario.num_agents}
+                    archetypes={selectedGame.archetypes}
+                  />
 
                   {/* Agent Layer */}
                   <AgentLayer
@@ -183,6 +297,8 @@ const GameReplay: React.FC = () => {
                 scenario={selectedGame.scenario}
                 currentNightData={currentNightData}
                 allNights={selectedGame.nights}
+                archetypes={selectedGame.archetypes}
+                statistics={selectedGame.statistics}
               />
             </div>
           </div>
@@ -197,4 +313,4 @@ const GameReplay: React.FC = () => {
   );
 };
 
-export default GameReplay;
+export default GameReplayPage;

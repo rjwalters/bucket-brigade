@@ -10,7 +10,6 @@ export const ScenarioSchema = z.object({
   A: z.number().positive(), // Reward per saved house
   L: z.number().positive(), // Penalty per ruined house
   c: z.number().nonnegative(), // Cost per worker per night
-  rho_ignite: z.number().min(0).max(1), // Initial burning fraction
   N_min: z.number().int().positive(), // Minimum nights before termination
   p_spark: z.number().min(0).max(1), // Probability of spontaneous ignition
   N_spark: z.number().int().nonnegative(), // Number of nights with sparks active
@@ -37,17 +36,35 @@ export const GameNightSchema = z.object({
 export const GameReplaySchema = z.object({
   scenario: ScenarioSchema,
   nights: z.array(GameNightSchema).min(1),
+  archetypes: z.array(z.string()).optional(), // Agent archetype names
+  statistics: z.object({
+    avgAgentScores: z.array(z.number()),
+    stdErrAgentScores: z.array(z.number()),
+    avgFinalScore: z.number(),
+    stdErrFinalScore: z.number(),
+    numGames: z.number().int().positive(),
+  }).optional(),
 }).refine((data) => {
   // Validate that all nights have the correct number of agents
   const numAgents = data.scenario.num_agents;
-  return data.nights.every(night =>
+  const nightsValid = data.nights.every(night =>
     night.signals.length === numAgents &&
     night.locations.length === numAgents &&
     night.actions.length === numAgents &&
     night.rewards.length === numAgents
   );
+
+  // If archetypes provided, should match num_agents
+  const archetypesValid = !data.archetypes || data.archetypes.length === numAgents;
+
+  // If statistics provided, arrays should match num_agents
+  const statsValid = !data.statistics ||
+    (data.statistics.avgAgentScores.length === numAgents &&
+     data.statistics.stdErrAgentScores.length === numAgents);
+
+  return nightsValid && archetypesValid && statsValid;
 }, {
-  message: "All nights must have data for the correct number of agents"
+  message: "All nights must have data for the correct number of agents, and archetypes/statistics must match if provided"
 });
 
 // Batch result schema

@@ -34,8 +34,8 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
     return () => clearTimeout(dayTimer);
   }, [locations, signals, actions, onPhaseChange]);
 
-  const centerX = 300;
-  const centerY = 300;
+  const centerX = 320; // Updated to match Town component (symmetric)
+  const centerY = 320; // Updated to match Town component (symmetric)
 
   // Helper function to get house center position (including "ghost house" at center for day phase)
   const getHouseCenterPosition = (houseIndex: number): { x: number, y: number } => {
@@ -45,7 +45,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
     } else {
       // Regular houses in a circle
       const houseAngle = (houseIndex / 10) * 2 * Math.PI - Math.PI / 2;
-      const houseRadius = 240;
+      const houseRadius = 210; // Updated to match Town component (5% larger)
       return {
         x: centerX + houseRadius * Math.cos(houseAngle),
         y: centerY + houseRadius * Math.sin(houseAngle)
@@ -126,7 +126,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
 
   return (
     <div className={`agent-layer ${className}`}>
-      <svg width="600" height="600" className="agent-svg absolute inset-0">
+      <svg width="640" height="640" viewBox="0 0 640 640" className="agent-svg absolute inset-0">
 
         {agentPositions.map((agent) => (
           <g
@@ -185,40 +185,6 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
           </g>
         ))}
       </svg>
-
-      {/* House hover information */}
-      <div className="house-info absolute inset-0 pointer-events-none">
-        {Object.entries(agentsByHouse).map(([houseIndex, agents]) => {
-          const houseAngle = (parseInt(houseIndex) / 10) * 2 * Math.PI - Math.PI / 2;
-          const infoX = 300 + 320 * Math.cos(houseAngle);
-          const infoY = 300 + 320 * Math.sin(houseAngle);
-
-          const workingAgents = agents.filter(a => a.action[1] === 1);
-          const restingAgents = agents.filter(a => a.action[1] === 0);
-
-          if (agents.length === 0) return null;
-
-          return (
-            <div
-              key={`house-info-${houseIndex}`}
-              className="house-info-popup absolute bg-black bg-opacity-75 text-white text-xs rounded px-2 py-1 pointer-events-auto opacity-0 hover:opacity-100 transition-opacity"
-              style={{
-                left: infoX,
-                top: infoY,
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div>House {houseIndex}</div>
-              {workingAgents.length > 0 && (
-                <div>Working: {workingAgents.map(a => a.agentId).join(', ')}</div>
-              )}
-              {restingAgents.length > 0 && (
-                <div>Resting: {restingAgents.map(a => a.agentId).join(', ')}</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };

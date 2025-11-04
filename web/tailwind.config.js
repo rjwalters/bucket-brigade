@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,6 +8,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Dynamic theme colors using CSS variables (flattened for @apply compatibility)
+        'surface-primary': 'rgb(var(--color-bg-primary) / <alpha-value>)',
+        'surface-secondary': 'rgb(var(--color-bg-secondary) / <alpha-value>)',
+        'surface-tertiary': 'rgb(var(--color-bg-tertiary) / <alpha-value>)',
+        'content-primary': 'rgb(var(--color-text-primary) / <alpha-value>)',
+        'content-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
+        'content-tertiary': 'rgb(var(--color-text-tertiary) / <alpha-value>)',
+        'outline-primary': 'rgb(var(--color-border-primary) / <alpha-value>)',
+        'outline-secondary': 'rgb(var(--color-border-secondary) / <alpha-value>)',
+        'interactive-hover': 'rgb(var(--color-interactive-hover) / <alpha-value>)',
+        'interactive-active': 'rgb(var(--color-interactive-active) / <alpha-value>)',
+        'brand-bg': 'rgb(var(--color-brand-bg) / <alpha-value>)',
+        'brand-text': 'rgb(var(--color-brand-text) / <alpha-value>)',
+
         // Bucket Brigade theme colors
         'fire': {
           50: '#fef2f2',

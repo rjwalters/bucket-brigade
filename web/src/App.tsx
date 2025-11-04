@@ -1,12 +1,14 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, Play, Settings, FlaskConical } from 'lucide-react';
+import { Flame, Play, Settings, FlaskConical, Github, Sun, Moon } from 'lucide-react';
 import SimpleDashboard from './pages/SimpleDashboard';
 import SettingsPage from './pages/Settings';
 import GameReplay from './pages/GameReplay';
 import ScenarioResearch from './pages/ScenarioResearch';
+import { useTheme } from './contexts/ThemeContext';
 
 function App() {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   // Map current path to active tab
   const getActiveTab = () => {
@@ -28,38 +30,56 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-primary">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-surface-secondary shadow-sm border-b border-outline-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-orange-100 rounded-lg">
-                <Flame className="w-5 h-5 text-orange-600" />
+              <div className="flex items-center justify-center w-8 h-8 bg-brand-bg rounded-lg">
+                <Flame className="w-5 h-5 text-brand-text" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Bucket Brigade</h1>
-              <span className="text-sm text-gray-500">Multi-Agent Cooperation Visualizer</span>
+              <h1 className="text-xl font-bold text-content-primary">Bucket Brigade</h1>
+              <span className="text-sm text-content-secondary">Multi-Agent Cooperation Tournament</span>
             </div>
-            <nav className="flex space-x-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <Link
-                    key={tab.id}
-                    to={tab.path}
-                    data-testid={`nav-${tab.id}`}
-                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {tab.label}
-                  </Link>
-                );
-              })}
-            </nav>
+            <div className="flex items-center space-x-4">
+              <nav className="flex space-x-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <Link
+                      key={tab.id}
+                      to={tab.path}
+                      data-testid={`nav-${tab.id}`}
+                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-interactive-active text-blue-700 dark:text-blue-300'
+                          : 'text-content-secondary hover:text-content-primary hover:bg-interactive-hover'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <a
+                href="https://github.com/rjwalters/bucket-brigade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-3 py-2 text-content-secondary hover:text-content-primary hover:bg-interactive-hover rounded-md transition-colors"
+                title="View on GitHub"
+              >
+                <Github className="w-5 h-5" />
+              </a>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center px-3 py-2 text-content-secondary hover:text-content-primary hover:bg-interactive-hover rounded-md transition-colors"
+                title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>

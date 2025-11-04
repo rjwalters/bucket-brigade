@@ -50,7 +50,7 @@ export const RADAR_DIMENSIONS: RadarDimension[] = [
   {
     key: 'selfPreservation',
     label: 'Self-Preservation',
-    description: 'Priority on protecting own house vs. helping others',
+    description: 'Priority on protecting own houses vs. helping others',
     min: 0,
     max: 10,
   },

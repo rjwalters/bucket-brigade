@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Colors - CSS Variables for Light/Dark Mode */
+@layer base {
+  :root {
+    /* Background colors */
+    --color-bg-primary: 249 250 251; /* gray-50 */
+    --color-bg-secondary: 255 255 255; /* white */
+    --color-bg-tertiary: 243 244 246; /* gray-100 */
+
+    /* Text colors */
+    --color-text-primary: 17 24 39; /* gray-900 */
+    --color-text-secondary: 107 114 128; /* gray-500 */
+    --color-text-tertiary: 156 163 175; /* gray-400 */
+
+    /* Border colors */
+    --color-border-primary: 229 231 235; /* gray-200 */
+    --color-border-secondary: 209 213 219; /* gray-300 */
+
+    /* Interactive colors */
+    --color-interactive-hover: 243 244 246; /* gray-100 */
+    --color-interactive-active: 219 234 254; /* blue-100 */
+
+    /* Brand colors */
+    --color-brand-bg: 254 243 199; /* orange-100 */
+    --color-brand-text: 234 88 12; /* orange-600 */
+  }
+
+  .dark {
+    /* Background colors */
+    --color-bg-primary: 17 24 39; /* gray-900 */
+    --color-bg-secondary: 31 41 55; /* gray-800 */
+    --color-bg-tertiary: 55 65 81; /* gray-700 */
+
+    /* Text colors */
+    --color-text-primary: 243 244 246; /* gray-100 */
+    --color-text-secondary: 156 163 175; /* gray-400 */
+    --color-text-tertiary: 107 114 128; /* gray-500 */
+
+    /* Border colors */
+    --color-border-primary: 55 65 81; /* gray-700 */
+    --color-border-secondary: 75 85 99; /* gray-600 */
+
+    /* Interactive colors */
+    --color-interactive-hover: 55 65 81; /* gray-700 */
+    --color-interactive-active: 30 58 138; /* blue-900 */
+
+    /* Brand colors */
+    --color-brand-bg: 124 45 18; /* orange-900 */
+    --color-brand-text: 251 146 60; /* orange-400 */
+  }
+}
+
 /* Custom styles for Bucket Brigade */
 @layer components {
   .btn-primary {
@@ -9,11 +60,24 @@
   }
 
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    background-color: rgb(var(--color-bg-tertiary));
+    color: rgb(var(--color-text-primary));
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 200ms, color 200ms;
+  }
+
+  .btn-secondary:hover {
+    background-color: rgb(var(--color-interactive-hover));
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+    background-color: rgb(var(--color-bg-secondary));
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    padding: 1.5rem;
+    border: 1px solid rgb(var(--color-border-primary));
   }
 
   /* Town Visualization Styles */
@@ -22,7 +86,9 @@
   }
 
   .town-svg {
-    @apply border border-gray-200 rounded-lg bg-gray-50;
+    border: 1px solid rgb(var(--color-border-primary));
+    border-radius: 0.5rem;
+    background-color: rgb(var(--color-bg-tertiary));
   }
 
   .town-connection {
@@ -105,7 +171,9 @@
 
   /* Replay Controls Styles */
   .replay-controls {
-    @apply bg-white rounded-lg shadow-lg;
+    background-color: rgb(var(--color-bg-secondary));
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
   .control-button {
@@ -118,11 +186,19 @@
 
   /* Sidebar Styles */
   .sidebar-section {
-    @apply bg-white rounded-lg shadow-md p-4;
+    background-color: rgb(var(--color-bg-secondary));
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    padding: 1rem;
   }
 
   .sidebar-title {
-    @apply text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(var(--color-text-primary));
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgb(var(--color-border-primary));
   }
 
   .sidebar-content {
@@ -138,11 +214,12 @@
   }
 
   .parameter-label {
-    @apply text-gray-600;
+    color: rgb(var(--color-text-secondary));
   }
 
   .parameter-value {
-    @apply font-medium text-gray-900;
+    font-weight: 500;
+    color: rgb(var(--color-text-primary));
   }
 
   .stats-grid {
@@ -150,7 +227,10 @@
   }
 
   .stat-item {
-    @apply text-center p-3 bg-gray-50 rounded-lg;
+    text-align: center;
+    padding: 0.75rem;
+    background-color: rgb(var(--color-bg-tertiary));
+    border-radius: 0.5rem;
   }
 
   .stat-number {
@@ -158,7 +238,9 @@
   }
 
   .stat-label {
-    @apply text-sm text-gray-600 mt-1;
+    font-size: 0.875rem;
+    color: rgb(var(--color-text-secondary));
+    margin-top: 0.25rem;
   }
 
   .final-stats {
@@ -170,7 +252,7 @@
   }
 
   .final-stat-label {
-    @apply text-gray-700;
+    color: rgb(var(--color-text-primary));
   }
 
   .final-stat-value {
@@ -182,11 +264,14 @@
   }
 
   .agent-reward-item {
-    @apply p-2 bg-gray-50 rounded text-sm;
+    padding: 0.5rem;
+    background-color: rgb(var(--color-bg-tertiary));
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
   }
 
   .agent-id {
-    @apply text-gray-700;
+    color: rgb(var(--color-text-primary));
   }
 
   .agent-reward {
@@ -205,13 +290,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background-color: rgb(var(--color-bg-tertiary));
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  background-color: rgb(var(--color-border-secondary));
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  background-color: rgb(var(--color-text-tertiary));
 }

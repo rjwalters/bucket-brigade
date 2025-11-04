@@ -3,16 +3,18 @@ import { HouseState } from '../types';
 
 interface TownProps {
   houses: HouseState[];
+  numAgents?: number;
+  archetypes?: string[];
   className?: string;
 }
 
-const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
+const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, className = '' }) => {
   // Create positions for 10 houses in a circle
   const housePositions = Array.from({ length: 10 }, (_, i) => {
     const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // Start from top
-    const radius = 240; // Distance from center (doubled)
-    const centerX = 300; // Center of the circle (doubled)
-    const centerY = 300;
+    const radius = 210; // Distance from center (5% larger)
+    const centerX = 320; // Center of the circle (symmetric)
+    const centerY = 320; // Center of the circle (symmetric)
 
     return {
       x: centerX + radius * Math.cos(angle),
@@ -42,7 +44,7 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
 
   return (
     <div className={`town-visualization ${className}`}>
-      <svg width="600" height="600" className="town-svg">
+      <svg width="640" height="640" viewBox="0 0 640 640" className="town-svg">
         {/* Connection lines between houses */}
         {housePositions.map((pos, i) => {
           const nextPos = housePositions[(i + 1) % 10];
@@ -64,6 +66,9 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
         {housePositions.map((pos, i) => {
           const houseState = houses[i];
           const symbol = getHouseSymbol(houseState);
+          const owner = i % numAgents;
+          const archetype = archetypes?.[owner];
+          const ownerLabel = archetype ? `${archetype} ${owner}` : `Agent ${owner}`;
 
           return (
             <g key={`house-${i}`} className="town-house-group">
@@ -87,6 +92,18 @@ const Town: React.FC<TownProps> = ({ houses, className = '' }) => {
                 style={{ fontSize: '2rem' }}
               >
                 {symbol}
+              </text>
+
+              {/* Owner index */}
+              <text
+                x={pos.x}
+                y={pos.y + 65}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="town-owner-index select-none text-gray-600 dark:text-gray-400"
+                style={{ fontSize: '0.75rem', fontWeight: 'bold' }}
+              >
+                {ownerLabel}
               </text>
             </g>
           );
