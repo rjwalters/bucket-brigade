@@ -23,6 +23,7 @@ NC='\033[0m' # No Color
 
 # Default configuration
 REMOTE_HOST="${REMOTE_HOST:-}"
+REMOTE_DIR="${REMOTE_DIR:-bucket-brigade}"
 GENERATIONS=500
 POPULATION=50
 WORKERS_PER_SCENARIO=4
@@ -143,11 +144,11 @@ fi
 # Check remote directory
 echo -n "  [2/4] Checking remote directory... "
 if [ "$DRY_RUN" = false ]; then
-    if ssh "$REMOTE_HOST" "[ -d bucket-brigade ]"; then
+    if ssh "$REMOTE_HOST" "[ -d $REMOTE_DIR ]"; then
         echo -e "${GREEN}✓${NC}"
     else
         echo -e "${RED}✗${NC}"
-        echo -e "${RED}Error: bucket-brigade directory not found on remote${NC}"
+        echo -e "${RED}Error: $REMOTE_DIR directory not found on remote${NC}"
         exit 1
     fi
 else
@@ -162,7 +163,7 @@ if [ "$DRY_RUN" = false ]; then
     else
         echo -e "${RED}✗${NC}"
         echo -e "${RED}Error: Python virtual environment not found${NC}"
-        echo "Run on remote: cd bucket-brigade && uv venv && uv sync"
+        echo "Run on remote: cd $REMOTE_DIR && uv venv && uv sync"
         exit 1
     fi
 else
@@ -172,7 +173,7 @@ fi
 # Check evolution script
 echo -n "  [4/4] Checking evolution script... "
 if [ "$DRY_RUN" = false ]; then
-    if ssh "$REMOTE_HOST" "[ -f bucket-brigade/scripts/evolve_scenario_expert.py ]"; then
+    if ssh "$REMOTE_HOST" "[ -f $REMOTE_DIR/scripts/evolve_scenario_expert.py ]"; then
         echo -e "${GREEN}✓${NC}"
     else
         echo -e "${RED}✗${NC}"
@@ -204,7 +205,7 @@ echo ""
 
 # Create logs directory on remote
 if [ "$DRY_RUN" = false ]; then
-    ssh "$REMOTE_HOST" "mkdir -p bucket-brigade/logs"
+    ssh "$REMOTE_HOST" "mkdir -p $REMOTE_DIR/logs"
 fi
 
 for scenario in "${SCENARIOS[@]}"; do
@@ -213,7 +214,7 @@ for scenario in "${SCENARIOS[@]}"; do
     echo -n "  Launching: ${scenario}... "
 
     # Build command
-    CMD="cd bucket-brigade && .venv/bin/python scripts/evolve_scenario_expert.py \
+    CMD="cd ${REMOTE_DIR} && ../bucket-brigade/.venv/bin/python scripts/evolve_scenario_expert.py \
         --scenario ${scenario} \
         --output-dir experiments/evolved_experts/${scenario} \
         --generations ${GENERATIONS} \
