@@ -61,9 +61,7 @@ def main():
 
     # Sequential baseline
     print("Running sequential (baseline)...")
-    seq_time = benchmark_evolution(
-        parallel=False, num_workers=None, label="Sequential"
-    )
+    seq_time = benchmark_evolution(parallel=False, num_workers=None, label="Sequential")
 
     # Parallel with 2 workers
     print("Running parallel (2 workers)...")
@@ -90,8 +88,12 @@ def main():
     print("Summary")
     print("=" * 80)
     print(f"Sequential time:    {seq_time:.2f}s (baseline)")
-    print(f"Parallel (2 workers):  {par2_time:.2f}s ({seq_time / par2_time:.2f}x speedup)")
-    print(f"Parallel (4 workers):  {par4_time:.2f}s ({seq_time / par4_time:.2f}x speedup)")
+    print(
+        f"Parallel (2 workers):  {par2_time:.2f}s ({seq_time / par2_time:.2f}x speedup)"
+    )
+    print(
+        f"Parallel (4 workers):  {par4_time:.2f}s ({seq_time / par4_time:.2f}x speedup)"
+    )
     print(
         f"Parallel (auto):       {par_auto_time:.2f}s ({seq_time / par_auto_time:.2f}x speedup)"
     )

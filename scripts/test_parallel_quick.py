@@ -6,7 +6,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm, create_random_population
+from bucket_brigade.evolution import (
+    EvolutionConfig,
+    GeneticAlgorithm,
+    create_random_population,
+)
 from bucket_brigade.evolution.fitness import FitnessEvaluator
 
 
@@ -55,8 +59,12 @@ def test_sequential_vs_parallel():
             f"    Individual {i}: seq={ind_seq.fitness:.4f}, par={ind_par.fitness:.4f}"
         )
         # Both should have fitness (may differ due to different random streams in workers)
-        assert ind_seq.fitness is not None, f"Sequential fitness is None for individual {i}"
-        assert ind_par.fitness is not None, f"Parallel fitness is None for individual {i}"
+        assert ind_seq.fitness is not None, (
+            f"Sequential fitness is None for individual {i}"
+        )
+        assert ind_par.fitness is not None, (
+            f"Parallel fitness is None for individual {i}"
+        )
 
     print("✅ Both sequential and parallel produce valid fitness values\n")
 
