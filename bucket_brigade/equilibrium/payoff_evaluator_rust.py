@@ -5,23 +5,23 @@ This version uses the fast Rust core (bucket_brigade_core) for 10-100x speedup.
 """
 
 import numpy as np
-from typing import Optional
+from typing import Any, Optional
 from multiprocessing import Pool, cpu_count
 import bucket_brigade_core as core
 
 
-def _convert_scenario_to_rust(scenario):
+def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario."""
     # Map Python scenario parameters to Rust parameter names
     return core.Scenario(
-        prob_fire_spreads_to_neighbor=scenario.beta,
-        prob_solo_agent_extinguishes_fire=scenario.kappa,
-        prob_house_catches_fire=scenario.p_spark,
-        team_reward_house_survives=scenario.A,
-        team_penalty_house_burns=scenario.L,
-        cost_to_work_one_night=scenario.c,
-        min_nights=scenario.N_min,
-        num_agents=scenario.num_agents,
+        prob_fire_spreads_to_neighbor=scenario.beta,  # type: ignore[attr-defined]
+        prob_solo_agent_extinguishes_fire=scenario.kappa,  # type: ignore[attr-defined]
+        prob_house_catches_fire=scenario.p_spark,  # type: ignore[attr-defined]
+        team_reward_house_survives=scenario.A,  # type: ignore[attr-defined]
+        team_penalty_house_burns=scenario.L,  # type: ignore[attr-defined]
+        cost_to_work_one_night=scenario.c,  # type: ignore[attr-defined]
+        min_nights=scenario.N_min,  # type: ignore[attr-defined]
+        num_agents=scenario.num_agents,  # type: ignore[attr-defined]
         # Use default individual rewards (not in our Python Scenario)
         reward_own_house_survives=10.0,
         reward_other_house_survives=5.0,
@@ -30,7 +30,9 @@ def _convert_scenario_to_rust(scenario):
     )
 
 
-def _heuristic_action(theta, obs, agent_id, rng):
+def _heuristic_action(
+    theta: np.ndarray, obs: Any, agent_id: int, rng: Any
+) -> list[int]:
     """
     Simplified heuristic action selection based on parameters.
 
@@ -43,18 +45,18 @@ def _heuristic_action(theta, obs, agent_id, rng):
     rest_reward_bias = theta[8]
 
     # Simple decision: work with probability based on work_tendency
-    if rng.random() < work_tendency * (1 - rest_reward_bias):
+    if rng.random() < work_tendency * (1 - rest_reward_bias):  # type: ignore[attr-defined]
         # Work - choose which house
         owned_house = agent_id % 10
 
         # Prioritize owned house if burning
-        if obs["houses"][owned_house] == 1 and rng.random() < own_house_priority:
+        if obs["houses"][owned_house] == 1 and rng.random() < own_house_priority:  # type: ignore[index,attr-defined]
             house = owned_house
         else:
             # Choose a burning house
-            burning = [i for i, h in enumerate(obs["houses"]) if h == 1]
+            burning = [i for i, h in enumerate(obs["houses"]) if h == 1]  # type: ignore[index]
             if burning:
-                house = rng.choice(burning)
+                house = rng.choice(burning)  # type: ignore[attr-defined]
             else:
                 house = owned_house
 

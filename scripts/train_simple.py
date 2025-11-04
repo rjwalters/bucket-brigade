@@ -104,12 +104,16 @@ def train_ppo(
     value_coef=0.5,
     entropy_coef=0.01,
     max_grad_norm=0.5,
-    eval_interval=10000,
+    eval_interval=1000,  # Changed from 10000 to 1000 for more frequent updates
     writer=None,
     experiment_session=None,
     experiment_run_id=None,
+    device=None,
 ):
     """Train the policy using PPO."""
+    # Get device from policy if not specified
+    if device is None:
+        device = next(policy.parameters()).device
 
     obs, _ = env.reset()
     obs = torch.FloatTensor(obs)
@@ -135,13 +139,14 @@ def train_ppo(
 
         for _ in range(batch_size):
             with torch.no_grad():
-                actions, log_prob, value = policy.get_action(obs.unsqueeze(0))
+                obs_gpu = obs.unsqueeze(0).to(device)
+                actions, log_prob, value = policy.get_action(obs_gpu)
                 actions_list = [a.item() for a in actions]
 
-            observations.append(obs)
+            observations.append(obs.cpu())
             actions_taken.append(actions_list)
-            log_probs_old.append(log_prob)
-            values.append(value.squeeze())
+            log_probs_old.append(log_prob.cpu() if log_prob is not None else None)
+            values.append(value.squeeze().cpu())
 
             # Step environment
             next_obs, reward, terminated, truncated, info = env.step(actions_list)
@@ -169,10 +174,12 @@ def train_ppo(
         # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        # Convert to tensors
-        obs_batch = torch.stack(observations)
-        actions_batch = torch.LongTensor(actions_taken)
-        log_probs_old = torch.stack(log_probs_old)
+        # Convert to tensors and move to device
+        obs_batch = torch.stack(observations).to(device)
+        actions_batch = torch.LongTensor(actions_taken).to(device)
+        log_probs_old = torch.stack(log_probs_old).to(device)
+        advantages = advantages.to(device)
+        returns = returns.to(device)
 
         # PPO update
         for epoch in range(num_epochs):
@@ -281,24 +288,36 @@ def train_ppo(
             elapsed = time.time() - start_time
             fps = global_step / elapsed
             avg_reward = np.mean(episode_rewards) if episode_rewards else 0
+            eta_seconds = (num_steps - global_step) / fps if fps > 0 else 0
+            eta_minutes = eta_seconds / 60
 
             print(
-                f"Step {global_step:,}/{num_steps:,} | "
-                f"Avg Reward: {avg_reward:.2f} | "
-                f"FPS: {fps:.0f} | "
-                f"Episodes: {len(episode_rewards)}"
+                f"\n{'=' * 60}\n"
+                f"📊 Step {global_step:,}/{num_steps:,} ({100 * global_step / num_steps:.1f}%)\n"
+                f"   Avg Reward: {avg_reward:.2f} | Episodes: {len(episode_rewards)}\n"
+                f"   FPS: {fps:.0f} | Elapsed: {elapsed / 60:.1f}m | ETA: {eta_minutes:.1f}m\n"
+                f"{'=' * 60}\n",
+                flush=True,
             )
 
     print(
-        f"\n✅ Training complete! Total time: {(time.time() - start_time) / 60:.1f} minutes"
+        f"\n{'=' * 60}\n"
+        f"✅ Training complete!\n"
+        f"   Total time: {(time.time() - start_time) / 60:.1f} minutes\n"
+        f"   Final avg reward: {np.mean(episode_rewards) if episode_rewards else 0:.2f}\n"
+        f"   Total episodes: {len(episode_rewards)}\n"
+        f"{'=' * 60}\n",
+        flush=True,
     )
 
     return policy
 
 
 def main():
+    print("🔍 DEBUG: Starting train_simple.py main()", flush=True)
     import argparse
 
+    print("🔍 DEBUG: Parsing arguments", flush=True)
     parser = argparse.ArgumentParser(description="Train Bucket Brigade policy with PPO")
     parser.add_argument(
         "--num-opponents", type=int, default=2, help="Number of opponent agents"
@@ -348,6 +367,10 @@ def main():
     )
 
     args = parser.parse_args()
+    print(
+        f"🔍 DEBUG: Arguments parsed. Steps={args.num_steps}, Scenario={args.scenario}",
+        flush=True,
+    )
 
     # Handle --list-scenarios
     if args.list_scenarios:
@@ -359,27 +382,43 @@ def main():
         return
 
     # Set seeds
+    print(f"🔍 DEBUG: Setting random seeds", flush=True)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
     # Create environment with scenario
+    print(f"🔍 DEBUG: Importing scenario functions", flush=True)
     from bucket_brigade.envs import get_scenario_by_name
 
-    print(f"🎮 Creating environment with scenario: {args.scenario}")
+    print(f"🎮 Creating environment with scenario: {args.scenario}", flush=True)
     print(f"   Number of opponents: {args.num_opponents}")
 
     scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
+    print(f"🔍 DEBUG: Got scenario, creating environment...", flush=True)
     env = PufferBucketBrigade(scenario=scenario, num_opponents=args.num_opponents)
+    print(f"🔍 DEBUG: Environment created!", flush=True)
 
     # Create policy
     obs_dim = env.observation_space.shape[0]
     action_dims = env.action_space.nvec.tolist()
 
-    print(f"🧠 Creating policy network")
+    # Set up device (GPU if available)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"🔧 Using device: {device}", flush=True)
+    if torch.cuda.is_available():
+        print(f"   GPU: {torch.cuda.get_device_name(0)}", flush=True)
+        print(
+            f"   Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB",
+            flush=True,
+        )
+
+    print(f"🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
-    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size)
+    policy = PolicyNetwork(obs_dim, action_dims, hidden_size=args.hidden_size).to(
+        device
+    )
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
     # Initialize TensorBoard writer
@@ -446,6 +485,7 @@ def main():
             writer=writer,
             experiment_session=experiment_session,
             experiment_run_id=experiment_run.id if experiment_run else None,
+            device=device,
         )
     finally:
         writer.close()

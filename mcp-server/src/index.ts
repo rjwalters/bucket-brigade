@@ -5,8 +5,15 @@
  *
  * Provides tools for executing commands on remote machines via SSH.
  * This allows Claude to directly interact with remote development/GPU machines.
+ *
+ * Uses native SSH command to support full SSH config including ProxyCommand,
+ * ControlMaster, and other advanced SSH features.
  */
 
+import { config as loadEnv } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { spawn, ChildProcess } from "child_process";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -14,26 +21,27 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Client } from "ssh2";
+
+// Load .env file from project root (two directories up from dist/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envPath = resolve(__dirname, "../../.env");
+loadEnv({ path: envPath });
 
 interface SSHConfig {
   host: string;
-  port: number;
-  username: string;
-  privateKeyPath?: string;
 }
 
 interface BackgroundJob {
   id: string;
   command: string;
-  stream: any;
+  process: ChildProcess;
   output: string[];
   exitCode?: number;
 }
 
 class RemoteSSHServer {
   private server: Server;
-  private sshClient: Client | null = null;
   private config: SSHConfig;
   private backgroundJobs = new Map<string, BackgroundJob>();
   private jobCounter = 0;
@@ -45,7 +53,7 @@ class RemoteSSHServer {
     this.server = new Server(
       {
         name: "remote-ssh",
-        version: "0.1.0",
+        version: "0.2.0",
       },
       {
         capabilities: {
@@ -58,50 +66,35 @@ class RemoteSSHServer {
   }
 
   private loadConfig(): SSHConfig {
-    const sshHost = process.env.SSH_HOST || "";
-    const [username, host] = sshHost.includes("@")
-      ? sshHost.split("@")
-      : ["", sshHost];
+    // SSH_HOST should now be an SSH config alias or user@host format
+    const sshHost = process.env.SSH_HOST || "localhost";
 
     return {
-      host: host || "localhost",
-      port: parseInt(process.env.SSH_PORT || "22"),
-      username: username || process.env.USER || "root",
-      privateKeyPath: process.env.SSH_KEY_PATH,
+      host: sshHost,
     };
   }
 
-  private async ensureConnection(): Promise<Client> {
-    if (this.sshClient && (this.sshClient as any)._sock?.readable) {
-      return this.sshClient;
-    }
+  private async testConnection(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const proc = spawn("ssh", [this.config.host, "echo", "test"]);
 
-    return new Promise((resolve, reject) => {
-      const client = new Client();
-
-      client.on("ready", () => {
-        this.sshClient = client;
-        console.error(`✓ SSH connected to ${this.config.username}@${this.config.host}`);
-        resolve(client);
+      let success = false;
+      proc.on("exit", (code) => {
+        success = code === 0;
+        resolve(success);
       });
 
-      client.on("error", (err) => {
-        console.error(`✗ SSH connection error: ${err.message}`);
-        reject(err);
+      proc.on("error", () => {
+        resolve(false);
       });
 
-      const connectConfig: any = {
-        host: this.config.host,
-        port: this.config.port,
-        username: this.config.username,
-      };
-
-      if (this.config.privateKeyPath) {
-        const fs = require("fs");
-        connectConfig.privateKey = fs.readFileSync(this.config.privateKeyPath);
-      }
-
-      client.connect(connectConfig);
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!success) {
+          proc.kill();
+          resolve(false);
+        }
+      }, 10000);
     });
   }
 
@@ -219,83 +212,86 @@ class RemoteSSHServer {
   }> {
     const { command, description, run_in_background, timeout = 120000 } = args;
 
-    const client = await this.ensureConnection();
-
     if (run_in_background) {
-      return this.executeBashBackground(client, command);
+      return this.executeBashBackground(command);
     }
 
     return new Promise((resolve, reject) => {
       let output = "";
       let errorOutput = "";
 
-      client.exec(command, (err, stream) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+      // Use SSH command to execute remote command
+      // SSH will handle all config including ProxyCommand
+      const proc = spawn("ssh", [this.config.host, command]);
 
-        const timeoutId = setTimeout(() => {
-          stream.close();
-          reject(new Error("Command timed out"));
-        }, timeout);
+      const timeoutId = setTimeout(() => {
+        proc.kill();
+        reject(new Error("Command timed out"));
+      }, timeout);
 
-        stream.on("close", (code: number) => {
-          clearTimeout(timeoutId);
-          resolve({
-            content: [
-              {
-                type: "text",
-                text: output || errorOutput || "(no output)",
-              },
-            ],
-          });
+      proc.stdout.on("data", (data: Buffer) => {
+        output += data.toString();
+      });
+
+      proc.stderr.on("data", (data: Buffer) => {
+        errorOutput += data.toString();
+      });
+
+      proc.on("close", (code: number) => {
+        clearTimeout(timeoutId);
+
+        // Combine stdout and stderr, prefer stdout if available
+        const result = output || errorOutput || "(no output)";
+
+        resolve({
+          content: [
+            {
+              type: "text",
+              text: result,
+            },
+          ],
         });
+      });
 
-        stream.on("data", (data: Buffer) => {
-          output += data.toString();
-        });
-
-        stream.stderr.on("data", (data: Buffer) => {
-          errorOutput += data.toString();
-        });
+      proc.on("error", (err) => {
+        clearTimeout(timeoutId);
+        reject(err);
       });
     });
   }
 
-  private async executeBashBackground(client: Client, command: string): Promise<{
+  private async executeBashBackground(command: string): Promise<{
     content: Array<{ type: string; text: string }>;
   }> {
     const jobId = `remote-${++this.jobCounter}`;
+
+    // Use SSH command in background
+    const proc = spawn("ssh", [this.config.host, command]);
+
     const job: BackgroundJob = {
       id: jobId,
       command,
-      stream: null,
+      process: proc,
       output: [],
     };
 
     this.backgroundJobs.set(jobId, job);
 
-    client.exec(command, (err, stream) => {
-      if (err) {
-        job.output.push(`Error: ${err.message}`);
-        job.exitCode = 1;
-        return;
-      }
+    proc.stdout.on("data", (data: Buffer) => {
+      job.output.push(data.toString());
+    });
 
-      job.stream = stream;
+    proc.stderr.on("data", (data: Buffer) => {
+      job.output.push(data.toString());
+    });
 
-      stream.on("close", (code: number) => {
-        job.exitCode = code;
-      });
+    proc.on("close", (code: number) => {
+      job.exitCode = code;
+    });
 
-      stream.on("data", (data: Buffer) => {
-        job.output.push(data.toString());
-      });
-
-      stream.stderr.on("data", (data: Buffer) => {
-        job.output.push(data.toString());
-      });
+    proc.on("error", (err) => {
+      job.output.push(`Error: ${err.message}`);
+      job.exitCode = 1;
     });
 
     return {
@@ -351,10 +347,22 @@ class RemoteSSHServer {
   }
 
   async run() {
+    // Test connection on startup
+    console.error("MCP Remote SSH Server starting...");
+    console.error(`Target: ${this.config.host}`);
+    console.error("Testing connection...");
+
+    const connected = await this.testConnection();
+    if (connected) {
+      console.error("✓ SSH connection test successful");
+    } else {
+      console.error("✗ SSH connection test failed - commands may fail");
+      console.error("  Check that SSH_HOST is configured correctly in .env");
+    }
+
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error("MCP Remote SSH Server running on stdio");
-    console.error(`Target: ${this.config.username}@${this.config.host}:${this.config.port}`);
   }
 }
 

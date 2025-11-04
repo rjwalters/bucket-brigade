@@ -7,7 +7,8 @@ MCP server that allows Claude to execute commands on remote machines via SSH.
 - **Remote Bash Execution**: Run commands on remote hosts
 - **Background Jobs**: Start long-running tasks and monitor them
 - **File Reading**: Read files from remote filesystem
-- **SSH Key Authentication**: Secure connection using SSH keys
+- **Full SSH Config Support**: Uses native SSH command with ProxyCommand, ControlMaster, etc.
+- **SSH Config Aliases**: Reference hosts by SSH config alias name
 
 ## Installation
 
@@ -19,7 +20,33 @@ npm run build
 
 ## Configuration
 
-Add to your Claude Code MCP settings (`~/.config/claude-code/mcp_settings.json`):
+### Option 1: Project-level .env (Recommended)
+
+Create a `.env` file in your project root:
+
+```bash
+# SSH_HOST can be an SSH config alias or user@host format
+SSH_HOST=my-gpu-server
+```
+
+Add `.mcp.json` to your project root:
+
+```json
+{
+  "mcpServers": {
+    "remote-ssh": {
+      "command": "node",
+      "args": ["${PWD}/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+The MCP server will automatically load the `.env` file and use your `~/.ssh/config` settings.
+
+### Option 2: Global MCP Settings
+
+Add to your Claude Code MCP settings (`~/.claude.json`):
 
 ```json
 {
@@ -28,9 +55,7 @@ Add to your Claude Code MCP settings (`~/.config/claude-code/mcp_settings.json`)
       "command": "node",
       "args": ["/absolute/path/to/bucket-brigade/mcp-server/dist/index.js"],
       "env": {
-        "SSH_HOST": "user@remote-host.com",
-        "SSH_PORT": "22",
-        "SSH_KEY_PATH": "/Users/you/.ssh/id_rsa"
+        "SSH_HOST": "my-gpu-server"
       }
     }
   }
@@ -39,9 +64,26 @@ Add to your Claude Code MCP settings (`~/.config/claude-code/mcp_settings.json`)
 
 ### Environment Variables
 
-- `SSH_HOST`: Remote host in format `user@hostname`
-- `SSH_PORT`: SSH port (default: 22)
-- `SSH_KEY_PATH`: Path to SSH private key (optional, uses default if not specified)
+- `SSH_HOST`: SSH config alias (e.g., `my-server`) or user@host format (e.g., `user@host.com`)
+  - Uses your `~/.ssh/config` settings including ProxyCommand, ControlMaster, etc.
+  - Supports all SSH configuration options
+
+### SSH Config Example
+
+In `~/.ssh/config`:
+
+```
+Host my-gpu-server
+  HostName localhost
+  Port 10022
+  User root
+  ProxyCommand ssh -W %h:%p jump-host.example.com
+  ControlMaster auto
+  ControlPath ~/.ssh/control-%r@%h:%p
+  ControlPersist 10m
+```
+
+Then set `SSH_HOST=my-gpu-server` in your `.env` file.
 
 ## Usage
 
@@ -98,10 +140,19 @@ npm run watch
 npm run dev
 ```
 
+## Architecture
+
+This MCP server uses the native SSH command (`ssh`) instead of a Node.js SSH library. This design provides:
+
+- **Full SSH Config Support**: All `~/.ssh/config` directives work (ProxyCommand, ControlMaster, etc.)
+- **Jump Host Support**: Automatic support for bastion/jump hosts via ProxyCommand
+- **Connection Multiplexing**: ControlMaster settings are respected for faster connections
+- **Standard Behavior**: Works exactly like your normal SSH commands
+
 ## Security Notes
 
-- Uses SSH key authentication (no passwords)
-- SSH connection is established once and reused
+- Uses SSH key authentication (configured in `~/.ssh/config`)
+- Leverages your existing SSH configuration and keys
 - Commands execute with permissions of SSH user
 - Be cautious about running untrusted commands
 
@@ -119,14 +170,22 @@ npm run dev
 ## Troubleshooting
 
 **Connection fails:**
-- Verify SSH key has correct permissions (`chmod 600 ~/.ssh/id_rsa`)
-- Test SSH manually: `ssh user@host`
-- Check SSH_HOST format: `user@hostname`
+- Test SSH manually: `ssh $SSH_HOST` (should work without password)
+- Check SSH config: `ssh -G $SSH_HOST` to see effective configuration
+- Verify SSH config alias exists in `~/.ssh/config`
+- For ProxyCommand setups, test jump host connectivity first
 
 **Commands timeout:**
-- Increase timeout parameter
+- Increase timeout parameter in tool call
 - Use `run_in_background: true` for long commands
+- Check if ControlMaster is working: `ssh -O check $SSH_HOST`
 
 **Permission denied:**
 - Ensure SSH user has necessary permissions
 - Check file paths are absolute
+- Verify SSH key authentication is configured correctly
+
+**MCP server not starting:**
+- Check that `.env` file exists and has `SSH_HOST` set
+- Rebuild the server: `npm run build`
+- Test server directly: `node mcp-server/dist/index.js` (should show connection test)

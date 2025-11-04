@@ -44,9 +44,9 @@ class HeuristicAgent(AgentBase):
         self.altruism_factor = params[9]  # Willingness to help others (0-1)
 
         # Internal state
-        self.last_action = None
+        self.last_action: Optional[tuple[int, int]] = None
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset agent state between games."""
         self.last_action = None
 
@@ -112,7 +112,7 @@ class HeuristicAgent(AgentBase):
         # Adjust for rest preference
         intent *= 1.0 - self.rest_reward_bias
 
-        return np.clip(intent, 0.0, 1.0)
+        return float(np.clip(intent, 0.0, 1.0))
 
     def _choose_signal(self, work_intent: float) -> int:
         """Choose whether to signal WORK or REST."""

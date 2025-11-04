@@ -10,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Optional
 import numpy as np
 
 # Add parent directory to path for imports
@@ -28,15 +28,17 @@ from bucket_brigade.agents.archetypes import (
 )
 
 
-def run_game(agents: List, scenario, seed: int = None) -> Dict[str, Any]:
+def run_game(
+    agents: List[Any], scenario: Any, seed: Optional[int] = None
+) -> Dict[str, Any]:
     """Run a single game with given agents."""
-    env = BucketBrigadeEnv(scenario)
+    env = BucketBrigadeEnv(scenario)  # type: ignore[arg-type]
     obs = env.reset(seed=seed)
 
     total_rewards = np.zeros(len(agents))
 
     while not env.done:
-        actions = np.array([agent.act(obs) for agent in agents])
+        actions = np.array([agent.act(obs) for agent in agents])  # type: ignore[attr-defined]
         obs, rewards, dones, info = env.step(actions)
         total_rewards += rewards
 
@@ -49,7 +51,9 @@ def run_game(agents: List, scenario, seed: int = None) -> Dict[str, Any]:
     }
 
 
-def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 100):
+def analyze_heuristics(
+    scenario_name: str, output_dir: Path, num_games: int = 100
+) -> Dict[str, Any]:
     """Run tournament with heuristic archetypes."""
 
     print(f"Analyzing heuristics for scenario: {scenario_name}")
@@ -207,16 +211,20 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
     print()
     print("Homogeneous Teams (Best to Worst):")
     sorted_homogeneous = sorted(
-        homogeneous_results, key=lambda x: x["mean_payoff"], reverse=True
+        homogeneous_results,
+        key=lambda x: float(x["mean_payoff"]),
+        reverse=True,  # type: ignore[arg-type]
     )
     for i, result in enumerate(sorted_homogeneous):
         print(
-            f"  {i + 1}. {result['agent_type'].title()}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
+            f"  {i + 1}. {str(result['agent_type']).title()}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"  # type: ignore[arg-type]
         )
 
     print()
     print("Mixed Teams (Best to Worst):")
-    sorted_mixed = sorted(mixed_results, key=lambda x: x["mean_payoff"], reverse=True)
+    sorted_mixed = sorted(
+        mixed_results, key=lambda x: float(x["mean_payoff"]), reverse=True
+    )  # type: ignore[arg-type]
     for i, result in enumerate(sorted_mixed):
         print(
             f"  {i + 1}. {result['description']}: {result['mean_payoff']:.2f} ± {result['std_payoff']:.2f}"
@@ -225,7 +233,7 @@ def analyze_heuristics(scenario_name: str, output_dir: Path, num_games: int = 10
     return results
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze heuristic agents")
     parser.add_argument("scenario", type=str, help="Scenario name")
     parser.add_argument(
