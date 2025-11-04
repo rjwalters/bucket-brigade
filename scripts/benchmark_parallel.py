@@ -13,8 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import time
 from multiprocessing import cpu_count
 
-import numpy as np
-
 from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm
 
 
@@ -57,8 +55,8 @@ def main():
     print("Parallel Fitness Evaluation Benchmark")
     print("=" * 80)
     print(f"System CPUs: {cpu_count()}")
-    print(f"Config: 20 individuals, 5 generations, 10 games/individual")
-    print(f"Total evaluations: ~100 individuals (20 initial + 16 new per gen)")
+    print("Config: 20 individuals, 5 generations, 10 games/individual")
+    print("Total evaluations: ~100 individuals (20 initial + 16 new per gen)")
     print()
 
     # Sequential baseline
