@@ -19,12 +19,10 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from matplotlib.figure import Figure
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -280,9 +278,9 @@ def generate_summary_report(all_stats: Dict[str, Dict], output_dir: Path):
         "",
         "## Overview",
         "",
-        f"**Dataset**: 12 scenarios × 10 seeds = 120 evolution runs",
-        f"**Population**: 500 individuals per run",
-        f"**Generations**: 5000 generations per run",
+        "**Dataset**: 12 scenarios × 10 seeds = 120 evolution runs",
+        "**Population**: 500 individuals per run",
+        "**Generations**: 5000 generations per run",
         "",
         "## Performance Summary",
         "",
