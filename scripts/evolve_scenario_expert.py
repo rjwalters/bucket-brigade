@@ -14,7 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import argparse
 import json
 import time
-from typing import Optional
 
 import numpy as np
 
@@ -44,10 +43,21 @@ def create_team_composition_fitness(scenario_name: str, num_agents: int = 4):
 
     # Define different team parameter sets
     team_types = {
-        'random': np.random.randn(10).tolist(),  # Random baseline
-        'greedy': [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],  # High free-riding
-        'fair': [0.0, 0.9, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0],  # Cooperative
-        'mixed': None,  # Will generate mix of above
+        "random": np.random.randn(10).tolist(),  # Random baseline
+        "greedy": [
+            0.0,
+            0.0,
+            0.0,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+        ],  # High free-riding
+        "fair": [0.0, 0.9, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0],  # Cooperative
+        "mixed": None,  # Will generate mix of above
     }
 
     def fitness_fn(individual: Individual) -> float:
@@ -64,27 +74,47 @@ def create_team_composition_fitness(scenario_name: str, num_agents: int = 4):
 
         for team_type_name, team_params in team_types.items():
             # Create team for this type
-            if team_type_name == 'mixed':
+            if team_type_name == "mixed":
                 # Mixed team: random, greedy, fair teammates
                 teammates = [
-                    HeuristicAgent(params=np.array(team_types['random']), agent_id=i+1, name=f"random-{i}")
+                    HeuristicAgent(
+                        params=np.array(team_types["random"]),
+                        agent_id=i + 1,
+                        name=f"random-{i}",
+                    )
                     for i in range(min(1, num_agents - 1))
                 ]
                 if num_agents > 2:
-                    teammates.append(HeuristicAgent(params=np.array(team_types['greedy']), agent_id=2, name="greedy"))
+                    teammates.append(
+                        HeuristicAgent(
+                            params=np.array(team_types["greedy"]),
+                            agent_id=2,
+                            name="greedy",
+                        )
+                    )
                 if num_agents > 3:
-                    teammates.append(HeuristicAgent(params=np.array(team_types['fair']), agent_id=3, name="fair"))
+                    teammates.append(
+                        HeuristicAgent(
+                            params=np.array(team_types["fair"]), agent_id=3, name="fair"
+                        )
+                    )
                 # Pad with random if needed
                 while len(teammates) < num_agents - 1:
-                    teammates.append(HeuristicAgent(
-                        params=np.array(team_types['random']),
-                        agent_id=len(teammates) + 1,
-                        name=f"random-{len(teammates)}"
-                    ))
+                    teammates.append(
+                        HeuristicAgent(
+                            params=np.array(team_types["random"]),
+                            agent_id=len(teammates) + 1,
+                            name=f"random-{len(teammates)}",
+                        )
+                    )
             else:
                 # Homogeneous team of this type
                 teammates = [
-                    HeuristicAgent(params=np.array(team_params), agent_id=i+1, name=f"{team_type_name}-{i}")
+                    HeuristicAgent(
+                        params=np.array(team_params),
+                        agent_id=i + 1,
+                        name=f"{team_type_name}-{i}",
+                    )
                     for i in range(num_agents - 1)
                 ]
 
@@ -92,10 +122,14 @@ def create_team_composition_fitness(scenario_name: str, num_agents: int = 4):
             for game_idx in range(10):
                 try:
                     # Create focal agent
-                    focal_agent = HeuristicAgent(params=individual.genome, agent_id=0, name="focal")
+                    focal_agent = HeuristicAgent(
+                        params=individual.genome, agent_id=0, name="focal"
+                    )
 
                     # Create environment and run episode
-                    env = BucketBrigadeEnv(scenario=scenario, agents=[focal_agent] + teammates)
+                    env = BucketBrigadeEnv(
+                        scenario=scenario, agents=[focal_agent] + teammates
+                    )
                     obs = env.reset(seed=rng.integers(0, 2**31))
 
                     done = False
@@ -115,7 +149,9 @@ def create_team_composition_fitness(scenario_name: str, num_agents: int = 4):
 
                 except Exception as e:
                     # Handle evaluation errors gracefully
-                    print(f"Warning: Evaluation failed for {team_type_name}, game {game_idx}: {e}")
+                    print(
+                        f"Warning: Evaluation failed for {team_type_name}, game {game_idx}: {e}"
+                    )
                     all_rewards.append(-200.0)  # Penalty for failure
 
         # Fitness = mean reward - variance penalty (robustness)
@@ -128,7 +164,9 @@ def create_team_composition_fitness(scenario_name: str, num_agents: int = 4):
     return fitness_fn
 
 
-def progress_callback(generation: int, population: Population, output_dir: Path) -> None:
+def progress_callback(
+    generation: int, population: Population, output_dir: Path
+) -> None:
     """Print evolution progress and save checkpoints.
 
     Args:
@@ -218,11 +256,11 @@ def save_results(
         f.write(f"Population Size: {config.population_size}\n")
         f.write(f"Generations: {config.num_generations}\n")
         f.write(f"Converged At: {result.converged_at}\n")
-        f.write(f"\nBest Individual:\n")
+        f.write("\nBest Individual:\n")
         f.write(f"  Fitness: {result.best_individual.fitness:.4f}\n")
         f.write(f"  Generation: {result.best_individual.generation}\n")
         f.write(f"  Genome: {result.best_individual.genome.tolist()}\n")
-        f.write(f"\nFinal Population Stats:\n")
+        f.write("\nFinal Population Stats:\n")
         final_stats = result.final_population.get_fitness_stats()
         f.write(f"  Best: {final_stats['max']:.4f}\n")
         f.write(f"  Mean: {final_stats['mean']:.4f}\n")
@@ -388,8 +426,10 @@ def main():
     print("=" * 80)
     print("Evolution Complete!")
     print("=" * 80)
-    print(f"Time elapsed: {elapsed_time:.1f}s ({elapsed_time/60:.1f} minutes)")
-    print(f"Converged at generation: {result.converged_at if result.converged_at is not None else 'N/A'}")
+    print(f"Time elapsed: {elapsed_time:.1f}s ({elapsed_time / 60:.1f} minutes)")
+    print(
+        f"Converged at generation: {result.converged_at if result.converged_at is not None else 'N/A'}"
+    )
     print()
     print("Best Individual:")
     print(f"  Fitness: {result.best_individual.fitness:.4f}")
@@ -404,11 +444,13 @@ def main():
     print("✓ All results saved successfully!")
     print()
     print("To use the evolved expert:")
-    print(f"  from bucket_brigade.agents.heuristic_agent import HeuristicAgent")
-    print(f"  import json")
+    print("  from bucket_brigade.agents.heuristic_agent import HeuristicAgent")
+    print("  import json")
     print(f"  with open('{args.output_dir / 'best_genome.json'}', 'r') as f:")
-    print(f"      params = json.load(f)")
-    print(f"  agent = HeuristicAgent(params=np.array(params), agent_id=0, name='Expert-{args.scenario}')")
+    print("      params = json.load(f)")
+    print(
+        f"  agent = HeuristicAgent(params=np.array(params), agent_id=0, name='Expert-{args.scenario}')"
+    )
 
 
 if __name__ == "__main__":
