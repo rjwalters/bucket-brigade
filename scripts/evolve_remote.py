@@ -164,29 +164,18 @@ class RemoteEvolutionRunner:
         Returns:
             EvolutionResult
         """
-        # Create fitness evaluator with parallel execution
+        # Note: Rust fitness evaluator will be used automatically if available
+        # (imported via evolution.__init__.py as FitnessEvaluator)
         if RUST_AVAILABLE:
-            self._log(f"Using Rust fitness evaluator with {self.num_workers} workers")
-            evaluator = RustFitnessEvaluator(
-                scenario=default_scenario(num_agents=1),
-                games_per_individual=self.config.games_per_individual,
-                seed=self.config.seed,
-                parallel=True,
-                num_workers=self.num_workers,
-            )
+            self._log(f"✅ Using Rust fitness evaluator with {self.num_workers} workers")
         else:
-            self._log(f"Using Python fitness evaluator (slower, no parallelism)")
-            evaluator = FitnessEvaluator(
-                scenario=default_scenario(num_agents=1),
-                games_per_individual=self.config.games_per_individual,
-                seed=self.config.seed,
-            )
+            self._log(f"⚠️  Using Python fitness evaluator (slower, no parallel)")
 
         self._log("Starting evolution...")
         self._log("")
 
-        # Create GA with evaluator
-        ga = GeneticAlgorithm(self.config, fitness_evaluator=evaluator)
+        # Create GA (will use FitnessEvaluator from config)
+        ga = GeneticAlgorithm(self.config)
 
         start_time = time.time()
 
