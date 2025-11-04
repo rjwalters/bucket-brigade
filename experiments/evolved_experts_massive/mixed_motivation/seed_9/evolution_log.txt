@@ -1,0 +1,15 @@
+Scenario: mixed_motivation
+Population Size: 500
+Generations: 5000
+Converged At: 18
+
+Best Individual:
+  Fitness: -0.6750
+  Generation: 19
+  Genome: [1.0, 0.6378987996942623, 0.15851036296513532, 0.06942989208232246, 0.6542172431945801, 0.6447152527572022, 0.023280252883790153, 0.0, 0.2629534987828367, 0.589923083782196]
+
+Final Population Stats:
+  Best: -0.6750
+  Mean: -2.9555
+  Std:  0.8723
+  Diversity: 0.5993
