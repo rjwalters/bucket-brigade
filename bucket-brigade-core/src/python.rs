@@ -343,7 +343,11 @@ fn run_heuristic_episode(
             .as_slice()
             .try_into()
             .map_err(|_| pyo3::exceptions::PyValueError::new_err("Failed to convert parameters"))?;
-        agents.push(HeuristicAgent::new(id, &format!("agent_{}", id), params_array));
+        agents.push(HeuristicAgent::new(
+            id,
+            &format!("agent_{}", id),
+            params_array,
+        ));
     }
 
     // Create game
@@ -358,9 +362,8 @@ fn run_heuristic_episode(
 
     while step_count < MAX_STEPS {
         // Get observations for all agents
-        let observations: Vec<AgentObservation> = (0..num_agents)
-            .map(|id| game.get_observation(id))
-            .collect();
+        let observations: Vec<AgentObservation> =
+            (0..num_agents).map(|id| game.get_observation(id)).collect();
 
         // Get actions from heuristic agents
         let actions: Vec<[u8; 2]> = observations
