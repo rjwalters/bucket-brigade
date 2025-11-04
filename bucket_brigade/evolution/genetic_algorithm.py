@@ -60,6 +60,10 @@ class EvolutionConfig:
     fitness_type: str = "mean_reward"
     games_per_individual: int = 20
 
+    # Parallelization
+    parallel: bool = True
+    num_workers: Optional[int] = None  # None = cpu_count()
+
     # Diversity
     maintain_diversity: bool = True
     min_diversity: float = 0.1
@@ -116,6 +120,7 @@ class GeneticAlgorithm:
             scenario=None,  # Use default scenario
             games_per_individual=config.games_per_individual,
             seed=int(self.rng.integers(0, 2**31)) if config.seed is not None else None,
+            num_workers=config.num_workers,
         )
 
         # History tracking
@@ -355,7 +360,7 @@ class GeneticAlgorithm:
         population = self.initialize_population(seed_individuals)
 
         # Evaluate initial population
-        self.fitness_evaluator.evaluate_population(population)
+        self.fitness_evaluator.evaluate_population(population, parallel=self.config.parallel)
 
         # Track initial stats
         self.fitness_history.append(population.get_fitness_stats())
@@ -375,7 +380,7 @@ class GeneticAlgorithm:
             population = self.create_next_generation(population)
 
             # Evaluate new individuals
-            self.fitness_evaluator.evaluate_population(population)
+            self.fitness_evaluator.evaluate_population(population, parallel=self.config.parallel)
 
             # Track stats
             self.fitness_history.append(population.get_fitness_stats())

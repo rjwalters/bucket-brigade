@@ -6,6 +6,7 @@ tournament games and computing performance metrics.
 
 from __future__ import annotations
 
+from multiprocessing import Pool, cpu_count
 from typing import Callable, Optional
 
 import numpy as np
@@ -14,6 +15,66 @@ from ..agents.heuristic_agent import HeuristicAgent
 from ..envs.bucket_brigade_env import BucketBrigadeEnv
 from ..envs.scenarios import Scenario, default_scenario
 from .population import Individual, Population
+
+
+# ============================================================================
+# Parallel Evaluation Worker Function
+# ============================================================================
+
+
+def _evaluate_individual_worker(
+    genome: np.ndarray,
+    scenario_dict: Optional[dict],
+    games_per_individual: int,
+    seed: int,
+) -> float:
+    """Worker function for parallel fitness evaluation.
+
+    This runs in a separate process, so must be picklable.
+
+    Args:
+        genome: Individual's genome (strategy parameters)
+        scenario_dict: Game scenario as dictionary (for pickling)
+        games_per_individual: Number of games to run
+        seed: Random seed
+
+    Returns:
+        Fitness score (mean reward)
+    """
+    from ..agents.heuristic_agent import HeuristicAgent
+    from ..envs.bucket_brigade_env import BucketBrigadeEnv
+    from ..envs.scenarios import Scenario, default_scenario
+
+    agent = HeuristicAgent(params=genome, agent_id=0)
+    rng = np.random.default_rng(seed)
+    total_reward = 0.0
+
+    for _ in range(games_per_individual):
+        # Create environment
+        if scenario_dict is not None:
+            scenario = Scenario(**scenario_dict)
+        else:
+            scenario = default_scenario(num_agents=1)
+
+        env = BucketBrigadeEnv(scenario=scenario)
+
+        # Run game
+        obs = env.reset(seed=int(rng.integers(0, 2**31)))
+        agent.reset()
+
+        max_steps = 1000
+        steps = 0
+        while not env.done and steps < max_steps:
+            action = agent.act(obs)
+            actions = np.array([action])
+            obs, rewards, done, info = env.step(actions)
+            steps += 1
+            if done:
+                break
+
+        total_reward += env.rewards[0]
+
+    return float(total_reward / games_per_individual)
 
 
 # ============================================================================
@@ -29,6 +90,7 @@ class FitnessEvaluator:
         scenario: Optional[Scenario] = None,
         games_per_individual: int = 10,
         seed: Optional[int] = None,
+        num_workers: Optional[int] = None,
     ) -> None:
         """Initialize fitness evaluator.
 
@@ -36,10 +98,12 @@ class FitnessEvaluator:
             scenario: Game scenario to use for evaluation (None = default)
             games_per_individual: Number of games to run per agent
             seed: Random seed for reproducibility
+            num_workers: Number of parallel workers (None = cpu_count)
         """
         self.scenario = scenario
         self.games_per_individual = games_per_individual
         self.rng = np.random.default_rng(seed)
+        self.num_workers = num_workers if num_workers is not None else cpu_count()
 
     def evaluate_individual(self, individual: Individual) -> float:
         """Evaluate a single individual by running tournament games.
@@ -90,18 +154,61 @@ class FitnessEvaluator:
         return float(total_reward / self.games_per_individual)
 
     def evaluate_population(
-        self, population: Population, parallel: bool = False
+        self, population: Population, parallel: bool = True
     ) -> None:
         """Evaluate all individuals in a population.
 
         Args:
             population: Population to evaluate
-            parallel: If True, use multiprocessing (not implemented yet)
+            parallel: If True, use multiprocessing for parallel evaluation
         """
-        # TODO: Implement parallel evaluation for speedup
-        for individual in population:
-            if individual.fitness is None:  # Only evaluate if not already evaluated
-                individual.fitness = self.evaluate_individual(individual)
+        # Find individuals needing evaluation
+        to_evaluate = [
+            (i, ind) for i, ind in enumerate(population) if ind.fitness is None
+        ]
+
+        if not to_evaluate:
+            return
+
+        # Sequential fallback for single individual or parallel disabled
+        if not parallel or len(to_evaluate) == 1:
+            for _, ind in to_evaluate:
+                ind.fitness = self.evaluate_individual(ind)
+            return
+
+        # Parallel evaluation
+        # Generate seeds for each individual (deterministic from self.rng)
+        seeds = [int(self.rng.integers(0, 2**31)) for _ in to_evaluate]
+
+        # Convert scenario to dict for pickling
+        scenario_dict = None
+        if self.scenario is not None:
+            scenario_dict = {
+                "num_agents": self.scenario.num_agents,
+                "num_houses": self.scenario.num_houses,
+                "initial_fires": self.scenario.initial_fires,
+                "fire_spread_chance": self.scenario.fire_spread_chance,
+                "max_nights": self.scenario.max_nights,
+                "reward_per_house_saved": self.scenario.reward_per_house_saved,
+                "penalty_per_house_ruined": self.scenario.penalty_per_house_ruined,
+                "effort_cost": self.scenario.effort_cost,
+                "scenario_name": self.scenario.scenario_name,
+                "observation_radius": self.scenario.observation_radius,
+            }
+
+        # Prepare arguments for parallel evaluation
+        args_list = [
+            (ind.genome, scenario_dict, self.games_per_individual, seed)
+            for (_, ind), seed in zip(to_evaluate, seeds)
+        ]
+
+        # Parallel evaluation using multiprocessing
+        with Pool(processes=self.num_workers) as pool:
+            fitness_scores = pool.starmap(_evaluate_individual_worker, args_list)
+
+        # Assign results back to individuals
+        for (idx, ind), fitness in zip(to_evaluate, fitness_scores):
+            ind.fitness = fitness
 
 
 # ============================================================================
