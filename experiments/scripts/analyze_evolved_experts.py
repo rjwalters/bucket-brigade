@@ -211,7 +211,7 @@ def plot_cross_scenario_comparison(all_stats: Dict[str, Dict], output_dir: Path)
     fig, ax = plt.subplots(figsize=(14, 8))
 
     x = np.arange(len(scenarios))
-    bars = ax.bar(x, means, yerr=stds, capsize=5, alpha=0.7, color='steelblue')
+    ax.bar(x, means, yerr=stds, capsize=5, alpha=0.7, color='steelblue')
 
     ax.set_xlabel('Scenario', fontsize=12)
     ax.set_ylabel('Mean Best Fitness', fontsize=12)
@@ -260,8 +260,8 @@ def plot_strategy_heatmap(all_stats: Dict[str, Dict], output_dir: Path):
     # Add text annotations
     for i in range(len(scenarios)):
         for j in range(len(PARAM_NAMES)):
-            text = ax.text(j, i, f'{param_matrix[i, j]:.2f}',
-                          ha="center", va="center", color="black", fontsize=8)
+            ax.text(j, i, f'{param_matrix[i, j]:.2f}',
+                    ha="center", va="center", color="black", fontsize=8)
 
     ax.set_title('Evolved Strategy Parameters Across Scenarios\n(Mean across 10 seeds)', fontsize=14)
     plt.tight_layout()
