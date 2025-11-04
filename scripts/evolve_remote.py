@@ -33,7 +33,16 @@ from bucket_brigade.evolution import (
     Individual,
     Population,
 )
-from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
+
+# Try to import Rust evaluator, fall back to Python if unavailable
+try:
+    from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
+    RUST_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    print(f"⚠️  Rust evaluator not available ({e}), using Python implementation")
+    from bucket_brigade.evolution.fitness import FitnessEvaluator
+    RUST_AVAILABLE = False
+
 from bucket_brigade.envs.scenarios import default_scenario
 
 
@@ -155,19 +164,28 @@ class RemoteEvolutionRunner:
         Returns:
             EvolutionResult
         """
-        # Create Rust fitness evaluator with parallel execution
-        evaluator = RustFitnessEvaluator(
-            scenario=default_scenario(num_agents=1),
-            games_per_individual=self.config.games_per_individual,
-            seed=self.config.seed,
-            parallel=True,
-            num_workers=self.num_workers,
-        )
+        # Create fitness evaluator with parallel execution
+        if RUST_AVAILABLE:
+            self._log(f"Using Rust fitness evaluator with {self.num_workers} workers")
+            evaluator = RustFitnessEvaluator(
+                scenario=default_scenario(num_agents=1),
+                games_per_individual=self.config.games_per_individual,
+                seed=self.config.seed,
+                parallel=True,
+                num_workers=self.num_workers,
+            )
+        else:
+            self._log(f"Using Python fitness evaluator (slower, no parallelism)")
+            evaluator = FitnessEvaluator(
+                scenario=default_scenario(num_agents=1),
+                games_per_individual=self.config.games_per_individual,
+                seed=self.config.seed,
+            )
 
         self._log("Starting evolution...")
         self._log("")
 
-        # Create GA with Rust evaluator
+        # Create GA with evaluator
         ga = GeneticAlgorithm(self.config, fitness_evaluator=evaluator)
 
         start_time = time.time()
