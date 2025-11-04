@@ -114,31 +114,18 @@ def compute_best_response_global(
     # Bounds: all parameters in [0, 1]
     bounds = [(0.0, 1.0) for _ in range(10)]
 
-    # Early stopping callback
-    best_values = []
-
-    def convergence_callback(xk, convergence=0):
-        """Stop early if no improvement in last 5 iterations."""
-        current_value = objective(xk)
-        best_values.append(current_value)
-        if len(best_values) >= 5:
-            recent_improvement = min(best_values[-5:]) - best_values[-1]
-            if abs(recent_improvement) < 0.01:
-                return True
-        return False
-
-    # Global optimization with adaptive early stopping and parallelization
+    # Global optimization with tighter convergence tolerances
+    # Note: workers=1 to avoid pickling issues; Rust provides parallelization
     result = differential_evolution(
         objective,
         bounds=bounds,
         seed=seed,
         maxiter=maxiter,
         polish=True,
-        workers=4,  # Parallelize for speed
-        updating='deferred',
-        callback=convergence_callback,
+        workers=1,  # Sequential to avoid pickling issues
+        updating='immediate',
         atol=0.01,
-        tol=0.001,
+        tol=0.005,
     )
 
     best_response = result.x
@@ -191,33 +178,19 @@ def compute_best_response_to_mixture(
     bounds = [(0.0, 1.0) for _ in range(10)]
 
     if method == "global":
-        # Early stopping callback for adaptive convergence
-        best_values = []
-
-        def convergence_callback(xk, convergence=0):
-            """Stop early if no improvement in last 5 iterations."""
-            current_value = objective(xk)
-            best_values.append(current_value)
-
-            # Check if converged (no improvement in last 5 iterations)
-            if len(best_values) >= 5:
-                recent_improvement = min(best_values[-5:]) - best_values[-1]
-                if abs(recent_improvement) < 0.01:  # Converged
-                    return True
-            return False
-
-        # Global optimization with adaptive early stopping and parallelization
+        # Global optimization with reduced maxiter and better convergence tolerances
+        # Note: Using workers=1 to avoid pickling issues with closures
+        # Parallelization happens at the PayoffEvaluator level via Rust
         result = differential_evolution(
             objective,
             bounds=bounds,
             seed=seed,
-            maxiter=20,  # Reduced from 50 for faster convergence
+            maxiter=15,  # Reduced from 50 for faster convergence
             polish=True,
-            workers=4,  # Parallelize across 4 cores (48 cores / 12 scenarios)
-            updating='deferred',  # Batch updates for better parallelization
-            callback=convergence_callback,
+            workers=1,  # Sequential to avoid pickling issues; Rust provides parallelization
+            updating='immediate',
             atol=0.01,  # Absolute tolerance for convergence
-            tol=0.001,  # Relative tolerance for convergence
+            tol=0.005,  # Relative tolerance for convergence
         )
     else:
         # Local optimization from multiple starting points
