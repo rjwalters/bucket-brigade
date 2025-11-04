@@ -48,19 +48,50 @@ if ! ssh -G "$SSH_ALIAS" &>/dev/null; then
 fi
 
 # Extract connection details
-HOSTNAME=$(ssh -G "$SSH_ALIAS" | grep "^hostname " | awk '{print $2}')
-PORT=$(ssh -G "$SSH_ALIAS" | grep "^port " | awk '{print $2}')
-USER=$(ssh -G "$SSH_ALIAS" | grep "^user " | awk '{print $2}')
+HOSTNAME=$(ssh -G "$SSH_ALIAS" 2>/dev/null | grep "^hostname " | awk '{print $2}')
+PORT=$(ssh -G "$SSH_ALIAS" 2>/dev/null | grep "^port " | awk '{print $2}')
+USER=$(ssh -G "$SSH_ALIAS" 2>/dev/null | grep "^user " | awk '{print $2}')
+PROXYCOMMAND=$(ssh -G "$SSH_ALIAS" 2>/dev/null | grep "^proxycommand " | sed 's/^proxycommand //')
 
-echo "✓ Found SSH configuration:"
-echo "  User: $USER"
-echo "  Hostname: $HOSTNAME"
-echo "  Port: $PORT"
+# Check if using ProxyCommand (common for SkyPilot)
+if [ -n "$PROXYCOMMAND" ]; then
+    echo "✓ Detected ProxyCommand (SkyPilot/jump host configuration)"
+    echo ""
+    echo "MCP remote-ssh doesn't support ProxyCommand. You need to set up an SSH tunnel."
+    echo ""
+    echo "Run this command in a separate terminal (keep it running):"
+    echo "  ssh -N -L $PORT:$HOSTNAME:$PORT $SSH_ALIAS"
+    echo ""
+    echo "This creates a tunnel from localhost:$PORT to the remote machine."
+    echo ""
+
+    # Extract SSH key from ProxyCommand if present
+    SSH_KEY=$(echo "$PROXYCOMMAND" | grep -oE '\-i [^ ]+' | awk '{print $2}')
+
+    # For ProxyCommand, MCP will connect through the tunnel on localhost
+    FINAL_HOST="localhost"
+    FINAL_PORT=$PORT
+
+    echo "Configuration will use SSH tunnel:"
+    echo "  Local tunnel: localhost:$PORT"
+    echo "  Target: $USER@$HOSTNAME:$PORT (via tunnel)"
+    if [ -n "$SSH_KEY" ]; then
+        echo "  SSH Key: $SSH_KEY"
+    fi
+else
+    echo "✓ Direct SSH configuration (no ProxyCommand)"
+    echo "  User: $USER"
+    echo "  Hostname: $HOSTNAME"
+    echo "  Port: $PORT"
+    FINAL_HOST=$HOSTNAME
+    FINAL_PORT=$PORT
+fi
+
 echo ""
 
 # Test connection
-echo "Testing SSH connection..."
-if ssh -p "$PORT" "$USER@$HOSTNAME" -o ConnectTimeout=5 "echo 'Connection successful!'" &>/dev/null; then
+echo "Testing SSH connection to $SSH_ALIAS..."
+if ssh "$SSH_ALIAS" -o ConnectTimeout=5 "echo 'Connection successful!'" &>/dev/null; then
     echo "✓ SSH connection test passed!"
 else
     echo "⚠️  SSH connection test failed (but continuing anyway)"
@@ -74,12 +105,24 @@ cat > "$ENV_FILE" <<EOF
 # MCP Remote SSH Server Configuration
 # Auto-configured for $SSH_ALIAS on $(date)
 
-SSH_HOST=$USER@$HOSTNAME
-SSH_PORT=$PORT
+SSH_HOST=$USER@$FINAL_HOST
+SSH_PORT=$FINAL_PORT
+EOF
+
+# Add SSH key if detected
+if [ -n "$SSH_KEY" ]; then
+    cat >> "$ENV_FILE" <<EOF
+
+# SSH key for cluster
+SSH_KEY_PATH=$SSH_KEY
+EOF
+else
+    cat >> "$ENV_FILE" <<EOF
 
 # Optional: Uncomment and set if using a non-default SSH key
 # SSH_KEY_PATH=~/.ssh/sky-key
 EOF
+fi
 
 echo "✓ Created .env file at: $ENV_FILE"
 echo ""
