@@ -24,8 +24,10 @@ This documentation directory contains detailed guides, specifications, and resea
 
 ### 🔭 Research Vision & Philosophy
 - **[background_closed_vs_open_world.md](background_closed_vs_open_world.md)** - Closed vs. open world learning foundations
+- **[technical_marl_review.md](technical_marl_review.md)** - Comprehensive technical MARL review
 - **[vision_future_directions.md](vision_future_directions.md)** - Long-term research questions and goals
 - **[roadmap_phased_plan.md](roadmap_phased_plan.md)** - Phased roadmap to meta-game exploration
+- **[library/](library/)** - Research paper summaries and references
 
 ### 💻 Development & Implementation
 - **[../API.md](../API.md)** - API reference and data structures
@@ -76,12 +78,22 @@ docs/
 ├── HYPERPARAMETER_TUNING.md            # Parameter optimization
 ├── curriculum_learning.md              # Learning curriculum design
 ├── background_closed_vs_open_world.md  # Closed vs. open world foundations
+├── technical_marl_review.md            # Technical MARL methods review
 ├── vision_future_directions.md         # Long-term research vision
 ├── roadmap_phased_plan.md              # Phased implementation roadmap
 ├── IMPLEMENTATION_CHECKLIST.md         # Development checklist
 ├── PERFORMANCE.md                      # Performance analysis
 ├── SIMPLIFIED_ARCHITECTURE.md          # Architecture overview
 ├── WEB_UI_MOCKUP.md                    # Web interface design
+├── library/                            # Research paper summaries
+│   ├── README.md                       # Library index and search guide
+│   ├── marl/                           # Multi-agent RL papers
+│   ├── safety/                         # AI safety papers
+│   ├── evolution/                      # Evolutionary algorithms
+│   ├── communication/                  # Emergent communication
+│   ├── open-world/                     # Open-world environments
+│   ├── game-theory/                    # Nash equilibria, norms
+│   └── templates/                      # Paper summary template
 ├── archive/                            # Deprecated documents
 ├── development/                        # Development planning
 ├── features/                           # Feature specifications
