@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 
-from .fitness import FitnessEvaluator
+from . import FitnessEvaluator  # Import from package __init__ which handles Rust/Python fallback
 from .operators import (
     adaptive_mutation,
     arithmetic_crossover,
