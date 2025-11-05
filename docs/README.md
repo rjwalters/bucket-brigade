@@ -22,6 +22,11 @@ This documentation directory contains detailed guides, specifications, and resea
 - **[../SCENARIO_RESEARCH.md](../SCENARIO_RESEARCH.md)** - Scenario-based research framework
 - **[curriculum_learning.md](curriculum_learning.md)** - Learning curriculum design
 
+### 🔭 Research Vision & Philosophy
+- **[background_closed_vs_open_world.md](background_closed_vs_open_world.md)** - Closed vs. open world learning foundations
+- **[vision_future_directions.md](vision_future_directions.md)** - Long-term research questions and goals
+- **[roadmap_phased_plan.md](roadmap_phased_plan.md)** - Phased roadmap to meta-game exploration
+
 ### 💻 Development & Implementation
 - **[../API.md](../API.md)** - API reference and data structures
 - **[IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)** - Development checklist
@@ -66,19 +71,22 @@ This documentation directory contains detailed guides, specifications, and resea
 
 ```
 docs/
-├── game_mechanics.md          # Canonical game rules
-├── AGENT_ROSTER.md            # AI agent specifications
-├── HYPERPARAMETER_TUNING.md   # Parameter optimization
-├── curriculum_learning.md     # Learning curriculum design
-├── IMPLEMENTATION_CHECKLIST.md # Development checklist
-├── PERFORMANCE.md             # Performance analysis
-├── SIMPLIFIED_ARCHITECTURE.md # Architecture overview
-├── WEB_UI_MOCKUP.md           # Web interface design
-├── archive/                   # Deprecated documents
-├── development/               # Development planning
-├── features/                  # Feature specifications
-├── game-design/               # Game design documents
-└── implementation/            # Implementation details
+├── game_mechanics.md                   # Canonical game rules
+├── AGENT_ROSTER.md                     # AI agent specifications
+├── HYPERPARAMETER_TUNING.md            # Parameter optimization
+├── curriculum_learning.md              # Learning curriculum design
+├── background_closed_vs_open_world.md  # Closed vs. open world foundations
+├── vision_future_directions.md         # Long-term research vision
+├── roadmap_phased_plan.md              # Phased implementation roadmap
+├── IMPLEMENTATION_CHECKLIST.md         # Development checklist
+├── PERFORMANCE.md                      # Performance analysis
+├── SIMPLIFIED_ARCHITECTURE.md          # Architecture overview
+├── WEB_UI_MOCKUP.md                    # Web interface design
+├── archive/                            # Deprecated documents
+├── development/                        # Development planning
+├── features/                           # Feature specifications
+├── game-design/                        # Game design documents
+└── implementation/                     # Implementation details
 ```
 
 ---
