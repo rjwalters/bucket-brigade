@@ -59,6 +59,7 @@ def run_scenario_research(
     print(f"  [{'✓' if not skip_evolution else ' '}] 2. Evolutionary Optimization")
     print(f"  [{'✓' if not skip_nash else ' '}] 3. Nash Equilibrium")
     print(f"  [{'✓' if not skip_comparison else ' '}] 4. Cross-Method Comparison")
+    print(f"  [✓] 5. Generate Research Insights")
     print()
 
     scenario_dir = Path(f"experiments/scenarios/{scenario_name}")
@@ -117,7 +118,17 @@ def run_scenario_research(
             "--num-games",
             str(comparison_games),
         ]
-        if not run_command(cmd, "Step 4/4: Cross-Method Comparison"):
+        if not run_command(cmd, "Step 4/5: Cross-Method Comparison"):
+            success = False
+
+    # 5. Generate Research Insights
+    if success:
+        cmd = [
+            ".venv/bin/python",
+            "experiments/scripts/generate_insights.py",
+            scenario_name,
+        ]
+        if not run_command(cmd, "Step 5/5: Generate Research Insights"):
             success = False
 
     # Summary

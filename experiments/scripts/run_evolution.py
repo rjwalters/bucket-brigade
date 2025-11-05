@@ -62,7 +62,7 @@ def run_evolution(
         games_per_individual=games_per_individual,
         maintain_diversity=True,
         min_diversity=0.1,
-        early_stopping=True,
+        early_stopping=False,  # Disable early stopping for research runs
         convergence_generations=10,
         convergence_threshold=0.01,
         seed=seed,

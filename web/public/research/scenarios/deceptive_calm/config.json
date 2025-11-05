@@ -21,10 +21,146 @@
     "nash_max_iterations": 50
   },
   "story": "Long games (20 nights) with few initial fires (10%) but higher spark rate (5%) create periods of calm punctuated by sudden crises. Moderate spread and extinguish rates mean fires are manageable IF agents respond quickly. Honest signaling of fatigue and fire detection becomes critical for coordination.",
-  "research_questions": [
-    "Does honest signaling emerge in variable-threat environments?",
-    "How do agents balance rest during calm periods?",
-    "Can teams learn to detect and respond to flare-ups?",
-    "What role does memory play in this scenario?"
-  ]
+  "research_insights": [
+    {
+      "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+      "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 37.3 payoff.",
+      "evidence": [
+        "Equilibrium type: pure",
+        "Strategy classification: Coordinator",
+        "Expected payoff: 37.30",
+        "Cooperation rate: 100%",
+        "Convergence: 1 iterations in 436.4s"
+      ],
+      "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+    },
+    {
+      "question": "What strategic traits does Nash equilibrium emphasize?",
+      "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+      "evidence": [
+        "coordination: 1.00",
+        "honesty: 0.90",
+        "Archetype: Coordinator (distance: 0.00)"
+      ],
+      "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+    },
+    {
+      "question": "How effective was evolutionary optimization?",
+      "finding": "Evolution improved from -2.1 to 0.1 payoff over 201 generations (\u0394 2.2).",
+      "evidence": [
+        "Initial best fitness: -2.15",
+        "Final best fitness: 0.05",
+        "Total improvement: 2.20",
+        "Generations: 201",
+        "Converged: False"
+      ],
+      "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+    },
+    {
+      "question": "What does population diversity reveal about the fitness landscape?",
+      "finding": "Population maintained high diversity (0.341), suggesting multiple viable strategies.",
+      "evidence": [
+        "Final diversity: 0.341",
+        "Mid-run diversity: 0.347",
+        "Best generation: 200"
+      ],
+      "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+    },
+    {
+      "question": "What is the price of anarchy in this scenario?",
+      "finding": "Nash equilibrium (37.3) shows moderate efficiency loss of 13.1 points vs optimal (50.4).",
+      "evidence": [
+        "Nash payoff: 37.30",
+        "Optimal payoff: 50.39",
+        "Gap: 13.09",
+        "Efficiency: 74.0%"
+      ],
+      "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+    },
+    {
+      "question": "Why does evolution fail to reach Nash equilibrium performance?",
+      "finding": "Evolution achieves only 12.6 payoff, falling 24.7 points short of Nash equilibrium (37.3).",
+      "evidence": [
+        "Evolved payoff: 12.62",
+        "Nash payoff: 37.30",
+        "coordination: 1.00 (Nash) vs 0.70 (Evolved)",
+        "altruism: 0.60 (Nash) vs 0.05 (Evolved)"
+      ],
+      "implication": "Some strategy spaces are too complex for evolution to navigate effectively. The fitness landscape may have local optima that trap evolutionary search."
+    }
+  ],
+  "method_insights": {
+    "nash": [
+      {
+        "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+        "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 37.3 payoff.",
+        "evidence": [
+          "Equilibrium type: pure",
+          "Strategy classification: Coordinator",
+          "Expected payoff: 37.30",
+          "Cooperation rate: 100%",
+          "Convergence: 1 iterations in 436.4s"
+        ],
+        "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+      },
+      {
+        "question": "What strategic traits does Nash equilibrium emphasize?",
+        "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+        "evidence": [
+          "coordination: 1.00",
+          "honesty: 0.90",
+          "Archetype: Coordinator (distance: 0.00)"
+        ],
+        "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+      }
+    ],
+    "evolution": [
+      {
+        "question": "How effective was evolutionary optimization?",
+        "finding": "Evolution improved from -2.1 to 0.1 payoff over 201 generations (\u0394 2.2).",
+        "evidence": [
+          "Initial best fitness: -2.15",
+          "Final best fitness: 0.05",
+          "Total improvement: 2.20",
+          "Generations: 201",
+          "Converged: False"
+        ],
+        "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+      },
+      {
+        "question": "What does population diversity reveal about the fitness landscape?",
+        "finding": "Population maintained high diversity (0.341), suggesting multiple viable strategies.",
+        "evidence": [
+          "Final diversity: 0.341",
+          "Mid-run diversity: 0.347",
+          "Best generation: 200"
+        ],
+        "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+      }
+    ],
+    "comparative": [
+      {
+        "question": "What is the price of anarchy in this scenario?",
+        "finding": "Nash equilibrium (37.3) shows moderate efficiency loss of 13.1 points vs optimal (50.4).",
+        "evidence": [
+          "Nash payoff: 37.30",
+          "Optimal payoff: 50.39",
+          "Gap: 13.09",
+          "Efficiency: 74.0%"
+        ],
+        "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+      },
+      {
+        "question": "Why does evolution fail to reach Nash equilibrium performance?",
+        "finding": "Evolution achieves only 12.6 payoff, falling 24.7 points short of Nash equilibrium (37.3).",
+        "evidence": [
+          "Evolved payoff: 12.62",
+          "Nash payoff: 37.30",
+          "coordination: 1.00 (Nash) vs 0.70 (Evolved)",
+          "altruism: 0.60 (Nash) vs 0.05 (Evolved)"
+        ],
+        "implication": "Some strategy spaces are too complex for evolution to navigate effectively. The fitness landscape may have local optima that trap evolutionary search."
+      }
+    ]
+  }
 }

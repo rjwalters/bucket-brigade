@@ -26,5 +26,171 @@
     "Can evolution find the Nash mixed strategy?",
     "At what work cost does cooperation collapse?",
     "How do free riders perform in mixed populations?"
+  ],
+  "method_insights": {
+    "nash": [
+      {
+        "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+        "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 58.8 payoff.",
+        "evidence": [
+          "Equilibrium type: pure",
+          "Strategy classification: Coordinator",
+          "Expected payoff: 58.77",
+          "Cooperation rate: 100%",
+          "Convergence: 2 iterations in 641.4s"
+        ],
+        "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+      },
+      {
+        "question": "What strategic traits does Nash equilibrium emphasize?",
+        "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+        "evidence": [
+          "coordination: 1.00",
+          "honesty: 0.90",
+          "Archetype: Coordinator (distance: 0.00)"
+        ],
+        "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+      }
+    ],
+    "evolution": [
+      {
+        "question": "How effective was evolutionary optimization?",
+        "finding": "Evolution improved from -1.9 to 0.8 payoff over 201 generations (\u0394 2.6).",
+        "evidence": [
+          "Initial best fitness: -1.85",
+          "Final best fitness: 0.75",
+          "Total improvement: 2.60",
+          "Generations: 201",
+          "Converged: False"
+        ],
+        "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+      },
+      {
+        "question": "What does population diversity reveal about the fitness landscape?",
+        "finding": "Population reached moderate diversity (0.267), balancing exploration and exploitation.",
+        "evidence": [
+          "Final diversity: 0.267",
+          "Mid-run diversity: 0.327",
+          "Best generation: 200"
+        ],
+        "implication": "Evolution balanced convergence toward good strategies while maintaining variation for continued adaptation."
+      }
+    ],
+    "comparative": [
+      {
+        "question": "How close is Nash equilibrium to optimal performance?",
+        "finding": "Nash equilibrium (58.8) achieves near-optimal performance, within -3.9 points of best strategy (54.9).",
+        "evidence": [
+          "Nash payoff: 58.77",
+          "Optimal payoff: 54.91",
+          "Gap: -3.86",
+          "Efficiency: 107.0%"
+        ],
+        "implication": "High efficiency - the incentive structure aligns individual and collective interests, making coordination relatively easy."
+      },
+      {
+        "question": "How does evolution compare to game-theoretic Nash equilibrium?",
+        "finding": "Evolution and Nash equilibrium converge to similar performance levels (54.9 vs 58.8).",
+        "evidence": [
+          "Evolved payoff: 54.91",
+          "Nash payoff: 58.77",
+          "coordination: 1.00 (Nash) vs 0.00 (Evolved)",
+          "altruism: 0.60 (Nash) vs 0.17 (Evolved)"
+        ],
+        "implication": "Evolution and game theory independently discover similar optimal strategies, suggesting these solutions are robust attractors in strategy space."
+      },
+      {
+        "question": "Which agent parameters matter most for success in this scenario?",
+        "finding": "The parameter 'exploration' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+        "evidence": [
+          "Nash strategy exploration: 0.05",
+          "Best strategy exploration: 0.74",
+          "Difference: 0.69",
+          "Also important: own_priority (\u0394 0.57)",
+          "Also important: neighbor_help (\u0394 0.53)"
+        ],
+        "implication": "Success in this scenario critically depends on optimizing exploration. Strategies that neglect this parameter face significant performance penalties."
+      }
+    ]
+  },
+  "research_insights": [
+    {
+      "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+      "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 58.8 payoff.",
+      "evidence": [
+        "Equilibrium type: pure",
+        "Strategy classification: Coordinator",
+        "Expected payoff: 58.77",
+        "Cooperation rate: 100%",
+        "Convergence: 2 iterations in 641.4s"
+      ],
+      "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+    },
+    {
+      "question": "What strategic traits does Nash equilibrium emphasize?",
+      "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+      "evidence": [
+        "coordination: 1.00",
+        "honesty: 0.90",
+        "Archetype: Coordinator (distance: 0.00)"
+      ],
+      "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+    },
+    {
+      "question": "How effective was evolutionary optimization?",
+      "finding": "Evolution improved from -1.9 to 0.8 payoff over 201 generations (\u0394 2.6).",
+      "evidence": [
+        "Initial best fitness: -1.85",
+        "Final best fitness: 0.75",
+        "Total improvement: 2.60",
+        "Generations: 201",
+        "Converged: False"
+      ],
+      "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+    },
+    {
+      "question": "What does population diversity reveal about the fitness landscape?",
+      "finding": "Population reached moderate diversity (0.267), balancing exploration and exploitation.",
+      "evidence": [
+        "Final diversity: 0.267",
+        "Mid-run diversity: 0.327",
+        "Best generation: 200"
+      ],
+      "implication": "Evolution balanced convergence toward good strategies while maintaining variation for continued adaptation."
+    },
+    {
+      "question": "How close is Nash equilibrium to optimal performance?",
+      "finding": "Nash equilibrium (58.8) achieves near-optimal performance, within -3.9 points of best strategy (54.9).",
+      "evidence": [
+        "Nash payoff: 58.77",
+        "Optimal payoff: 54.91",
+        "Gap: -3.86",
+        "Efficiency: 107.0%"
+      ],
+      "implication": "High efficiency - the incentive structure aligns individual and collective interests, making coordination relatively easy."
+    },
+    {
+      "question": "How does evolution compare to game-theoretic Nash equilibrium?",
+      "finding": "Evolution and Nash equilibrium converge to similar performance levels (54.9 vs 58.8).",
+      "evidence": [
+        "Evolved payoff: 54.91",
+        "Nash payoff: 58.77",
+        "coordination: 1.00 (Nash) vs 0.00 (Evolved)",
+        "altruism: 0.60 (Nash) vs 0.17 (Evolved)"
+      ],
+      "implication": "Evolution and game theory independently discover similar optimal strategies, suggesting these solutions are robust attractors in strategy space."
+    },
+    {
+      "question": "Which agent parameters matter most for success in this scenario?",
+      "finding": "The parameter 'exploration' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+      "evidence": [
+        "Nash strategy exploration: 0.05",
+        "Best strategy exploration: 0.74",
+        "Difference: 0.69",
+        "Also important: own_priority (\u0394 0.57)",
+        "Also important: neighbor_help (\u0394 0.53)"
+      ],
+      "implication": "Success in this scenario critically depends on optimizing exploration. Strategies that neglect this parameter face significant performance penalties."
+    }
   ]
 }

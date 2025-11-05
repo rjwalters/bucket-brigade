@@ -20,11 +20,173 @@
     "nash_simulations": 1000,
     "nash_max_iterations": 50
   },
-  "story": "Fires are rare and spread slowly with very high extinguish efficiency (κ=0.9). With no spontaneous ignition and low work cost, this scenario makes cooperation the obvious choice. The challenge is minimal, making it ideal for baseline comparisons.",
+  "story": "Fires are rare and spread slowly with very high extinguish efficiency (\u03ba=0.9). With no spontaneous ignition and low work cost, this scenario makes cooperation the obvious choice. The challenge is minimal, making it ideal for baseline comparisons.",
   "research_questions": [
     "Do all agents naturally cooperate when fires are trivial?",
     "What is the minimum cooperation rate needed for success?",
     "How much can agents rest without risking failure?",
     "Does evolution find more efficient strategies than full cooperation?"
-  ]
+  ],
+  "research_insights": [
+    {
+      "question": "What does Nash equilibrium predict about cooperation in this scenario?",
+      "finding": "Nash equilibrium predicts complete free-riding (0% cooperation) with expected payoff of 108.8.",
+      "evidence": [
+        "Equilibrium type: mixed",
+        "Strategy classification: Free Rider",
+        "Expected payoff: 108.78",
+        "Cooperation rate: 0%",
+        "Convergence: 3 iterations in 2189.5s"
+      ],
+      "implication": "Individual rationality leads to collective failure. Without external coordination mechanisms, rational agents will defect even when cooperation benefits everyone."
+    },
+    {
+      "question": "What strategic traits does Nash equilibrium emphasize?",
+      "finding": "The equilibrium strongly favors honesty (all > 0.7) as critical for stability.",
+      "evidence": [
+        "honesty: 0.70",
+        "Archetype: Free Rider (distance: 0.00)"
+      ],
+      "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+    },
+    {
+      "question": "How effective was evolutionary optimization?",
+      "finding": "Evolution improved from -1.4 to 0.3 payoff over 201 generations (\u0394 1.8).",
+      "evidence": [
+        "Initial best fitness: -1.40",
+        "Final best fitness: 0.35",
+        "Total improvement: 1.75",
+        "Generations: 201",
+        "Converged: False"
+      ],
+      "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+    },
+    {
+      "question": "What does population diversity reveal about the fitness landscape?",
+      "finding": "Population maintained high diversity (0.367), suggesting multiple viable strategies.",
+      "evidence": [
+        "Final diversity: 0.367",
+        "Mid-run diversity: 0.334",
+        "Best generation: 200"
+      ],
+      "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+    },
+    {
+      "question": "What is the price of anarchy in this scenario?",
+      "finding": "Nash equilibrium (108.8) shows moderate efficiency loss of 10.0 points vs optimal (118.8).",
+      "evidence": [
+        "Nash payoff: 108.78",
+        "Optimal payoff: 118.83",
+        "Gap: 10.05",
+        "Efficiency: 91.5%"
+      ],
+      "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+    },
+    {
+      "question": "How does evolution compare to game-theoretic Nash equilibrium?",
+      "finding": "Evolution and Nash equilibrium converge to similar performance levels (109.3 vs 108.8).",
+      "evidence": [
+        "Evolved payoff: 109.35",
+        "Nash payoff: 108.78",
+        "work_tendency: 0.20 (Nash) vs 0.67 (Evolved)"
+      ],
+      "implication": "Evolution and game theory independently discover similar optimal strategies, suggesting these solutions are robust attractors in strategy space."
+    },
+    {
+      "question": "Which agent parameters matter most for success in this scenario?",
+      "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+      "evidence": [
+        "Nash strategy coordination: 0.00",
+        "Best strategy coordination: 1.00",
+        "Difference: 1.00",
+        "Also important: risk_aversion (\u0394 0.80)",
+        "Also important: rest_bias (\u0394 0.70)"
+      ],
+      "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+    }
+  ],
+  "method_insights": {
+    "nash": [
+      {
+        "question": "What does Nash equilibrium predict about cooperation in this scenario?",
+        "finding": "Nash equilibrium predicts complete free-riding (0% cooperation) with expected payoff of 108.8.",
+        "evidence": [
+          "Equilibrium type: mixed",
+          "Strategy classification: Free Rider",
+          "Expected payoff: 108.78",
+          "Cooperation rate: 0%",
+          "Convergence: 3 iterations in 2189.5s"
+        ],
+        "implication": "Individual rationality leads to collective failure. Without external coordination mechanisms, rational agents will defect even when cooperation benefits everyone."
+      },
+      {
+        "question": "What strategic traits does Nash equilibrium emphasize?",
+        "finding": "The equilibrium strongly favors honesty (all > 0.7) as critical for stability.",
+        "evidence": [
+          "honesty: 0.70",
+          "Archetype: Free Rider (distance: 0.00)"
+        ],
+        "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+      }
+    ],
+    "evolution": [
+      {
+        "question": "How effective was evolutionary optimization?",
+        "finding": "Evolution improved from -1.4 to 0.3 payoff over 201 generations (\u0394 1.8).",
+        "evidence": [
+          "Initial best fitness: -1.40",
+          "Final best fitness: 0.35",
+          "Total improvement: 1.75",
+          "Generations: 201",
+          "Converged: False"
+        ],
+        "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+      },
+      {
+        "question": "What does population diversity reveal about the fitness landscape?",
+        "finding": "Population maintained high diversity (0.367), suggesting multiple viable strategies.",
+        "evidence": [
+          "Final diversity: 0.367",
+          "Mid-run diversity: 0.334",
+          "Best generation: 200"
+        ],
+        "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+      }
+    ],
+    "comparative": [
+      {
+        "question": "What is the price of anarchy in this scenario?",
+        "finding": "Nash equilibrium (108.8) shows moderate efficiency loss of 10.0 points vs optimal (118.8).",
+        "evidence": [
+          "Nash payoff: 108.78",
+          "Optimal payoff: 118.83",
+          "Gap: 10.05",
+          "Efficiency: 91.5%"
+        ],
+        "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+      },
+      {
+        "question": "How does evolution compare to game-theoretic Nash equilibrium?",
+        "finding": "Evolution and Nash equilibrium converge to similar performance levels (109.3 vs 108.8).",
+        "evidence": [
+          "Evolved payoff: 109.35",
+          "Nash payoff: 108.78",
+          "work_tendency: 0.20 (Nash) vs 0.67 (Evolved)"
+        ],
+        "implication": "Evolution and game theory independently discover similar optimal strategies, suggesting these solutions are robust attractors in strategy space."
+      },
+      {
+        "question": "Which agent parameters matter most for success in this scenario?",
+        "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+        "evidence": [
+          "Nash strategy coordination: 0.00",
+          "Best strategy coordination: 1.00",
+          "Difference: 1.00",
+          "Also important: risk_aversion (\u0394 0.80)",
+          "Also important: rest_bias (\u0394 0.70)"
+        ],
+        "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+      }
+    ]
+  }
 }

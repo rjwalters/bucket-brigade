@@ -19,6 +19,7 @@ type WasmModule = {
     get_result(): string;
     is_done(): boolean;
   };
+  WasmScenario: new (scenarioJson: string) => any;
   get_scenario: (name: string) => string;
   get_scenario_names: () => string[];
 };

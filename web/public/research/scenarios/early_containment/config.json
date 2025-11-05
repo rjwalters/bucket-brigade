@@ -20,11 +20,157 @@
     "nash_simulations": 1000,
     "nash_max_iterations": 50
   },
-  "story": "Fires start aggressively with high spread rate (β=0.35) and many initial fires (30%), but moderate extinguish efficiency (κ=0.6) means coordinated early action can contain them. Delaying response leads to cascading failures across the town.",
+  "story": "Fires start aggressively with high spread rate (\u03b2=0.35) and many initial fires (30%), but moderate extinguish efficiency (\u03ba=0.6) means coordinated early action can contain them. Delaying response leads to cascading failures across the town.",
   "research_questions": [
     "How quickly must agents respond to prevent chain reactions?",
     "Is early coordination more valuable than distributed coverage?",
     "Can signaling help agents prioritize burning houses?",
     "What happens if agents delay to conserve energy for later nights?"
-  ]
+  ],
+  "research_insights": [
+    {
+      "question": "What does Nash equilibrium predict about cooperation in this scenario?",
+      "finding": "Nash equilibrium predicts complete free-riding (0% cooperation) with expected payoff of 24.3.",
+      "evidence": [
+        "Equilibrium type: mixed",
+        "Strategy classification: Free Rider",
+        "Expected payoff: 24.27",
+        "Cooperation rate: 0%",
+        "Convergence: 3 iterations in 1646.9s"
+      ],
+      "implication": "Individual rationality leads to collective failure. Without external coordination mechanisms, rational agents will defect even when cooperation benefits everyone."
+    },
+    {
+      "question": "How effective was evolutionary optimization?",
+      "finding": "Evolution improved from -2.0 to 1.2 payoff over 201 generations (\u0394 3.2).",
+      "evidence": [
+        "Initial best fitness: -2.05",
+        "Final best fitness: 1.20",
+        "Total improvement: 3.25",
+        "Generations: 201",
+        "Converged: False"
+      ],
+      "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+    },
+    {
+      "question": "What does population diversity reveal about the fitness landscape?",
+      "finding": "Population maintained high diversity (0.364), suggesting multiple viable strategies.",
+      "evidence": [
+        "Final diversity: 0.364",
+        "Mid-run diversity: 0.314",
+        "Best generation: 200"
+      ],
+      "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+    },
+    {
+      "question": "How much performance is lost at Nash equilibrium?",
+      "finding": "Nash equilibrium (24.3) falls 23.7 points short of optimal play (48.0) - a 98% efficiency loss.",
+      "evidence": [
+        "Nash payoff: 24.27",
+        "Optimal payoff: 47.95",
+        "Gap: 23.68",
+        "Efficiency: 50.6%"
+      ],
+      "implication": "Significant coordination failure. Individual rationality produces collectively suboptimal outcomes, indicating need for external coordination mechanisms."
+    },
+    {
+      "question": "Can evolution discover strategies superior to Nash equilibrium?",
+      "finding": "Yes - evolved strategies achieve 46.1 payoff, outperforming Nash equilibrium (24.3) by 21.9 points.",
+      "evidence": [
+        "Evolved payoff: 46.12",
+        "Nash payoff: 24.27",
+        "honesty: 0.70 (Nash) vs 1.00 (Evolved)",
+        "work_tendency: 0.20 (Nash) vs 0.60 (Evolved)"
+      ],
+      "implication": "Evolution can escape suboptimal equilibria by discovering innovative strategies that Nash analysis misses. Natural selection may find solutions that pure rationality cannot."
+    },
+    {
+      "question": "Which agent parameters matter most for success in this scenario?",
+      "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+      "evidence": [
+        "Nash strategy coordination: 0.00",
+        "Best strategy coordination: 1.00",
+        "Difference: 1.00",
+        "Also important: risk_aversion (\u0394 0.80)",
+        "Also important: neighbor_help (\u0394 0.70)"
+      ],
+      "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+    }
+  ],
+  "method_insights": {
+    "nash": [
+      {
+        "question": "What does Nash equilibrium predict about cooperation in this scenario?",
+        "finding": "Nash equilibrium predicts complete free-riding (0% cooperation) with expected payoff of 24.3.",
+        "evidence": [
+          "Equilibrium type: mixed",
+          "Strategy classification: Free Rider",
+          "Expected payoff: 24.27",
+          "Cooperation rate: 0%",
+          "Convergence: 3 iterations in 1646.9s"
+        ],
+        "implication": "Individual rationality leads to collective failure. Without external coordination mechanisms, rational agents will defect even when cooperation benefits everyone."
+      }
+    ],
+    "evolution": [
+      {
+        "question": "How effective was evolutionary optimization?",
+        "finding": "Evolution improved from -2.0 to 1.2 payoff over 201 generations (\u0394 3.2).",
+        "evidence": [
+          "Initial best fitness: -2.05",
+          "Final best fitness: 1.20",
+          "Total improvement: 3.25",
+          "Generations: 201",
+          "Converged: False"
+        ],
+        "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+      },
+      {
+        "question": "What does population diversity reveal about the fitness landscape?",
+        "finding": "Population maintained high diversity (0.364), suggesting multiple viable strategies.",
+        "evidence": [
+          "Final diversity: 0.364",
+          "Mid-run diversity: 0.314",
+          "Best generation: 200"
+        ],
+        "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+      }
+    ],
+    "comparative": [
+      {
+        "question": "How much performance is lost at Nash equilibrium?",
+        "finding": "Nash equilibrium (24.3) falls 23.7 points short of optimal play (48.0) - a 98% efficiency loss.",
+        "evidence": [
+          "Nash payoff: 24.27",
+          "Optimal payoff: 47.95",
+          "Gap: 23.68",
+          "Efficiency: 50.6%"
+        ],
+        "implication": "Significant coordination failure. Individual rationality produces collectively suboptimal outcomes, indicating need for external coordination mechanisms."
+      },
+      {
+        "question": "Can evolution discover strategies superior to Nash equilibrium?",
+        "finding": "Yes - evolved strategies achieve 46.1 payoff, outperforming Nash equilibrium (24.3) by 21.9 points.",
+        "evidence": [
+          "Evolved payoff: 46.12",
+          "Nash payoff: 24.27",
+          "honesty: 0.70 (Nash) vs 1.00 (Evolved)",
+          "work_tendency: 0.20 (Nash) vs 0.60 (Evolved)"
+        ],
+        "implication": "Evolution can escape suboptimal equilibria by discovering innovative strategies that Nash analysis misses. Natural selection may find solutions that pure rationality cannot."
+      },
+      {
+        "question": "Which agent parameters matter most for success in this scenario?",
+        "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+        "evidence": [
+          "Nash strategy coordination: 0.00",
+          "Best strategy coordination: 1.00",
+          "Difference: 1.00",
+          "Also important: risk_aversion (\u0394 0.80)",
+          "Also important: neighbor_help (\u0394 0.70)"
+        ],
+        "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+      }
+    ]
+  }
 }

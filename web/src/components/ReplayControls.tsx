@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, RotateCcw, Clock } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import type { GameNight } from '../types';
 
 interface ReplayControlsProps {
@@ -7,6 +7,7 @@ interface ReplayControlsProps {
   totalNights: number;
   isPlaying: boolean;
   speed: number;
+  phase?: 'day' | 'night';
   onPlayPause: () => void;
   onReset: () => void;
   onPrev: () => void;
@@ -21,6 +22,7 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   totalNights,
   isPlaying,
   speed,
+  phase = 'day',
   onPlayPause,
   onReset,
   onPrev,
@@ -29,8 +31,6 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   nights,
   className = ''
 }) => {
-  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
-
   const speedOptions = [
     { label: '0.5x', value: 2000, multiplier: 0.5 },
     { label: '1x', value: 1000, multiplier: 1 },
@@ -39,35 +39,6 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
   ];
 
   const progressPercentage = totalNights > 0 ? ((currentNight + 1) / totalNights) * 100 : 0;
-
-  // Calculate elapsed time based on current night
-  // Assuming each night represents 1 day (24 hours)
-  useEffect(() => {
-    setElapsedTime(currentNight * 24 * 3600); // Convert days to seconds
-  }, [currentNight]);
-
-  // Tick the clock when playing
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const currentMultiplier = speedOptions.find(opt => opt.value === speed)?.multiplier || 1;
-    // Update clock every 100ms, advancing by time proportional to speed
-    const interval = setInterval(() => {
-      setElapsedTime(prev => prev + (0.1 * currentMultiplier * 24 * 3600)); // 0.1s real time = fraction of a day
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, speed]);
-
-  // Format elapsed time as D:HH:MM:SS
-  const formatElapsedTime = (seconds: number): string => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    return `${days}d ${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Find nights where fires occurred (any house became burning)
   const fireEventNights = nights ? nights.reduce((acc, night, index) => {
@@ -93,12 +64,18 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Playback Controls</h3>
         <div className="flex items-center space-x-4">
-          {/* Elapsed Time Clock */}
-          <div className="flex items-center space-x-2 text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-            <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">
-              {formatElapsedTime(elapsedTime)}
-            </span>
+        {/* Day/Night Indicator */}
+        <div className={`flex items-center space-x-2 text-sm px-3 py-1 rounded-full ${
+        phase === 'day'
+          ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+        : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+        }`}>
+          <span className="text-lg">
+            {phase === 'day' ? '☀️' : '🌙'}
+        </span>
+          <span className="font-semibold">
+          {phase === 'day' ? `Day ${currentNight + 1}` : `Night ${currentNight + 1}`}
+          </span>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Night {currentNight + 1} of {totalNights}

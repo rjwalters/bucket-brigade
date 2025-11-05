@@ -20,11 +20,177 @@
     "nash_simulations": 1000,
     "nash_max_iterations": 50
   },
-  "story": "Fires almost never spread (β=0.05) and extinguish very easily (κ=0.95) with minimal work cost (c=0.2). The rational choice seems to be resting, but occasional sparks can catch lazy teams off-guard. This creates a deceptive trap where the optimal strategy is harder than it appears.",
+  "story": "Fires almost never spread (\u03b2=0.05) and extinguish very easily (\u03ba=0.95) with minimal work cost (c=0.2). The rational choice seems to be resting, but occasional sparks can catch lazy teams off-guard. This creates a deceptive trap where the optimal strategy is harder than it appears.",
   "research_questions": [
     "Do agents learn to rest when fires are minimal?",
     "How many agents can safely rest without risk?",
     "Can honest signaling prevent complacency?",
     "What is the cost of over-caution in this scenario?"
-  ]
+  ],
+  "research_insights": [
+    {
+      "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+      "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 98.9 payoff.",
+      "evidence": [
+        "Equilibrium type: pure",
+        "Strategy classification: Coordinator",
+        "Expected payoff: 98.94",
+        "Cooperation rate: 100%",
+        "Convergence: 1 iterations in 407.7s"
+      ],
+      "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+    },
+    {
+      "question": "What strategic traits does Nash equilibrium emphasize?",
+      "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+      "evidence": [
+        "coordination: 1.00",
+        "honesty: 0.90",
+        "Archetype: Coordinator (distance: 0.00)"
+      ],
+      "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+    },
+    {
+      "question": "How effective was evolutionary optimization?",
+      "finding": "Evolution improved from -2.3 to 0.2 payoff over 201 generations (\u0394 2.5).",
+      "evidence": [
+        "Initial best fitness: -2.30",
+        "Final best fitness: 0.25",
+        "Total improvement: 2.55",
+        "Generations: 201",
+        "Converged: False"
+      ],
+      "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+    },
+    {
+      "question": "What does population diversity reveal about the fitness landscape?",
+      "finding": "Population maintained high diversity (0.461), suggesting multiple viable strategies.",
+      "evidence": [
+        "Final diversity: 0.461",
+        "Mid-run diversity: 0.310",
+        "Best generation: 200"
+      ],
+      "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+    },
+    {
+      "question": "What is the price of anarchy in this scenario?",
+      "finding": "Nash equilibrium (98.9) shows moderate efficiency loss of 15.3 points vs optimal (114.3).",
+      "evidence": [
+        "Nash payoff: 98.94",
+        "Optimal payoff: 114.28",
+        "Gap: 15.35",
+        "Efficiency: 86.6%"
+      ],
+      "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+    },
+    {
+      "question": "Why does evolution fail to reach Nash equilibrium performance?",
+      "finding": "Evolution achieves only 86.9 payoff, falling 12.0 points short of Nash equilibrium (98.9).",
+      "evidence": [
+        "Evolved payoff: 86.90",
+        "Nash payoff: 98.94",
+        "coordination: 1.00 (Nash) vs 0.18 (Evolved)",
+        "altruism: 0.60 (Nash) vs 0.13 (Evolved)"
+      ],
+      "implication": "Some strategy spaces are too complex for evolution to navigate effectively. The fitness landscape may have local optima that trap evolutionary search."
+    },
+    {
+      "question": "Which agent parameters matter most for success in this scenario?",
+      "finding": "The parameter 'work_tendency' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+      "evidence": [
+        "Nash strategy work_tendency: 0.60",
+        "Best strategy work_tendency: 0.90",
+        "Difference: 0.30",
+        "Also important: risk_aversion (\u0394 0.30)",
+        "Also important: coordination (\u0394 0.30)"
+      ],
+      "implication": "Success in this scenario critically depends on optimizing work_tendency. Strategies that neglect this parameter face significant performance penalties."
+    }
+  ],
+  "method_insights": {
+    "nash": [
+      {
+        "question": "Why does Nash equilibrium favor cooperation in this scenario?",
+        "finding": "Nash equilibrium selects highly cooperative strategies (100% cooperation rate) achieving 98.9 payoff.",
+        "evidence": [
+          "Equilibrium type: pure",
+          "Strategy classification: Coordinator",
+          "Expected payoff: 98.94",
+          "Cooperation rate: 100%",
+          "Convergence: 1 iterations in 407.7s"
+        ],
+        "implication": "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
+      },
+      {
+        "question": "What strategic traits does Nash equilibrium emphasize?",
+        "finding": "The equilibrium strongly favors coordination, honesty (all > 0.7) as critical for stability.",
+        "evidence": [
+          "coordination: 1.00",
+          "honesty: 0.90",
+          "Archetype: Coordinator (distance: 0.00)"
+        ],
+        "implication": "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+      }
+    ],
+    "evolution": [
+      {
+        "question": "How effective was evolutionary optimization?",
+        "finding": "Evolution improved from -2.3 to 0.2 payoff over 201 generations (\u0394 2.5).",
+        "evidence": [
+          "Initial best fitness: -2.30",
+          "Final best fitness: 0.25",
+          "Total improvement: 2.55",
+          "Generations: 201",
+          "Converged: False"
+        ],
+        "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
+      },
+      {
+        "question": "What does population diversity reveal about the fitness landscape?",
+        "finding": "Population maintained high diversity (0.461), suggesting multiple viable strategies.",
+        "evidence": [
+          "Final diversity: 0.461",
+          "Mid-run diversity: 0.310",
+          "Best generation: 200"
+        ],
+        "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+      }
+    ],
+    "comparative": [
+      {
+        "question": "What is the price of anarchy in this scenario?",
+        "finding": "Nash equilibrium (98.9) shows moderate efficiency loss of 15.3 points vs optimal (114.3).",
+        "evidence": [
+          "Nash payoff: 98.94",
+          "Optimal payoff: 114.28",
+          "Gap: 15.35",
+          "Efficiency: 86.6%"
+        ],
+        "implication": "Partial coordination failure. Some gains possible through cooperation, but individual incentives aren't catastrophically misaligned."
+      },
+      {
+        "question": "Why does evolution fail to reach Nash equilibrium performance?",
+        "finding": "Evolution achieves only 86.9 payoff, falling 12.0 points short of Nash equilibrium (98.9).",
+        "evidence": [
+          "Evolved payoff: 86.90",
+          "Nash payoff: 98.94",
+          "coordination: 1.00 (Nash) vs 0.18 (Evolved)",
+          "altruism: 0.60 (Nash) vs 0.13 (Evolved)"
+        ],
+        "implication": "Some strategy spaces are too complex for evolution to navigate effectively. The fitness landscape may have local optima that trap evolutionary search."
+      },
+      {
+        "question": "Which agent parameters matter most for success in this scenario?",
+        "finding": "The parameter 'work_tendency' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+        "evidence": [
+          "Nash strategy work_tendency: 0.60",
+          "Best strategy work_tendency: 0.90",
+          "Difference: 0.30",
+          "Also important: risk_aversion (\u0394 0.30)",
+          "Also important: coordination (\u0394 0.30)"
+        ],
+        "implication": "Success in this scenario critically depends on optimizing work_tendency. Strategies that neglect this parameter face significant performance penalties."
+      }
+    ]
+  }
 }

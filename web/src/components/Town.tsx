@@ -11,10 +11,10 @@ interface TownProps {
 const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, className = '' }) => {
   // Create positions for 10 houses in a circle
   const housePositions = Array.from({ length: 10 }, (_, i) => {
-    const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // Start from top
-    const radius = 210; // Distance from center (5% larger)
-    const centerX = 320; // Center of the circle (symmetric)
-    const centerY = 320; // Center of the circle (symmetric)
+  const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // Start from top
+  const radius = 231; // Distance from center (10% larger than original 210)
+  const centerX = 320; // Center of the circle (symmetric)
+  const centerY = 320; // Center of the circle (symmetric)
 
     return {
       x: centerX + radius * Math.cos(angle),
@@ -23,6 +23,8 @@ const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, classNam
       angle: angle
     };
   });
+
+
 
   const getHouseClass = (state: HouseState) => {
     switch (state) {
@@ -43,8 +45,8 @@ const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, classNam
   };
 
   return (
-    <div className={`town-visualization ${className}`}>
-      <svg width="640" height="640" viewBox="0 0 640 640" className="town-svg">
+  <div className={`town-visualization ${className}`}>
+  <svg width="640" height="640" viewBox="0 0 640 640" className="town-svg absolute inset-0">
         {/* Connection lines between houses */}
         {housePositions.map((pos, i) => {
           const nextPos = housePositions[(i + 1) % 10];
@@ -72,15 +74,17 @@ const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, classNam
 
           return (
             <g key={`house-${i}`} className="town-house-group">
-              {/* House circle */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r="50"
-                className={`town-house ${getHouseClass(houseState)}`}
-                data-house-index={i}
-                data-house-state={houseState}
-              />
+              {/* House circle - only for safe houses */}
+              {houseState === 0 && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r="50"
+                  className={`town-house ${getHouseClass(houseState)}`}
+                  data-house-index={i}
+                  data-house-state={houseState}
+                />
+              )}
 
               {/* House symbol */}
               <text
@@ -117,12 +121,12 @@ const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, classNam
           <span>Safe (🏠)</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full house-burning border-2 border-red-300 animate-pulse"></div>
-          <span>Burning (🔥)</span>
+          <span className="text-2xl">🔥</span>
+          <span>Burning</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full house-ruined border-2 border-gray-300"></div>
-          <span>Ruined (💀)</span>
+          <span className="text-2xl">💀</span>
+          <span>Ruined</span>
         </div>
       </div>
     </div>

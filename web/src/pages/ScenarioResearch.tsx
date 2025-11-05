@@ -46,7 +46,7 @@ export default function ScenarioResearch() {
       let nash, heuristics, evolutionTrace, evolutionBest, comparison;
 
       if (activeTab === 'nash') {
-        nash = await fetch(`${scenarioPath}/nash/results.json`).then(r => r.ok ? r.json() : null);
+        nash = await fetch(`${scenarioPath}/nash/equilibrium.json`).then(r => r.ok ? r.json() : null);
       } else if (activeTab === 'evolution') {
         [evolutionTrace, evolutionBest] = await Promise.all([
           fetch(`${scenarioPath}/evolved/evolution_trace.json`).then(r => r.ok ? r.json() : null),
@@ -216,57 +216,61 @@ export default function ScenarioResearch() {
       )}
 
       {/* Heuristic Results */}
-      {data.heuristics && (
+      {data.heuristics && data.heuristics.ranking && (
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Heuristic Archetypes</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Homogeneous Teams */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <h3 className="text-xl font-semibold mb-4">Homogeneous Teams</h3>
-              <div className="space-y-3">
-                {data.heuristics.ranking.homogeneous.map((team) => (
-                  <div key={team.name}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium capitalize">{team.name.replace(/_/g, ' ')}</span>
-                      <span className="font-bold">{team.mean_payoff.toFixed(1)}</span>
+            {data.heuristics.ranking.homogeneous && data.heuristics.ranking.homogeneous.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-4">Homogeneous Teams</h3>
+                <div className="space-y-3">
+                  {data.heuristics.ranking.homogeneous.map((team) => (
+                    <div key={team.name}>
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium capitalize">{team.name.replace(/_/g, ' ')}</span>
+                        <span className="font-bold">{team.mean_payoff.toFixed(1)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div
+                          className="bg-green-500 h-3 rounded-full"
+                          style={{
+                            width: `${(team.mean_payoff / Math.max(...data.heuristics!.ranking.homogeneous.map(t => t.mean_payoff))) * 100}%`
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">±{team.std_payoff.toFixed(1)}</div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div
-                        className="bg-green-500 h-3 rounded-full"
-                        style={{
-                          width: `${(team.mean_payoff / Math.max(...data.heuristics!.ranking.homogeneous.map(t => t.mean_payoff))) * 100}%`
-                        }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">±{team.std_payoff.toFixed(1)}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Mixed Teams */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <h3 className="text-xl font-semibold mb-4">Mixed Teams</h3>
-              <div className="space-y-3">
-                {data.heuristics.ranking.mixed.slice(0, 5).map((team) => (
-                  <div key={team.composition}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">{team.composition}</span>
-                      <span className="font-bold">{team.mean_payoff.toFixed(1)}</span>
+            {data.heuristics.ranking.mixed && data.heuristics.ranking.mixed.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-4">Mixed Teams</h3>
+                <div className="space-y-3">
+                  {data.heuristics.ranking.mixed.slice(0, 5).map((team) => (
+                    <div key={team.composition}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">{team.composition}</span>
+                        <span className="font-bold">{team.mean_payoff.toFixed(1)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div
+                          className="bg-purple-500 h-3 rounded-full"
+                          style={{
+                            width: `${(team.mean_payoff / Math.max(...data.heuristics!.ranking.mixed.map(t => t.mean_payoff))) * 100}%`
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">±{team.std_payoff.toFixed(1)}</div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                      <div
-                        className="bg-purple-500 h-3 rounded-full"
-                        style={{
-                          width: `${(team.mean_payoff / Math.max(...data.heuristics!.ranking.mixed.map(t => t.mean_payoff))) * 100}%`
-                        }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">±{team.std_payoff.toFixed(1)}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -379,8 +383,387 @@ export default function ScenarioResearch() {
         </div>
       )}
 
-      {/* Research Questions */}
-      {data.config?.research_questions && data.config.research_questions.length > 0 && (
+      {/* Nash Equilibrium Results */}
+      {data.nash && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Nash Equilibrium Analysis</h2>
+
+          {/* Key Metrics */}
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <div className="text-sm text-gray-500 mb-1">Equilibrium Type</div>
+              <div className="text-2xl font-bold capitalize">{data.nash.equilibrium.type}</div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <div className="text-sm text-gray-500 mb-1">Expected Payoff</div>
+              <div className="text-2xl font-bold">{data.nash.equilibrium.expected_payoff.toFixed(2)}</div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <div className="text-sm text-gray-500 mb-1">Cooperation Rate</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {(data.nash.interpretation.cooperation_rate * 100).toFixed(0)}%
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <div className="text-sm text-gray-500 mb-1">Convergence Time</div>
+              <div className="text-2xl font-bold">{data.nash.convergence.elapsed_time.toFixed(1)}s</div>
+            </div>
+          </div>
+
+          {/* Strategy Pool */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+            <h3 className="text-xl font-semibold mb-4">Equilibrium Strategies</h3>
+            <div className="space-y-6">
+              {data.nash.equilibrium.strategy_pool.map((strategy) => (
+                <div key={strategy.index} className="border-l-4 border-blue-500 pl-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="text-lg font-bold">{strategy.classification}</h4>
+                      <div className="text-sm text-gray-500">
+                        Probability: {(strategy.probability * 100).toFixed(0)}%
+                        {strategy.closest_archetype !== strategy.classification && (
+                          <span className="ml-2">
+                            (Closest to {strategy.closest_archetype}, distance: {strategy.archetype_distance.toFixed(3)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Agent Parameters Visualization */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {Object.entries(strategy.parameters).map(([param, value]) => (
+                      <div key={param}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="capitalize text-gray-600 dark:text-gray-400">
+                            {param.replace(/_/g, ' ')}
+                          </span>
+                          <span className="font-mono font-semibold">{(value as number).toFixed(2)}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              (value as number) > 0.66
+                                ? 'bg-green-500'
+                                : (value as number) > 0.33
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${(value as number) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Algorithm Details */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h3 className="text-xl font-semibold mb-4">Computation Details</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm text-gray-500">Algorithm</div>
+                <div className="font-bold capitalize">{data.nash.algorithm.method.replace(/_/g, ' ')}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Simulations</div>
+                <div className="font-bold">{data.nash.algorithm.num_simulations}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Iterations</div>
+                <div className="font-bold">{data.nash.convergence.iterations} / {data.nash.algorithm.max_iterations}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Epsilon</div>
+                <div className="font-bold">{data.nash.algorithm.epsilon}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Converged</div>
+                <div className={`font-bold ${data.nash.convergence.converged ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {data.nash.convergence.converged ? 'Yes' : 'No'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Support Size</div>
+                <div className="font-bold">{data.nash.equilibrium.support_size}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Research Insights - Method-Specific */}
+      {data.config?.method_insights && Object.keys(data.config.method_insights).length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">Research Insights</h2>
+
+          {/* Nash Equilibrium Insights */}
+          {data.config.method_insights.nash && data.config.method_insights.nash.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold mb-4 text-purple-700 dark:text-purple-300">
+                Nash Equilibrium Analysis
+              </h3>
+              <div className="space-y-6">
+                {data.config.method_insights.nash.map((insight: any, idx: number) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-purple-500">
+                    <h4 className="text-lg font-semibold mb-3 text-purple-700 dark:text-purple-300">
+                      {insight.question}
+                    </h4>
+
+                    <div className="mb-4">
+                      <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                        Finding
+                      </div>
+                      <p className="text-base text-gray-800 dark:text-gray-200">
+                        {insight.finding}
+                      </p>
+                    </div>
+
+                    {insight.evidence && insight.evidence.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                          Evidence
+                        </div>
+                        <ul className="space-y-1">
+                          {insight.evidence.map((evidence: string, evidx: number) => (
+                            <li key={evidx} className="flex items-start text-sm">
+                              <span className="text-purple-500 mr-2 mt-1">•</span>
+                              <span className="text-gray-700 dark:text-gray-300">{evidence}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded">
+                      <div className="text-sm font-semibold text-purple-600 dark:text-purple-300 uppercase mb-1">
+                        Implication
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 italic">
+                        {insight.implication}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evolution Insights */}
+          {data.config.method_insights.evolution && data.config.method_insights.evolution.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold mb-4 text-green-700 dark:text-green-300">
+                Evolutionary Optimization
+              </h3>
+              <div className="space-y-6">
+                {data.config.method_insights.evolution.map((insight: any, idx: number) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500">
+                    <h4 className="text-lg font-semibold mb-3 text-green-700 dark:text-green-300">
+                      {insight.question}
+                    </h4>
+
+                    <div className="mb-4">
+                      <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                        Finding
+                      </div>
+                      <p className="text-base text-gray-800 dark:text-gray-200">
+                        {insight.finding}
+                      </p>
+                    </div>
+
+                    {insight.evidence && insight.evidence.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                          Evidence
+                        </div>
+                        <ul className="space-y-1">
+                          {insight.evidence.map((evidence: string, evidx: number) => (
+                            <li key={evidx} className="flex items-start text-sm">
+                              <span className="text-green-500 mr-2 mt-1">•</span>
+                              <span className="text-gray-700 dark:text-gray-300">{evidence}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded">
+                      <div className="text-sm font-semibold text-green-600 dark:text-green-300 uppercase mb-1">
+                        Implication
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 italic">
+                        {insight.implication}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comparative Insights */}
+          {data.config.method_insights.comparative && data.config.method_insights.comparative.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold mb-4 text-blue-700 dark:text-blue-300">
+                Comparative Analysis
+              </h3>
+              <div className="space-y-6">
+                {data.config.method_insights.comparative.map((insight: any, idx: number) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-blue-500">
+                    <h4 className="text-lg font-semibold mb-3 text-blue-700 dark:text-blue-300">
+                      {insight.question}
+                    </h4>
+
+                    <div className="mb-4">
+                      <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                        Finding
+                      </div>
+                      <p className="text-base text-gray-800 dark:text-gray-200">
+                        {insight.finding}
+                      </p>
+                    </div>
+
+                    {insight.evidence && insight.evidence.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                          Evidence
+                        </div>
+                        <ul className="space-y-1">
+                          {insight.evidence.map((evidence: string, evidx: number) => (
+                            <li key={evidx} className="flex items-start text-sm">
+                              <span className="text-blue-500 mr-2 mt-1">•</span>
+                              <span className="text-gray-700 dark:text-gray-300">{evidence}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded">
+                      <div className="text-sm font-semibold text-blue-600 dark:text-blue-300 uppercase mb-1">
+                        Implication
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 italic">
+                        {insight.implication}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PPO Training Insights (placeholder for future) */}
+          {data.config.method_insights.ppo && data.config.method_insights.ppo.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold mb-4 text-orange-700 dark:text-orange-300">
+                PPO Training Analysis
+              </h3>
+              <div className="space-y-6">
+                {data.config.method_insights.ppo.map((insight: any, idx: number) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-orange-500">
+                    <h4 className="text-lg font-semibold mb-3 text-orange-700 dark:text-orange-300">
+                      {insight.question}
+                    </h4>
+
+                    <div className="mb-4">
+                      <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                        Finding
+                      </div>
+                      <p className="text-base text-gray-800 dark:text-gray-200">
+                        {insight.finding}
+                      </p>
+                    </div>
+
+                    {insight.evidence && insight.evidence.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                          Evidence
+                        </div>
+                        <ul className="space-y-1">
+                          {insight.evidence.map((evidence: string, evidx: number) => (
+                            <li key={evidx} className="flex items-start text-sm">
+                              <span className="text-orange-500 mr-2 mt-1">•</span>
+                              <span className="text-gray-700 dark:text-gray-300">{evidence}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded">
+                      <div className="text-sm font-semibold text-orange-600 dark:text-orange-300 uppercase mb-1">
+                        Implication
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 italic">
+                        {insight.implication}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Legacy Research Insights (fallback) */}
+      {(!data.config?.method_insights || Object.keys(data.config.method_insights).length === 0) &&
+       data.config?.research_insights && data.config.research_insights.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">Research Insights</h2>
+          <div className="space-y-6">
+            {data.config.research_insights.map((insight: any, idx: number) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-blue-500">
+                <h3 className="text-xl font-semibold mb-3 text-blue-700 dark:text-blue-300">
+                  {insight.question}
+                </h3>
+
+                <div className="mb-4">
+                  <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                    Finding
+                  </div>
+                  <p className="text-lg text-gray-800 dark:text-gray-200">
+                    {insight.finding}
+                  </p>
+                </div>
+
+                {insight.evidence && insight.evidence.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                      Evidence
+                    </div>
+                    <ul className="space-y-2">
+                      {insight.evidence.map((evidence: string, evidx: number) => (
+                        <li key={evidx} className="flex items-start">
+                          <span className="text-green-500 mr-2 mt-1">•</span>
+                          <span className="text-gray-700 dark:text-gray-300">{evidence}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded">
+                  <div className="text-sm font-semibold text-blue-600 dark:text-blue-300 uppercase mb-1">
+                    Implication
+                  </div>
+                  <p className="text-gray-800 dark:text-gray-200 italic">
+                    {insight.implication}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Research Questions (fallback if no insights) */}
+      {(!data.config?.research_insights || data.config.research_insights.length === 0) &&
+       data.config?.research_questions && data.config.research_questions.length > 0 && (
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Research Questions</h2>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">

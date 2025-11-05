@@ -114,7 +114,14 @@
       "Bash(sky status:*)",
       "Bash(ssh:*)",
       "Bash(VIRTUAL_ENV=/Users/rwalters/GitHub/bucket-brigade/.venv PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(rsync:*)",
+      "Bash(experiments/scripts/generate_insights.py )",
+      "Bash(rwalters-sandbox-1:~/bucket-brigade/experiments/scripts/)",
+      "Bash(./scripts/monitor_evolution.sh:*)",
+      "Bash(do echo \"=== $scenario ===\" echo -n \"Evolution fitness: \" cat experiments/scenarios/$scenario/evolved/best_agent.json)",
+      "Bash(if [ -f \"experiments/scenarios/$scenario/comparison/results.json\" ])",
+      "Bash(then)"
     ],
     "deny": [],
     "ask": []

@@ -91,8 +91,10 @@ function saveTournamentGamesToReplay(results: ScenarioResult[]): void {
   const existingReplays = loadGameReplays();
   const allReplays = [...existingReplays, ...gamesToSave];
 
-  // Keep only the most recent 50 games to avoid filling localStorage
-  const recentReplays = allReplays.slice(-50);
+  // Keep only the most recent 25 games to avoid filling localStorage
+  const recentReplays = allReplays
+    .sort((a, b) => (b.timestamp ? Number(b.timestamp) : 0) - (a.timestamp ? Number(a.timestamp) : 0))
+    .slice(0, 25);
 
   saveGameReplays(recentReplays);
 
@@ -188,12 +190,13 @@ async function runSingleGame(
   team: TeamComposition,
   scenario: Scenario,
   scenarioType: ScenarioType,
+  forceJsEngine = false,
 ): Promise<ScenarioResult> {
   // Filter out null agents
   const activeAgents = team.positions.filter((a) => a != null);
 
   // Create engine with scenario (WASM if available, fallback to JS)
-  const engine = await createGameEngine(scenario);
+  const engine = await createGameEngine(scenario, !forceJsEngine);
 
   // Create agents
   const agents: Agent[] = activeAgents.map((archetype, i) =>
@@ -368,6 +371,7 @@ export class TournamentEngine {
   async runTournament(
     team: TeamComposition,
     config: TournamentConfig,
+    forceJsEngine = false,
     onProgress?: (progress: TournamentProgress) => void,
   ): Promise<TournamentResult> {
     const startTime = Date.now();
@@ -400,7 +404,7 @@ export class TournamentEngine {
       const { scenario, type } = scenarioSet[i];
 
       // Run game
-      const result = await runSingleGame(team, scenario, type);
+      const result = await runSingleGame(team, scenario, type, forceJsEngine);
       results.push(result);
 
       // Report progress

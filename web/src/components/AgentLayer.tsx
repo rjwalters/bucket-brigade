@@ -45,7 +45,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
     } else {
       // Regular houses in a circle
       const houseAngle = (houseIndex / 10) * 2 * Math.PI - Math.PI / 2;
-      const houseRadius = 210; // Updated to match Town component (5% larger)
+      const houseRadius = 231; // Updated to match Town component (10% larger than original 210)
       return {
         x: centerX + houseRadius * Math.cos(houseAngle),
         y: centerY + houseRadius * Math.sin(houseAngle)
@@ -54,9 +54,9 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
   };
 
   // Helper function to get agent position around a house
-  const getAgentPositionAroundHouse = (houseCenterX: number, houseCenterY: number, agentId: number, spotRadius: number): { x: number, y: number } => {
-    // Position agent at one of 10 spots around the house perimeter (36 degrees apart)
-    const spotAngle = (agentId / 10) * 2 * Math.PI;
+  const getAgentPositionAroundHouse = (houseCenterX: number, houseCenterY: number, agentId: number, spotRadius: number, totalAgents: number): { x: number, y: number } => {
+    // Position agent at evenly spaced spots around the house perimeter
+    const spotAngle = (agentId / totalAgents) * 2 * Math.PI;
     return {
       x: houseCenterX + spotRadius * Math.cos(spotAngle),
       y: houseCenterY + spotRadius * Math.sin(spotAngle)
@@ -65,40 +65,65 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
 
   // Create positions for agents
   const getAgentPositions = () => {
-    const positions: Array<{
-      x: number;
-      y: number;
-      agentId: number;
-      houseIndex: number;
-      signal: number;
-      action: number[];
-    }> = [];
+  const positions: Array<{
+  x: number;
+  y: number;
+  idX: number;
+  idY: number;
+  agentId: number;
+  houseIndex: number;
+  signal: number;
+  action: number[];
+      lied: boolean;
+  }> = [];
 
     locations.forEach((houseIndex, agentId) => {
-      let x, y;
+  let x, y, idX, idY, houseCenterX, houseCenterY;
 
-      if (phase === 'day') {
-        // During day: agents gather at center "ghost house" in angular positions
-        const houseCenter = getHouseCenterPosition(-1); // -1 for center ghost house
-        const agentPos = getAgentPositionAroundHouse(houseCenter.x, houseCenter.y, agentId, 35);
-        x = agentPos.x;
-        y = agentPos.y;
-      } else {
-        // During night: agents move to their target houses in angular positions
-        const targetHouse = actions[agentId] ? actions[agentId][0] : houseIndex;
-        const houseCenter = getHouseCenterPosition(targetHouse);
-        const agentPos = getAgentPositionAroundHouse(houseCenter.x, houseCenter.y, agentId, 35);
-        x = agentPos.x;
-        y = agentPos.y;
+  if (phase === 'day') {
+    // During day: agents position near their target houses to signal destination
+    const targetHouse = actions[agentId] ? actions[agentId][0] : houseIndex;
+    const houseCenter = getHouseCenterPosition(targetHouse);
+    houseCenterX = houseCenter.x;
+    houseCenterY = houseCenter.y;
+    const agentPos = getAgentPositionAroundHouse(houseCenterX, houseCenterY, agentId, 60, locations.length);
+    x = agentPos.x;
+    y = agentPos.y;
+    // Position ID at larger radius along same angle
+    const idAngle = (agentId / locations.length) * 2 * Math.PI;
+    const idRadius = 60 + 20; // 20 units beyond agent position
+    idX = houseCenterX + idRadius * Math.cos(idAngle);
+    idY = houseCenterY + idRadius * Math.sin(idAngle);
+  } else {
+  // During night: agents move to their target houses in angular positions
+  const targetHouse = actions[agentId] ? actions[agentId][0] : houseIndex;
+  const houseCenter = getHouseCenterPosition(targetHouse);
+  houseCenterX = houseCenter.x;
+  houseCenterY = houseCenter.y;
+  const agentPos = getAgentPositionAroundHouse(houseCenterX, houseCenterY, agentId, 60, locations.length);
+    x = agentPos.x;
+      y = agentPos.y;
+        // Position ID at larger radius along same angle
+        const idAngle = (agentId / locations.length) * 2 * Math.PI;
+        const idRadius = 60 + 20; // 20 units beyond agent position
+        idX = houseCenterX + idRadius * Math.cos(idAngle);
+        idY = houseCenterY + idRadius * Math.sin(idAngle);
       }
+
+      // Check if agent lied (signal doesn't match action)
+      const agentAction = actions[agentId] || [houseIndex, 0];
+      const lied = signals[agentId] !== agentAction[1];
 
       positions.push({
         x,
         y,
+        idX,
+        idY,
         agentId,
         houseIndex,
         signal: signals[agentId],
-        action: actions[agentId] || [houseIndex, 0]
+        action: agentAction,
+        lied
       });
     });
 
@@ -108,7 +133,7 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
   const agentPositions = getAgentPositions();
 
   const getSignalSymbol = (signal: number) => {
-    return signal === 1 ? '🔥' : '💤';
+    return signal === 1 ? '🚒' : '😴';
   };
 
   const getSignalClass = (signal: number) => {
@@ -138,8 +163,8 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
             <circle
               cx={agent.x}
               cy={agent.y}
-              r="12"
-              className="agent-dot fill-blue-500 stroke-white stroke-2 cursor-pointer hover:stroke-blue-300"
+              r="14.4"
+              className={`agent-dot ${phase === 'day' ? 'fill-yellow-400' : 'fill-slate-400'} ${phase === 'night' && agent.lied ? 'stroke-red-500 stroke-4' : 'stroke-white stroke-2'} cursor-pointer hover:stroke-blue-300`}
               style={{
                 transition: 'cx 0.8s ease-in-out, cy 0.8s ease-in-out',
               }}
@@ -147,41 +172,44 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
               <title>{`Agent ${agent.agentId} at house ${agent.action[0]}`}</title>
             </circle>
 
-            {/* Signal indicator - only visible during day phase */}
-            {phase === 'day' && (
-              <text
-                x={agent.x}
-                y={agent.y - 18}
-                textAnchor="middle"
-                className={`agent-signal select-none ${getSignalClass(agent.signal)}`}
-                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out', fontSize: '1.2rem' }}
+            {/* Action emoji inside the agent dot */}
+            <g
+            transform={`translate(${agent.x}, ${agent.y})`}
+            style={{
+            transition: 'transform 0.8s ease-in-out'
+            }}
+            >
+            <text
+            x="0"
+            y="0"
+            textAnchor="middle"
+              dominantBaseline="middle"
+            className="select-none"
+              style={{
+                  fontSize: '0.9rem'
+                }}
               >
-                {getSignalSymbol(agent.signal)}
+                {phase === 'day' ? getSignalSymbol(agent.signal) : (agent.action[1] === 1 ? '🚒' : '😴')}
               </text>
-            )}
-
-            {/* Action indicator - only visible during night phase */}
-            {phase === 'night' && (
-              <text
-                x={agent.x}
-                y={agent.y - 18}
-                textAnchor="middle"
-                className="select-none"
-                style={{ transition: 'x 0.8s ease-in-out, y 0.8s ease-in-out', fontSize: '1.2rem' }}
-              >
-                {agent.action[1] === 1 ? '🚒' : '😴'}
-              </text>
-            )}
+            </g>
 
             {/* Agent ID label */}
-            <text
-              x={agent.x}
-              y={agent.y + 20}
-              textAnchor="middle"
-              className="agent-id text-sm font-medium text-blue-600 fill-current select-none"
+            <g
+              transform={`translate(${agent.idX}, ${agent.idY})`}
+              style={{
+                transition: 'transform 0.8s ease-in-out'
+              }}
             >
-              {agent.agentId}
-            </text>
+            <text
+              x="0"
+                y="0"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="agent-id text-sm font-medium text-blue-600 fill-current select-none"
+              >
+                {agent.agentId}
+              </text>
+            </g>
           </g>
         ))}
       </svg>
