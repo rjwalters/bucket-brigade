@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
-from bucket_brigade.evolution import FitnessEvaluator
+from bucket_brigade.evolution import FitnessEvaluator, Individual
 
 
 def test_tournament_mode(scenario_name: str, genome: np.ndarray, num_games: int = 10) -> dict:
@@ -60,15 +60,16 @@ def test_training_mode(scenario_name: str, genome: np.ndarray, num_games: int = 
         parallel=False,  # Disable parallel for easier debugging
     )
 
-    # Evaluate single genome
-    fitness = evaluator.evaluate([genome])[0]
+    # Create Individual object for evaluation
+    individual = Individual(genome=genome, fitness=0.0)
 
-    # Note: fitness is sum of agent scores, not mean
-    # To compare with tournament, divide by 4
+    # Evaluate
+    fitness = evaluator.evaluate_individual(individual)
+
+    # Note: fitness is MEAN of agent scores (same as tournament now)
     return {
-        "fitness_sum": float(fitness),
-        "fitness_mean": float(fitness / 4.0),
-        "note": "Training uses sum(agent_scores), tournament uses mean(agent_scores)",
+        "fitness_mean": float(fitness),
+        "note": "Training evaluator returns mean(agent_scores) across games",
     }
 
 
@@ -97,7 +98,6 @@ def diagnose_agent(scenario_name: str, version: str, num_games: int = 20):
     # Test in training mode
     print("Testing in TRAINING mode (Rust evaluator)...")
     training_result = test_training_mode(scenario_name, genome, num_games)
-    print(f"  Fitness (sum):  {training_result['fitness_sum']:.2f}")
     print(f"  Fitness (mean): {training_result['fitness_mean']:.2f}")
     print(f"  Stored fitness: {stored_fitness}")
     print()
