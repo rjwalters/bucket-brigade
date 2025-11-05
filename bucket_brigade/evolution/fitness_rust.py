@@ -82,7 +82,7 @@ def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
         args: Tuple of (genome, python_scenario, seed)
 
     Returns:
-        Episode reward for agent
+        Scenario payoff (team final score)
     """
     genome, python_scenario, seed = args
 
@@ -94,9 +94,6 @@ def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
 
     # Python RNG for heuristic decisions
     rng = np.random.RandomState(seed)
-
-    # Track agent reward
-    episode_reward = 0.0
 
     # Run until done
     done = False
@@ -117,12 +114,12 @@ def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
 
         # Step the Rust game with single agent action
         rewards, done, info = game.step([action])
-
-        # Accumulate reward
-        episode_reward += rewards[0]
         step_count += 1
 
-    return episode_reward
+    # Return scenario final score instead of agent rewards
+    # This matches tournament evaluation and provides interpretable fitness
+    result = game.get_result()
+    return result.final_score
 
 
 class RustFitnessEvaluator:
