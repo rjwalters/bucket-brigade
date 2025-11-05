@@ -4,13 +4,15 @@ Compare results across heuristics, evolution, and Nash equilibrium analysis.
 
 Usage:
     python experiments/scripts/run_comparison.py greedy_neighbor
+    python experiments/scripts/run_comparison.py greedy_neighbor --evolution-versions evolved evolved_v3
+    python experiments/scripts/run_comparison.py greedy_neighbor --evolution-versions all
 """
 
 import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -21,8 +23,27 @@ from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
 
 
-def load_results(scenario_dir: Path) -> Dict[str, Any]:
-    """Load all analysis results for a scenario."""
+def find_evolution_versions(scenario_dir: Path) -> List[str]:
+    """Find all available evolution result directories."""
+    versions = []
+    for path in scenario_dir.iterdir():
+        if path.is_dir() and (path.name == "evolved" or path.name.startswith("evolved_")):
+            if (path / "best_agent.json").exists():
+                versions.append(path.name)
+    return sorted(versions)
+
+
+def load_results(
+    scenario_dir: Path, evolution_versions: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Load all analysis results for a scenario.
+
+    Args:
+        scenario_dir: Path to scenario directory
+        evolution_versions: List of evolution directories to load (e.g., ['evolved', 'evolved_v3'])
+                          If None, loads default 'evolved' directory
+                          If ['all'], loads all available evolution versions
+    """
     results = {}
 
     # Load heuristics
@@ -33,13 +54,22 @@ def load_results(scenario_dir: Path) -> Dict[str, Any]:
     else:
         results["heuristics"] = None
 
-    # Load evolution
-    evolved_file = scenario_dir / "evolved" / "best_agent.json"
-    if evolved_file.exists():
-        with open(evolved_file) as f:
-            results["evolved"] = json.load(f)
-    else:
-        results["evolved"] = None
+    # Determine which evolution versions to load
+    if evolution_versions is None:
+        evolution_versions = ["evolved"]  # Default
+    elif evolution_versions == ["all"]:
+        evolution_versions = find_evolution_versions(scenario_dir)
+        print(f"  Auto-detected evolution versions: {', '.join(evolution_versions)}")
+
+    # Load evolution results
+    results["evolution"] = {}
+    for version in evolution_versions:
+        evolved_file = scenario_dir / version / "best_agent.json"
+        if evolved_file.exists():
+            with open(evolved_file) as f:
+                results["evolution"][version] = json.load(f)
+        else:
+            print(f"  ⚠️  Evolution version '{version}' not found, skipping...")
 
     # Load Nash
     nash_file = scenario_dir / "nash" / "equilibrium.json"
@@ -107,9 +137,21 @@ def run_tournament(
 
 
 def run_comparison(
-    scenario_name: str, output_dir: Path, num_games: int = 20
+    scenario_name: str,
+    output_dir: Path,
+    num_games: int = 20,
+    evolution_versions: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """Compare all analysis methods for a scenario."""
+    """Compare all analysis methods for a scenario.
+
+    Args:
+        scenario_name: Name of the scenario
+        output_dir: Directory to save results
+        num_games: Number of games per strategy
+        evolution_versions: List of evolution versions to compare (e.g., ['evolved', 'evolved_v3'])
+                          If None, uses default 'evolved'
+                          If ['all'], compares all available versions
+    """
 
     print(f"Running comparison analysis for scenario: {scenario_name}")
     print(f"Output directory: {output_dir}")
@@ -121,15 +163,15 @@ def run_comparison(
 
     # Load all results
     print("Loading analysis results...")
-    all_results = load_results(scenario_dir)
+    all_results = load_results(scenario_dir, evolution_versions)
 
     if all_results["heuristics"] is None:
         print("⚠️  No heuristics results found. Run analyze_heuristics.py first.")
-        return
+        return {}
 
-    if all_results["evolved"] is None:
+    if not all_results["evolution"]:
         print("⚠️  No evolution results found. Run run_evolution.py first.")
-        return
+        return {}
 
     if all_results["nash"] is None:
         print("⚠️  No Nash results found. Run compute_nash.py first.")
@@ -151,8 +193,9 @@ def run_comparison(
         )
     )
 
-    # Add evolved agent
-    strategies["evolved"] = np.array(all_results["evolved"]["genome"])
+    # Add evolved agents (all versions)
+    for version_name, version_data in all_results["evolution"].items():
+        strategies[version_name] = np.array(version_data["genome"])
 
     # Add Nash strategies (if available)
     if all_results["nash"] is not None:
@@ -214,9 +257,9 @@ def run_comparison(
 
     print()
 
-    # Evolved vs Nash
+    # Evolved vs Nash (for each evolution version)
+    evolution_vs_nash_insights = {}
     if all_results["nash"] is not None:
-        evolved_payoff = float(tournament_results["evolved"]["mean_payoff"])  # type: ignore[arg-type]
         nash_payoffs = [
             float(result["mean_payoff"])  # type: ignore[arg-type]
             for name, result in tournament_results.items()
@@ -225,40 +268,49 @@ def run_comparison(
 
         if nash_payoffs:
             best_nash_payoff = max(nash_payoffs)
-            gap = evolved_payoff - best_nash_payoff
 
-            print("Evolved vs Nash:")
-            print(f"  Evolved payoff: {evolved_payoff:.2f}")
-            print(f"  Best Nash payoff: {best_nash_payoff:.2f}")
-            print(f"  Gap: {gap:+.2f}")
+            print("Evolution vs Nash Comparison:")
+            for version_name in all_results["evolution"].keys():
+                if version_name in tournament_results:
+                    evolved_payoff = float(tournament_results[version_name]["mean_payoff"])  # type: ignore[arg-type]
+                    gap = evolved_payoff - best_nash_payoff
 
-            if abs(gap) < 5.0:
-                print("  → Evolution found near-Nash strategy!")
-            elif gap > 0:
-                print(
-                    "  → Evolution outperformed Nash (possible exploitation of homogeneous opponents)"
-                )
-            else:
-                print("  → Nash outperformed evolution")
+                    print(f"  {version_name}:")
+                    print(f"    Payoff: {evolved_payoff:.2f}")
+                    print(f"    Gap from Nash: {gap:+.2f}")
+
+                    if abs(gap) < 5.0:
+                        print("    → Found near-Nash strategy!")
+                    elif gap > 0:
+                        print("    → Outperformed Nash")
+                    else:
+                        print("    → Nash outperformed this version")
+
+                    evolution_vs_nash_insights[version_name] = {
+                        "evolved_payoff": evolved_payoff,
+                        "best_nash_payoff": best_nash_payoff,
+                        "gap": gap,
+                    }
+
+            print()
+
+    # Strategy similarity for each evolved version
+    if all_results["nash"] is not None and len(nash_strategies) > 0:
+        print("Strategy Similarity to Nash:")
+        for version_name in all_results["evolution"].keys():
+            closest_nash = None
+            min_distance = float("inf")
+
+            for name, dist in distances.items():
+                if name.startswith(f"{version_name}_vs_nash_"):
+                    if dist < min_distance:
+                        min_distance = dist
+                        closest_nash = name.replace(f"{version_name}_vs_", "")
+
+            if closest_nash:
+                print(f"  {version_name} is closest to: {closest_nash} (distance: {min_distance:.3f})")
 
         print()
-
-    # Strategy similarity
-    if all_results["nash"] is not None and len(nash_strategies) > 0:
-        closest_nash = None
-        min_distance = float("inf")
-
-        for name, dist in distances.items():
-            if name.startswith("evolved_vs_nash_"):
-                if dist < min_distance:
-                    min_distance = dist
-                    closest_nash = name.replace("evolved_vs_", "")
-
-        if closest_nash:
-            print("Strategy Similarity:")
-            print(f"  Evolved strategy is closest to: {closest_nash}")
-            print(f"  Distance: {min_distance:.3f}")
-            print()
 
     # Prepare output
     comparison_results = {
@@ -278,12 +330,8 @@ def run_comparison(
     }
 
     # Add insights
-    if all_results["nash"] is not None:
-        comparison_results["insights"]["evolution_vs_nash"] = {  # type: ignore[index]
-            "evolved_payoff": float(evolved_payoff),
-            "best_nash_payoff": float(best_nash_payoff) if nash_payoffs else None,
-            "gap": float(gap) if nash_payoffs else None,
-        }
+    if evolution_vs_nash_insights:
+        comparison_results["insights"]["evolution_vs_nash"] = evolution_vs_nash_insights  # type: ignore[index]
 
     # Save results
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -299,11 +347,32 @@ def run_comparison(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compare analysis methods")
+    parser = argparse.ArgumentParser(
+        description="Compare analysis methods",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Compare default 'evolved' version
+  python run_comparison.py greedy_neighbor
+
+  # Compare specific versions
+  python run_comparison.py greedy_neighbor --evolution-versions evolved evolved_v3
+
+  # Compare all available versions
+  python run_comparison.py greedy_neighbor --evolution-versions all
+        """,
+    )
     parser.add_argument("scenario", type=str, help="Scenario name")
     parser.add_argument("--num-games", type=int, default=20, help="Games per strategy")
     parser.add_argument(
         "--output-dir", type=Path, default=None, help="Output directory"
+    )
+    parser.add_argument(
+        "--evolution-versions",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Evolution versions to compare (e.g., evolved evolved_v3) or 'all' for all versions",
     )
 
     args = parser.parse_args()
@@ -312,7 +381,9 @@ def main() -> None:
     if args.output_dir is None:
         args.output_dir = Path(f"experiments/scenarios/{args.scenario}/comparison")
 
-    run_comparison(args.scenario, args.output_dir, args.num_games)
+    run_comparison(
+        args.scenario, args.output_dir, args.num_games, args.evolution_versions
+    )
 
 
 if __name__ == "__main__":
