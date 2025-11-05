@@ -15,7 +15,7 @@ from bucket_brigade.agents.archetypes import (
     HERO_PARAMS,
     COORDINATOR_PARAMS,
 )
-from bucket_brigade.equilibrium.payoff_evaluator import PayoffEvaluator
+from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator
 from bucket_brigade.equilibrium.best_response import compute_best_response_to_mixture
 from bucket_brigade.equilibrium.nash_solver import solve_symmetric_nash
 
@@ -115,11 +115,12 @@ class DoubleOracle:
         self.epsilon = epsilon
         self.seed = seed
         self.verbose = verbose
-        self.evaluator = PayoffEvaluator(
+        self.evaluator = RustPayoffEvaluator(
             scenario=scenario,
             num_simulations=num_simulations,
             seed=seed,
             parallel=True,  # Enable parallelization
+            use_full_rust=True,  # Use fastest Rust implementation
         )
 
     def solve(

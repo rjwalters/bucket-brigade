@@ -262,3 +262,72 @@ class RustPayoffEvaluator:
                 )
 
         return payoff_matrix
+
+    def evaluate_against_mixture(
+        self,
+        theta_focal: np.ndarray,
+        strategy_mixture: dict[int, float],
+        strategy_pool: list[np.ndarray],
+    ) -> float:
+        """
+        Evaluate expected payoff against a mixed strategy distribution.
+
+        Computes E[payoff | opponents sample strategies from mixture].
+        This is used to evaluate best responses to mixed equilibria.
+
+        Args:
+            theta_focal: Focal agent's strategy parameters
+            strategy_mixture: Dictionary mapping strategy indices to probabilities
+            strategy_pool: List of available strategies
+
+        Returns:
+            Expected payoff when opponents play according to mixture
+        """
+        expected_payoff = 0.0
+
+        for strategy_idx, prob in strategy_mixture.items():
+            if prob > 0:
+                theta_opponents = strategy_pool[strategy_idx]
+                payoff = self.evaluate_symmetric_payoff(
+                    theta_focal=theta_focal,
+                    theta_opponents=theta_opponents,
+                )
+                expected_payoff += prob * payoff
+
+        return expected_payoff
+
+    def evaluate_mixture_vs_mixture(
+        self,
+        focal_mixture: dict[int, float],
+        opponent_mixture: dict[int, float],
+        strategy_pool: list[np.ndarray],
+    ) -> float:
+        """
+        Evaluate expected payoff when both focal and opponents use mixed strategies.
+
+        Computes E[payoff | focal and opponents both sample from mixtures].
+        This is used to compute the equilibrium payoff in mixed strategy equilibria.
+
+        Args:
+            focal_mixture: Focal agent's probability distribution over strategies
+            opponent_mixture: Opponents' probability distribution over strategies
+            strategy_pool: List of available strategies
+
+        Returns:
+            Expected payoff under both mixtures
+        """
+        expected_payoff = 0.0
+
+        for focal_idx, focal_prob in focal_mixture.items():
+            if focal_prob > 0:
+                for opponent_idx, opponent_prob in opponent_mixture.items():
+                    if opponent_prob > 0:
+                        theta_focal = strategy_pool[focal_idx]
+                        theta_opponents = strategy_pool[opponent_idx]
+                        payoff = self.evaluate_symmetric_payoff(
+                            theta_focal=theta_focal,
+                            theta_opponents=theta_opponents,
+                        )
+                        expected_payoff += focal_prob * opponent_prob * payoff
+
+        return expected_payoff
