@@ -18,9 +18,10 @@ from typing import Any, Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
-from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.agents.heuristic_agent import HeuristicAgent
+from bucket_brigade.envs.scenarios.definitions import SCENARIOS
+from bucket_brigade.evolution.fitness_rust import _heuristic_action
+import bucket_brigade_core as core
 
 
 def find_evolution_versions(scenario_dir: Path) -> List[str]:
@@ -88,38 +89,63 @@ def compute_strategy_distance(strategy1: np.ndarray, strategy2: np.ndarray) -> f
 
 
 def run_tournament(
-    strategies: Dict[str, np.ndarray], scenario: Any, num_games: int = 20
+    strategies: Dict[str, np.ndarray], scenario_name: str, num_games: int = 20
 ) -> Dict[str, Dict[str, Any]]:
-    """Run head-to-head tournament between strategies."""
+    """Run head-to-head tournament between strategies using Rust environment.
+
+    This ensures train/test consistency - both use the same Rust implementation.
+    """
 
     print(f"Running tournament with {len(strategies)} strategies...")
     print(f"  Games per matchup: {num_games}")
+    print(f"  Using: Rust environment (single source of truth)")
     print()
+
+    # Get Rust scenario
+    rust_scenario = SCENARIOS[scenario_name]
+    python_scenario = get_scenario_by_name(scenario_name, num_agents=4)
+    num_agents = python_scenario.num_agents
 
     results = {}
 
     for name, genome in strategies.items():
         print(f"  Testing {name}...", end=" ", flush=True)
 
-        # Create team of 4 identical agents
-        agents = [
-            HeuristicAgent(params=genome, agent_id=i, name=f"{name}-{i}")
-            for i in range(4)
-        ]
-
-        # Run games
+        # Run games using Rust environment
         payoffs = []
         for game_idx in range(num_games):
-            env = BucketBrigadeEnv(scenario)  # type: ignore[arg-type]
-            obs = env.reset(seed=game_idx)
+            # Create Rust game
+            game = core.BucketBrigadeGame(rust_scenario, seed=game_idx)
 
-            total_rewards = np.zeros(4)
-            while not env.done:
-                actions = np.array([agent.act(obs) for agent in agents])
-                obs, rewards, dones, info = env.step(actions)
-                total_rewards += rewards
+            # Python RNG for heuristic decisions
+            rng = np.random.RandomState(game_idx)
 
-            payoffs.append(float(np.mean(total_rewards)))
+            # Run until done
+            done = False
+            step_count = 0
+            max_steps = 100
+
+            while not done and step_count < max_steps:
+                # Get actions for all 4 agents using same genome
+                actions = []
+                for agent_id in range(num_agents):
+                    obs = game.get_observation(agent_id)
+                    obs_dict = {
+                        "houses": obs.houses,
+                        "signals": obs.signals,
+                        "locations": obs.locations,
+                    }
+                    action = _heuristic_action(genome, obs_dict, agent_id, rng)
+                    actions.append(action)
+
+                # Step the game
+                rewards, done, info = game.step(actions)
+                step_count += 1
+
+            # Get final result
+            result = game.get_result()
+            # Use mean of agent scores for consistency with training
+            payoffs.append(result.final_score / num_agents)
 
         mean_payoff = np.mean(payoffs)
         std_payoff = np.std(payoffs)
@@ -157,8 +183,7 @@ def run_comparison(
     print(f"Output directory: {output_dir}")
     print()
 
-    # Load scenario
-    scenario = get_scenario_by_name(scenario_name, num_agents=4)
+    # Scenario directory
     scenario_dir = Path(f"experiments/scenarios/{scenario_name}")
 
     # Load all results
@@ -216,7 +241,7 @@ def run_comparison(
     print("=" * 80)
     print()
 
-    tournament_results = run_tournament(strategies, scenario, num_games)
+    tournament_results = run_tournament(strategies, scenario_name, num_games)
 
     # Compute strategy distances
     print("=" * 80)
