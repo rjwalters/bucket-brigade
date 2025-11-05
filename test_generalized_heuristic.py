@@ -83,8 +83,8 @@ def test_focal_wrapper():
     theta_opponents = np.array([0.0, 0.7, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0])
 
     seed = 42
-    focal_reward = core.run_heuristic_episode_focal(scenario, 4,
-        scenario, theta_focal.tolist(), theta_opponents.tolist(), seed
+    focal_reward = core.run_heuristic_episode_focal(
+        scenario, 4, scenario, theta_focal.tolist(), theta_opponents.tolist(), seed
     )
 
     print("\nFocal wrapper test:")
