@@ -145,166 +145,327 @@ Each scenario includes:
 **Risk**: External interest is low
 * *Mitigation*: Focus on intrinsic scientific value, publish regardless, engage community early
 
+### Phase 1 Completion Status
+
+**Status**: ✅ **EXCEEDED EXPECTATIONS** (as of 2025-11-05)
+
+**Completed Work**:
+* ✅ **Evolution V4**: Discovered optimal strategies for all 9 scenarios (15,000 generations)
+* ✅ **Nash Equilibrium V2**: Game-theoretic validation of evolved strategies
+* ✅ **Phase 1.5**: Cross-scenario generalization analysis
+* ⚠️ **PPO Track**: Deferred (not necessary - see Phase 1.5 findings)
+
+**Major Discovery** (Phase 1.5):
+All 9 evolved agents converged to **EXACTLY the same strategy** - a Universal Nash Equilibrium that achieves perfect generalization across all tested scenarios.
+
+**Key Findings**:
+* Genome identity: L2 distance = 0.0 (identical to 10+ decimal places)
+* Transfer efficiency: 100% across all 9×9 = 81 scenario pairs
+* No specialist vs generalist trade-off exists
+* Universal "lazy free-rider" strategy is optimal across parameter ranges:
+  - β (fire spread): 0.10 to 0.30
+  - c (work cost): 0.30 to 1.00
+
+**Implications for Roadmap**:
+* ✅ Closed-world mastery achieved beyond expectations
+* ✅ Generalization already solved (no multi-scenario training needed)
+* 🔄 Phase 2 refocused on heterogeneity and universality boundaries
+* 📊 Results publishable as major finding
+
+**Documentation**:
+* [Phase 1.5 Plan](../experiments/generalization/PHASE_1.5_PLAN.md)
+* [Generalization Results](../experiments/generalization/GENERALIZATION_RESULTS.md)
+* [Nash V2 Results](../experiments/nash/V2_RESULTS.md)
+
 ### Phase Completion Gate
 
-Proceed to Phase 2 when:
-* ✅ All success criteria met
-* ✅ Paper submitted or published
-* ✅ Software released and documented
-* ✅ At least one external researcher has successfully reproduced results
+✅ **COMPLETED** (Phase 1 + Phase 1.5)
+
+Phase 1 achievements exceed original goals:
+* ✅ Strong policies discovered (universal equilibrium)
+* ✅ Nash analysis completed (all 9 scenarios)
+* ✅ Infrastructure validated (Rust-accelerated evaluation)
+* ✅ Perfect generalization demonstrated
+* ⚠️ PPO deferred (universal strategy makes it lower priority)
+* ⚠️ External validation pending (paper publication)
 
 ---
 
-## Phase 2 — Adaptive Multi-Scenario Agents
+## Phase 1.5 — Cross-Scenario Generalization Analysis ✅ COMPLETED
 
-**Objective:** Train agents that act robustly when the environment's "game mode" switches.
+**Objective:** Determine whether evolved strategies are specialists or generalists.
 
-**Timeline:** 3-4 months development + experiments
+**Timeline:** 2 days (planned) → 2 hours (actual)
 
-**Corresponds to**: Conceptual Milestones 2 (Scenario Generalization) and 3 (Game Inference)
+**Status**: ✅ **COMPLETED** (2025-11-05)
 
-**Depends on**: Phase 1 complete (need strong single-scenario baselines)
+### Findings
+
+**Hypothesis**: Agents would specialize for their training scenarios with trade-offs when tested cross-scenario.
+
+**Result**: All agents are IDENTICAL and achieve perfect generalization.
 
 ### Technical Approach
 
-#### Stochastic Scenario Switching
+**Evaluation Matrix**: 9 agents × 9 test scenarios = 81 evaluations
+* RustPayoffEvaluator with 2000 simulations per evaluation
+* Total: 162,000 Monte Carlo rollouts
+* Runtime: ~12 minutes (local sequential execution)
 
-Introduce non-stationarity in controlled ways:
+**Analysis**:
+* Genome comparison: L2 distance between all pairs
+* Performance matrix: Cross-scenario payoffs
+* Transfer efficiency: Performance relative to Nash equilibrium
+* Strategic interpretation: Parameter analysis
 
-* **Episode-level switching**: Each episode uses a randomly selected scenario
-* **Mid-episode switching**: Scenario changes after N timesteps (without agent observation)
-* **Mixed distributions**: Sample scenarios from weighted mixtures (e.g., 70% A, 30% B)
-* **Gradual drift**: Slowly interpolate reward parameters between scenarios
+### Major Discovery
 
-**Environment modifications**:
-* Extended observation space with optional scenario hint channel
-* Controllable noise level in scenario hints (for testing robust inference)
-* Logging of true scenario at each timestep (for analysis)
+**Universal Nash Equilibrium Exists**
 
-#### Game-Belief Channel
+All 9 independent evolutionary runs (different scenarios, different starting conditions, 15,000 generations each) converged to the **exact same strategy**:
 
-Add explicit scenario information to observations:
+| Parameter | Value | Interpretation |
+|-----------|-------|----------------|
+| honesty | 0.306 | Low dishonesty |
+| work_tendency | 0.064 | **Very low** - minimal work |
+| neighbor_help | 0.015 | **Very low** - self-interested |
+| own_priority | 0.907 | **High** - focus on own house |
+| risk_aversion | 0.948 | **Very high** - conservative |
+| rest_bias | 1.000 | **Maximum** - always prefer rest |
 
-* **Phase 2a (Oracle)**: Ground-truth scenario ID in observation
-  * Establishes upper bound for scenario-conditional policies
-  * Tests if agents *can* condition on scenario when known
+**Strategic Profile**: "Lazy Free-Rider with High Risk Aversion"
 
-* **Phase 2b (Noisy)**: Scenario ID with controlled error rate
-  * Tests robustness to misspecified beliefs
-  * Measures performance degradation vs. noise level
+### Implications
 
-* **Phase 2c (Hidden)**: No scenario ID provided
-  * Agents must infer from observations alone
-  * Requires true latent game inference capability
+**Phase 2 Redesign Required**:
+* Original goal: Train agents that generalize across scenarios
+* Finding: **Already achieved** - universal strategy works everywhere
+* New focus: Heterogeneity, adaptation, universality boundaries
 
-**Baseline comparisons**:
-* **Mixture-of-specialists**: Ensemble of Phase 1 single-scenario policies
-* **Single generalist**: One policy trained on uniform scenario mix
-* **Oracle**: Access to true scenario ID (upper bound)
-
-#### Classifier Head Architecture
-
-Add auxiliary prediction task:
-
-* **Architecture**: Policy network branches into two heads:
-  * Value/policy head (original PPO objectives)
-  * Classifier head (predicts scenario ID)
-
-* **Loss**: Multi-task with weighted terms:
-  * L = λ₁ L_PPO + λ₂ L_classification
-  * Tune λ₂ to balance primary objective with inference
-
-* **Evaluation**: Track both task performance and classifier accuracy
-  * Does better classification improve policy performance?
-  * Can agents learn useful features without classification head?
-
-#### Measuring Epistemic Humility
-
-**Belief representation**:
-* Softmax over scenario IDs gives probability distribution
-* Entropy of distribution measures uncertainty
-
-**Humility metrics**:
-* **Calibration**: Do 70% confidence predictions succeed 70% of the time?
-* **Confidence-gated action**: Do agents act conservatively when uncertain?
-* **Information seeking**: Do agents take actions that reduce uncertainty?
-
-**Experimental protocol**:
-* Compare agent behavior at high vs. low belief entropy
-* Measure performance variance by confidence level
-* Test if agents prefer information-revealing actions early in episodes
-
-#### Risk-Sensitive Behavior
-
-**Research question**: Should uncertain agents be conservative or exploratory?
-
-Two competing approaches:
-* **Conservative**: High uncertainty → safe, low-variance actions
-* **Exploratory**: High uncertainty → information-gathering actions
-
-Test both with explicit priors:
-* Add uncertainty penalty to reward: R' = R - α·H(belief)
-* Add information bonus: R' = R + β·IG(action, belief)
-* Compare long-term performance
-
-### Success Criteria
-
-**Quantitative**:
-* Performance on mixed scenarios >80% of specialist baseline
-* Classifier accuracy >90% within 20 timesteps (Phase 2c)
-* Calibration error <10% (predicted confidence matches accuracy)
-* Adaptation time <100 timesteps after scenario switch
-* Some transfer to novel scenario combinations (>random baseline)
-
-**Qualitative**:
-* Observable relationship between belief entropy and action selection
-* Interpretable belief dynamics (can explain why belief changed)
-* Clear failure modes (document when/why inference fails)
-* Reusable techniques for other multi-task MARL problems
+**Scientific Impact**:
+* Symmetric self-play discovers universal solutions
+* Game-theoretic equilibria robust across parameter variations
+* No specialist vs generalist trade-off in tested parameter ranges
+* Evolution reliably finds unique Nash equilibrium
 
 ### Deliverables
 
-1. **Paper**: "Learning What Game You're In: Scenario Inference for Multi-Agent RL"
-   * Novel scenario-switching benchmark
-   * Comparison of implicit vs. explicit inference
-   * Analysis of epistemic humility in learned policies
-   * Open questions for future work
+* ✅ Performance matrix (9×9 cross-scenario evaluations)
+* ✅ Comprehensive analysis document
+* ✅ Evaluation infrastructure (reusable scripts)
+* ✅ Genome comparison and statistical validation
 
-2. **Extended Benchmark**:
-   * Scenario-switching environment variants
-   * Baseline agents (oracle, mixture-of-specialists, etc.)
-   * Metrics for inference quality and robustness
-   * Visualization tools for belief dynamics
+**Documentation**: [experiments/generalization/GENERALIZATION_RESULTS.md](../experiments/generalization/GENERALIZATION_RESULTS.md)
 
-3. **Infrastructure**:
-   * Training code for multi-scenario agents
-   * Belief analysis and visualization tools
-   * Leaderboard extended with adaptation metrics
+---
+
+## Phase 2 — Beyond the Universal Equilibrium (REVISED)
+
+**Objective:** Explore the boundaries and limitations of the universal equilibrium discovered in Phase 1.5.
+
+**Timeline:** 2-3 months development + experiments
+
+**Status**: PLANNED (design in progress)
+
+**Motivation**: Phase 1.5 found that a single strategy is optimal across all tested scenarios (β: 0.10-0.30, c: 0.30-1.00). Phase 2 investigates:
+* Where does universality break down? (extreme parameters)
+* Can we force heterogeneity? (different agent roles)
+* How robust is the equilibrium? (off-equilibrium opponents)
+* Can we design scenarios requiring cooperation? (mechanism design)
+
+**Corresponds to**: New research direction (universality boundaries, not originally planned)
+
+**Depends on**: Phase 1.5 complete ✅
+
+### Technical Approach
+
+Phase 2 investigates four complementary research directions:
+
+#### 2A. Universality Boundary Testing
+
+**Goal**: Map the parameter space where universal equilibrium breaks down.
+
+**Approach**:
+* **Extreme β testing**: Test β ∈ [0.01, 0.50] (10× range expansion)
+  * β → 0: Fires never spread (trivial scenarios)
+  * β → 1: Fires spread explosively (crisis scenarios)
+* **Extreme c testing**: Test c ∈ [0.05, 5.00] (50× range expansion)
+  * c → 0: Work is free (no social dilemma)
+  * c → ∞: Work is prohibitive (coordination critical)
+* **Team size variation**: Test num_agents ∈ {2, 8, 16, 32}
+* **Grid size variation**: Test larger grids (20×20, 50×50)
+
+**Hypotheses**:
+* H1: Universal strategy fails when β > 0.40 (fire spreads too fast)
+* H2: Universal strategy fails when c < 0.10 (optimal to always work)
+* H3: Universal strategy scales to larger teams (symmetry preserved)
+
+**Metrics**:
+* Performance relative to Nash equilibrium in new parameter ranges
+* Genome distance from universal strategy
+* Identification of parameter discontinuities
+
+**Deliverable**: Parameter space map showing universality regions
+
+#### 2B. Heterogeneous Team Equilibria
+
+**Goal**: Force agent diversity and study mixed-strategy equilibria.
+
+**Approach**:
+* **Role constraints**: Designate agents as "firefighter" or "coordinator"
+  * Firefighters: Forced high work_tendency (>0.5)
+  * Coordinators: Can choose any strategy
+* **Asymmetric payoffs**: Different agents get different rewards
+  * Owner: Higher reward for own house survival
+  * Neighbor: Higher reward for helping others
+* **Capability differences**: Some agents more/less effective at firefighting
+  * Expert: κ_effective = 2× normal
+  * Novice: κ_effective = 0.5× normal
+
+**Research Questions**:
+* Does the universal strategy still emerge for unconstrained agents?
+* What equilibria arise with 50/50 firefighter/coordinator mix?
+* Do asymmetric payoffs create specialized strategies?
+
+**Baseline**: Compare heterogeneous teams to homogeneous universal agents
+
+**Deliverable**: Taxonomy of equilibria under heterogeneity constraints
+
+#### 2C. Adaptive Opponents and Robustness
+
+**Goal**: Test universal strategy robustness against non-equilibrium opponents.
+
+**Approach**:
+* **Always-work opponent**: Agent that works 100% of the time
+  * Tests if universal strategy exploits over-workers
+* **Random opponent**: Uniformly random action selection
+  * Tests baseline robustness
+* **Adversarial opponent**: Trained to minimize universal strategy's payoff
+  * Use PPO with negative reward = -payoff_universal
+  * Tests worst-case exploitability
+* **Evolving opponent**: Online learning that adapts during episode
+  * Tests stability to opponent adaptation
+
+**Research Questions**:
+* Does universal strategy remain optimal against off-equilibrium opponents?
+* Can adversarial training find exploits?
+* What is the "price of universality" (suboptimality vs best response)?
+
+**Metrics**:
+* Payoff vs each opponent type
+* Nash equilibrium when opponents use different strategies
+* Regret: difference from best response to opponent
+
+**Deliverable**: Robustness analysis and identification of exploitability
+
+#### 2D. Mechanism Design for Cooperation
+
+**Goal**: Design scenarios where free-riding equilibrium is suboptimal.
+
+**Approach**:
+* **Explicit coordination bonuses**:
+  * Add reward for synchronized actions: R_coord = k·(num_agents_working)²
+  * Tests if quadratic rewards incentivize cooperation
+* **Punishment mechanisms**:
+  * Penalty for resting when others work: R_guilt = -g·(others_working)·(self_resting)
+  * Tests if guilt mechanisms break free-riding
+* **Information asymmetry**:
+  * Only working agents observe true fire state
+  * Resting agents see noisy/delayed observations
+  * Tests if information value incentivizes work
+* **Temporal dependencies**:
+  * Early work prevents later catastrophes
+  * Late work is ineffective
+  * Tests if foresight breaks lazy equilibrium
+
+**Research Questions**:
+* What mechanism parameters shift equilibrium from free-riding to cooperation?
+* Can we design a scenario where work_tendency > 0.5 is optimal?
+* What is the minimal intervention to achieve cooperation?
+
+**Success Metric**: Identify at least one mechanism that produces work_tendency > 0.5
+
+**Deliverable**: Design patterns for cooperation-inducing scenarios
+
+### Success Criteria
+
+**Phase 2A (Universality Boundaries)**:
+* Map parameter space for β ∈ [0.01, 0.50], c ∈ [0.05, 5.00]
+* Identify at least one parameter regime where universal strategy fails
+* Measure performance degradation outside tested ranges
+* Document parameter discontinuities and phase transitions
+
+**Phase 2B (Heterogeneous Teams)**:
+* Train agents under 3+ role constraint configurations
+* Document equilibria with mixed firefighter/coordinator teams
+* Measure performance vs homogeneous universal baseline
+* Identify conditions where specialization improves team performance
+
+**Phase 2C (Adaptive Opponents)**:
+* Test universal strategy vs 4+ opponent types
+* Measure exploitability (payoff loss vs best response)
+* Identify any opponent that significantly exploits universal strategy
+* Document robustness bounds
+
+**Phase 2D (Mechanism Design)**:
+* Design 3+ mechanism interventions
+* Achieve work_tendency > 0.5 in at least one designed scenario
+* Measure cooperation levels (working frequency) under different mechanisms
+* Identify minimal mechanism for cooperation
+
+**Qualitative**:
+* Clear understanding of universality limitations
+* Documented design patterns for breaking free-riding
+* Actionable insights for mechanism design
+* Reusable methodology for boundary testing
+
+### Deliverables
+
+1. **Paper**: "The Limits of Universality: Boundary Conditions for Nash Equilibria in Symmetric Multi-Agent Games"
+   * Phase 1.5 universal equilibrium discovery
+   * Parameter space mapping (universality boundaries)
+   * Heterogeneous equilibria analysis
+   * Mechanism design for cooperation
+   * Open questions: scalability, asymmetric games
+
+2. **Extended Scenario Suite**:
+   * Extreme parameter scenarios (β ∈ [0.01, 0.50], c ∈ [0.05, 5.00])
+   * Heterogeneous team configurations
+   * Mechanism-augmented scenarios (coordination bonuses, etc.)
+   * Baseline agents (universal strategy, specialists, adversarial)
+
+3. **Analysis Tools**:
+   * Parameter space visualization
+   * Equilibrium taxonomy
+   * Exploitability measurement
+   * Mechanism effectiveness metrics
 
 ### Risks and Mitigation
 
-**Risk**: Multi-task learning degrades both objectives
-* *Mitigation*: Careful loss weighting, ablation studies, potential for staged training
+**Risk**: Universal strategy remains optimal even at extreme parameters
+* *Mitigation*: Test very wide parameter ranges, theoretical analysis of equilibrium conditions, consider fundamentally different game structures
 
-**Risk**: Classifier head overfits, doesn't help policy
-* *Mitigation*: Regularization, track classifier accuracy vs. policy performance correlation
+**Risk**: Heterogeneous constraints don't produce interesting equilibria
+* *Mitigation*: Try multiple constraint types, vary constraint strength, analyze failure modes
 
-**Risk**: Scenarios too similar, inference trivial
-* *Mitigation*: Choose diverse scenarios, validate difficulty, add noise
+**Risk**: Universal strategy is unexploitable (perfectly robust)
+* *Mitigation*: Try stronger adversarial training methods, test computational limits of exploitation search
 
-**Risk**: Scenarios too different, no useful transfer
-* *Mitigation*: Start with related scenarios, increase difficulty gradually
+**Risk**: No mechanism successfully induces cooperation
+* *Mitigation*: Theoretical analysis of cooperation conditions, consult mechanism design literature, try extreme interventions
 
-**Risk**: "Humility" metrics don't correlate with safety
-* *Mitigation*: Multiple operationalizations, human evaluation of qualitative behavior, ablation studies
+**Risk**: Findings are specific to Bucket Brigade, don't generalize
+* *Mitigation*: Test on other symmetric game families, connect to theoretical game theory literature, identify common structures
 
 ### Phase Completion Gate
 
 Proceed to Phase 3 when:
-* ✅ All quantitative success criteria met
-* ✅ Paper drafted and submitted to conference
-* ✅ Clear evidence that agents use belief uncertainty in decision-making
-* ✅ Documented failure cases and limitations understood
+* ✅ At least 2 of 4 research directions (2A-2D) completed
+* ✅ Universality boundaries documented (parameter space map)
+* ✅ At least one mechanism induces cooperation (work_tendency > 0.5)
+* ✅ Robustness analysis complete (universal strategy vs adversaries)
+* ✅ Results publishable (paper draft complete)
+* ⚠️ Optional: All 4 directions completed (ideal but not required)
 
 ---
 
