@@ -14,8 +14,30 @@ High-performance Rust implementation of the Bucket Brigade multi-agent cooperati
 
 **Python Version Requirement**: This module requires Python 3.9-3.13. Python 3.14+ is not yet supported by PyO3 0.22.6.
 
+### Quick Build (Recommended)
+
 ```bash
+./build.sh
+```
+
+This script:
+- Checks your Python version
+- Builds the Rust library with `cargo`
+- Copies the `.so` file to the correct location
+- Verifies the installation
+
+### Manual Build
+
+If you prefer manual installation:
+
+```bash
+# Using pip (may not trigger Rust build correctly)
 pip install -e .
+
+# Using cargo directly (more reliable)
+export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+cargo build --release --features python
+# Then manually copy target/release/libbucket_brigade_core.so to bucket_brigade_core/
 ```
 
 ## Usage

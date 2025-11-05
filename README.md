@@ -302,11 +302,15 @@ pip install pytest ruff mypy typer
 
 for Rust core (**required** for Nash equilibrium and fast training, provides 100x speedup):
 ```bash
-cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+cd bucket-brigade-core && ./build.sh
 ```
 
-Alternatively, using pip:
+This automated build script checks your Python version, compiles the Rust library, and installs it correctly.
+
+Alternatively, manual methods:
 ```bash
+cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+# or
 cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 pip install -e .
 ```
 
