@@ -15,10 +15,6 @@ use serde::{Deserialize, Serialize};
 pub use engine::{BucketBrigade, GameResult, GameState};
 pub use scenarios::{Scenario, SCENARIOS};
 
-// Re-export Python module for PyO3
-#[cfg(feature = "python")]
-pub use python::bucket_brigade_core;
-
 /// House states: 0 = Safe, 1 = Burning, 2 = Ruined
 pub type HouseState = u8;
 
