@@ -61,7 +61,7 @@ def test_training_mode(scenario_name: str, genome: np.ndarray, num_games: int = 
     )
 
     # Create Individual object for evaluation
-    individual = Individual(genome=genome, fitness=0.0)
+    individual = Individual(genome=genome, generation=0)
 
     # Evaluate
     fitness = evaluator.evaluate_individual(individual)
