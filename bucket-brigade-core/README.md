@@ -1,14 +1,18 @@
 # Bucket Brigade Core
 
-High-performance Rust implementation of the Bucket Brigade multi-agent cooperation environment.
+**Canonical source of truth** for the Bucket Brigade multi-agent cooperation game engine.
+
+This Rust implementation serves as the authoritative game logic, with Python and WASM bindings for different use cases.
 
 ## Features
 
-- **10-20x faster** than Python implementations
+- **Canonical game implementation**: Definitive rules and scenarios for Bucket Brigade
+- **10-20x faster** than pure Python implementations
 - **Memory safe** and thread-safe
-- **Python bindings** via PyO3 for seamless integration
+- **Python bindings** via PyO3 for research and RL training
 - **WASM support** for browser deployment
 - **Deterministic RNG** for reproducible experiments
+- **12 predefined scenarios**: 3 difficulty levels + 9 research-focused cooperation scenarios
 
 ## Installation
 
@@ -74,10 +78,15 @@ print(f"Final score: {result.final_score}")
 
 ## Architecture
 
-- **Core Engine**: Pure Rust implementation with zero-cost abstractions
-- **Python Bindings**: PyO3 provides seamless Python integration
-- **WASM Support**: Compile to WebAssembly for browser deployment
-- **Deterministic RNG**: Reproducible results across platforms
+This crate is the **source of truth** for Bucket Brigade game mechanics:
+
+- **Core Engine**: Pure Rust implementation defining canonical game rules (`src/engine/`)
+- **Scenarios**: All 12 official scenarios defined in Rust (`src/scenarios.rs`)
+- **Python Bindings**: PyO3 exposes Rust engine to Python for RL training (`src/python.rs`)
+- **WASM Support**: Compile to WebAssembly for browser deployment (`src/wasm.rs`)
+- **Deterministic RNG**: Reproducible results across all platforms (`src/rng.rs`)
+
+**Design Principle**: Rust defines the rules, Python and WASM consume them. Any game logic changes must be made here first.
 
 ## Development
 

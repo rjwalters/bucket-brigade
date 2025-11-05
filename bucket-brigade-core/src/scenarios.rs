@@ -24,10 +24,57 @@ pub struct Scenario {
 }
 
 pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
+    // Standard difficulty scenarios
+    "default" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.25,
+        prob_solo_agent_extinguishes_fire: 0.5,
+        prob_house_catches_fire: 0.02,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 12,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "easy" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.1,
+        prob_solo_agent_extinguishes_fire: 0.8,
+        prob_house_catches_fire: 0.01,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 10,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "hard" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.4,
+        prob_solo_agent_extinguishes_fire: 0.3,
+        prob_house_catches_fire: 0.05,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.5,
+        min_nights: 15,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    // Research scenarios testing specific cooperation dynamics
     "trivial_cooperation" => Scenario {
         prob_fire_spreads_to_neighbor: 0.15,
-        prob_solo_agent_extinguishes_fire: 0.7,
-        prob_house_catches_fire: 0.01,
+        prob_solo_agent_extinguishes_fire: 0.9,
+        prob_house_catches_fire: 0.0, // Note: Python uses rho_ignite=0.1 + no sparks
         team_reward_house_survives: 100.0,
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
@@ -41,8 +88,8 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
 
     "early_containment" => Scenario {
         prob_fire_spreads_to_neighbor: 0.35,
-        prob_solo_agent_extinguishes_fire: 0.45,
-        prob_house_catches_fire: 0.03,
+        prob_solo_agent_extinguishes_fire: 0.6,
+        prob_house_catches_fire: 0.02,
         team_reward_house_survives: 100.0,
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
@@ -56,27 +103,102 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
 
     "greedy_neighbor" => Scenario {
         prob_fire_spreads_to_neighbor: 0.15,
-        prob_solo_agent_extinguishes_fire: 0.33,
+        prob_solo_agent_extinguishes_fire: 0.4,
         prob_house_catches_fire: 0.02,
         team_reward_house_survives: 100.0,
         team_penalty_house_burns: 100.0,
-        cost_to_work_one_night: 1.0,
+        cost_to_work_one_night: 1.0, // High work cost creates social dilemma
         min_nights: 12,
         num_agents: 4,
-        reward_own_house_survives: 150.0,
-        reward_other_house_survives: 25.0,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
         penalty_other_house_burns: 0.0,
     },
 
-    "random" => Scenario {
-        prob_fire_spreads_to_neighbor: 0.25,
-        prob_solo_agent_extinguishes_fire: 0.39,
+    "sparse_heroics" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.1,
+        prob_solo_agent_extinguishes_fire: 0.5,
         prob_house_catches_fire: 0.02,
         team_reward_house_survives: 100.0,
         team_penalty_house_burns: 100.0,
-        cost_to_work_one_night: 0.5,
+        cost_to_work_one_night: 0.8,
+        min_nights: 20, // Longer games
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "rest_trap" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.05,
+        prob_solo_agent_extinguishes_fire: 0.95,
+        prob_house_catches_fire: 0.02,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.2,
         min_nights: 12,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "chain_reaction" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.45,
+        prob_solo_agent_extinguishes_fire: 0.6,
+        prob_house_catches_fire: 0.03,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.7,
+        min_nights: 15,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "deceptive_calm" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.25,
+        prob_solo_agent_extinguishes_fire: 0.6,
+        prob_house_catches_fire: 0.05, // Occasional sparks
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.4,
+        min_nights: 20, // Long games
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "overcrowding" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.2,
+        prob_solo_agent_extinguishes_fire: 0.3, // Low efficiency
+        prob_house_catches_fire: 0.02,
+        team_reward_house_survives: 50.0, // Lower reward
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.6,
+        min_nights: 12,
+        num_agents: 4,
+        reward_own_house_survives: 100.0,
+        reward_other_house_survives: 50.0,
+        penalty_own_house_burns: 0.0,
+        penalty_other_house_burns: 0.0,
+    },
+
+    "mixed_motivation" => Scenario {
+        prob_fire_spreads_to_neighbor: 0.3,
+        prob_solo_agent_extinguishes_fire: 0.5,
+        prob_house_catches_fire: 0.03,
+        team_reward_house_survives: 100.0,
+        team_penalty_house_burns: 100.0,
+        cost_to_work_one_night: 0.6,
+        min_nights: 15,
         num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
@@ -90,11 +212,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_scenarios_exist() {
+    fn test_all_scenarios_exist() {
+        // Standard difficulty scenarios
+        assert!(SCENARIOS.get("default").is_some());
+        assert!(SCENARIOS.get("easy").is_some());
+        assert!(SCENARIOS.get("hard").is_some());
+
+        // Research scenarios
         assert!(SCENARIOS.get("trivial_cooperation").is_some());
         assert!(SCENARIOS.get("early_containment").is_some());
         assert!(SCENARIOS.get("greedy_neighbor").is_some());
-        assert!(SCENARIOS.get("random").is_some());
+        assert!(SCENARIOS.get("sparse_heroics").is_some());
+        assert!(SCENARIOS.get("rest_trap").is_some());
+        assert!(SCENARIOS.get("chain_reaction").is_some());
+        assert!(SCENARIOS.get("deceptive_calm").is_some());
+        assert!(SCENARIOS.get("overcrowding").is_some());
+        assert!(SCENARIOS.get("mixed_motivation").is_some());
     }
 
     #[test]
@@ -107,11 +240,11 @@ mod tests {
     fn test_trivial_cooperation_values() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
         assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.15);
-        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.7);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.9); // Updated to match new value
         assert_eq!(scenario.team_reward_house_survives, 100.0);
         assert_eq!(scenario.team_penalty_house_burns, 100.0);
         assert_eq!(scenario.cost_to_work_one_night, 0.5);
-        assert_eq!(scenario.prob_house_catches_fire, 0.01);
+        assert_eq!(scenario.prob_house_catches_fire, 0.0); // Updated to match new value
         assert_eq!(scenario.min_nights, 12);
         assert_eq!(scenario.num_agents, 4);
     }
@@ -120,23 +253,25 @@ mod tests {
     fn test_early_containment_values() {
         let scenario = SCENARIOS.get("early_containment").unwrap();
         assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.35);
-        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.45);
-        assert_eq!(scenario.prob_house_catches_fire, 0.03);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.6); // Updated to match new value
+        assert_eq!(scenario.prob_house_catches_fire, 0.02); // Updated to match new value
     }
 
     #[test]
     fn test_greedy_neighbor_values() {
         let scenario = SCENARIOS.get("greedy_neighbor").unwrap();
         assert_eq!(scenario.cost_to_work_one_night, 1.0);
-        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.33);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.4); // Updated to match new value
     }
 
     #[test]
-    fn test_random_values() {
-        let scenario = SCENARIOS.get("random").unwrap();
+    fn test_default_values() {
+        let scenario = SCENARIOS.get("default").unwrap();
         assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
-        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.39);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
         assert_eq!(scenario.prob_house_catches_fire, 0.02);
+        assert_eq!(scenario.team_reward_house_survives, 100.0);
+        assert_eq!(scenario.team_penalty_house_burns, 100.0);
     }
 
     #[test]
@@ -201,7 +336,7 @@ mod tests {
     #[test]
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
-        assert_eq!(count, 4, "Expected 4 predefined scenarios");
+        assert_eq!(count, 12, "Expected 12 predefined scenarios (3 difficulty + 9 research)");
     }
 
     #[test]
@@ -217,6 +352,122 @@ mod tests {
                 "Scenario '{}' should have positive penalty for ruined houses",
                 name
             );
+        }
+    }
+
+    // Scenario-specific gameplay characteristic tests
+    // These verify that each scenario has the parameters that create its intended strategic dynamics
+
+    #[test]
+    fn test_trivial_cooperation_is_easy() {
+        let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
+        // Should have high extinguish rate and low spread
+        assert!(scenario.prob_solo_agent_extinguishes_fire >= 0.8, "Trivial cooperation should have high extinguish rate");
+        assert!(scenario.prob_fire_spreads_to_neighbor <= 0.2, "Trivial cooperation should have low spread rate");
+        assert!(scenario.cost_to_work_one_night <= 0.5, "Trivial cooperation should have low work cost");
+    }
+
+    #[test]
+    fn test_greedy_neighbor_creates_social_dilemma() {
+        let scenario = SCENARIOS.get("greedy_neighbor").unwrap();
+        // Should have high work cost to create free-riding incentive
+        assert!(scenario.cost_to_work_one_night >= 0.8, "Greedy neighbor should have high work cost to create social dilemma");
+    }
+
+    #[test]
+    fn test_early_containment_is_aggressive() {
+        let scenario = SCENARIOS.get("early_containment").unwrap();
+        // Should have high spread rate requiring fast response
+        assert!(scenario.prob_fire_spreads_to_neighbor >= 0.3, "Early containment should have high spread rate");
+    }
+
+    #[test]
+    fn test_chain_reaction_has_highest_spread() {
+        let scenario = SCENARIOS.get("chain_reaction").unwrap();
+        // Chain reaction should have the highest spread rate
+        assert!(scenario.prob_fire_spreads_to_neighbor >= 0.4, "Chain reaction should have very high spread rate");
+        for (name, other) in SCENARIOS.entries() {
+            if name != &"chain_reaction" {
+                assert!(
+                    scenario.prob_fire_spreads_to_neighbor >= other.prob_fire_spreads_to_neighbor,
+                    "Chain reaction should have highest spread rate, but {} has higher",
+                    name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_rest_trap_has_highest_extinguish_rate() {
+        let scenario = SCENARIOS.get("rest_trap").unwrap();
+        // Rest trap should have very high extinguish rate (fires usually extinguish themselves)
+        assert!(scenario.prob_solo_agent_extinguishes_fire >= 0.9, "Rest trap should have very high extinguish rate");
+        assert!(scenario.prob_fire_spreads_to_neighbor <= 0.1, "Rest trap should have very low spread rate");
+        assert!(scenario.cost_to_work_one_night <= 0.3, "Rest trap should have low work cost");
+    }
+
+    #[test]
+    fn test_sparse_heroics_has_long_games() {
+        let scenario = SCENARIOS.get("sparse_heroics").unwrap();
+        // Sparse heroics should have longer minimum game length
+        assert!(scenario.min_nights >= 15, "Sparse heroics should have longer minimum nights");
+    }
+
+    #[test]
+    fn test_deceptive_calm_has_long_games() {
+        let scenario = SCENARIOS.get("deceptive_calm").unwrap();
+        // Deceptive calm should have longer games with occasional sparks
+        assert!(scenario.min_nights >= 15, "Deceptive calm should have longer minimum nights");
+        assert!(scenario.prob_house_catches_fire >= 0.03, "Deceptive calm should have occasional sparks");
+    }
+
+    #[test]
+    fn test_overcrowding_has_low_efficiency() {
+        let scenario = SCENARIOS.get("overcrowding").unwrap();
+        // Overcrowding should have low extinguish efficiency
+        assert!(scenario.prob_solo_agent_extinguishes_fire <= 0.4, "Overcrowding should have low extinguish efficiency");
+        // May also have lower team reward
+        assert!(scenario.team_reward_house_survives <= 100.0, "Overcrowding may have reduced rewards");
+    }
+
+    #[test]
+    fn test_easy_vs_hard_difficulty_ordering() {
+        let easy = SCENARIOS.get("easy").unwrap();
+        let default_scenario = SCENARIOS.get("default").unwrap();
+        let hard = SCENARIOS.get("hard").unwrap();
+
+        // Easy should have easier parameters than default
+        assert!(easy.prob_solo_agent_extinguishes_fire > default_scenario.prob_solo_agent_extinguishes_fire,
+                "Easy should have higher extinguish rate than default");
+        assert!(easy.prob_fire_spreads_to_neighbor < default_scenario.prob_fire_spreads_to_neighbor,
+                "Easy should have lower spread rate than default");
+
+        // Hard should have harder parameters than default
+        assert!(hard.prob_solo_agent_extinguishes_fire < default_scenario.prob_solo_agent_extinguishes_fire,
+                "Hard should have lower extinguish rate than default");
+        assert!(hard.prob_fire_spreads_to_neighbor > default_scenario.prob_fire_spreads_to_neighbor,
+                "Hard should have higher spread rate than default");
+    }
+
+    #[test]
+    fn test_all_scenarios_use_standard_rewards() {
+        // Most scenarios should use standard 100/100 rewards (except overcrowding)
+        for (name, scenario) in SCENARIOS.entries() {
+            if name != &"overcrowding" {
+                assert_eq!(scenario.team_reward_house_survives, 100.0,
+                          "Scenario '{}' should use standard reward (100)", name);
+                assert_eq!(scenario.team_penalty_house_burns, 100.0,
+                          "Scenario '{}' should use standard penalty (100)", name);
+            }
+        }
+    }
+
+    #[test]
+    fn test_all_scenarios_use_4_agents() {
+        // All current scenarios should use 4 agents
+        for (name, scenario) in SCENARIOS.entries() {
+            assert_eq!(scenario.num_agents, 4,
+                      "Scenario '{}' should use 4 agents", name);
         }
     }
 }

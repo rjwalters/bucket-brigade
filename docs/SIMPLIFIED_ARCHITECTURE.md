@@ -41,25 +41,21 @@
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │             TypeScript Browser Engine                       │ │
-│  │  • browserEngine.ts - Pure TS implementation                │ │
-│  │  • ~50ms per game                                            │ │
-│  │  • Perfect for single-game demos                            │ │
+│  │          Rust Core Engine (SOURCE OF TRUTH)                 │ │
+│  │  • bucket-brigade-core - Canonical game implementation      │ │
+│  │  • Defines all scenarios and game mechanics                 │ │
+│  │  • Exposed via PyO3 (Python) and wasm-bindgen (WASM)       │ │
 │  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │             WASM Engine (Optional)                          │ │
-│  │  • wasmEngine.ts - Rust compiled to WASM                    │ │
-│  │  • ~5ms per game (10x faster)                               │ │
-│  │  • For batch simulations in browser                          │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │             Python Engine (Research)                        │ │
-│  │  • bucket_brigade_env.py - Pure Python                      │ │
-│  │  • bucket-brigade-core - Rust via PyO3                      │ │
-│  │  • For large-scale tournaments & training                    │ │
-│  └────────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│              ┌───────────────┼───────────────┐                 │
+│              ▼               ▼               ▼                  │
+│  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐           │
+│  │ TypeScript   │  │ WASM        │  │ Python      │           │
+│  │ (fallback)   │  │ (browser)   │  │ (research)  │           │
+│  │              │  │             │  │             │           │
+│  │ browserEng.  │  │ wasmEng.    │  │ PyO3        │           │
+│  │ ~50ms/game   │  │ ~5ms/game   │  │ ~2ms/game   │           │
+│  └──────────────┘  └─────────────┘  └─────────────┘           │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
                               │

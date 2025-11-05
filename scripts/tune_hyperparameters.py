@@ -99,7 +99,9 @@ def train_trial(
 
         # Compute advantages
         values_np = torch.stack(values).detach().numpy()
-        advantages = compute_gae(rewards, values_np, dones, gamma=gamma, gae_lambda=gae_lambda)
+        advantages = compute_gae(
+            rewards, values_np, dones, gamma=gamma, gae_lambda=gae_lambda
+        )
         advantages = torch.FloatTensor(advantages)
         returns = advantages + torch.FloatTensor(values_np)
 
@@ -368,22 +370,26 @@ def main():
 
     results_file = results_dir / f"{args.study_name}_results.json"
     with open(results_file, "w") as f:
-        json.dump({
-            "study_name": args.study_name,
-            "scenario": args.scenario,
-            "best_value": trial.value,
-            "best_params": trial.params,
-            "n_trials": len(study.trials),
-            "all_trials": [
-                {
-                    "number": t.number,
-                    "value": t.value,
-                    "params": t.params,
-                    "state": str(t.state),
-                }
-                for t in study.trials
-            ],
-        }, f, indent=2)
+        json.dump(
+            {
+                "study_name": args.study_name,
+                "scenario": args.scenario,
+                "best_value": trial.value,
+                "best_params": trial.params,
+                "n_trials": len(study.trials),
+                "all_trials": [
+                    {
+                        "number": t.number,
+                        "value": t.value,
+                        "params": t.params,
+                        "state": str(t.state),
+                    }
+                    for t in study.trials
+                ],
+            },
+            f,
+            indent=2,
+        )
 
     print(f"\n💾 Results saved to: {results_file}")
 
