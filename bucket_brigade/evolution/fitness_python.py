@@ -121,15 +121,11 @@ class PythonFitnessEvaluator:
 
             while not done and step_count < max_steps:
                 # Get action from heuristic
-                obs_dict = {
-                    "houses": obs[0]["houses"],
-                    "signals": obs[0]["signals"],
-                    "locations": obs[0]["locations"],
-                }
-                action = _heuristic_action(individual.genome, obs_dict, 0, game_rng)
+                # obs is already a dict with the observation
+                action = _heuristic_action(individual.genome, obs, 0, game_rng)
 
-                # Step environment
-                obs, rewards, done, info = game.step([action])
+                # Step environment with single agent action
+                obs, rewards, done, info = game.step(action)
                 step_count += 1
 
             # Get final score from game result
