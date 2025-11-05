@@ -11,13 +11,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
-from bucket_brigade.evolution.fitness_rust import _run_rust_game, _heuristic_action
+from bucket_brigade.evolution.fitness_rust import _heuristic_action
 from bucket_brigade_core import BucketBrigadeGame
+
 
 def test_python_env(scenario_name: str, genome: np.ndarray, seed: int = 42) -> float:
     """Run agent in Python environment."""
     scenario = get_scenario_by_name(scenario_name, num_agents=4)
-    agents = [HeuristicAgent(params=genome, agent_id=i, name=f"agent-{i}") for i in range(4)]
+    agents = [
+        HeuristicAgent(params=genome, agent_id=i, name=f"agent-{i}") for i in range(4)
+    ]
 
     env = BucketBrigadeEnv(scenario)
     obs = env.reset(seed=seed)
@@ -78,7 +81,9 @@ def main():
     version = sys.argv[2]
 
     # Load agent genome
-    agent_file = Path(f"experiments/scenarios/{scenario_name}/{version}/best_agent.json")
+    agent_file = Path(
+        f"experiments/scenarios/{scenario_name}/{version}/best_agent.json"
+    )
     if not agent_file.exists():
         print(f"Error: Agent file not found: {agent_file}")
         sys.exit(1)
@@ -87,7 +92,7 @@ def main():
         agent_data = json.load(f)
         genome = np.array(list(agent_data["parameters"].values()))
 
-    print(f"Testing Rust vs Python environment parity")
+    print("Testing Rust vs Python environment parity")
     print(f"Scenario: {scenario_name}")
     print(f"Agent: {version}")
     print()
@@ -108,13 +113,19 @@ def main():
 
         diff = abs(py_score - rust_score)
         match = "✓" if diff < 0.01 else "✗"
-        print(f"Python: {py_score:7.2f}, Rust: {rust_score:7.2f}, Diff: {diff:7.2f} {match}")
+        print(
+            f"Python: {py_score:7.2f}, Rust: {rust_score:7.2f}, Diff: {diff:7.2f} {match}"
+        )
 
     print()
     print("Summary:")
-    print(f"  Python mean: {np.mean(python_results):.2f} ± {np.std(python_results):.2f}")
+    print(
+        f"  Python mean: {np.mean(python_results):.2f} ± {np.std(python_results):.2f}"
+    )
     print(f"  Rust mean:   {np.mean(rust_results):.2f} ± {np.std(rust_results):.2f}")
-    print(f"  Mean diff:   {np.mean([abs(p - r) for p, r in zip(python_results, rust_results)]):.2f}")
+    print(
+        f"  Mean diff:   {np.mean([abs(p - r) for p, r in zip(python_results, rust_results)]):.2f}"
+    )
     print()
 
     # Determine if environments match
