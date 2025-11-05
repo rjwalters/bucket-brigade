@@ -124,8 +124,9 @@ class PythonFitnessEvaluator:
                 # obs is already a dict with the observation
                 action = _heuristic_action(individual.genome, obs, 0, game_rng)
 
-                # Step environment with single agent action
-                obs, rewards, done, info = game.step(action)
+                # Step environment - needs action as numpy array for single agent
+                actions = np.array([action])  # Shape: (1, 2) for single agent
+                obs, rewards, done, info = game.step(actions)
                 step_count += 1
 
             # Get final score from game result
