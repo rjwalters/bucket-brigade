@@ -19,8 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.envs.scenarios.definitions import SCENARIOS
-from bucket_brigade.evolution.fitness_rust import _heuristic_action
+from bucket_brigade.evolution.fitness_rust import _heuristic_action, _convert_scenario_to_rust
 import bucket_brigade_core as core
 
 
@@ -101,9 +100,9 @@ def run_tournament(
     print(f"  Using: Rust environment (single source of truth)")
     print()
 
-    # Get Rust scenario
-    rust_scenario = SCENARIOS[scenario_name]
+    # Get scenario and convert to Rust
     python_scenario = get_scenario_by_name(scenario_name, num_agents=4)
+    rust_scenario = _convert_scenario_to_rust(python_scenario)
     num_agents = python_scenario.num_agents
 
     results = {}
