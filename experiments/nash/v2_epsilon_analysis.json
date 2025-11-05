@@ -1,0 +1,100 @@
+{
+  "summary": {
+    "exact_nash": 8,
+    "epsilon_nash": 1,
+    "average_gap": 10.597166666666665,
+    "average_gap_pct": 28.14897682973539
+  },
+  "scenarios": [
+    {
+      "scenario": "chain_reaction",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 61.02525,
+      "gap": 7.774749999999997,
+      "gap_pct": 12.740218188372843,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "deceptive_calm",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 48.56375,
+      "gap": 20.23625,
+      "gap_pct": 41.66945509768088,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "early_containment",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 64.866,
+      "gap": 3.9339999999999975,
+      "gap_pct": 6.064810532482345,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "greedy_neighbor",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 64.866,
+      "gap": 3.9339999999999975,
+      "gap_pct": 6.064810532482345,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "mixed_motivation",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 61.02525,
+      "gap": 7.774749999999997,
+      "gap_pct": 12.740218188372843,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "overcrowding",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 64.866,
+      "gap": 3.9339999999999975,
+      "gap_pct": 6.064810532482345,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "rest_trap",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 64.866,
+      "gap": 3.9339999999999975,
+      "gap_pct": 6.064810532482345,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    },
+    {
+      "scenario": "sparse_heroics",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 67.24725,
+      "gap": 1.5527500000000032,
+      "gap_pct": 2.3090163538286004,
+      "status": "\u03b5-Nash (\u03b5=4.77e-06)",
+      "iterations": 6,
+      "evolved_in_eq": 0
+    },
+    {
+      "scenario": "trivial_cooperation",
+      "evolved_fitness": 68.8,
+      "nash_payoff": 26.5,
+      "gap": 42.3,
+      "gap_pct": 159.62264150943395,
+      "status": "Exact Nash",
+      "iterations": 1,
+      "evolved_in_eq": 1
+    }
+  ]
+}

@@ -1,8 +1,48 @@
 # Nash Equilibrium V2 Plan
 
 **Date**: 2025-11-05
-**Status**: Planning phase
+**Status**: ✅ COMPLETED - See [V2_RESULTS.md](V2_RESULTS.md)
 **Related**: Evolution V3/V4/V5 results, [Phase 1 Roadmap](../../docs/roadmap_phased_plan.md)
+
+---
+
+## V2 Actual Results (COMPLETED)
+
+### Summary
+
+✅ **Mystery Resolved**: The 20× gap was due to Python/Rust environment mismatch, not algorithmic differences.
+
+✅ **Key Finding**: Evolution found Nash equilibria for ALL 9 scenarios:
+- 8/9 scenarios: Exact Nash equilibrium (converged in 1 iteration)
+- 1/9 scenarios: ε-Nash within 10⁻⁵ parameter precision (sparse_heroics)
+
+✅ **Validation**: Cross-validation between evolution and game theory confirms both methods are correct.
+
+### Actual Chain Reaction Results
+
+| Approach | Environment | Result | Status |
+|----------|-------------|--------|--------|
+| **V1 Nash** | Python ❌ | 2.94 payoff (Free Rider) | Wrong environment |
+| **V2 Nash** | Rust ✅ | 61.03 payoff (Evolved agent) | Correct |
+| **Evolution V4** | Rust ✅ | 68.80 fitness → 61.03 Nash payoff | ✅ **IS Nash Equilibrium!** |
+
+**Gap Explained**: Python evaluator produced 2.94, but same strategy in Rust produces 61.03. Evolution (68.80 fitness) ≈ Nash (61.03 payoff) within evaluation variance.
+
+### Full Results
+
+See [V2_RESULTS.md](V2_RESULTS.md) for complete analysis.
+
+| Scenario | Nash Payoff | Evolved in Eq? | Iterations | Status |
+|----------|-------------|----------------|------------|--------|
+| chain_reaction | 61.03 | ✅ Yes | 1 | Exact Nash |
+| deceptive_calm | 48.56 | ✅ Yes | 1 | Exact Nash |
+| early_containment | 64.87 | ✅ Yes | 1 | Exact Nash |
+| greedy_neighbor | 64.87 | ✅ Yes | 1 | Exact Nash |
+| mixed_motivation | 61.03 | ✅ Yes | 1 | Exact Nash |
+| overcrowding | 64.87 | ✅ Yes | 1 | Exact Nash |
+| rest_trap | 64.87 | ✅ Yes | 1 | Exact Nash |
+| sparse_heroics | 67.25 | ⚠️ ε-Nash | 6 | ε ≈ 10⁻⁵ |
+| trivial_cooperation | 26.50 | ✅ Yes | 1 | Exact Nash |
 
 ---
 

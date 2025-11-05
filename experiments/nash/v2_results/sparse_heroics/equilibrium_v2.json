@@ -1,0 +1,83 @@
+{
+  "scenario": "sparse_heroics",
+  "version": "v2",
+  "parameters": {
+    "beta": 0.1,
+    "kappa": 0.5,
+    "c": 0.8,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.15,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle_v2",
+    "num_simulations": 2000,
+    "max_iterations": 50,
+    "epsilon": 0.01,
+    "seed": 42,
+    "evaluator": "RustPayoffEvaluator"
+  },
+  "initial_pool": {
+    "archetypes": 5,
+    "evolved_agents": 1,
+    "evolved_versions": [
+      "v4"
+    ],
+    "total": 6
+  },
+  "equilibrium": {
+    "type": "pure",
+    "support_size": 1,
+    "expected_payoff": 67.24725,
+    "distribution": {
+      "10": 1.0
+    },
+    "strategy_pool": [
+      {
+        "index": 10,
+        "probability": 1.0,
+        "is_evolved": false,
+        "evolved_info": null,
+        "classification": "Free Rider",
+        "closest_archetype": "Liar",
+        "archetype_distance": 1.6028342002503992,
+        "parameters": {
+          "honesty": 0.3060887557132561,
+          "work_tendency": 0.0635243861316819,
+          "neighbor_help": 0.014819694832175292,
+          "own_priority": 0.9073071340251421,
+          "risk_aversion": 0.9477837350621906,
+          "coordination": 0.557101567993355,
+          "exploration": 0.5980087927648835,
+          "fatigue_memory": 0.7947060405154519,
+          "rest_bias": 0.9999988261641548,
+          "altruism": 0.8501422830112846
+        },
+        "genome": [
+          0.3060887557132561,
+          0.0635243861316819,
+          0.014819694832175292,
+          0.9073071340251421,
+          0.9477837350621906,
+          0.557101567993355,
+          0.5980087927648835,
+          0.7947060405154519,
+          0.9999988261641548,
+          0.8501422830112846
+        ]
+      }
+    ],
+    "evolved_in_equilibrium": 0
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 6,
+    "elapsed_time": 316.91029596328735
+  },
+  "interpretation": {
+    "equilibrium_type": "pure",
+    "cooperation_rate": 0.0,
+    "free_riding_rate": 1.0
+  }
+}
