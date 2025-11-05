@@ -57,11 +57,11 @@ for i in "${!SCENARIOS[@]}"; do
     scenario="${SCENARIOS[$i]}"
     window_num=$((i + 1))
     log_file="logs/evolution/${scenario}_v2_\$(date +%Y%m%d_%H%M%S).log"
-    
+
     tmux new-window -t overnight-evolution:$window_num -n "$scenario"
     tmux send-keys -t overnight-evolution:$window_num "cd ~/bucket-brigade && source .venv/bin/activate" C-m
     tmux send-keys -t overnight-evolution:$window_num "python experiments/scripts/run_evolution.py $scenario --population $POPULATION --generations $GENERATIONS --games $GAMES --output-dir experiments/scenarios/$scenario/evolved_v2 2>&1 | tee $log_file" C-m
-    
+
     echo "✓ Launched $scenario (specialist) in window $window_num"
 done
 

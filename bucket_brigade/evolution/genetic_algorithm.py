@@ -12,7 +12,9 @@ from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 
-from . import FitnessEvaluator  # Import from package __init__ which handles Rust/Python fallback
+from . import (
+    FitnessEvaluator,
+)  # Import from package __init__ which handles Rust/Python fallback
 from .operators import (
     adaptive_mutation,
     arithmetic_crossover,
@@ -106,7 +108,9 @@ class GeneticAlgorithm:
        g. Track progress and check convergence
     """
 
-    def __init__(self, config: EvolutionConfig, fitness_evaluator: Optional[Any] = None) -> None:
+    def __init__(
+        self, config: EvolutionConfig, fitness_evaluator: Optional[Any] = None
+    ) -> None:
         """Initialize genetic algorithm.
 
         Args:
@@ -123,7 +127,9 @@ class GeneticAlgorithm:
             self.fitness_evaluator = FitnessEvaluator(
                 scenario=None,  # Use default scenario
                 games_per_individual=config.games_per_individual,
-                seed=int(self.rng.integers(0, 2**31)) if config.seed is not None else None,
+                seed=int(self.rng.integers(0, 2**31))
+                if config.seed is not None
+                else None,
                 num_workers=config.num_workers,
             )
 

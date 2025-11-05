@@ -59,7 +59,7 @@ def run_scenario_research(
     print(f"  [{'✓' if not skip_evolution else ' '}] 2. Evolutionary Optimization")
     print(f"  [{'✓' if not skip_nash else ' '}] 3. Nash Equilibrium")
     print(f"  [{'✓' if not skip_comparison else ' '}] 4. Cross-Method Comparison")
-    print(f"  [✓] 5. Generate Research Insights")
+    print("  [✓] 5. Generate Research Insights")
     print()
 
     scenario_dir = Path(f"experiments/scenarios/{scenario_name}")

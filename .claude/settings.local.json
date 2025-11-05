@@ -132,7 +132,9 @@
       "Bash(web_config=\"web/public/research/scenarios/$scenario/config.json\")",
       "Bash(__NEW_LINE__ if [ -f \"$exp_config\" ])",
       "Bash(else)",
-      "Bash(if [ -f \"$web_config\" ])"
+      "Bash(if [ -f \"$web_config\" ])",
+      "Bash(../.venv/bin/python:*)",
+      "Bash(./build.sh:*)"
     ],
     "deny": [],
     "ask": []

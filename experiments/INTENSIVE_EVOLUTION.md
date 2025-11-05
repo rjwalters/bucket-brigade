@@ -52,7 +52,7 @@ tmux attach -t evolution-master
 
 **Parameters**:
 - Population: 200 (2x increase)
-- Generations: 1000 (5x increase) 
+- Generations: 1000 (5x increase)
 - Games/eval: 50 (2.5x increase)
 - Estimated time: 8-10 hours
 - Expected improvement: 2-4x fitness increase
@@ -225,7 +225,7 @@ Based on similar evolutionary optimization studies:
 | C      | 8-10h   | Low     | 2-3x         | 10-18%      |
 | D      | 48h     | High    | 3-5x         | 15-25%      |
 
-**Recommendation**: 
+**Recommendation**:
 1. Start with Option A (best ROI)
 2. If showing continued improvement at gen 1000, run Option D
 3. If converged early (< 500 gen), results are likely near-optimal

@@ -187,7 +187,9 @@ def run_generalist_evolution(
                 "individuals": [
                     {
                         "genome": ind.genome.tolist(),
-                        "fitness": float(ind.fitness) if ind.fitness is not None else None,
+                        "fitness": float(ind.fitness)
+                        if ind.fitness is not None
+                        else None,
                     }
                     for ind in population.individuals[:10]
                 ],
@@ -214,7 +216,9 @@ def run_generalist_evolution(
     print(f"Converged: {result.converged_at is not None}")
     print()
     print("Best Individual:")
-    print(f"  Fitness (avg across {len(SCENARIOS)} scenarios): {result.best_individual.fitness:.2f}")
+    print(
+        f"  Fitness (avg across {len(SCENARIOS)} scenarios): {result.best_individual.fitness:.2f}"
+    )
     print(f"  Generation: {result.best_individual.generation}")
     print()
 
@@ -289,13 +293,23 @@ def run_generalist_evolution(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evolve generalist agent across scenarios")
+    parser = argparse.ArgumentParser(
+        description="Evolve generalist agent across scenarios"
+    )
     parser.add_argument("--population", type=int, default=100, help="Population size")
-    parser.add_argument("--generations", type=int, default=200, help="Number of generations")
-    parser.add_argument("--games-per-scenario", type=int, default=5, help="Games per scenario per eval")
-    parser.add_argument("--snapshot-interval", type=int, default=10, help="Snapshot every N generations")
+    parser.add_argument(
+        "--generations", type=int, default=200, help="Number of generations"
+    )
+    parser.add_argument(
+        "--games-per-scenario", type=int, default=5, help="Games per scenario per eval"
+    )
+    parser.add_argument(
+        "--snapshot-interval", type=int, default=10, help="Snapshot every N generations"
+    )
     parser.add_argument("--seed", type=int, default=None, help="Random seed")
-    parser.add_argument("--output-dir", type=Path, default=None, help="Output directory")
+    parser.add_argument(
+        "--output-dir", type=Path, default=None, help="Output directory"
+    )
 
     args = parser.parse_args()
 

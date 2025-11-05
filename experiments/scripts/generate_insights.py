@@ -14,7 +14,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -83,8 +83,12 @@ class InsightGenerator:
 
         if "nash" in self.data:
             nash = self.data["nash"]
-            dynamics["nash_cooperation_rate"] = nash["interpretation"]["cooperation_rate"]
-            dynamics["nash_free_riding_rate"] = nash["interpretation"]["free_riding_rate"]
+            dynamics["nash_cooperation_rate"] = nash["interpretation"][
+                "cooperation_rate"
+            ]
+            dynamics["nash_free_riding_rate"] = nash["interpretation"][
+                "free_riding_rate"
+            ]
             dynamics["nash_payoff"] = nash["equilibrium"]["expected_payoff"]
             dynamics["nash_type"] = nash["equilibrium"]["type"]
 
@@ -95,7 +99,9 @@ class InsightGenerator:
                 best = ranking[0]
                 dynamics["best_strategy"] = best["name"]
                 dynamics["best_payoff"] = best["mean_payoff"]
-                dynamics["payoff_gap"] = best["mean_payoff"] - dynamics.get("nash_payoff", 0)
+                dynamics["payoff_gap"] = best["mean_payoff"] - dynamics.get(
+                    "nash_payoff", 0
+                )
 
         return dynamics
 
@@ -134,7 +140,12 @@ class InsightGenerator:
 
             if diff > 0.3:  # Significant difference
                 important_params.append(
-                    {"parameter": param, "nash": nash_val, "best": best_val, "difference": diff}
+                    {
+                        "parameter": param,
+                        "nash": nash_val,
+                        "best": best_val,
+                        "difference": diff,
+                    }
                 )
 
         return sorted(important_params, key=lambda x: x["difference"], reverse=True)[:3]
@@ -154,32 +165,36 @@ class InsightGenerator:
 
         # Insight 1: Equilibrium characterization
         if cooperation_rate == 0:
-            question = "What does Nash equilibrium predict about cooperation in this scenario?"
+            question = (
+                "What does Nash equilibrium predict about cooperation in this scenario?"
+            )
             finding = f"Nash equilibrium predicts complete free-riding (0% cooperation) with expected payoff of {nash_payoff:.1f}."
             implication = "Individual rationality leads to collective failure. Without external coordination mechanisms, rational agents will defect even when cooperation benefits everyone."
         elif cooperation_rate >= 0.8:
             question = "Why does Nash equilibrium favor cooperation in this scenario?"
-            finding = f"Nash equilibrium selects highly cooperative strategies ({cooperation_rate*100:.0f}% cooperation rate) achieving {nash_payoff:.1f} payoff."
+            finding = f"Nash equilibrium selects highly cooperative strategies ({cooperation_rate * 100:.0f}% cooperation rate) achieving {nash_payoff:.1f} payoff."
             implication = "The incentive structure naturally aligns individual and collective interests, making cooperation individually rational without enforcement."
         else:
             question = "What mixed strategy does Nash equilibrium prescribe?"
-            finding = f"Nash equilibrium involves partial cooperation ({cooperation_rate*100:.0f}%) with {nash_payoff:.1f} expected payoff."
+            finding = f"Nash equilibrium involves partial cooperation ({cooperation_rate * 100:.0f}%) with {nash_payoff:.1f} expected payoff."
             implication = "The scenario creates tension between cooperation and free-riding, resulting in a mixed equilibrium that balances both strategies."
 
         evidence = [
             f"Equilibrium type: {equilibrium_type}",
             f"Strategy classification: {strategy_type}",
             f"Expected payoff: {nash_payoff:.2f}",
-            f"Cooperation rate: {cooperation_rate*100:.0f}%",
-            f"Convergence: {nash['convergence']['iterations']} iterations in {nash['convergence']['elapsed_time']:.1f}s"
+            f"Cooperation rate: {cooperation_rate * 100:.0f}%",
+            f"Convergence: {nash['convergence']['iterations']} iterations in {nash['convergence']['elapsed_time']:.1f}s",
         ]
 
-        insights.append({
-            "question": question,
-            "finding": finding,
-            "evidence": evidence,
-            "implication": implication
-        })
+        insights.append(
+            {
+                "question": question,
+                "finding": finding,
+                "evidence": evidence,
+                "implication": implication,
+            }
+        )
 
         # Insight 2: Strategy stability
         strategy = nash["equilibrium"]["strategy_pool"][0]
@@ -187,25 +202,28 @@ class InsightGenerator:
             "coordination": strategy["parameters"]["coordination"],
             "honesty": strategy["parameters"]["honesty"],
             "work_tendency": strategy["parameters"]["work_tendency"],
-            "altruism": strategy["parameters"]["altruism"]
+            "altruism": strategy["parameters"]["altruism"],
         }
 
         high_params = [k for k, v in key_params.items() if v > 0.7]
-        low_params = [k for k, v in key_params.items() if v < 0.3]
 
         if high_params:
-            question = f"What strategic traits does Nash equilibrium emphasize?"
+            question = "What strategic traits does Nash equilibrium emphasize?"
             finding = f"The equilibrium strongly favors {', '.join(high_params)} (all > 0.7) as critical for stability."
             evidence = [f"{k}: {v:.2f}" for k, v in key_params.items() if v > 0.7]
-            evidence.append(f"Archetype: {strategy['closest_archetype']} (distance: {strategy['archetype_distance']:.2f})")
-            implication = f"These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
+            evidence.append(
+                f"Archetype: {strategy['closest_archetype']} (distance: {strategy['archetype_distance']:.2f})"
+            )
+            implication = "These traits are Nash-stable because they form mutually best responses - no agent can improve by unilaterally deviating."
 
-            insights.append({
-                "question": question,
-                "finding": finding,
-                "evidence": evidence,
-                "implication": implication
-            })
+            insights.append(
+                {
+                    "question": question,
+                    "finding": finding,
+                    "evidence": evidence,
+                    "implication": implication,
+                }
+            )
 
         return insights
 
@@ -233,7 +251,7 @@ class InsightGenerator:
             f"Final best fitness: {final_fitness:.2f}",
             f"Total improvement: {improvement:.2f}",
             f"Generations: {len(generations)}",
-            f"Converged: {trace['convergence']['converged']}"
+            f"Converged: {trace['convergence']['converged']}",
         ]
 
         if improvement > 30:
@@ -243,16 +261,20 @@ class InsightGenerator:
         else:
             implication = "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
 
-        insights.append({
-            "question": question,
-            "finding": finding,
-            "evidence": evidence,
-            "implication": implication
-        })
+        insights.append(
+            {
+                "question": question,
+                "finding": finding,
+                "evidence": evidence,
+                "implication": implication,
+            }
+        )
 
         # Insight 2: Convergence dynamics
         mid_gen = len(generations) // 2
-        mid_diversity = generations[mid_gen]["diversity"] if mid_gen < len(generations) else 0
+        mid_diversity = (
+            generations[mid_gen]["diversity"] if mid_gen < len(generations) else 0
+        )
         final_diversity = generations[-1]["diversity"]
 
         question = "What does population diversity reveal about the fitness landscape?"
@@ -269,15 +291,17 @@ class InsightGenerator:
         evidence = [
             f"Final diversity: {final_diversity:.3f}",
             f"Mid-run diversity: {mid_diversity:.3f}",
-            f"Best generation: {evolved['generation']}"
+            f"Best generation: {evolved['generation']}",
         ]
 
-        insights.append({
-            "question": question,
-            "finding": finding,
-            "evidence": evidence,
-            "implication": implication
-        })
+        insights.append(
+            {
+                "question": question,
+                "finding": finding,
+                "evidence": evidence,
+                "implication": implication,
+            }
+        )
 
         return insights
 
@@ -297,7 +321,7 @@ class InsightGenerator:
         # Insight 1: Efficiency gap between Nash and optimal
         if payoff_gap > 20:
             question = "How much performance is lost at Nash equilibrium?"
-            finding = f"Nash equilibrium ({nash_payoff:.1f}) falls {payoff_gap:.1f} points short of optimal play ({best_payoff:.1f}) - a {(payoff_gap/nash_payoff*100):.0f}% efficiency loss."
+            finding = f"Nash equilibrium ({nash_payoff:.1f}) falls {payoff_gap:.1f} points short of optimal play ({best_payoff:.1f}) - a {(payoff_gap / nash_payoff * 100):.0f}% efficiency loss."
             implication = "Significant coordination failure. Individual rationality produces collectively suboptimal outcomes, indicating need for external coordination mechanisms."
         elif payoff_gap < 5:
             question = "How close is Nash equilibrium to optimal performance?"
@@ -312,19 +336,27 @@ class InsightGenerator:
             f"Nash payoff: {nash_payoff:.2f}",
             f"Optimal payoff: {best_payoff:.2f}",
             f"Gap: {payoff_gap:.2f}",
-            f"Efficiency: {(nash_payoff/best_payoff*100):.1f}%"
+            f"Efficiency: {(nash_payoff / best_payoff * 100):.1f}%",
         ]
 
-        insights.append({
-            "question": question,
-            "finding": finding,
-            "evidence": evidence,
-            "implication": implication
-        })
+        insights.append(
+            {
+                "question": question,
+                "finding": finding,
+                "evidence": evidence,
+                "implication": implication,
+            }
+        )
 
         # Insight 2: Evolution vs Nash
-        if "nash" in self.data and "evolved_agent" in self.data and "comparison" in self.data:
-            nash_params = self.data["nash"]["equilibrium"]["strategy_pool"][0]["parameters"]
+        if (
+            "nash" in self.data
+            and "evolved_agent" in self.data
+            and "comparison" in self.data
+        ):
+            nash_params = self.data["nash"]["equilibrium"]["strategy_pool"][0][
+                "parameters"
+            ]
             evolved_params = self.data["evolved_agent"]["parameters"]
 
             # Find evolved strategy in comparison
@@ -352,10 +384,14 @@ class InsightGenerator:
                     question = "Can evolution discover strategies superior to Nash equilibrium?"
                     finding = f"Yes - evolved strategies achieve {evolved_payoff:.1f} payoff, outperforming Nash equilibrium ({nash_payoff:.1f}) by {performance_diff:.1f} points."
                 elif performance_diff < -5:
-                    question = "Why does evolution fail to reach Nash equilibrium performance?"
+                    question = (
+                        "Why does evolution fail to reach Nash equilibrium performance?"
+                    )
                     finding = f"Evolution achieves only {evolved_payoff:.1f} payoff, falling {abs(performance_diff):.1f} points short of Nash equilibrium ({nash_payoff:.1f})."
                 else:
-                    question = "How does evolution compare to game-theoretic Nash equilibrium?"
+                    question = (
+                        "How does evolution compare to game-theoretic Nash equilibrium?"
+                    )
                     finding = f"Evolution and Nash equilibrium converge to similar performance levels ({evolved_payoff:.1f} vs {nash_payoff:.1f})."
 
                 evidence = [
@@ -384,7 +420,9 @@ class InsightGenerator:
         if important_params:
             param = important_params[0]  # Most important parameter
 
-            question = f"Which agent parameters matter most for success in this scenario?"
+            question = (
+                "Which agent parameters matter most for success in this scenario?"
+            )
             finding = f"The parameter '{param['parameter']}' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance."
 
             evidence = [
@@ -430,12 +468,14 @@ class InsightGenerator:
 
         return method_insights
 
-    def update_config_with_insights(self, method_insights: Dict[str, List[Dict[str, Any]]]):
+    def update_config_with_insights(
+        self, method_insights: Dict[str, List[Dict[str, Any]]]
+    ):
         """Update the scenario config file with generated insights."""
         # Try both experiment and web config locations
         config_paths = [
             self.scenario_dir / "config.json",
-            Path(f"web/public/research/scenarios/{self.scenario_name}/config.json")
+            Path(f"web/public/research/scenarios/{self.scenario_name}/config.json"),
         ]
 
         updated_count = 0
@@ -466,7 +506,9 @@ class InsightGenerator:
 
         if updated_count > 0:
             methods_str = ", ".join(method_insights.keys())
-            print(f"✅ Updated {updated_count} config file(s) with {total_insights} insights ({methods_str})")
+            print(
+                f"✅ Updated {updated_count} config file(s) with {total_insights} insights ({methods_str})"
+            )
             return True
         else:
             print(f"❌ No config files found for {self.scenario_name}")
@@ -474,7 +516,9 @@ class InsightGenerator:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate research insights from experimental data")
+    parser = argparse.ArgumentParser(
+        description="Generate research insights from experimental data"
+    )
     parser.add_argument(
         "scenario", nargs="?", help="Scenario name (or use --all)", default=None
     )
@@ -511,7 +555,9 @@ def main():
 
         # Print insights by method
         total_count = sum(len(insights) for insights in method_insights.values())
-        print(f"\n📊 Generated {total_count} insights across {len(method_insights)} method(s):\n")
+        print(
+            f"\n📊 Generated {total_count} insights across {len(method_insights)} method(s):\n"
+        )
 
         for method, insights in method_insights.items():
             print(f"  {method.upper()} ({len(insights)} insights):")
