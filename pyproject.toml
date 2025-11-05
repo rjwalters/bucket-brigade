@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Multi-agent cooperation game and ranking engine"
 authors = [{name = "rjwalters", email = "rjwalters@users.noreply.github.com"}]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.14"  # PyO3 0.22.6 (bucket-brigade-core) requires Python <=3.13
 dependencies = [
 "numpy>=1.26.0",
 "pandas>=2.0.0",

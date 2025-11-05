@@ -12,6 +12,8 @@ High-performance Rust implementation of the Bucket Brigade multi-agent cooperati
 
 ## Installation
 
+**Python Version Requirement**: This module requires Python 3.9-3.13. Python 3.14+ is not yet supported by PyO3 0.22.6.
+
 ```bash
 pip install -e .
 ```
