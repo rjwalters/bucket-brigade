@@ -1,7 +1,9 @@
-# Nash Equilibrium Analysis - Cross-Scenario Summary
+# Nash Equilibrium V1 - Cross-Scenario Summary
 
+**Version**: V1 (Baseline - Predefined Archetypes Only)
 **Generated:** 2025-11-04 14:49:20
 **Scenarios Analyzed:** 12
+**Next**: [V2 Plan](./V2_PLAN.md) - Integration with evolved strategies
 
 ## Overview
 
@@ -178,20 +180,58 @@ Based on Nash equilibrium analysis:
    - Predominance of pure equilibria indicates clear optimal strategies
    - Game parameters may need tuning for strategic depth
 
-## Future Work
+## V1 Limitations and Next Steps
 
-1. **Compare with evolved agents** (Issue #84)
-   - Do evolved strategies converge to Nash equilibria?
-   - Measure strategy divergence between theory and practice
+### Key Limitation
 
-2. **Robustness analysis**
+**V1 used only predefined archetypes** (Coordinator, Free Rider, Hero, Liar). This missed:
+- Evolved strategies from genetic algorithm research
+- Potentially better equilibria outside the archetype space
+- Connection between theory (Nash) and practice (evolution)
+
+### Critical Gap: chain_reaction
+
+| Method | Result | Gap |
+|--------|--------|-----|
+| **V1 Nash (Free Rider)** | 2.94 payoff | Baseline |
+| **Evolution V3/V4** | 58.50 payoff | **+55.56** 🔍 |
+
+**Why does evolution achieve 20× better than Nash?** This is the central question for V2.
+
+### V2 Plans
+
+See **[V2_PLAN.md](./V2_PLAN.md)** for:
+- Integration with evolved strategies (V3/V4/V5)
+- Evolution-Nash comparison and gap analysis
+- Epsilon-equilibrium and robustness testing
+- Cross-validation between theory and practice
+
+**V2 Goals**:
+1. ✅ Add evolved agents to Double Oracle strategy pool
+2. ✅ Explain the 2.94 → 58.50 gap in chain_reaction
+3. ✅ Validate if evolved strategies are Nash equilibria
+4. ✅ Complete Phase 1 Nash track with evolution cross-validation
+
+---
+
+## Future Work (Phase 2+)
+
+1. **Heterogeneous equilibria** (Phase 2)
+   - Nash with diverse agent types
+   - Team composition optimization
+
+2. **Robustness analysis** (Phase 2)
    - Test equilibrium stability to parameter perturbations
    - Identify critical parameter thresholds
 
-3. **Mechanism design**
+3. **Mechanism design** (Phase 3+)
    - Design incentives to improve equilibrium outcomes
    - Reduce price of anarchy where applicable
 
 ---
+
+**Version**: V1 (Baseline)
+**Status**: Complete - provides foundation for V2
+**Next**: [V2 Plan](./V2_PLAN.md) - Evolution integration
 
 *Analysis generated using Double Oracle algorithm with 2000 simulations per evaluation.*
