@@ -168,7 +168,8 @@ But 100x slower.
 
 ### Wasted Compute
 - V3 run: 9 scenarios × 200 pop × 2500 gen × 50 games = **225M evaluations**
-- Runtime: ~64 minutes per scenario × 9 = **9.6 GPU-hours**
+- Runtime: ~64 minutes per scenario × 9 = **9.6 CPU-hours** (wall-clock: 64 min parallel)
+- Machine: 64-vCPU remote sandbox
 - Result: Unusable agents ❌
 
 ### Salvageable Work

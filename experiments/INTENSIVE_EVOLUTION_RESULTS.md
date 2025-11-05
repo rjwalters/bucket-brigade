@@ -182,3 +182,96 @@ All values from 20-game tournaments vs best_heuristic and nash_strategy:
 | trivial_cooperation | 132.26  | 113.96  | 125.02    | #1   |
 
 **100% win rate for evolved strategies!**
+
+---
+
+## V3 Evolution Attempt - CRITICAL FAILURE ⚠️
+
+**Date**: November 2025
+**Status**: Failed - agents unusable
+**Root Cause**: Single-agent training, multi-agent testing bug
+
+### What Happened
+
+Attempted to improve on the successful "evolved" agents by running:
+- **Configuration**: Population 200, 2500 generations, 50 games/eval
+- **Compute**: 225M evaluations, 9.6 GPU-hours
+- **Expected**: Even better performance with 2.5x more compute
+- **Actual**: 96% performance regression
+
+### Performance Comparison (chain_reaction)
+
+| Version | Tournament Payoff | Method | Status |
+|---------|-------------------|--------|--------|
+| **evolved** | **92.06 ± 27.59** | Python (multi-agent) | ✅ Best |
+| evolved_v3 | -4.11 ± 22.19 | Rust (single-agent bug) | ❌ Unusable |
+| **Regression** | **-96%** | | |
+
+### The Critical Bug
+
+The Rust fitness evaluator (`fitness_rust.py`) has been simulating **only 1 agent** since the Rust migration:
+
+```python
+# Training: Single agent (WRONG)
+obs = game.get_observation(0)  # Only agent 0
+action = _heuristic_action(genome, obs_dict, 0, rng)
+rewards, done, info = game.step([action])  # Single action
+
+# Testing: 4 agents (CORRECT)
+agents = [HeuristicAgent(...) for i in range(4)]
+actions = [agent.act(obs) for agent in agents]  # 4 actions
+env.step(actions)
+```
+
+**Result**: V3 agents learned to "free-ride" on Rust auto-agents during training, achieving "fitness 70.00" but failing catastrophically when deployed as teams of 4 identical agents.
+
+### Why work_tendency=0.000 Makes Sense
+
+Chain_reaction v3 agent has `work_tendency=0.000` (doesn't work) because:
+1. During single-agent training, Rust filled in actions for agents 1-3
+2. Evolved agent learned to let others do the work (free-riding)
+3. This strategy achieved fitness 70.00 in solo evaluation
+4. But fails when all 4 agents are non-workers: payoff -4.11
+
+### Lesson Learned
+
+**Critical Insight**: Always validate evolved agents in tournaments!
+
+The v3 run achieved the target "fitness 70.00" but was optimizing the wrong objective. Fitness values alone are meaningless without:
+1. ✅ Multi-agent simulation during training
+2. ✅ Tournament validation against baselines
+3. ✅ Alignment testing (evolution fitness ≈ tournament performance)
+
+### Impact
+
+- ❌ **9.6 CPU-hours wasted** on broken evaluator (64 min wall-clock, 64-vCPU parallel)
+- ❌ **All v3 agents unusable** - do not deploy
+- ✅ **Original "evolved" agents remain best** - keep using these
+- ✅ **Critical bug identified** - can be fixed for v4
+- ✅ **Improved comparison script** - supports multiple versions
+
+### Fix Required
+
+Update `fitness_rust.py` to simulate all 4 agents:
+
+```python
+# Correct approach
+for agent_id in range(num_agents):
+    obs = game.get_observation(agent_id)
+    action = _heuristic_action(genome, obs_dict, agent_id, rng)
+    actions.append(action)
+rewards, done, info = game.step(actions)  # All 4 actions
+```
+
+### Next Steps
+
+1. **Fix Rust evaluator** - Single highest priority
+2. **Add integration tests** - Verify Rust ≈ Python fitness
+3. **Run v4 evolution** - With corrected evaluator
+4. **Archive v3 results** - Document as failed experiment
+
+**Full analysis**: See `experiments/V3_FITNESS_BUG_ANALYSIS.md`
+
+---
+
+**Document Status**: Updated with v3 failure analysis (2025-11-04)
