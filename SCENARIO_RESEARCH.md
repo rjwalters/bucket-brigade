@@ -13,7 +13,7 @@ This document outlines a comprehensive research framework for:
 
 ## Current State
 
-### Named Scenarios (9 total)
+### Named Scenarios (12 total)
 
 From `bucket_brigade/envs/scenarios.py`:
 
@@ -26,6 +26,9 @@ From `bucket_brigade/envs/scenarios.py`:
 7. **deceptive_calm** - Occasional flare-ups reward honest signaling
 8. **overcrowding** - Too many workers reduce efficiency
 9. **mixed_motivation** - Self-interest conflicts with team optimum
+10. **default** - Balanced baseline scenario
+11. **easy** - Easier cooperation task
+12. **hard** - More challenging cooperation task
 
 ### Existing Analysis Tools
 

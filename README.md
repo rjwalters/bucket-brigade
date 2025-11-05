@@ -15,9 +15,13 @@ Some are exhausted from long workdays. Others prioritize their own home over the
 **Bucket Brigade** transforms this dramatic scenario into a research platform where AI agents navigate the complex dance between self-interest and collective good. Every "night," agents make two crucial decisions:
 
 1. **Signal** their intent (work or rest) — but they might be lying
-2. **Choose an action**: where to go and whether to fight fires or conserve energy
+2. **Choose an action**: where to go and whether to fight fires
 
 The result? Endless fascinating dynamics of **trust, deception, coordination, and sacrifice**.
+
+## 🎯 Core Game Mechanics
+
+See [docs/game_mechanics.md](docs/game_mechanics.md) for the complete game rules and mechanics.
 
 ## 🎯 Research Goals
 
@@ -121,8 +125,8 @@ bucket-brigade/
 
 | Feature | Description |
 |----------|-------------|
-| **World** | 10 houses in a ring, each `Safe`, `Burning`, or `Ruined` |
-| **Agents** | 4–10 agents, each owning one or more houses |
+| **World** | 10 houses in a ring, each Safe, Burning, or Ruined |
+| **Agents** | 4–10 agents, each owning one house |
 | **Signals** | Broadcast intent (`Work` or `Rest`) each night |
 | **Actions** | `(house, mode)` → choose where and whether to work |
 | **Fire spread** | Burning houses ignite neighbors with probability `prob_fire_spreads_to_neighbor` |
@@ -130,24 +134,7 @@ bucket-brigade/
 | **Termination** | After ≥ min_nights and all fires are out or all houses ruined (max 100 nights) |
 | **Rewards** | Team and individual components based on saved/ruined houses and effort cost |
 
-### 🎮 Turn Order & Game Mechanics
-
-Each "night" in Bucket Brigade follows this sequence:
-
-1. **Observation Phase**: Agents observe current fire state (fires from previous night's spread/sparks)
-2. **Signal Phase**: Agents broadcast their intended mode (`Work` or `Rest`)
-3. **Action Phase**: Agents simultaneously choose destination and mode `(house_index, work/rest)`
-4. **Extinguish Phase**: Workers attempt to put out fires at their chosen locations
-   - Probability: `P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^num_workers`
-5. **Burn-out Phase**: Unextinguished fires become RUINED houses
-6. **Spread Phase**: Fires spread to neighboring SAFE houses (probability `prob_fire_spreads_to_neighbor`)
-   - **Important**: New fires are visible NEXT turn, giving agents time to respond
-7. **Spontaneous Ignition Phase**: Random spontaneous fires ignite on SAFE houses (probability `prob_house_catches_fire`) on every night
-   - **Important**: New fires are visible NEXT turn
-8. **Reward Calculation**: Based on houses saved/ruined and work costs
-9. **Termination Check**: Game ends if `night ≥ N_min AND (all_safe OR all_ruined OR night ≥ 100)`
-
-**Key Design Decision**: Fires spread and spark at the END of each turn, making them visible for the NEXT turn. This allows agents to observe fire locations and coordinate strategic responses, rewarding teamwork over luck.
+**Detailed mechanics**: See [docs/game_mechanics.md](docs/game_mechanics.md) for the complete turn sequence and rules.
 
 ---
 
@@ -580,7 +567,7 @@ cat web/public/data/known-good-agents.json
 # Select: "Agent Submission" template
 ```
 
-**Learn more**: See [docs/AGENT_SUBMISSION_GUIDE.md](docs/AGENT_SUBMISSION_GUIDE.md) for complete submission guidelines.
+**Learn more**: See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 🧠 Future Work
 

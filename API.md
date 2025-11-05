@@ -2,6 +2,8 @@
 
 This document describes the data structures and interfaces used in the Bucket Brigade platform.
 
+*For game mechanics and rules, see [docs/game_mechanics.md](docs/game_mechanics.md).*
+
 ## 🏗️ Architecture Overview
 
 **Current Implementation**: Client-side only (browser-based)
@@ -18,9 +20,9 @@ This document describes the data structures and interfaces used in the Bucket Br
 
 ```typescript
 type HouseState = 0 | 1 | 2;
-// 0 = SAFE    - House is undamaged
-// 1 = BURNING - House is on fire
-// 2 = RUINED  - House is destroyed
+// 0 = Safe    - House is undamaged
+// 1 = Burning - House is on fire
+// 2 = Ruined  - House is destroyed
 ```
 
 ### Scenario Configuration

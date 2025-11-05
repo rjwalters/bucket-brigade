@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, Play, Pause, RotateCcw, TrendingUp, Users, Clock, Target, Activity } from 'lucide-react';
 import { createTournamentEngine } from '../utils/tournamentEngine';
-import { getAllTeams, loadTeams, loadTournaments, saveTournaments } from '../utils/teamBuilderStorage';
+import { getAllTeams, loadTeams, loadTournaments, saveTournaments, saveTournamentResult } from '../utils/teamBuilderStorage';
 import { calculateAgentRankings, getTournamentSummary, getRecentActivity } from '../utils/tournamentAnalysis';
 import { getAllArchetypes } from '../utils/agentArchetypes';
 
@@ -77,6 +77,11 @@ export default function Tournament() {
       const duration = Date.now() - startTime;
       console.log(`✅ Tournament completed in ${duration}ms: ${result.teamName}`);
       console.log(`📈 Results: ${result.scenarios.length} scenarios, avg score: ${result.statistics.mean.toFixed(2)}, total games: ${result.scenarios.length}`);
+
+      // Save tournament result
+      console.log('💾 Saving tournament result...');
+      saveTournamentResult(result);
+      console.log('✅ Tournament result saved');
 
       // Update rankings
       console.log('🔄 Updating rankings...');
