@@ -19,7 +19,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.evolution.fitness_rust import _heuristic_action, _convert_scenario_to_rust
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
 import bucket_brigade_core as core
 
 
@@ -27,7 +30,9 @@ def find_evolution_versions(scenario_dir: Path) -> List[str]:
     """Find all available evolution result directories."""
     versions = []
     for path in scenario_dir.iterdir():
-        if path.is_dir() and (path.name == "evolved" or path.name.startswith("evolved_")):
+        if path.is_dir() and (
+            path.name == "evolved" or path.name.startswith("evolved_")
+        ):
             if (path / "best_agent.json").exists():
                 versions.append(path.name)
     return sorted(versions)
@@ -97,7 +102,7 @@ def run_tournament(
 
     print(f"Running tournament with {len(strategies)} strategies...")
     print(f"  Games per matchup: {num_games}")
-    print(f"  Using: Rust environment (single source of truth)")
+    print("  Using: Rust environment (single source of truth)")
     print()
 
     # Get scenario and convert to Rust
@@ -296,7 +301,9 @@ def run_comparison(
             print("Evolution vs Nash Comparison:")
             for version_name in all_results["evolution"].keys():
                 if version_name in tournament_results:
-                    evolved_payoff = float(tournament_results[version_name]["mean_payoff"])  # type: ignore[arg-type]
+                    evolved_payoff = float(
+                        tournament_results[version_name]["mean_payoff"]
+                    )  # type: ignore[arg-type]
                     gap = evolved_payoff - best_nash_payoff
 
                     print(f"  {version_name}:")
@@ -332,7 +339,9 @@ def run_comparison(
                         closest_nash = name.replace(f"{version_name}_vs_", "")
 
             if closest_nash:
-                print(f"  {version_name} is closest to: {closest_nash} (distance: {min_distance:.3f})")
+                print(
+                    f"  {version_name} is closest to: {closest_nash} (distance: {min_distance:.3f})"
+                )
 
         print()
 

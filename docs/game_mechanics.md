@@ -1,5 +1,7 @@
 # Bucket Brigade: Core Game Mechanics
 
+**Implementation Reference**: `bucket-brigade-core/src/` (Rust) is the canonical source of truth for all game mechanics.
+
 ## Overview
 
 Bucket Brigade is a multi-agent cooperation game where 4-10 agents work together to save a town from fires while managing individual energy costs and incentives for free-riding.
@@ -55,10 +57,26 @@ Game ends when:
 
 ## Scenarios
 
-The game includes 12 named scenarios with different parameter combinations, each testing different aspects of cooperation:
-- trivial_cooperation, early_containment, greedy_neighbor, sparse_heroics, rest_trap, chain_reaction, deceptive_calm, overcrowding, mixed_motivation
-- Additional scenarios: default, easy, hard
+The game includes 12 predefined scenarios with different parameter combinations, each testing different aspects of cooperation:
+
+**Difficulty Levels**:
+- `default` - Balanced baseline scenario
+- `easy` - Low fire spread, high extinguish efficiency (training)
+- `hard` - High fire spread, low extinguish efficiency (challenge)
+
+**Research Scenarios**:
+- `trivial_cooperation` - Pure cooperation (easy fires, no social dilemma)
+- `early_containment` - Aggressive fires requiring fast coordination
+- `greedy_neighbor` - High work cost creates free-rider incentive
+- `sparse_heroics` - Few workers can make the difference
+- `rest_trap` - Fires usually self-extinguish, but not always
+- `chain_reaction` - High spread requires distributed teams
+- `deceptive_calm` - Occasional flare-ups reward honest signaling
+- `overcrowding` - Too many workers reduce efficiency
+- `mixed_motivation` - Ownership creates self-interest conflicts
+
+**Canonical Definition**: See `bucket-brigade-core/src/scenarios.rs` for authoritative parameter values.
 
 ---
 
-*This section provides the canonical description of Bucket Brigade game mechanics. Reference this from other documents to ensure consistency.*
+*This document provides the canonical description of Bucket Brigade game mechanics. The authoritative implementation is in `bucket-brigade-core/src/`. Reference this from other documents to ensure consistency.*

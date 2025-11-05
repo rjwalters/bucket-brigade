@@ -63,7 +63,9 @@ def main():
     version = sys.argv[2]
 
     # Load agent genome
-    agent_file = Path(f"experiments/scenarios/{scenario_name}/{version}/best_agent.json")
+    agent_file = Path(
+        f"experiments/scenarios/{scenario_name}/{version}/best_agent.json"
+    )
     if not agent_file.exists():
         print(f"Error: Agent file not found: {agent_file}")
         sys.exit(1)
