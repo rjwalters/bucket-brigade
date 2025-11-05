@@ -129,9 +129,14 @@ class PythonFitnessEvaluator:
                 obs, rewards, done, info = game.step(actions)
                 step_count += 1
 
-            # Get final score from game result
-            result = game.get_result()
-            episode_payoffs.append(result.final_score)
+            # Calculate scenario payoff manually
+            # Payoff = A * (houses survived) - L * (houses burned)
+            houses_survived = int(np.sum(game.houses == 0))
+            houses_burned = int(np.sum(game.houses == 2))
+            scenario_payoff = (
+                self.scenario.A * houses_survived - self.scenario.L * houses_burned
+            )
+            episode_payoffs.append(scenario_payoff)
 
         return float(np.mean(episode_payoffs))
 
