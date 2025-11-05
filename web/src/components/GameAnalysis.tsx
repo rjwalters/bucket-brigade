@@ -94,74 +94,74 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
   }
 
   return (
-    <div className="space-y-6 mt-8 pt-8 border-t-2 border-gray-200">
+    <div className="space-y-6 mt-8 pt-8 border-t-2 border-outline-primary">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Game Analysis</h2>
-        <p className="text-gray-600">Performance breakdown and insights</p>
+        <h2 className="text-3xl font-bold text-content-primary mb-2">Game Analysis</h2>
+        <p className="text-content-secondary">Performance breakdown and insights</p>
       </div>
 
       {/* Outcome Summary */}
-      <div className={`card text-center ${gameSuccess ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+      <div className={`card text-center ${gameSuccess ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'}`}>
         <div className="flex items-center justify-center mb-4">
           {gameSuccess ? (
-            <CheckCircle className="w-12 h-12 text-green-600" />
+            <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
           ) : (
-            <AlertTriangle className="w-12 h-12 text-red-600" />
+            <AlertTriangle className="w-12 h-12 text-red-600 dark:text-red-400" />
           )}
         </div>
-        <h3 className={`text-2xl font-bold mb-2 ${gameSuccess ? 'text-green-900' : 'text-red-900'}`}>
+        <h3 className={`text-2xl font-bold mb-2 ${gameSuccess ? 'text-green-900 dark:text-green-100' : 'text-red-900 dark:text-red-100'}`}>
           {gameSuccess ? 'Mission Success!' : 'Mission Failed'}
         </h3>
-        <p className={`text-lg ${gameSuccess ? 'text-green-700' : 'text-red-700'}`}>
+        <p className={`text-lg ${gameSuccess ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
           {savedHouses} houses saved, {ruinedHouses} ruined, {burningHouses} still burning
         </p>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card bg-blue-50 border-blue-200">
+        <div className="card bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <div className="flex items-center justify-between mb-2">
-            <Trophy className="w-6 h-6 text-blue-600" />
-            <span className="text-2xl font-bold text-blue-900">{totalTeamReward.toFixed(1)}</span>
+            <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalTeamReward.toFixed(1)}</span>
           </div>
-          <p className="text-sm text-blue-700">Total Team Reward</p>
+          <p className="text-sm text-blue-700 dark:text-blue-300">Total Team Reward</p>
         </div>
 
-        <div className="card bg-purple-50 border-purple-200">
+        <div className="card bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
           <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="w-6 h-6 text-purple-600" />
-            <span className="text-2xl font-bold text-purple-900">{avgRewardPerAgent.toFixed(1)}</span>
+            <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <span className="text-2xl font-bold text-purple-900 dark:text-purple-100">{avgRewardPerAgent.toFixed(1)}</span>
           </div>
-          <p className="text-sm text-purple-700">Avg Per Agent</p>
+          <p className="text-sm text-purple-700 dark:text-purple-300">Avg Per Agent</p>
         </div>
 
-        <div className="card bg-orange-50 border-orange-200">
+        <div className="card bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
           <div className="flex items-center justify-between mb-2">
-            <Flame className="w-6 h-6 text-orange-600" />
-            <span className="text-2xl font-bold text-orange-900">{totalNights}</span>
+            <Flame className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <span className="text-2xl font-bold text-orange-900 dark:text-orange-100">{totalNights}</span>
           </div>
-          <p className="text-sm text-orange-700">Nights Survived</p>
+          <p className="text-sm text-orange-700 dark:text-orange-300">Nights Survived</p>
         </div>
 
-        <div className="card bg-green-50 border-green-200">
+        <div className="card bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
           <div className="flex items-center justify-between mb-2">
-            <Users className="w-6 h-6 text-green-600" />
-            <span className="text-2xl font-bold text-green-900">{game.scenario.num_agents}</span>
+            <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <span className="text-2xl font-bold text-green-900 dark:text-green-100">{game.scenario.num_agents}</span>
           </div>
-          <p className="text-sm text-green-700">Team Size</p>
+          <p className="text-sm text-green-700 dark:text-green-300">Team Size</p>
         </div>
       </div>
 
       {/* Agent Performance */}
       <div className="card">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <Users className="w-5 h-5 mr-2 text-blue-600" />
+        <h3 className="text-xl font-semibold text-content-primary mb-4 flex items-center">
+          <Users className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
           Individual Contributions
         </h3>
 
         <div className="space-y-4">
           {sortedAgents.map((agent, idx) => (
-            <div key={agent.agentId} className="border border-gray-200 rounded-lg p-4">
+            <div key={agent.agentId} className="border border-outline-primary rounded-lg p-4 bg-surface-secondary">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
@@ -173,33 +173,33 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
                     {agent.agentId}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">Agent {agent.agentId}</div>
-                    <div className="text-sm text-gray-600">Rank #{idx + 1}</div>
+                    <div className="font-semibold text-content-primary">Agent {agent.agentId}</div>
+                    <div className="text-sm text-content-secondary">Rank #{idx + 1}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">{agent.totalReward.toFixed(1)}</div>
-                  <div className="text-sm text-gray-600">Total Reward</div>
+                  <div className="text-2xl font-bold text-content-primary">{agent.totalReward.toFixed(1)}</div>
+                  <div className="text-sm text-content-secondary">Total Reward</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <div className="text-gray-600 mb-1">Work Nights</div>
-                  <div className="font-semibold text-gray-900 flex items-center">
-                    <Zap className="w-4 h-4 mr-1 text-yellow-600" />
+                  <div className="text-content-secondary mb-1">Work Nights</div>
+                  <div className="font-semibold text-content-primary flex items-center">
+                    <Zap className="w-4 h-4 mr-1 text-yellow-600 dark:text-yellow-400" />
                     {agent.workNights} / {totalNights}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-600 mb-1">Contribution</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="text-content-secondary mb-1">Contribution</div>
+                  <div className="font-semibold text-content-primary">
                     {agent.contribution.toFixed(1)}%
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-600 mb-1">Efficiency</div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="text-content-secondary mb-1">Efficiency</div>
+                  <div className="font-semibold text-content-primary">
                     {agent.efficiency.toFixed(1)} per work
                   </div>
                 </div>
@@ -207,7 +207,7 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
 
               {/* Work participation bar */}
               <div className="mt-3">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 transition-all"
                     style={{ width: `${(agent.workNights / totalNights) * 100}%` }}
@@ -220,14 +220,14 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
       </div>
 
       {/* Key Insights */}
-      <div className="card bg-blue-50 border-blue-200">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <Zap className="w-5 h-5 mr-2 text-blue-600" />
+      <div className="card bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+        <h3 className="text-xl font-semibold text-content-primary mb-4 flex items-center">
+          <Zap className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
           Key Insights
         </h3>
         <ul className="space-y-2">
           {insights.map((insight, idx) => (
-            <li key={idx} className="flex items-start text-gray-700">
+            <li key={idx} className="flex items-start text-blue-700 dark:text-blue-300">
               <span className="mr-2 mt-1">•</span>
               <span>{insight}</span>
             </li>
@@ -236,31 +236,31 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
       </div>
 
       {/* Scenario Parameters */}
-      <div className="card bg-gray-50">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Scenario Configuration</h3>
+      <div className="card bg-surface-tertiary">
+        <h3 className="text-xl font-semibold text-content-primary mb-4">Scenario Configuration</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-gray-600">Fire Spread</div>
-            <div className="font-semibold text-gray-900">{(game.scenario.beta * 100).toFixed(0)}%</div>
+            <div className="text-content-secondary">Fire Spread</div>
+            <div className="font-semibold text-content-primary">{(game.scenario.beta * 100).toFixed(0)}%</div>
           </div>
           <div>
-            <div className="text-gray-600">Extinguish Efficiency</div>
-            <div className="font-semibold text-gray-900">{(game.scenario.kappa * 100).toFixed(0)}%</div>
+            <div className="text-content-secondary">Extinguish Efficiency</div>
+            <div className="font-semibold text-content-primary">{(game.scenario.kappa * 100).toFixed(0)}%</div>
           </div>
           <div>
-            <div className="text-gray-600">Initial Fires</div>
+            <div className="text-content-secondary">Initial Fires</div>
           </div>
           <div>
-            <div className="text-gray-600">Work Cost</div>
-            <div className="font-semibold text-gray-900">{game.scenario.c.toFixed(1)} per night</div>
+            <div className="text-content-secondary">Work Cost</div>
+            <div className="font-semibold text-content-primary">{game.scenario.c.toFixed(1)} per night</div>
           </div>
           <div>
-            <div className="text-gray-600">Saved House Value</div>
-            <div className="font-semibold text-gray-900">{game.scenario.A.toFixed(0)}</div>
+            <div className="text-content-secondary">Saved House Value</div>
+            <div className="font-semibold text-content-primary">{game.scenario.A.toFixed(0)}</div>
           </div>
           <div>
-            <div className="text-gray-600">Ruined House Penalty</div>
-            <div className="font-semibold text-gray-900">-{game.scenario.L.toFixed(0)}</div>
+            <div className="text-content-secondary">Ruined House Penalty</div>
+            <div className="font-semibold text-content-primary">-{game.scenario.L.toFixed(0)}</div>
           </div>
         </div>
       </div>
