@@ -4,11 +4,11 @@
 
 ## Current Status
 
-**V4 Evolution Launched**: 2025-11-05 07:50 UTC
-**Configuration**: 100 pop, 1000 gen, 50 games, seed=42
+**V4 Evolution Launched**: 2025-11-05 07:52 UTC (restarted with 10hr config)
+**Configuration**: 200 pop, 15000 gen, 50 games, seed=42
 **Scenarios**: All 9 scenarios running in parallel on `rwalters-sandbox-1`
-**Expected Completion**: ~08:20 UTC (30 minutes from start)
-**Estimated Total Runtime**: 20-30 minutes wall-clock
+**Expected Completion**: ~14:22 UTC (6.5 hours from start)
+**Estimated Total Runtime**: 6.5 hours wall-clock (10hr window available)
 
 ## Step 1: Verify Completion
 
@@ -247,12 +247,12 @@ ssh rwalters-sandbox-1 'for s in $(tmux ls | grep v4_ | cut -d: -f1); do tmux ki
 
 ## Timeline Expectations
 
-- **Start**: 07:50 UTC
-- **Expected completion**: 08:20 UTC (~30 min)
+- **Start**: 07:52 UTC (restarted with intensive config)
+- **Expected completion**: 14:22 UTC (~6.5 hours)
 - **Retrieval**: +5 min (rsync results)
 - **Tournaments**: +20-30 min (all scenarios)
 - **Analysis**: +15 min (document findings)
-- **Total**: ~70-80 minutes from start to completion
+- **Total**: ~7 hours from start to full analysis
 
 ## Failure Scenarios
 

@@ -4,13 +4,14 @@
 # This script launches evolution for all 9 scenarios with the corrected
 # multi-agent Rust evaluator (fixing the v3 single-agent bug).
 #
-# Configuration: Conservative approach
-# - Population: 100 (same as successful "evolved" agents)
-# - Generations: 1000 (more than original 200)
-# - Games/eval: 50 (more stable than original 20)
+# Configuration: Intensive 10-hour approach
+# - Population: 200 (2x original, same as v3)
+# - Generations: 15000 (75x original, 6x v3)
+# - Games/eval: 50 (stable evaluation)
 # - Seed: 42 (reproducibility)
 #
-# Expected runtime: ~20-30 min per scenario, ~25 min wall-clock (parallel)
+# Expected runtime: ~6.5 hours wall-clock (leaves 3.5hr buffer)
+# Based on v3 actual performance: 2500 gen in 64 min = ~39 gen/min
 
 set -e
 
@@ -27,8 +28,8 @@ SCENARIOS=(
     "trivial_cooperation"
 )
 
-POPULATION=100
-GENERATIONS=1000
+POPULATION=200
+GENERATIONS=15000
 GAMES=50
 SEED=42
 
