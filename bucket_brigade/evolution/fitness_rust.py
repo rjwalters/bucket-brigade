@@ -95,25 +95,31 @@ def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
     # Python RNG for heuristic decisions
     rng = np.random.RandomState(seed)
 
+    # Get number of agents from scenario
+    num_agents = python_scenario.num_agents
+
     # Run until done
     done = False
     step_count = 0
     max_steps = 100  # Safety limit
 
     while not done and step_count < max_steps:
-        # Get observation
-        obs = game.get_observation(0)
-        obs_dict = {
-            "houses": obs.houses,
-            "signals": obs.signals,
-            "locations": obs.locations,
-        }
+        # Get actions for ALL agents (not just agent 0)
+        actions = []
+        for agent_id in range(num_agents):
+            obs = game.get_observation(agent_id)
+            obs_dict = {
+                "houses": obs.houses,
+                "signals": obs.signals,
+                "locations": obs.locations,
+            }
 
-        # Get action from heuristic
-        action = _heuristic_action(genome, obs_dict, 0, rng)
+            # Get action from heuristic
+            action = _heuristic_action(genome, obs_dict, agent_id, rng)
+            actions.append(action)
 
-        # Step the Rust game with single agent action
-        rewards, done, info = game.step([action])
+        # Step the Rust game with ALL agent actions
+        rewards, done, info = game.step(actions)
         step_count += 1
 
     # Return scenario final score instead of agent rewards
