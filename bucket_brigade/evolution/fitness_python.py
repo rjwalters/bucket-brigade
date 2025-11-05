@@ -104,7 +104,11 @@ class PythonFitnessEvaluator:
         episode_payoffs = []
         for game_seed in seeds:
             # Create game
-            game = BucketBrigadeEnv(self.scenario, seed=game_seed)
+            game = BucketBrigadeEnv(self.scenario)
+
+            # Set seed via numpy random state if provided
+            if game_seed is not None:
+                np.random.seed(game_seed)
 
             # Python RNG for heuristic decisions
             game_rng = np.random.RandomState(game_seed)
