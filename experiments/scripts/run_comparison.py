@@ -114,7 +114,7 @@ def run_tournament(
         payoffs = []
         for game_idx in range(num_games):
             # Create Rust game
-            game = core.BucketBrigadeGame(rust_scenario, seed=game_idx)
+            game = core.BucketBrigade(rust_scenario, seed=game_idx)
 
             # Python RNG for heuristic decisions
             rng = np.random.RandomState(game_idx)
