@@ -17,8 +17,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm
-from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
+from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm, FitnessEvaluator
 from bucket_brigade.evolution.population import Individual
 import numpy as np
 
@@ -54,7 +53,7 @@ class CrossScenarioFitnessEvaluator:
         self.evaluators = {}
         for scenario_name in scenario_names:
             scenario = get_scenario_by_name(scenario_name, num_agents=1)
-            self.evaluators[scenario_name] = RustFitnessEvaluator(
+            self.evaluators[scenario_name] = FitnessEvaluator(
                 scenario=scenario,
                 games_per_individual=games_per_scenario,
                 seed=self.rng.randint(0, 2**31 - 1) if seed is not None else None,
