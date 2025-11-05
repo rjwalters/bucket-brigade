@@ -21,7 +21,7 @@
 
 ```bash
 POPULATION=200
-GENERATIONS=2500  # Optimized for ~10 hour runtime
+GENERATIONS=2500  # Originally planned for 10 hours, actually ~1 hour!
 GAMES=50
 ```
 
@@ -30,6 +30,11 @@ GAMES=50
 - ✅ Using RustFitnessEvaluator (100x faster than Python)
 - ✅ 2500 generations for full convergence
 - ✅ Proper tmux session management
+
+**Actual performance** (measured):
+- **1.53 seconds/generation** (much faster than expected!)
+- Total runtime: **~64 minutes** for 2500 generations
+- See `EVOLUTION_TIMING_ANALYSIS.md` for detailed analysis
 
 ## Runtime Details
 
