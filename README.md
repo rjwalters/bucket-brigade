@@ -285,6 +285,12 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 
 ## 🧰 Dependencies
 
+**Python Version Requirement**: Python 3.9 - 3.13 (3.14+ not yet supported)
+
+This project uses PyO3 for Rust-Python bindings in `bucket-brigade-core`. PyO3 0.22.6 currently supports Python up to 3.13. Python 3.14 support will be available in future PyO3 releases.
+
+We recommend Python 3.12 (specified in `.python-version`).
+
 ```bash
 pip install numpy pandas scikit-learn matplotlib
 ```

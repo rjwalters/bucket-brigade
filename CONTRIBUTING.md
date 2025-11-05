@@ -38,9 +38,12 @@ We use **Loom** for AI-powered development orchestration. See [CLAUDE.md](CLAUDE
 
 ### Prerequisites
 
-- Python 3.9+ with uv package manager
+- **Python 3.9 - 3.13** (3.14+ not yet supported due to PyO3 0.22.6 limitations)
+  - We recommend Python 3.12 (see `.python-version`)
+  - Use `uv` package manager for best experience
 - Node.js 18+ with pnpm
 - Git
+- Rust toolchain (for building `bucket-brigade-core`)
 
 ### Local Development Setup
 
