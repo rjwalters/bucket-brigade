@@ -92,13 +92,15 @@ def compute_nash_v2(
 
     if not evolved_agents:
         print("  ⚠️  No evolved agents found!")
-        print(f"  Looked for: experiments/scenarios/{scenario_name}/evolved_{{v3,v4,v5}}/best_agent.json")
+        print(
+            f"  Looked for: experiments/scenarios/{scenario_name}/evolved_{{v3,v4,v5}}/best_agent.json"
+        )
         print()
     else:
         print(f"  ✓ Loaded {len(evolved_agents)} evolved agent(s)")
         for i, version in enumerate(evolved_versions):
             desc = get_evolved_agent_description(scenario_name, version)
-            print(f"    {i+1}. {desc}")
+            print(f"    {i + 1}. {desc}")
         print()
 
     # Build initial strategy pool: archetypes + evolved agents
@@ -111,7 +113,9 @@ def compute_nash_v2(
     ] + evolved_agents
 
     print(f"Initial Strategy Pool: {len(initial_strategies)} strategies")
-    print(f"  - 5 predefined archetypes (Firefighter, Free Rider, Hero, Coordinator, Liar)")
+    print(
+        "  - 5 predefined archetypes (Firefighter, Free Rider, Hero, Coordinator, Liar)"
+    )
     print(f"  - {len(evolved_agents)} evolved agent(s)")
     print()
 
@@ -120,7 +124,7 @@ def compute_nash_v2(
     print(f"  Max iterations: {max_iterations}")
     print(f"  Convergence threshold (ε): {epsilon}")
     print(f"  Seed: {seed}")
-    print(f"  Evaluator: RustPayoffEvaluator (100x speedup)")
+    print("  Evaluator: RustPayoffEvaluator (100x speedup)")
     print()
 
     # Create output directory
@@ -150,7 +154,9 @@ def compute_nash_v2(
     print("Nash Equilibrium V2 Results")
     print("=" * 80)
     print()
-    print(f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}")
+    print(
+        f"Convergence Status: {'CONVERGED' if equilibrium.converged else 'MAX ITERATIONS'}"
+    )
     print(f"Iterations: {equilibrium.iterations}")
     print(f"Expected Payoff: {equilibrium.payoff:.2f}")
     print(f"Support Size: {len(equilibrium.distribution)}")
@@ -198,7 +204,11 @@ def compute_nash_v2(
                 # Check if it matches an evolved agent
                 if np.allclose(strategy, evolved_agents[evolved_idx], atol=1e-6):
                     is_evolved = True
-                    version = evolved_versions[evolved_idx] if evolved_idx < len(evolved_versions) else "unknown"
+                    version = (
+                        evolved_versions[evolved_idx]
+                        if evolved_idx < len(evolved_versions)
+                        else "unknown"
+                    )
                     evolved_info = load_evolved_agent_metadata(scenario_name, version)
 
         print(f"Strategy {idx + 1}: Probability = {probability:.3f}")
@@ -208,7 +218,9 @@ def compute_nash_v2(
             print(f"     Generation: {evolved_info['generation']}")
         else:
             print(f"  Classification: {classification}")
-            print(f"  Closest archetype: {closest} (distance: {distances[closest]:.3f})")
+            print(
+                f"  Closest archetype: {closest} (distance: {distances[closest]:.3f})"
+            )
         print("  Parameters:")
 
         for name, value in zip(param_names, strategy):
@@ -218,17 +230,21 @@ def compute_nash_v2(
 
         print()
 
-        strategy_details.append({
-            "index": int(strategy_idx),
-            "probability": float(probability),
-            "is_evolved": is_evolved,
-            "evolved_info": evolved_info if is_evolved else None,
-            "classification": classification,
-            "closest_archetype": closest,
-            "archetype_distance": float(distances[closest]),
-            "parameters": {name: float(value) for name, value in zip(param_names, strategy)},
-            "genome": strategy.tolist(),
-        })
+        strategy_details.append(
+            {
+                "index": int(strategy_idx),
+                "probability": float(probability),
+                "is_evolved": is_evolved,
+                "evolved_info": evolved_info if is_evolved else None,
+                "classification": classification,
+                "closest_archetype": closest,
+                "archetype_distance": float(distances[closest]),
+                "parameters": {
+                    name: float(value) for name, value in zip(param_names, strategy)
+                },
+                "genome": strategy.tolist(),
+            }
+        )
 
     # Game-theoretic interpretation
     print("=" * 80)
@@ -256,13 +272,15 @@ def compute_nash_v2(
             print(f"  ✓ {info['version'].upper()}: {s['probability']:.1%} probability")
             print(f"    Evolution fitness: {info['fitness']:.2f}")
             print(f"    Nash payoff: {equilibrium.payoff:.2f}")
-            gap = abs(info['fitness'] - equilibrium.payoff)
+            gap = abs(info["fitness"] - equilibrium.payoff)
             gap_pct = (gap / equilibrium.payoff) * 100
             print(f"    Gap: {gap:.2f} ({gap_pct:.1f}%)")
         print()
     else:
         print("📊 No evolved agents in equilibrium support")
-        print("   This suggests evolved strategies were exploitable by archetypes or best responses")
+        print(
+            "   This suggests evolved strategies were exploitable by archetypes or best responses"
+        )
         print()
 
     # Cooperation analysis
@@ -310,7 +328,9 @@ def compute_nash_v2(
             "type": equilibrium_type,
             "support_size": len(equilibrium.distribution),
             "expected_payoff": float(equilibrium.payoff),
-            "distribution": {int(idx): float(prob) for idx, prob in equilibrium.distribution.items()},
+            "distribution": {
+                int(idx): float(prob) for idx, prob in equilibrium.distribution.items()
+            },
             "strategy_pool": strategy_details,
             "evolved_in_equilibrium": len(evolved_in_equilibrium),
         },
@@ -354,7 +374,9 @@ def main():
         default=50,
         help="Maximum Double Oracle iterations",
     )
-    parser.add_argument("--epsilon", type=float, default=0.01, help="Convergence threshold")
+    parser.add_argument(
+        "--epsilon", type=float, default=0.01, help="Convergence threshold"
+    )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument(
         "--evolved-versions",

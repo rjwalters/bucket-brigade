@@ -26,11 +26,20 @@ impl BucketBrigade {
         // Compute final rewards based on house outcomes at game end
         let mut rewards = vec![0.0; self.scenario.num_agents];
 
+        // Compute collective team reward (public goods component)
+        let saved_houses = self.houses.iter().filter(|&&h| h == 0).count() as f32;
+        let ruined_houses = self.houses.iter().filter(|&&h| h == 2).count() as f32;
+        let team_reward = saved_houses * self.scenario.team_reward_house_survives
+            - ruined_houses * self.scenario.team_penalty_house_burns;
+
         for (agent_idx, reward) in rewards
             .iter_mut()
             .enumerate()
             .take(self.scenario.num_agents)
         {
+            // Each agent receives full team reward (public goods incentive)
+            *reward += team_reward;
+
             let owned_house = agent_idx % 10;
             let left_neighbor = if owned_house == 0 { 9 } else { owned_house - 1 };
             let right_neighbor = (owned_house + 1) % 10;

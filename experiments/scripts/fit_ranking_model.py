@@ -20,12 +20,10 @@ import json
 import argparse
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
-from scipy import stats
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -59,13 +57,15 @@ def load_heuristics_data(scenarios: List[str]) -> pd.DataFrame:
             team_composition = team_result["team_composition"]
 
             for game in team_result["games"]:
-                observations.append({
-                    "game_id": game_id,
-                    "scenario": scenario,
-                    "team": tuple(team_composition),  # Make hashable
-                    "individual_payoffs": game["individual_payoffs"],
-                    "team_payoff": game["mean_payoff"],
-                })
+                observations.append(
+                    {
+                        "game_id": game_id,
+                        "scenario": scenario,
+                        "team": tuple(team_composition),  # Make hashable
+                        "individual_payoffs": game["individual_payoffs"],
+                        "team_payoff": game["mean_payoff"],
+                    }
+                )
                 game_id += 1
 
         # Also process homogeneous teams
@@ -74,13 +74,15 @@ def load_heuristics_data(scenarios: List[str]) -> pd.DataFrame:
             team_composition = [agent_type] * 4
 
             for game in team_result["games"]:
-                observations.append({
-                    "game_id": game_id,
-                    "scenario": scenario,
-                    "team": tuple(team_composition),
-                    "individual_payoffs": game["individual_payoffs"],
-                    "team_payoff": game["mean_payoff"],
-                })
+                observations.append(
+                    {
+                        "game_id": game_id,
+                        "scenario": scenario,
+                        "team": tuple(team_composition),
+                        "individual_payoffs": game["individual_payoffs"],
+                        "team_payoff": game["mean_payoff"],
+                    }
+                )
                 game_id += 1
 
     df = pd.DataFrame(observations)
@@ -284,7 +286,7 @@ def fit_scenario_specific_models(
         scenario_rankings[scenario] = ratings
 
         # Print top 3
-        print(f"  Top 3 agents:")
+        print("  Top 3 agents:")
         for agent_name, rating in list(ratings.items())[:3]:
             print(
                 f"    {rating['rank']}. {agent_name:15s}: θ={rating['theta']:6.2f} [{rating['ci_lower']:6.2f}, {rating['ci_upper']:6.2f}]"
@@ -390,10 +392,12 @@ def main() -> None:
         if args.output is None:
             args.output = Path("experiments/rankings/custom_rankings.json")
 
-    print(f"\nDataset statistics:")
+    print("\nDataset statistics:")
     print(f"  Total games: {len(df)}")
     print(f"  Scenarios: {df['scenario'].nunique()}")
-    print(f"  Unique agents: {len(set(agent for team in df['team'] for agent in team))}")
+    print(
+        f"  Unique agents: {len(set(agent for team in df['team'] for agent in team))}"
+    )
     print()
 
     # Fit models

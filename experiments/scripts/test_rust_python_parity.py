@@ -13,8 +13,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.evolution.fitness_rust import _heuristic_action, _convert_scenario_to_rust
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
 import bucket_brigade_core as core
+
 
 def test_rust_env(scenario_name: str, genome: np.ndarray, seed: int = 42) -> float:
     """Run agent in Rust environment."""
@@ -63,7 +67,9 @@ def main():
     version = sys.argv[2]
 
     # Load agent genome
-    agent_file = Path(f"experiments/scenarios/{scenario_name}/{version}/best_agent.json")
+    agent_file = Path(
+        f"experiments/scenarios/{scenario_name}/{version}/best_agent.json"
+    )
     if not agent_file.exists():
         print(f"Error: Agent file not found: {agent_file}")
         sys.exit(1)
@@ -72,7 +78,7 @@ def main():
         agent_data = json.load(f)
         genome = np.array(list(agent_data["parameters"].values()))
 
-    print(f"Testing Rust environment consistency")
+    print("Testing Rust environment consistency")
     print(f"Scenario: {scenario_name}")
     print(f"Agent: {version}")
     print()
@@ -100,7 +106,9 @@ def main():
     print("Summary:")
     print(f"  Run 1 mean: {np.mean(first_run):.2f} ± {np.std(first_run):.2f}")
     print(f"  Run 2 mean: {np.mean(second_run):.2f} ± {np.std(second_run):.2f}")
-    print(f"  Mean diff:  {np.mean([abs(r1 - r2) for r1, r2 in zip(first_run, second_run)]):.2f}")
+    print(
+        f"  Mean diff:  {np.mean([abs(r1 - r2) for r1, r2 in zip(first_run, second_run)]):.2f}"
+    )
     print()
 
     # Determine if Rust is deterministic
