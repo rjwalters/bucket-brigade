@@ -54,13 +54,13 @@ const SCENARIO_PARAM_INFO: Record<keyof ScenarioParams, ParamInfo> = {
   },
   team_reward_house_survives: {
     label: 'Team Reward (survives)',
-    description: 'Team reward for each house that survives until the end of the game (collective outcome).',
+    description: 'Reward each agent receives for each house that survives. Creates collective incentive since all agents receive this independently (public goods).',
     format: (v) => v.toString(),
     unit: 'points',
   },
   team_penalty_house_burns: {
     label: 'Team Penalty (burns)',
-    description: 'Team penalty for each house that burns down completely (collective outcome).',
+    description: 'Penalty each agent receives for each house that burns down. All agents receive this penalty independently (public cost).',
     format: (v) => v.toString(),
     unit: 'points',
   },
