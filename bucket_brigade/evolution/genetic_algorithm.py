@@ -8,7 +8,7 @@ and fitness evaluation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 
@@ -106,22 +106,26 @@ class GeneticAlgorithm:
        g. Track progress and check convergence
     """
 
-    def __init__(self, config: EvolutionConfig) -> None:
+    def __init__(self, config: EvolutionConfig, fitness_evaluator: Optional[Any] = None) -> None:
         """Initialize genetic algorithm.
 
         Args:
             config: Evolution configuration
+            fitness_evaluator: Optional custom fitness evaluator (uses default if None)
         """
         self.config = config
         self.rng = np.random.default_rng(config.seed)
 
-        # Create fitness evaluator
-        self.fitness_evaluator = FitnessEvaluator(
-            scenario=None,  # Use default scenario
-            games_per_individual=config.games_per_individual,
-            seed=int(self.rng.integers(0, 2**31)) if config.seed is not None else None,
-            num_workers=config.num_workers,
-        )
+        # Create fitness evaluator (use provided or create default)
+        if fitness_evaluator is not None:
+            self.fitness_evaluator = fitness_evaluator
+        else:
+            self.fitness_evaluator = FitnessEvaluator(
+                scenario=None,  # Use default scenario
+                games_per_individual=config.games_per_individual,
+                seed=int(self.rng.integers(0, 2**31)) if config.seed is not None else None,
+                num_workers=config.num_workers,
+            )
 
         # History tracking
         self.fitness_history: list[dict[str, float]] = []
