@@ -18,11 +18,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.evolution import FitnessEvaluator, Individual
-from bucket_brigade.evolution.fitness_rust import _heuristic_action, _convert_scenario_to_rust
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
 import bucket_brigade_core as core
 
 
-def test_tournament_mode(scenario_name: str, genome: np.ndarray, num_games: int = 10) -> dict:
+def test_tournament_mode(
+    scenario_name: str, genome: np.ndarray, num_games: int = 10
+) -> dict:
     """Test agent in tournament mode (Rust environment).
 
     This ensures train/test consistency - both use the same Rust implementation.
@@ -175,13 +180,13 @@ def main():
     results = {}
 
     # Test original "evolved" agent
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("BASELINE: Testing original 'evolved' agent")
     print("=" * 80)
     results["evolved"] = diagnose_agent(args.scenario, "evolved", args.num_games)
 
     # Test v4 agent
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("V4: Testing 'evolved_v4' agent")
     print("=" * 80)
     results["evolved_v4"] = diagnose_agent(args.scenario, "evolved_v4", args.num_games)

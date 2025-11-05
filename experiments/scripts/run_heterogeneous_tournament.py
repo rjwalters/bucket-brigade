@@ -38,7 +38,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.evolution.fitness_rust import _heuristic_action, _convert_scenario_to_rust
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
 from bucket_brigade.agents.archetypes import (
     FIREFIGHTER_PARAMS,
     FREE_RIDER_PARAMS,
@@ -81,7 +84,9 @@ def load_agent_genome(agent_name: str, scenario: str = None) -> np.ndarray:
             scenario = "chain_reaction"
 
         evolved_dir = agent_name if agent_name == "evolved" else agent_name
-        genome_file = Path(f"experiments/scenarios/{scenario}/{evolved_dir}/best_agent.json")
+        genome_file = Path(
+            f"experiments/scenarios/{scenario}/{evolved_dir}/best_agent.json"
+        )
 
         if not genome_file.exists():
             raise FileNotFoundError(f"No genome found for {agent_name} in {scenario}")
@@ -116,9 +121,7 @@ def load_agent_pool(agent_names: List[str], scenario: str) -> Dict[str, np.ndarr
 
 
 def play_heterogeneous_game(
-    team_genomes: List[np.ndarray],
-    scenario_name: str,
-    seed: int
+    team_genomes: List[np.ndarray], scenario_name: str, seed: int
 ) -> Dict[str, Any]:
     """
     Play a single game with a heterogeneous team.
@@ -207,7 +210,7 @@ def run_heterogeneous_tournament(
     observations = []
 
     if verbose:
-        print(f"Running heterogeneous tournament...")
+        print("Running heterogeneous tournament...")
         print(f"  Agents: {', '.join(agent_names)}")
         print(f"  Scenarios: {', '.join(scenarios)}")
         print(f"  Games: {num_games}")
@@ -234,14 +237,16 @@ def run_heterogeneous_tournament(
         try:
             result = play_heterogeneous_game(team_genomes, scenario, game_idx)
 
-            observations.append({
-                "game_id": game_idx,
-                "scenario": scenario,
-                "team": team_names,  # List of agent names
-                "individual_payoffs": result["agent_rewards"],
-                "team_payoff": result["mean_reward"],
-                "steps": result["steps"],
-            })
+            observations.append(
+                {
+                    "game_id": game_idx,
+                    "scenario": scenario,
+                    "team": team_names,  # List of agent names
+                    "individual_payoffs": result["agent_rewards"],
+                    "team_payoff": result["mean_reward"],
+                    "steps": result["steps"],
+                }
+            )
 
             if verbose and (game_idx + 1) % 100 == 0:
                 print(f"  {game_idx + 1}/{num_games} games completed...")
@@ -327,7 +332,7 @@ def main() -> None:
         args.output = Path(f"experiments/tournaments/tournament_{timestamp}.csv")
 
     # Load initial agent pool (for validation)
-    print(f"Loading agent pool...")
+    print("Loading agent pool...")
     agent_pool = load_agent_pool(args.agents, args.scenarios[0])
 
     if len(agent_pool) == 0:
@@ -335,8 +340,10 @@ def main() -> None:
         return
 
     if len(agent_pool) < args.team_size:
-        print(f"⚠️  Warning: Only {len(agent_pool)} agents available, but team size is {args.team_size}")
-        print(f"    Some games may be skipped.")
+        print(
+            f"⚠️  Warning: Only {len(agent_pool)} agents available, but team size is {args.team_size}"
+        )
+        print("    Some games may be skipped.")
         print()
 
     # Run tournament
@@ -355,7 +362,7 @@ def main() -> None:
 
     if not args.quiet:
         print(f"\n✅ Tournament data saved to: {args.output}")
-        print(f"\nDataset statistics:")
+        print("\nDataset statistics:")
         print(f"  Games: {len(df)}")
 
         if len(df) > 0:
@@ -367,12 +374,16 @@ def main() -> None:
                 for agent in team:
                     agent_counts[agent] = agent_counts.get(agent, 0) + 1
 
-            print(f"\nAgent appearances:")
-            for agent, count in sorted(agent_counts.items(), key=lambda x: x[1], reverse=True):
+            print("\nAgent appearances:")
+            for agent, count in sorted(
+                agent_counts.items(), key=lambda x: x[1], reverse=True
+            ):
                 print(f"  {agent:20s}: {count:4d} games")
 
-            print(f"\nTo fit ranking model:")
-            print(f"  uv run python experiments/scripts/fit_ranking_model.py --data {args.output}")
+            print("\nTo fit ranking model:")
+            print(
+                f"  uv run python experiments/scripts/fit_ranking_model.py --data {args.output}"
+            )
 
 
 if __name__ == "__main__":
