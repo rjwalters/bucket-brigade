@@ -1,29 +1,29 @@
 {
   "scenario": "deceptive_calm",
-  "fitness": 0.05,
-  "generation": 200,
+  "fitness": 0.06,
+  "generation": 1000,
   "genome": [
     1.0,
-    0.48946397519105694,
-    0.2995530515215551,
+    0.4977880818216718,
+    0.16940563489603494,
     0.0,
-    0.9738727713642847,
-    0.6960527274804328,
+    1.0,
+    0.14832228649457116,
     0.0,
     0.0,
     0.0,
-    0.04882757169822353
+    0.0
   ],
   "parameters": {
     "honesty": 1.0,
-    "work_tendency": 0.48946397519105694,
-    "neighbor_help": 0.2995530515215551,
+    "work_tendency": 0.4977880818216718,
+    "neighbor_help": 0.16940563489603494,
     "own_priority": 0.0,
-    "risk_aversion": 0.9738727713642847,
-    "coordination": 0.6960527274804328,
+    "risk_aversion": 1.0,
+    "coordination": 0.14832228649457116,
     "exploration": 0.0,
     "fatigue_memory": 0.0,
     "rest_bias": 0.0,
-    "altruism": 0.04882757169822353
+    "altruism": 0.0
   }
 }

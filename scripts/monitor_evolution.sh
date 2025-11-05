@@ -1,42 +1,72 @@
 #!/bin/bash
-# Monitor evolution experiment progress
+# Monitor evolution progress across all scenarios
 
-REMOTE="rwalters-sandbox-1"
-
-echo "Evolution Experiment Monitor"
-echo "============================"
+echo "Evolution Progress Monitor"
+echo "=========================="
 echo
 
-# Check if tmux session exists
-if ! ssh "$REMOTE" "tmux has-session -t evolution 2>/dev/null"; then
-    echo "❌ No evolution tmux session found on $REMOTE"
-    exit 1
-fi
+SCENARIOS=(
+    "chain_reaction"
+    "deceptive_calm"
+    "early_containment"
+    "greedy_neighbor"
+    "mixed_motivation"
+    "overcrowding"
+    "rest_trap"
+    "sparse_heroics"
+    "trivial_cooperation"
+)
 
-echo "📊 Recent output from evolution session:"
-echo "----------------------------------------"
-ssh "$REMOTE" "tmux capture-pane -t evolution -p | tail -40"
+LOG_DIR="logs/evolution"
+
+# Find latest logs for each scenario
+echo "Latest Runs:"
+echo "------------"
+for scenario in "${SCENARIOS[@]}"; do
+    latest_log=$(ls -t $LOG_DIR/${scenario}_*.log 2>/dev/null | head -1)
+    if [ -n "$latest_log" ]; then
+        # Get last line showing generation progress
+        last_gen=$(grep "Gen " "$latest_log" | tail -1)
+        if [ -n "$last_gen" ]; then
+            echo "$scenario: $last_gen"
+        else
+            echo "$scenario: Starting..."
+        fi
+    else
+        echo "$scenario: No log found"
+    fi
+done
 
 echo
-echo "----------------------------------------"
-echo
+echo "Summary Statistics:"
+echo "-------------------"
 
-# Check active scenarios
-echo "🔥 Active scenario processes:"
-ssh "$REMOTE" "ps aux | grep 'run_evolution.py' | grep -v grep | awk '{print \$2, \$11, \$12, \$13, \$14}'"
+# Aggregate statistics
+total_scenarios=0
+completed_scenarios=0
+
+for scenario in "${SCENARIOS[@]}"; do
+    latest_log=$(ls -t $LOG_DIR/${scenario}_*.log 2>/dev/null | head -1)
+    if [ -n "$latest_log" ]; then
+        ((total_scenarios++))
+
+        # Check if completed
+        if grep -q "Evolution Complete!" "$latest_log"; then
+            ((completed_scenarios++))
+        fi
+    fi
+done
+
+echo "Scenarios running: $total_scenarios"
+echo "Scenarios completed: $completed_scenarios"
 
 echo
-echo "📁 Completed scenarios:"
-ssh "$REMOTE" "ls -1 bucket-brigade/experiments/scenarios/*/evolved/evolution_trace.json 2>/dev/null | wc -l | xargs echo '  scenarios with evolution data:'"
+echo "System Resources:"
+echo "-----------------"
+echo "Load average: $(uptime | awk -F'load average:' '{print $2}')"
 
 echo
-echo "💾 Log files:"
-ssh "$REMOTE" "ls -lth bucket-brigade/logs/evolution/ 2>/dev/null | head -10"
-
-echo
-echo "========================================"
 echo "Commands:"
-echo "  Attach to session:  ssh $REMOTE -t 'tmux attach -t evolution'"
-echo "  Kill session:       ssh $REMOTE 'tmux kill-session -t evolution'"
-echo "  Watch live:         watch -n 10 ./scripts/monitor_evolution.sh"
-echo "========================================"
+echo "  Attach to tmux:  tmux attach -t evolution-master"
+echo "  Kill all:        tmux kill-session -t evolution-master"
+echo "  Watch this:      watch -n 30 ./scripts/monitor_evolution.sh"

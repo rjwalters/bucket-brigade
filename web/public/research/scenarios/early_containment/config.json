@@ -42,59 +42,59 @@
     },
     {
       "question": "How effective was evolutionary optimization?",
-      "finding": "Evolution improved from -2.0 to 1.2 payoff over 201 generations (\u0394 3.2).",
+      "finding": "Evolution improved from -3.0 to 0.2 payoff over 1001 generations (\u0394 3.3).",
       "evidence": [
-        "Initial best fitness: -2.05",
-        "Final best fitness: 1.20",
-        "Total improvement: 3.25",
-        "Generations: 201",
+        "Initial best fitness: -3.02",
+        "Final best fitness: 0.24",
+        "Total improvement: 3.26",
+        "Generations: 1001",
         "Converged: False"
       ],
       "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
     },
     {
       "question": "What does population diversity reveal about the fitness landscape?",
-      "finding": "Population maintained high diversity (0.364), suggesting multiple viable strategies.",
+      "finding": "Population reached moderate diversity (0.289), balancing exploration and exploitation.",
       "evidence": [
-        "Final diversity: 0.364",
-        "Mid-run diversity: 0.314",
-        "Best generation: 200"
+        "Final diversity: 0.289",
+        "Mid-run diversity: 0.252",
+        "Best generation: 1000"
       ],
-      "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+      "implication": "Evolution balanced convergence toward good strategies while maintaining variation for continued adaptation."
     },
     {
       "question": "How much performance is lost at Nash equilibrium?",
-      "finding": "Nash equilibrium (24.3) falls 23.7 points short of optimal play (48.0) - a 98% efficiency loss.",
+      "finding": "Nash equilibrium (24.3) falls 44.5 points short of optimal play (68.8) - a 184% efficiency loss.",
       "evidence": [
         "Nash payoff: 24.27",
-        "Optimal payoff: 47.95",
-        "Gap: 23.68",
-        "Efficiency: 50.6%"
+        "Optimal payoff: 68.80",
+        "Gap: 44.53",
+        "Efficiency: 35.3%"
       ],
       "implication": "Significant coordination failure. Individual rationality produces collectively suboptimal outcomes, indicating need for external coordination mechanisms."
     },
     {
       "question": "Can evolution discover strategies superior to Nash equilibrium?",
-      "finding": "Yes - evolved strategies achieve 46.1 payoff, outperforming Nash equilibrium (24.3) by 21.9 points.",
+      "finding": "Yes - evolved strategies achieve 68.8 payoff, outperforming Nash equilibrium (24.3) by 44.5 points.",
       "evidence": [
-        "Evolved payoff: 46.12",
+        "Evolved payoff: 68.80",
         "Nash payoff: 24.27",
         "honesty: 0.70 (Nash) vs 1.00 (Evolved)",
-        "work_tendency: 0.20 (Nash) vs 0.60 (Evolved)"
+        "work_tendency: 0.20 (Nash) vs 0.67 (Evolved)"
       ],
       "implication": "Evolution can escape suboptimal equilibria by discovering innovative strategies that Nash analysis misses. Natural selection may find solutions that pure rationality cannot."
     },
     {
       "question": "Which agent parameters matter most for success in this scenario?",
-      "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+      "finding": "The parameter 'risk_aversion' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
       "evidence": [
-        "Nash strategy coordination: 0.00",
-        "Best strategy coordination: 1.00",
+        "Nash strategy risk_aversion: 0.00",
+        "Best strategy risk_aversion: 1.00",
         "Difference: 1.00",
-        "Also important: risk_aversion (\u0394 0.80)",
-        "Also important: neighbor_help (\u0394 0.70)"
+        "Also important: own_priority (\u0394 0.88)",
+        "Also important: rest_bias (\u0394 0.57)"
       ],
-      "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+      "implication": "Success in this scenario critically depends on optimizing risk_aversion. Strategies that neglect this parameter face significant performance penalties."
     }
   ],
   "method_insights": {
@@ -115,61 +115,61 @@
     "evolution": [
       {
         "question": "How effective was evolutionary optimization?",
-        "finding": "Evolution improved from -2.0 to 1.2 payoff over 201 generations (\u0394 3.2).",
+        "finding": "Evolution improved from -3.0 to 0.2 payoff over 1001 generations (\u0394 3.3).",
         "evidence": [
-          "Initial best fitness: -2.05",
-          "Final best fitness: 1.20",
-          "Total improvement: 3.25",
-          "Generations: 201",
+          "Initial best fitness: -3.02",
+          "Final best fitness: 0.24",
+          "Total improvement: 3.26",
+          "Generations: 1001",
           "Converged: False"
         ],
         "implication": "Limited improvement suggests either strong initial random strategies or a complex fitness landscape with many local optima."
       },
       {
         "question": "What does population diversity reveal about the fitness landscape?",
-        "finding": "Population maintained high diversity (0.364), suggesting multiple viable strategies.",
+        "finding": "Population reached moderate diversity (0.289), balancing exploration and exploitation.",
         "evidence": [
-          "Final diversity: 0.364",
-          "Mid-run diversity: 0.314",
-          "Best generation: 200"
+          "Final diversity: 0.289",
+          "Mid-run diversity: 0.252",
+          "Best generation: 1000"
         ],
-        "implication": "The fitness landscape has multiple peaks or plateaus where different strategies achieve similar performance."
+        "implication": "Evolution balanced convergence toward good strategies while maintaining variation for continued adaptation."
       }
     ],
     "comparative": [
       {
         "question": "How much performance is lost at Nash equilibrium?",
-        "finding": "Nash equilibrium (24.3) falls 23.7 points short of optimal play (48.0) - a 98% efficiency loss.",
+        "finding": "Nash equilibrium (24.3) falls 44.5 points short of optimal play (68.8) - a 184% efficiency loss.",
         "evidence": [
           "Nash payoff: 24.27",
-          "Optimal payoff: 47.95",
-          "Gap: 23.68",
-          "Efficiency: 50.6%"
+          "Optimal payoff: 68.80",
+          "Gap: 44.53",
+          "Efficiency: 35.3%"
         ],
         "implication": "Significant coordination failure. Individual rationality produces collectively suboptimal outcomes, indicating need for external coordination mechanisms."
       },
       {
         "question": "Can evolution discover strategies superior to Nash equilibrium?",
-        "finding": "Yes - evolved strategies achieve 46.1 payoff, outperforming Nash equilibrium (24.3) by 21.9 points.",
+        "finding": "Yes - evolved strategies achieve 68.8 payoff, outperforming Nash equilibrium (24.3) by 44.5 points.",
         "evidence": [
-          "Evolved payoff: 46.12",
+          "Evolved payoff: 68.80",
           "Nash payoff: 24.27",
           "honesty: 0.70 (Nash) vs 1.00 (Evolved)",
-          "work_tendency: 0.20 (Nash) vs 0.60 (Evolved)"
+          "work_tendency: 0.20 (Nash) vs 0.67 (Evolved)"
         ],
         "implication": "Evolution can escape suboptimal equilibria by discovering innovative strategies that Nash analysis misses. Natural selection may find solutions that pure rationality cannot."
       },
       {
         "question": "Which agent parameters matter most for success in this scenario?",
-        "finding": "The parameter 'coordination' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
+        "finding": "The parameter 'risk_aversion' shows the largest difference between Nash and optimal strategies, suggesting it's critical for performance.",
         "evidence": [
-          "Nash strategy coordination: 0.00",
-          "Best strategy coordination: 1.00",
+          "Nash strategy risk_aversion: 0.00",
+          "Best strategy risk_aversion: 1.00",
           "Difference: 1.00",
-          "Also important: risk_aversion (\u0394 0.80)",
-          "Also important: neighbor_help (\u0394 0.70)"
+          "Also important: own_priority (\u0394 0.88)",
+          "Also important: rest_bias (\u0394 0.57)"
         ],
-        "implication": "Success in this scenario critically depends on optimizing coordination. Strategies that neglect this parameter face significant performance penalties."
+        "implication": "Success in this scenario critically depends on optimizing risk_aversion. Strategies that neglect this parameter face significant performance penalties."
       }
     ]
   }

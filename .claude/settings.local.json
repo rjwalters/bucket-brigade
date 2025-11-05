@@ -121,7 +121,18 @@
       "Bash(./scripts/monitor_evolution.sh:*)",
       "Bash(do echo \"=== $scenario ===\" echo -n \"Evolution fitness: \" cat experiments/scenarios/$scenario/evolved/best_agent.json)",
       "Bash(if [ -f \"experiments/scenarios/$scenario/comparison/results.json\" ])",
-      "Bash(then)"
+      "Bash(then)",
+      "Bash(do echo \"Testing $scenario...\" uv run python experiments/scripts/run_comparison.py $scenario --quick)",
+      "Bash(/tmp/test_all_evolved.sh)",
+      "Bash(/tmp/run_all_comparisons.sh)",
+      "Bash(src=\"experiments/scenarios/$scenario/config.json\")",
+      "Bash(dst=\"web/public/research/scenarios/$scenario/config.json\")",
+      "Bash(if [ -f \"$src\" ])",
+      "Bash(exp_config=\"experiments/scenarios/$scenario/config.json\")",
+      "Bash(web_config=\"web/public/research/scenarios/$scenario/config.json\")",
+      "Bash(__NEW_LINE__ if [ -f \"$exp_config\" ])",
+      "Bash(else)",
+      "Bash(if [ -f \"$web_config\" ])"
     ],
     "deny": [],
     "ask": []
