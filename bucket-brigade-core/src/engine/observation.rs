@@ -28,7 +28,7 @@ impl BucketBrigade {
                 self.scenario.cost_to_work_one_night,
                 self.scenario.prob_house_catches_fire,
                 self.scenario.min_nights as f32,
-                self.scenario.num_agents as f32,
+                self.num_agents as f32,
                 self.scenario.reward_own_house_survives,
                 self.scenario.reward_other_house_survives,
                 self.scenario.penalty_own_house_burns,
@@ -44,7 +44,7 @@ impl BucketBrigade {
         let mut agent_scores =
             self.trajectory
                 .iter()
-                .fold(vec![0.0; self.scenario.num_agents], |mut acc, night| {
+                .fold(vec![0.0; self.num_agents], |mut acc, night| {
                     for (i, &reward) in night.rewards.iter().enumerate() {
                         acc[i] += reward;
                     }

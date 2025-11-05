@@ -14,10 +14,10 @@ pub struct PyBucketBrigade {
 #[pymethods]
 impl PyBucketBrigade {
     #[new]
-    #[pyo3(signature = (scenario, seed=None))]
-    fn new(scenario: PyScenario, seed: Option<u64>) -> Self {
+    #[pyo3(signature = (scenario, num_agents, seed=None))]
+    fn new(scenario: PyScenario, num_agents: usize, seed: Option<u64>) -> Self {
         Self {
-            inner: BucketBrigade::new(scenario.inner, seed),
+            inner: BucketBrigade::new(scenario.inner, num_agents, seed),
         }
     }
 
@@ -78,7 +78,6 @@ impl PyScenario {
         team_penalty_house_burns: f32,
         cost_to_work_one_night: f32,
         min_nights: u32,
-        num_agents: usize,
         reward_own_house_survives: f32,
         reward_other_house_survives: f32,
         penalty_own_house_burns: f32,
@@ -93,7 +92,6 @@ impl PyScenario {
                 team_penalty_house_burns,
                 cost_to_work_one_night,
                 min_nights,
-                num_agents,
                 reward_own_house_survives,
                 reward_other_house_survives,
                 penalty_own_house_burns,
@@ -135,11 +133,6 @@ impl PyScenario {
     #[getter]
     fn min_nights(&self) -> u32 {
         self.inner.min_nights
-    }
-
-    #[getter]
-    fn num_agents(&self) -> usize {
-        self.inner.num_agents
     }
 
     #[getter]
@@ -313,14 +306,14 @@ impl PyGameResult {
 /// # Returns
 /// Vector of cumulative rewards for all agents
 #[pyfunction]
-#[pyo3(signature = (scenario, agent_params, seed))]
+#[pyo3(signature = (scenario, num_agents, agent_params, seed))]
 fn run_heuristic_episode(
     scenario: PyScenario,
+    num_agents: usize,
     agent_params: Vec<Vec<f64>>,
     seed: u64,
 ) -> PyResult<Vec<f64>> {
     // Validate agent count
-    let num_agents = scenario.num_agents();
     if agent_params.len() != num_agents {
         return Err(pyo3::exceptions::PyValueError::new_err(format!(
             "Expected {} agent parameter vectors for scenario, got {}",
@@ -351,7 +344,7 @@ fn run_heuristic_episode(
     }
 
     // Create game
-    let mut game = BucketBrigade::new(scenario.inner, Some(seed));
+    let mut game = BucketBrigade::new(scenario.inner, num_agents, Some(seed));
 
     // Create RNG for heuristic decisions
     let mut rng = Pcg64::seed_from_u64(seed);
@@ -407,22 +400,22 @@ fn run_heuristic_episode(
 /// # Returns
 /// Cumulative reward for the focal agent (agent 0)
 #[pyfunction]
-#[pyo3(signature = (scenario, theta_focal, theta_opponents, seed))]
+#[pyo3(signature = (scenario, num_agents, theta_focal, theta_opponents, seed))]
 fn run_heuristic_episode_focal(
     scenario: PyScenario,
+    num_agents: usize,
     theta_focal: Vec<f64>,
     theta_opponents: Vec<f64>,
     seed: u64,
 ) -> PyResult<f64> {
     // Build agent_params vector: focal agent + N-1 opponent agents
-    let num_agents = scenario.num_agents();
     let mut agent_params = vec![theta_focal];
     for _ in 1..num_agents {
         agent_params.push(theta_opponents.clone());
     }
 
     // Call the generalized function
-    let rewards = run_heuristic_episode(scenario, agent_params, seed)?;
+    let rewards = run_heuristic_episode(scenario, num_agents, agent_params, seed)?;
 
     // Return only focal agent reward
     Ok(rewards[0])

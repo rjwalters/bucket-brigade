@@ -34,7 +34,7 @@ class TestRustCoreIntegration:
         rust_scenario = SCENARIOS[scenario_name]
 
         # Create environments
-        rust_env = BucketBrigade(rust_scenario, seed=42)
+        rust_env = BucketBrigade(rust_scenario, 4, seed=42)
         python_env = BucketBrigadeEnv(num_agents=4, seed=42)
 
         # Run same sequence of actions
@@ -88,7 +88,7 @@ class TestRustCoreIntegration:
         import time
 
         scenario = SCENARIOS["trivial_cooperation"]
-        env = BucketBrigade(scenario, seed=42)
+        env = BucketBrigade(scenario, 4, seed=42)
 
         # Benchmark: run many steps
         num_steps = 1000
@@ -126,7 +126,7 @@ class TestRustCoreIntegration:
         results2 = []
 
         for run in [1, 2]:
-            env = BucketBrigade(scenario, seed=12345)
+            env = BucketBrigade(scenario, 4, seed=12345)
             run_results = []
 
             for _ in range(10):

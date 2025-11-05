@@ -24,7 +24,7 @@ impl BucketBrigade {
 
     pub(super) fn compute_final_rewards(&self) -> Vec<f32> {
         // Compute final rewards based on house outcomes at game end
-        let mut rewards = vec![0.0; self.scenario.num_agents];
+        let mut rewards = vec![0.0; self.num_agents];
 
         // Compute collective team reward (public goods component)
         let saved_houses = self.houses.iter().filter(|&&h| h == 0).count() as f32;
@@ -35,7 +35,7 @@ impl BucketBrigade {
         for (agent_idx, reward) in rewards
             .iter_mut()
             .enumerate()
-            .take(self.scenario.num_agents)
+            .take(self.num_agents)
         {
             // Each agent receives full team reward (public goods incentive)
             *reward += team_reward;

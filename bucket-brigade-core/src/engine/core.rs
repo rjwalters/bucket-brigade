@@ -14,21 +14,23 @@ pub struct BucketBrigade {
     pub(super) rewards: Vec<f32>,
     pub(super) rng: DeterministicRng,
     pub scenario: Scenario,
+    pub num_agents: usize,
     pub(super) trajectory: Vec<GameNight>,
 }
 
 impl BucketBrigade {
-    pub fn new(scenario: Scenario, seed: Option<u64>) -> Self {
+    pub fn new(scenario: Scenario, num_agents: usize, seed: Option<u64>) -> Self {
         let mut engine = Self {
             houses: vec![0; 10],
-            agent_positions: vec![0; scenario.num_agents],
-            agent_signals: vec![0; scenario.num_agents],
-            last_actions: vec![[0, 0]; scenario.num_agents],
+            agent_positions: vec![0; num_agents],
+            agent_signals: vec![0; num_agents],
+            last_actions: vec![[0, 0]; num_agents],
             night: 0,
             done: false,
-            rewards: vec![0.0; scenario.num_agents],
+            rewards: vec![0.0; num_agents],
             rng: DeterministicRng::new(seed),
             scenario,
+            num_agents,
             trajectory: Vec::new(),
         };
         engine.reset();
@@ -37,12 +39,12 @@ impl BucketBrigade {
 
     pub fn reset(&mut self) {
         self.houses = vec![0; 10];
-        self.agent_positions = vec![0; self.scenario.num_agents];
-        self.agent_signals = vec![0; self.scenario.num_agents];
-        self.last_actions = vec![[0, 0]; self.scenario.num_agents];
+        self.agent_positions = vec![0; self.num_agents];
+        self.agent_signals = vec![0; self.num_agents];
+        self.last_actions = vec![[0, 0]; self.num_agents];
         self.night = 0;
         self.done = false;
-        self.rewards = vec![0.0; self.scenario.num_agents];
+        self.rewards = vec![0.0; self.num_agents];
         self.trajectory = Vec::new();
 
         // Initialize fires - probabilistic per-house
