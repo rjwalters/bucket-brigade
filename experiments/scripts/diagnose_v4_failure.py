@@ -16,33 +16,61 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.agents.heuristic_agent import HeuristicAgent
 from bucket_brigade.evolution import FitnessEvaluator, Individual
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
+import bucket_brigade_core as core
 
 
 def test_tournament_mode(
     scenario_name: str, genome: np.ndarray, num_games: int = 10
 ) -> dict:
-    """Test agent in tournament mode (Python environment)."""
-    scenario = get_scenario_by_name(scenario_name, num_agents=4)
-    agents = [
-        HeuristicAgent(params=genome, agent_id=i, name=f"agent-{i}") for i in range(4)
-    ]
+    """Test agent in tournament mode (Rust environment).
+
+    This ensures train/test consistency - both use the same Rust implementation.
+    """
+    # Get scenario and convert to Rust
+    python_scenario = get_scenario_by_name(scenario_name, num_agents=4)
+    rust_scenario = _convert_scenario_to_rust(python_scenario)
+    num_agents = python_scenario.num_agents
 
     payoffs = []
     for game_idx in range(num_games):
-        env = BucketBrigadeEnv(scenario)
-        obs = env.reset(seed=game_idx)
+        # Create Rust game
+        game = core.BucketBrigade(rust_scenario, seed=game_idx)
 
-        total_rewards = np.zeros(4)
-        while not env.done:
-            actions = np.array([agent.act(obs) for agent in agents])
-            obs, rewards, dones, info = env.step(actions)
-            total_rewards += rewards
+        # Python RNG for heuristic decisions
+        rng = np.random.RandomState(game_idx)
 
-        payoffs.append(float(np.mean(total_rewards)))
+        # Run until done
+        done = False
+        step_count = 0
+        max_steps = 100
+
+        while not done and step_count < max_steps:
+            # Get actions for all 4 agents using same genome
+            actions = []
+            for agent_id in range(num_agents):
+                obs = game.get_observation(agent_id)
+                obs_dict = {
+                    "houses": obs.houses,
+                    "signals": obs.signals,
+                    "locations": obs.locations,
+                }
+                action = _heuristic_action(genome, obs_dict, agent_id, rng)
+                actions.append(action)
+
+            # Step the game
+            rewards, done, info = game.step(actions)
+            step_count += 1
+
+        # Get final result
+        result = game.get_result()
+        # Use mean of agent scores for consistency with training
+        payoffs.append(result.final_score / num_agents)
 
     return {
         "mean": float(np.mean(payoffs)),
@@ -111,7 +139,7 @@ def diagnose_agent(scenario_name: str, version: str, num_games: int = 20):
     print()
 
     # Test in tournament mode
-    print("Testing in TOURNAMENT mode (Python environment)...")
+    print("Testing in TOURNAMENT mode (Rust environment)...")
     tournament_result = test_tournament_mode(scenario_name, genome, num_games)
     print(
         f"  Mean payoff: {tournament_result['mean']:.2f} ± {tournament_result['std']:.2f}"
@@ -151,13 +179,13 @@ def main():
 
     results = {}
 
-    # Test original "evolved" agent (known to work well)
+    # Test original "evolved" agent
     print("\n" + "=" * 80)
     print("BASELINE: Testing original 'evolved' agent")
     print("=" * 80)
     results["evolved"] = diagnose_agent(args.scenario, "evolved", args.num_games)
 
-    # Test v4 agent (broken)
+    # Test v4 agent
     print("\n" + "=" * 80)
     print("V4: Testing 'evolved_v4' agent")
     print("=" * 80)
@@ -193,17 +221,16 @@ def main():
             print("Possible causes:")
             print("  1. Fix not actually applied during v4 training")
             print("  2. Different bug introduced in v4")
-            print("  3. Rust/Python environment mismatch for v4 agents")
+            print("  3. Training and tournament using different configurations")
         elif not evolved_match and not v4_match:
             print("❌ BOTH agents show train/test mismatch")
             print()
-            print("This suggests a systematic difference between:")
-            print("  - Rust evaluator (training)")
-            print("  - Python environment (tournament)")
+            print("This suggests a systematic difference in configuration between")
+            print("training and tournament evaluation.")
         elif evolved_match and v4_match:
             print("✅ BOTH agents match training and tournament")
             print()
-            print("The environments are consistent!")
+            print("The environments are consistent (both use Rust)!")
             print("V4 failure must be due to poor evolution, not evaluation bug.")
         else:
             print("⚠️  Unexpected pattern - evolved mismatch but v4 match")

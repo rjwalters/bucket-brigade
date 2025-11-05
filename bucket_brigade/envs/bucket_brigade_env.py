@@ -259,8 +259,8 @@ class BucketBrigadeEnv:
             owned_ruined = np.sum(self.houses[owned_houses] == self.RUINED)
             individual_rewards[agent_idx] -= 2.0 * owned_ruined
 
-            # Team reward component (gamma = 0.1)
-            individual_rewards[agent_idx] += 0.1 * team_reward
+            # Team reward component (full public goods incentive)
+            individual_rewards[agent_idx] += team_reward
 
         return individual_rewards
 

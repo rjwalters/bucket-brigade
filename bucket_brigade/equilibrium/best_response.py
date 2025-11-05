@@ -9,7 +9,9 @@ import numpy as np
 from scipy.optimize import minimize, differential_evolution
 from typing import Optional
 from bucket_brigade.envs.scenarios import Scenario
-from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator as PayoffEvaluator
+from bucket_brigade.equilibrium.payoff_evaluator_rust import (
+    RustPayoffEvaluator as PayoffEvaluator,
+)
 
 
 def compute_best_response(

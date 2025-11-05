@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Test if Rust and Python environments produce identical results for the same agent."""
+"""Test Rust environment consistency for the same agent.
+
+This script now tests only Rust implementation to verify consistency across runs.
+Python environment is deprecated - Rust is the single source of truth.
+"""
 
 import sys
 import json
@@ -8,45 +12,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.agents.heuristic_agent import HeuristicAgent
-from bucket_brigade.evolution.fitness_rust import _heuristic_action
-from bucket_brigade_core import BucketBrigadeGame
-
-
-def test_python_env(scenario_name: str, genome: np.ndarray, seed: int = 42) -> float:
-    """Run agent in Python environment."""
-    scenario = get_scenario_by_name(scenario_name, num_agents=4)
-    agents = [
-        HeuristicAgent(params=genome, agent_id=i, name=f"agent-{i}") for i in range(4)
-    ]
-
-    env = BucketBrigadeEnv(scenario)
-    obs = env.reset(seed=seed)
-
-    total_rewards = np.zeros(4)
-    while not env.done:
-        actions = np.array([agent.act(obs) for agent in agents])
-        obs, rewards, dones, info = env.step(actions)
-        total_rewards += rewards
-
-    return float(np.mean(total_rewards))
+from bucket_brigade.evolution.fitness_rust import (
+    _heuristic_action,
+    _convert_scenario_to_rust,
+)
+import bucket_brigade_core as core
 
 
 def test_rust_env(scenario_name: str, genome: np.ndarray, seed: int = 42) -> float:
-    """Run agent in Rust environment (via evaluator)."""
-    from bucket_brigade.envs.scenarios.definitions import SCENARIOS
-
+    """Run agent in Rust environment."""
     python_scenario = get_scenario_by_name(scenario_name, num_agents=4)
-
-    # Create Rust game
-    game = BucketBrigadeGame(SCENARIOS[scenario_name], seed)
-
-    # Run game with all 4 agents using same genome
-    rng = np.random.default_rng(seed)
+    rust_scenario = _convert_scenario_to_rust(python_scenario)
     num_agents = python_scenario.num_agents
 
+    # Create Rust game
+    game = core.BucketBrigade(rust_scenario, seed=seed)
+
+    # Python RNG for heuristic decisions
+    rng = np.random.RandomState(seed)
+
+    # Run game with all 4 agents using same genome
     done = False
     step_count = 0
     max_steps = 100
@@ -67,7 +53,7 @@ def test_rust_env(scenario_name: str, genome: np.ndarray, seed: int = 42) -> flo
         step_count += 1
 
     result = game.get_result()
-    # Convert sum to mean for comparison with Python
+    # Return mean for consistency
     return result.final_score / num_agents
 
 
@@ -92,50 +78,47 @@ def main():
         agent_data = json.load(f)
         genome = np.array(list(agent_data["parameters"].values()))
 
-    print("Testing Rust vs Python environment parity")
+    print("Testing Rust environment consistency")
     print(f"Scenario: {scenario_name}")
     print(f"Agent: {version}")
     print()
 
-    # Run 5 games with different seeds
+    # Run 5 games with different seeds, twice each to verify determinism
     seeds = [42, 123, 456, 789, 1024]
-    python_results = []
-    rust_results = []
+    first_run = []
+    second_run = []
 
     for i, seed in enumerate(seeds, 1):
         print(f"Game {i}/5 (seed={seed})...", end=" ")
 
-        py_score = test_python_env(scenario_name, genome, seed)
-        rust_score = test_rust_env(scenario_name, genome, seed)
+        # Run twice with same seed to verify determinism
+        score1 = test_rust_env(scenario_name, genome, seed)
+        score2 = test_rust_env(scenario_name, genome, seed)
 
-        python_results.append(py_score)
-        rust_results.append(rust_score)
+        first_run.append(score1)
+        second_run.append(score2)
 
-        diff = abs(py_score - rust_score)
+        diff = abs(score1 - score2)
         match = "✓" if diff < 0.01 else "✗"
-        print(
-            f"Python: {py_score:7.2f}, Rust: {rust_score:7.2f}, Diff: {diff:7.2f} {match}"
-        )
+        print(f"Run 1: {score1:7.2f}, Run 2: {score2:7.2f}, Diff: {diff:7.2f} {match}")
 
     print()
     print("Summary:")
+    print(f"  Run 1 mean: {np.mean(first_run):.2f} ± {np.std(first_run):.2f}")
+    print(f"  Run 2 mean: {np.mean(second_run):.2f} ± {np.std(second_run):.2f}")
     print(
-        f"  Python mean: {np.mean(python_results):.2f} ± {np.std(python_results):.2f}"
-    )
-    print(f"  Rust mean:   {np.mean(rust_results):.2f} ± {np.std(rust_results):.2f}")
-    print(
-        f"  Mean diff:   {np.mean([abs(p - r) for p, r in zip(python_results, rust_results)]):.2f}"
+        f"  Mean diff:  {np.mean([abs(r1 - r2) for r1, r2 in zip(first_run, second_run)]):.2f}"
     )
     print()
 
-    # Determine if environments match
-    mean_diff = np.mean([abs(p - r) for p, r in zip(python_results, rust_results)])
-    if mean_diff < 0.1:
-        print("✅ PASS: Rust and Python environments produce identical results")
+    # Determine if Rust is deterministic
+    mean_diff = np.mean([abs(r1 - r2) for r1, r2 in zip(first_run, second_run)])
+    if mean_diff < 0.01:
+        print("✅ PASS: Rust environment is deterministic (same seed → same result)")
         return 0
     else:
-        print("❌ FAIL: Rust and Python environments produce DIFFERENT results")
-        print("   This explains why training and tournament metrics don't match!")
+        print("❌ FAIL: Rust environment is non-deterministic")
+        print("   This indicates a bug in the Rust implementation!")
         return 1
 
 

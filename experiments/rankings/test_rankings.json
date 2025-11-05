@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "num_games": 100,
+    "num_scenarios": 2,
+    "scenarios": [
+      "chain_reaction",
+      "greedy_neighbor"
+    ],
+    "alpha": 1.0
+  },
+  "aggregate": {
+    "free_rider": {
+      "theta": 10.433799094192572,
+      "std_error": 3.5773208476665577,
+      "ci_lower": 3.4222502327661193,
+      "ci_upper": 17.445347955619027,
+      "num_games": 61,
+      "rank": 1
+    },
+    "liar": {
+      "theta": 1.221259666937205,
+      "std_error": 3.67377487117798,
+      "ci_lower": -5.979339080571635,
+      "ci_upper": 8.421858414446046,
+      "num_games": 62,
+      "rank": 2
+    },
+    "coordinator": {
+      "theta": -0.5346726576967025,
+      "std_error": 3.648508455164429,
+      "ci_lower": -7.685749229818983,
+      "ci_upper": 6.616403914425579,
+      "num_games": 60,
+      "rank": 3
+    },
+    "firefighter": {
+      "theta": -8.768799385803916,
+      "std_error": 3.6628126600160114,
+      "ci_lower": -15.947912199435297,
+      "ci_upper": -1.5896865721725346,
+      "num_games": 62,
+      "rank": 4
+    },
+    "hero": {
+      "theta": -12.441500153940577,
+      "std_error": 3.6976085788713617,
+      "ci_lower": -19.688812968528445,
+      "ci_upper": -5.194187339352708,
+      "num_games": 53,
+      "rank": 5
+    }
+  },
+  "by_scenario": {
+    "chain_reaction": {
+      "free_rider": {
+        "theta": 9.282518696695952,
+        "std_error": 3.0177502270394942,
+        "ci_lower": 3.3677282516985434,
+        "ci_upper": 15.19730914169336,
+        "num_games": 32,
+        "rank": 1
+      },
+      "coordinator": {
+        "theta": -0.19045197820118512,
+        "std_error": 3.217171006588939,
+        "ci_lower": -6.496107151115506,
+        "ci_upper": 6.115203194713136,
+        "num_games": 33,
+        "rank": 2
+      },
+      "liar": {
+        "theta": -1.7167375062851067,
+        "std_error": 3.214305040508307,
+        "ci_lower": -8.016775385681388,
+        "ci_upper": 4.583300373111175,
+        "num_games": 30,
+        "rank": 3
+      },
+      "firefighter": {
+        "theta": -7.8505203328112545,
+        "std_error": 3.187724538417712,
+        "ci_lower": -14.09846042810997,
+        "ci_upper": -1.602580237512539,
+        "num_games": 36,
+        "rank": 4
+      },
+      "hero": {
+        "theta": -8.993168969187593,
+        "std_error": 3.2946318454225887,
+        "ci_lower": -15.450647386215866,
+        "ci_upper": -2.53569055215932,
+        "num_games": 25,
+        "rank": 5
+      }
+    },
+    "greedy_neighbor": {
+      "free_rider": {
+        "theta": 9.589397729794477,
+        "std_error": 4.6956533310875805,
+        "ci_lower": 0.3859172008628189,
+        "ci_upper": 18.792878258726134,
+        "num_games": 29,
+        "rank": 1
+      },
+      "liar": {
+        "theta": 1.7362457918539875,
+        "std_error": 4.5482407301105825,
+        "ci_lower": -7.178306039162754,
+        "ci_upper": 10.650797622870728,
+        "num_games": 32,
+        "rank": 2
+      },
+      "coordinator": {
+        "theta": -4.131788081463833,
+        "std_error": 4.525644325002633,
+        "ci_lower": -13.002050958468994,
+        "ci_upper": 4.738474795541327,
+        "num_games": 27,
+        "rank": 3
+      },
+      "firefighter": {
+        "theta": -13.360726278270029,
+        "std_error": 4.747261270491615,
+        "ci_lower": -22.665358368433594,
+        "ci_upper": -4.056094188106464,
+        "num_games": 26,
+        "rank": 4
+      },
+      "hero": {
+        "theta": -18.396917516897062,
+        "std_error": 4.526007911686232,
+        "ci_lower": -27.267893023802078,
+        "ci_upper": -9.525942009992047,
+        "num_games": 28,
+        "rank": 5
+      }
+    }
+  }
+}
