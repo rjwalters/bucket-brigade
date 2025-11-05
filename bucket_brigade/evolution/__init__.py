@@ -3,15 +3,23 @@
 This module provides genetic algorithms for evolving agent parameters
 through tournament-based fitness evaluation.
 
-Uses Rust-backed fitness evaluation for 100x speedup when available.
-Falls back to Python implementation if Rust module not built.
+Requires Rust-backed fitness evaluation for acceptable performance.
+Build the Rust module with: maturin develop
 """
 
-# Try to import Rust fitness evaluator, fall back to Python if not available
 try:
     from .fitness_rust import RustFitnessEvaluator as FitnessEvaluator
-except (ImportError, ModuleNotFoundError):
-    from .fitness_python import PythonFitnessEvaluator as FitnessEvaluator
+except (ImportError, ModuleNotFoundError) as e:
+    raise ImportError(
+        "Rust fitness evaluator required but not found. "
+        "The Python fallback is too slow for practical use (100x slower). "
+        "Please build the Rust module:\n\n"
+        "  export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1\n"
+        "  maturin develop\n\n"
+        "Or if using uv:\n"
+        "  export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1\n"
+        "  uv run maturin develop\n"
+    ) from e
 
 from .genetic_algorithm import EvolutionConfig, EvolutionResult, GeneticAlgorithm
 from .operators import (
