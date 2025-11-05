@@ -7,7 +7,9 @@ import {
   type BestAgent,
   type ComparisonResults,
   type NashResults,
+  type AgentParameters,
 } from '../types/research';
+import { AgentRadarChart } from '../components/AgentRadarChart';
 
 interface ScenarioData {
   config: any;
@@ -20,16 +22,32 @@ interface ScenarioData {
   comparison?: ComparisonResults;
 }
 
+// Convert genome array to AgentParameters object
+function genomeToParams(genome: number[]): AgentParameters {
+  return {
+    honesty: genome[0],
+    work_tendency: genome[1],
+    neighbor_help: genome[2],
+    own_priority: genome[3],
+    risk_aversion: genome[4],
+    coordination: genome[5],
+    exploration: genome[6],
+    fatigue_memory: genome[7],
+    rest_bias: genome[8],
+    altruism: genome[9],
+  };
+}
+
 export default function ScenarioResearch() {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioName>('greedy_neighbor');
-  const [activeTab, setActiveTab] = useState<'nash' | 'evolution' | 'heuristics'>('evolution');
+  // Removed tab state - now showing all sections stacked vertically
   const [data, setData] = useState<ScenarioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadScenarioData(selectedScenario);
-  }, [selectedScenario, activeTab]);
+  }, [selectedScenario]);
 
   const loadScenarioData = async (scenario: ScenarioName) => {
     setLoading(true);
@@ -39,25 +57,15 @@ export default function ScenarioResearch() {
       const basePath = import.meta.env.BASE_URL || '/';
       const scenarioPath = `${basePath}research/scenarios/${scenario}`;
 
-      // Load config first
-      const config = await fetch(`${scenarioPath}/config.json`).then(r => r.ok ? r.json() : null);
-
-      // Load data based on active tab
-      let nash, heuristics, evolutionTrace, evolutionBest, comparison;
-
-      if (activeTab === 'nash') {
-        nash = await fetch(`${scenarioPath}/nash/equilibrium.json`).then(r => r.ok ? r.json() : null);
-      } else if (activeTab === 'evolution') {
-        [evolutionTrace, evolutionBest] = await Promise.all([
-          fetch(`${scenarioPath}/evolved/evolution_trace.json`).then(r => r.ok ? r.json() : null),
-          fetch(`${scenarioPath}/evolved/best_agent.json`).then(r => r.ok ? r.json() : null),
-        ]);
-      } else if (activeTab === 'heuristics') {
-        [heuristics, comparison] = await Promise.all([
-          fetch(`${scenarioPath}/heuristics/results.json`).then(r => r.ok ? r.json() : null),
-          fetch(`${scenarioPath}/comparison/comparison.json`).then(r => r.ok ? r.json() : null),
-        ]);
-      }
+      // Load all data in parallel
+      const [config, nash, heuristics, evolutionTrace, evolutionBest, comparison] = await Promise.all([
+        fetch(`${scenarioPath}/config.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${scenarioPath}/nash/equilibrium.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${scenarioPath}/heuristics/results.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${scenarioPath}/evolved/evolution_trace.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${scenarioPath}/evolved/best_agent.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${scenarioPath}/comparison/comparison.json`).then(r => r.ok ? r.json() : null),
+      ]);
 
       setData({
         config,
@@ -93,12 +101,6 @@ export default function ScenarioResearch() {
     );
   }
 
-  const tabs = [
-  { id: 'nash', label: 'Nash Equilibrium', icon: '🎯' },
-  { id: 'evolution', label: 'Evolution', icon: '🧬' },
-    { id: 'heuristics', label: 'Heuristics', icon: '🧠' },
-  ] as const;
-
   return (
   <div className="container mx-auto px-4 py-8">
   <h1 className="text-4xl font-bold mb-8 text-content-primary">Scenario Research</h1>
@@ -117,26 +119,6 @@ export default function ScenarioResearch() {
             </option>
           ))}
         </select>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="mb-8">
-        <nav className="flex space-x-1 bg-surface-tertiary p-1 rounded-lg">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-surface-secondary text-content-primary shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary'
-              }`}
-            >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
       </div>
 
       {/* Scenario Overview */}
@@ -170,6 +152,32 @@ export default function ScenarioResearch() {
       {data.comparison && (
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4 text-content-primary">Strategy Comparison</h2>
+
+          {/* Agent Profiles - Radar Charts */}
+          <div className="mb-6 bg-surface-secondary p-6 rounded-lg shadow border border-outline-primary">
+            <h3 className="text-xl font-semibold mb-4 text-content-primary">Strategy Profiles</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {data.comparison.ranking.map((result, idx) => {
+                const strategyGenome = data.comparison!.strategies[result.name];
+                const params = genomeToParams(strategyGenome);
+                return (
+                  <div key={result.name} className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="text-xl font-bold text-content-tertiary">#{idx + 1}</div>
+                      <h4 className="text-lg font-semibold capitalize text-content-primary">
+                        {result.name.replace(/_/g, ' ')}
+                      </h4>
+                    </div>
+                    <div className="text-sm text-content-secondary mb-2">
+                      Avg: {result.mean_payoff.toFixed(2)} ± {result.std_payoff.toFixed(2)}
+                    </div>
+                    <AgentRadarChart params={params} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="bg-surface-secondary p-6 rounded-lg shadow border border-outline-primary">
             <h3 className="text-xl font-semibold mb-4 text-content-primary">Tournament Results</h3>
             <div className="space-y-4">
