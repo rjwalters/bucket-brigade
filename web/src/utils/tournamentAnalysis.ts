@@ -15,6 +15,13 @@ export interface AgentRanking {
   scenarioTypes: Record<string, { count: number; avgScore: number }>;
 }
 
+export interface BayesianAgentRanking extends AgentRanking {
+  skillEstimate: number;
+  skillUncertainty: number;
+  marginalValue: number;
+  confidenceInterval: [number, number];
+}
+
 export interface TournamentStats {
   totalGames: number;
   totalAgents: number;
@@ -206,4 +213,32 @@ export function getRecentActivity(limit = 10): Array<{
     }))
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit);
+}
+
+/**
+ * Export tournament data in CSV format for Bayesian ranking analysis
+ */
+export function exportTournamentDataForAnalysis(): string {
+  const tournaments = loadTournaments();
+  const csvRows: string[] = [];
+
+  // CSV header
+  csvRows.push('episode_id,scenario_id,team,team_reward,agent_rewards,nights_played,replay_path');
+
+  // Convert each tournament scenario to CSV rows
+  Object.entries(tournaments).forEach(([tournamentId, tournament]) => {
+    tournament.scenarios.forEach((scenario, scenarioIndex) => {
+      const episodeId = `${tournamentId}_${scenarioIndex}`;
+      const scenarioId = scenario.scenarioId || scenarioIndex.toString();
+      const team = JSON.stringify(scenario.team || []);
+      const teamReward = scenario.teamScore || 0;
+      const agentRewards = JSON.stringify(scenario.agentScores || []);
+      const nightsPlayed = scenario.nightsPlayed || 0;
+      const replayPath = `replays/${episodeId}.json`;
+
+      csvRows.push(`${episodeId},${scenarioId},${team},${teamReward},${agentRewards},${nightsPlayed},${replayPath}`);
+    });
+  });
+
+  return csvRows.join('\n');
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Trophy, Play, Pause, RotateCcw, TrendingUp, Users, Clock, Target, Activity } from 'lucide-react';
 import { createTournamentEngine } from '../utils/tournamentEngine';
 import { getAllTeams, loadTeams, loadTournaments, saveTournaments, saveTournamentResult } from '../utils/teamBuilderStorage';
-import { calculateAgentRankings, getTournamentSummary, getRecentActivity } from '../utils/tournamentAnalysis';
+import { calculateAgentRankings, getTournamentSummary, getRecentActivity, exportTournamentDataForAnalysis } from '../utils/tournamentAnalysis';
 import { getAllArchetypes } from '../utils/agentArchetypes';
 
 export default function Tournament() {
@@ -167,6 +167,29 @@ export default function Tournament() {
     loadExistingData();
   };
 
+  const exportForAnalysis = () => {
+    console.log('📊 Exporting tournament data for Bayesian analysis...');
+
+    try {
+      const csvData = exportTournamentDataForAnalysis();
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bucket-brigade-tournament-data-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log('✅ Tournament data exported successfully');
+      console.log('💡 To run Bayesian analysis:');
+      console.log('   uv run python scripts/analyze_rankings.py --results-dir /path/to/exported/data');
+    } catch (error) {
+      console.error('❌ Failed to export tournament data:', error);
+    }
+  };
+
   const getRankIcon = (rank: number) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
@@ -214,6 +237,16 @@ export default function Tournament() {
               Stop Tournament
             </button>
           )}
+
+          <button
+            onClick={exportForAnalysis}
+            disabled={totalGames === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+            title="Export data for advanced Bayesian ranking analysis"
+          >
+            <TrendingUp className="w-4 h-4" />
+            Export for Analysis
+          </button>
 
           <button
             onClick={resetRankings}
@@ -421,6 +454,10 @@ export default function Tournament() {
           <p>
             <strong>Continuous Tournaments:</strong> Background tournaments run automatically, testing agents in
             mixed teams across diverse scenarios to ensure robust rankings.
+          </p>
+          <p>
+            <strong>Advanced Analysis:</strong> Export tournament data for Bayesian statistical modeling that provides
+            uncertainty estimates and more accurate skill rankings. Use the "Export for Analysis" button above.
           </p>
           <p>
             <strong>Scenario Diversity:</strong> Agents are evaluated across all 9 scenario types (cooperation,
