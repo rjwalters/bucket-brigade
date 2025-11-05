@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+"""
+Diagnose why v4 training fitness doesn't match tournament performance.
+
+This script will:
+1. Test the original "evolved" agent in both training and tournament modes
+2. Test the v4 agent in both modes
+3. Compare the results to identify where the discrepancy occurs
+"""
+
+import sys
+import json
+import argparse
+import numpy as np
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from bucket_brigade.envs import BucketBrigadeEnv
+from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.agents.heuristic_agent import HeuristicAgent
+from bucket_brigade.evolution import FitnessEvaluator
+
+
+def test_tournament_mode(scenario_name: str, genome: np.ndarray, num_games: int = 10) -> dict:
+    """Test agent in tournament mode (Python environment)."""
+    scenario = get_scenario_by_name(scenario_name, num_agents=4)
+    agents = [HeuristicAgent(params=genome, agent_id=i, name=f"agent-{i}") for i in range(4)]
+
+    payoffs = []
+    for game_idx in range(num_games):
+        env = BucketBrigadeEnv(scenario)
+        obs = env.reset(seed=game_idx)
+
+        total_rewards = np.zeros(4)
+        while not env.done:
+            actions = np.array([agent.act(obs) for agent in agents])
+            obs, rewards, dones, info = env.step(actions)
+            total_rewards += rewards
+
+        payoffs.append(float(np.mean(total_rewards)))
+
+    return {
+        "mean": float(np.mean(payoffs)),
+        "std": float(np.std(payoffs)),
+        "min": float(np.min(payoffs)),
+        "max": float(np.max(payoffs)),
+        "raw_payoffs": payoffs,
+    }
+
+
+def test_training_mode(scenario_name: str, genome: np.ndarray, num_games: int = 10) -> dict:
+    """Test agent in training mode (Rust evaluator)."""
+    scenario = get_scenario_by_name(scenario_name, num_agents=4)
+
+    evaluator = FitnessEvaluator(
+        scenario=scenario,
+        games_per_individual=num_games,
+        seed=42,
+        parallel=False,  # Disable parallel for easier debugging
+    )
+
+    # Evaluate single genome
+    fitness = evaluator.evaluate([genome])[0]
+
+    # Note: fitness is sum of agent scores, not mean
+    # To compare with tournament, divide by 4
+    return {
+        "fitness_sum": float(fitness),
+        "fitness_mean": float(fitness / 4.0),
+        "note": "Training uses sum(agent_scores), tournament uses mean(agent_scores)",
+    }
+
+
+def diagnose_agent(scenario_name: str, version: str, num_games: int = 20):
+    """Full diagnostic for one agent."""
+    print(f"\n{'='*80}")
+    print(f"Diagnosing: {scenario_name} / {version}")
+    print(f"{'='*80}\n")
+
+    # Load agent
+    agent_file = Path(f"experiments/scenarios/{scenario_name}/{version}/best_agent.json")
+    if not agent_file.exists():
+        print(f"❌ Agent file not found: {agent_file}")
+        return None
+
+    with open(agent_file) as f:
+        agent_data = json.load(f)
+        genome = np.array(list(agent_data["parameters"].values()))
+        stored_fitness = agent_data.get("fitness", "N/A")
+
+    print(f"Agent parameters:")
+    for param, value in agent_data["parameters"].items():
+        print(f"  {param:20s}: {value:.4f}")
+    print()
+
+    # Test in training mode
+    print("Testing in TRAINING mode (Rust evaluator)...")
+    training_result = test_training_mode(scenario_name, genome, num_games)
+    print(f"  Fitness (sum):  {training_result['fitness_sum']:.2f}")
+    print(f"  Fitness (mean): {training_result['fitness_mean']:.2f}")
+    print(f"  Stored fitness: {stored_fitness}")
+    print()
+
+    # Test in tournament mode
+    print("Testing in TOURNAMENT mode (Python environment)...")
+    tournament_result = test_tournament_mode(scenario_name, genome, num_games)
+    print(f"  Mean payoff: {tournament_result['mean']:.2f} ± {tournament_result['std']:.2f}")
+    print(f"  Range: [{tournament_result['min']:.2f}, {tournament_result['max']:.2f}]")
+    print()
+
+    # Compare
+    diff = abs(training_result['fitness_mean'] - tournament_result['mean'])
+    print(f"COMPARISON:")
+    print(f"  Training (mean):   {training_result['fitness_mean']:8.2f}")
+    print(f"  Tournament (mean): {tournament_result['mean']:8.2f}")
+    print(f"  Difference:        {diff:8.2f}")
+
+    if diff < 1.0:
+        print(f"  ✅ MATCH - Environments produce similar results")
+    else:
+        print(f"  ❌ MISMATCH - {diff:.1f} point discrepancy!")
+        print(f"     This indicates training and tournament use different logic!")
+
+    return {
+        "version": version,
+        "training": training_result,
+        "tournament": tournament_result,
+        "difference": diff,
+        "parameters": agent_data["parameters"],
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Diagnose v4 training/tournament mismatch")
+    parser.add_argument("scenario", help="Scenario name (e.g., chain_reaction)")
+    parser.add_argument("--num-games", type=int, default=20, help="Games per test")
+    args = parser.parse_args()
+
+    results = {}
+
+    # Test original "evolved" agent (known to work well)
+    print("\n" + "="*80)
+    print("BASELINE: Testing original 'evolved' agent")
+    print("="*80)
+    results["evolved"] = diagnose_agent(args.scenario, "evolved", args.num_games)
+
+    # Test v4 agent (broken)
+    print("\n" + "="*80)
+    print("V4: Testing 'evolved_v4' agent")
+    print("="*80)
+    results["evolved_v4"] = diagnose_agent(args.scenario, "evolved_v4", args.num_games)
+
+    # Summary
+    print("\n" + "="*80)
+    print("SUMMARY")
+    print("="*80)
+    for version, result in results.items():
+        if result:
+            print(f"\n{version}:")
+            print(f"  Training:   {result['training']['fitness_mean']:8.2f}")
+            print(f"  Tournament: {result['tournament']['mean']:8.2f}")
+            print(f"  Difference: {result['difference']:8.2f}")
+            print(f"  Status: {'✅ MATCH' if result['difference'] < 1.0 else '❌ MISMATCH'}")
+
+    print("\n" + "="*80)
+    print("CONCLUSION")
+    print("="*80)
+
+    if results["evolved"] and results["evolved_v4"]:
+        evolved_match = results["evolved"]["difference"] < 1.0
+        v4_match = results["evolved_v4"]["difference"] < 1.0
+
+        if evolved_match and not v4_match:
+            print("✅ Original 'evolved' agents: Training matches tournament")
+            print("❌ V4 agents: Training DOES NOT match tournament")
+            print()
+            print("This suggests the v4 fix is not working correctly!")
+            print("Possible causes:")
+            print("  1. Fix not actually applied during v4 training")
+            print("  2. Different bug introduced in v4")
+            print("  3. Rust/Python environment mismatch for v4 agents")
+        elif not evolved_match and not v4_match:
+            print("❌ BOTH agents show train/test mismatch")
+            print()
+            print("This suggests a systematic difference between:")
+            print("  - Rust evaluator (training)")
+            print("  - Python environment (tournament)")
+        elif evolved_match and v4_match:
+            print("✅ BOTH agents match training and tournament")
+            print()
+            print("The environments are consistent!")
+            print("V4 failure must be due to poor evolution, not evaluation bug.")
+        else:
+            print("⚠️  Unexpected pattern - evolved mismatch but v4 match")
+
+    # Save detailed results
+    output_file = Path(f"experiments/scenarios/{args.scenario}/v4_diagnostic_results.json")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"\nDetailed results saved to: {output_file}")
+
+
+if __name__ == "__main__":
+    main()
