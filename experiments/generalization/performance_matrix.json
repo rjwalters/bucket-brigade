@@ -1,0 +1,3035 @@
+{
+  "evolved_version": "v4",
+  "num_simulations": 2000,
+  "seed": 42,
+  "scenarios": [
+    "chain_reaction",
+    "deceptive_calm",
+    "early_containment",
+    "greedy_neighbor",
+    "mixed_motivation",
+    "overcrowding",
+    "rest_trap",
+    "sparse_heroics",
+    "trivial_cooperation"
+  ],
+  "performance_matrix": {
+    "chain_reaction": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "deceptive_calm": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "early_containment": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "greedy_neighbor": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "mixed_motivation": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "overcrowding": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "rest_trap": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "sparse_heroics": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    },
+    "trivial_cooperation": {
+      "chain_reaction": 61.22875,
+      "deceptive_calm": 48.562,
+      "early_containment": 65.13575,
+      "greedy_neighbor": 65.13575,
+      "mixed_motivation": 61.22875,
+      "overcrowding": 65.13575,
+      "rest_trap": 65.13575,
+      "sparse_heroics": 67.1755,
+      "trivial_cooperation": 26.5
+    }
+  },
+  "detailed_results": [
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1067640781402588,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.2528481483459473,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.3200039863586426,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.19144868850708,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.2020001411437988,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1464548110961914,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1123600006103516,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1005728244781494,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "chain_reaction",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0760550498962402,
+      "agent_metadata": {
+        "scenario": "chain_reaction",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0208921432495117,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9629161357879639,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1256499290466309,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1305971145629883,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.2018699645996094,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1325581073760986,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1294569969177246,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.149507999420166,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "deceptive_calm",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.089081048965454,
+      "agent_metadata": {
+        "scenario": "deceptive_calm",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1501438617706299,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0699000358581543,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0498089790344238,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1111488342285156,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1016230583190918,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.121551752090454,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1385440826416016,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1623849868774414,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "early_containment",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0614230632781982,
+      "agent_metadata": {
+        "scenario": "early_containment",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.125654935836792,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1284689903259277,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9888238906860352,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.100569248199463,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9784197807312012,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1221089363098145,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.060802698135376,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1186959743499756,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "greedy_neighbor",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1092281341552734,
+      "agent_metadata": {
+        "scenario": "greedy_neighbor",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1709039211273193,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0876939296722412,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.145035982131958,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9651730060577393,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1017227172851562,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1197679042816162,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1482129096984863,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1965229511260986,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "mixed_motivation",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.085583209991455,
+      "agent_metadata": {
+        "scenario": "mixed_motivation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1666038036346436,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0930821895599365,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1562449932098389,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0899970531463623,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.173616886138916,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1241741180419922,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1093287467956543,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.059208869934082,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "overcrowding",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9270439147949219,
+      "agent_metadata": {
+        "scenario": "overcrowding",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.196923017501831,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0375990867614746,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1407318115234375,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.12624192237854,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1180009841918945,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1202919483184814,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1624279022216797,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0884690284729004,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "rest_trap",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9770798683166504,
+      "agent_metadata": {
+        "scenario": "rest_trap",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9806089401245117,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.0271129608154297,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1524829864501953,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1229801177978516,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.130723237991333,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1393511295318604,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1127209663391113,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1418437957763672,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "sparse_heroics",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.057677984237671,
+      "agent_metadata": {
+        "scenario": "sparse_heroics",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "chain_reaction",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1418180465698242,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.45,
+        "kappa": 0.6,
+        "c": 0.7,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "deceptive_calm",
+      "evolved_version": "v4",
+      "payoff": 48.562,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1607270240783691,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.25,
+        "kappa": 0.6,
+        "c": 0.4,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "early_containment",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1866679191589355,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.35,
+        "kappa": 0.6,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "greedy_neighbor",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1239140033721924,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.4,
+        "c": 1.0,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "mixed_motivation",
+      "evolved_version": "v4",
+      "payoff": 61.22875,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1496539115905762,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.3,
+        "kappa": 0.5,
+        "c": 0.6,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "overcrowding",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1611580848693848,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.2,
+        "kappa": 0.3,
+        "c": 0.6,
+        "A": 50.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "rest_trap",
+      "evolved_version": "v4",
+      "payoff": 65.13575,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.2019140720367432,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.05,
+        "kappa": 0.95,
+        "c": 0.2,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "sparse_heroics",
+      "evolved_version": "v4",
+      "payoff": 67.1755,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 0.9967906475067139,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "c": 0.8,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    },
+    {
+      "agent_scenario": "trivial_cooperation",
+      "test_scenario": "trivial_cooperation",
+      "evolved_version": "v4",
+      "payoff": 26.5,
+      "num_simulations": 2000,
+      "seed": 42,
+      "elapsed_time": 1.1060082912445068,
+      "agent_metadata": {
+        "scenario": "trivial_cooperation",
+        "fitness": 68.8,
+        "generation": 15000,
+        "version": "v4",
+        "parameters": {
+          "honesty": 0.3060885233641002,
+          "work_tendency": 0.06352264031873198,
+          "neighbor_help": 0.014818693619284187,
+          "own_priority": 0.9073119055652519,
+          "risk_aversion": 0.9477873275024511,
+          "coordination": 0.5571028379732136,
+          "exploration": 0.5980114834945792,
+          "fatigue_memory": 0.7947088089477861,
+          "rest_bias": 1.0,
+          "altruism": 0.8501413166770448
+        }
+      },
+      "test_scenario_params": {
+        "beta": 0.15,
+        "kappa": 0.9,
+        "c": 0.5,
+        "A": 100.0,
+        "L": 100.0,
+        "num_agents": 4
+      },
+      "on_scenario_fitness": 68.8
+    }
+  ]
+}
