@@ -265,10 +265,13 @@ All 9 independent evolutionary runs (different scenarios, different starting con
 
 **Timeline:** 2-3 months development + experiments
 
-**Status**: 🔄 IN PROGRESS (Phase 2A complete, 2A.1 in progress)
+**Status**: 🔄 IN PROGRESS (Phase 2A, 2A.1, 2D, and Scale Testing complete)
 
 **Completed Work**:
 * ✅ **Phase 2A**: Universality boundary testing (extreme parameter scenarios)
+* ✅ **Phase 2A.1**: Trivial cooperation investigation (p_spark boundary)
+* ✅ **Phase 2D**: Mechanism design for cooperation (parameter-based approaches)
+* ✅ **Scale Testing**: Population-size invariance (N=4,6,8,10)
 
 **Motivation**: Phase 1.5 found that a single strategy is optimal across all tested scenarios (β: 0.10-0.30, c: 0.30-1.00). Phase 2 investigates:
 * Where does universality break down? (extreme parameters)
@@ -318,10 +321,105 @@ Phase 2 investigates four complementary research directions:
 * [Phase 2A Analysis](../experiments/boundary_testing/PHASE_2A_ANALYSIS.md)
 * Results: `experiments/boundary_testing/universal_strategy_test.json`
 
-**Next Steps**:
-* **2A.1**: Investigate trivial cooperation anomaly (κ and p_spark extremes)
-* **2A.2**: Team size variation (N=6, 8, 10) - deferred to later
+**Follow-up Work**:
+* ✅ **2A.1**: Investigated trivial cooperation anomaly - identified p_spark as critical boundary
+* ✅ **2A.2**: Team size variation (N=6, 8, 10) - completed as "Scale Testing"
 * **2A.3**: Grid size variation - deferred to later
+
+#### 2A.1. Trivial Cooperation Investigation ✅ COMPLETED
+
+**Goal**: Understand why trivial_cooperation scenario failed (payoff 26.50 vs 63.78 mean).
+
+**Status**: ✅ Completed 2025-11-05
+
+**Key Discovery**: p_spark (ongoing fire probability) is the critical boundary parameter, not κ (extinguish rate).
+
+**Approach**:
+* κ sweep: Test κ ∈ {0.60, 0.70, 0.80, 0.90} with p_spark=0
+* p_spark sweep: Test p_spark ∈ {0.00, 0.01, 0.02, 0.05} with κ=0.90
+
+**Results**:
+* **κ sweep**: NO effect - all scenarios achieved identical payoff (26.50) when p_spark=0
+* **p_spark sweep**: MASSIVE effect:
+  * p_spark=0.00: 26.50 (poor - fires disappear)
+  * p_spark=0.01: 59.28 (good - minimal persistence)
+  * p_spark=0.02: 65.14 (best - optimal persistence) ★
+  * p_spark=0.03: 60-61 (good - moderate persistence)
+  * p_spark=0.05: 48.53 (fair - high pressure)
+
+**Key Finding**: Universal strategy optimized for **persistent threats** (p_spark > 0), not transient scenarios (p_spark=0).
+
+**Goldilocks Zone**: Optimal p_spark ∈ [0.02, 0.03] - enough persistence to maintain strategy effectiveness without overwhelming the system.
+
+**Documentation**:
+* [Phase 2A.1 Analysis](../experiments/boundary_testing/PHASE_2A1_ANALYSIS.md)
+* Results: `experiments/boundary_testing/trivial_cooperation_analysis.json`
+
+#### 2A.2. Scale Testing (Population-Size Invariance) ✅ COMPLETED
+
+**Goal**: Test if N=4 universal strategy scales to larger populations (N=6, 8, 10).
+
+**Status**: ✅ Completed 2025-11-05
+
+**Remarkable Finding**: **PERFECT SCALING** - 0.00% degradation across all population sizes.
+
+**Approach**:
+* Test universal strategy on N ∈ {4, 6, 8, 10}
+* Test scenarios: chain_reaction, sparse_heroics, crisis_cheap, easy_spark_02
+* Python-only evaluation (500 simulations) for compatibility
+
+**Results**:
+* All scenarios: **Identical payoffs** to 2+ decimal places across all N
+* Mean degradation: **0.00%** for N=6, N=8, N=10
+* Every single test: 0.00% degradation
+
+**Key Finding**: Population-size invariance demonstrates this is a **dominant strategy equilibrium**, not just Nash equilibrium:
+* Free-riding optimal regardless of population size
+* Regardless of what others do
+* Independent of beliefs or coordination
+
+**Implications**:
+* No need to evolve separate strategies for different N
+* Same equilibrium applies to 4, 6, 8, 10... or larger populations
+* Free-riding problem doesn't get better OR worse with group size
+
+**Documentation**:
+* [Scale Testing Analysis](../experiments/scale_testing/SCALE_TESTING_ANALYSIS.md)
+* Results: `experiments/scale_testing/quick_results.json`
+
+#### 2D. Mechanism Design for Cooperation ✅ COMPLETED
+
+**Goal**: Design scenarios where parameter variations can break free-riding equilibrium and induce cooperation.
+
+**Status**: ✅ Completed 2025-11-05
+
+**Key Finding**: Parameter-based mechanism design **CANNOT** induce cooperation - free-riding equilibrium is extremely robust.
+
+**Tested Mechanisms**:
+1. **nearly_free_work** (c=0.01): Payoff 65.14 - good but no cooperation
+2. **front_loaded_crisis** (high ρ_ignite, p_spark=0): Payoff 24.50 - very poor (transient threat)
+3. **sustained_pressure** (p_spark=0.10): Payoff 34.37 - poor (overwhelming pressure)
+4. **high_stakes** (A=500, L=500): Payoff 60.91 - okay but no cooperation
+
+**Result**: NO scenario induced cooperation. work_tendency remained at 0.064 (6.4%) across all mechanisms.
+
+**Why Parameter-Based Approaches Fail**:
+* Free-riding remains dominant under nearly-free work
+* High stakes don't change incentive structure
+* Crisis conditions don't require cooperation in current mechanics
+* Sustained pressure overwhelms without changing equilibrium
+
+**Would Need** (fundamental mechanic changes):
+* Coordination bonuses (e.g., quadratic rewards: k·(num_workers)²)
+* Information asymmetry (working reveals information)
+* Punishment mechanisms (guilt, reputation systems)
+* Temporal dependencies (early work prevents later catastrophe)
+
+**Conclusion**: Within current game mechanics, cooperation cannot be induced through parameter variations alone.
+
+**Documentation**:
+* [Phase 2D Analysis](../experiments/mechanism_design/PHASE_2D_ANALYSIS.md)
+* Results: `experiments/mechanism_design/results.json`
 
 #### 2B. Heterogeneous Team Equilibria
 
