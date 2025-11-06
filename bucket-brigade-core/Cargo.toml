@@ -33,6 +33,9 @@ features = ["extension-module"]
 version = "0.22"
 optional = true
 
+[dev-dependencies]
+proptest = "1.0"
+
 [lib]
 name = "bucket_brigade_core"
 path = "src/lib.rs"

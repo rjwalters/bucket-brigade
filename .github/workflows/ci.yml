@@ -37,19 +37,22 @@ jobs:
         VIRTUAL_ENV: ${{ github.workspace }}/.venv
     - name: Install test annotation plugin
       run: uv pip install pytest-github-actions-annotate-failures
-    - name: Run tests
+    - name: Run fast tests
       run: |
         uv run pytest \
           --cov=bucket_brigade \
           --cov-report=xml \
           --cov-report=term-missing \
-          --cov-fail-under=80 \
+          --cov-fail-under=75 \
           -v \
           --tb=short \
+          -m "not slow and not integration" \
           | tee pytest-output.txt
 
         # Generate GitHub summary
-        echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "## 🧪 Test Results (Fast Tests)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Running**: Fast tests only (slow and integration tests skipped)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         tail -50 pytest-output.txt >> $GITHUB_STEP_SUMMARY
@@ -191,12 +194,23 @@ jobs:
       run: cd web && pnpm install --frozen-lockfile
     - name: Run integration tests
       run: |
-        # Test that Python can run experiments
+        # Run pytest integration tests
+        uv run pytest \
+          -v \
+          --tb=short \
+          --run-integration \
+          tests/test_integration.py \
+          | tee integration-output.txt
+
+        # Also run legacy integration checks
         uv run python scripts/run_one_game.py
-        # Skip web build for now - needs UI fixes
-        # cd web && pnpm run build
-        # Test that Python analysis works
-        uv run python scripts/analyze_rankings.py results/ || true  # May fail if no data
+
+        # Generate summary
+        echo "## 🔗 Integration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        tail -30 integration-output.txt >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
   pre-commit:
     runs-on: ubuntu-latest

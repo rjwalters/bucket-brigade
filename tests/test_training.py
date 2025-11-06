@@ -4,7 +4,12 @@ This module tests the PolicyNetwork and CurriculumTrainer classes to ensure
 they work correctly after refactoring from the monolithic train_curriculum.py script.
 """
 
-import torch
+import pytest
+
+# Skip entire module if torch not available (RL dependencies not installed)
+torch = pytest.importorskip(
+    "torch", reason="torch not installed (install with: uv sync --extra rl)"
+)
 
 from bucket_brigade.training import PolicyNetwork
 

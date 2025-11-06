@@ -148,7 +148,9 @@ class TestRustCoreIntegration:
             np.testing.assert_array_equal(r1, r2, err_msg=f"Rewards differ at step {i}")
             assert d1 == d2, f"Termination differs at step {i}"
 
-    @pytest.mark.skip(reason="Rust and Python scenarios may have different parameter values")
+    @pytest.mark.skip(
+        reason="Rust and Python scenarios may have different parameter values"
+    )
     def test_rust_scenario_coverage(self):
         """Test that all scenarios are available in Rust."""
         try:

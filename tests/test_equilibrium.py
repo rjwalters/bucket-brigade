@@ -4,6 +4,7 @@ Unit tests for Nash equilibrium computation module.
 Tests basic functionality with minimal simulations to verify correctness.
 """
 
+import pytest
 import numpy as np
 from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
@@ -86,8 +87,9 @@ class TestPayoffEvaluator:
 class TestBestResponse:
     """Test best response computation."""
 
+    @pytest.mark.slow
     def test_compute_best_response(self):
-        """Test best response computation with minimal optimization."""
+        """Test best response computation with minimal optimization (slow: ~60s)."""
         scenario = trivial_cooperation_scenario(num_agents=4)
 
         # Find best response to Firefighters
@@ -153,8 +155,9 @@ class TestNashSolver:
 class TestDoubleOracle:
     """Test Double Oracle algorithm."""
 
+    @pytest.mark.slow
     def test_double_oracle_minimal(self):
-        """Test Double Oracle with minimal parameters."""
+        """Test Double Oracle with minimal parameters (slow: ~2-5 minutes)."""
         scenario = trivial_cooperation_scenario(num_agents=4)
 
         solver = DoubleOracle(

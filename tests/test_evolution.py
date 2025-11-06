@@ -458,7 +458,9 @@ class TestParallelEvaluation:
 
     def test_parallel_vs_sequential_fitness(self):
         """Test that parallel and sequential evaluation give equivalent results."""
-        from bucket_brigade.evolution.fitness import FitnessEvaluator
+        from bucket_brigade.evolution.fitness_rust import (
+            RustFitnessEvaluator as FitnessEvaluator,
+        )
 
         # Create test population
         pop = create_random_population(size=5, generation=0, seed=42)
@@ -487,7 +489,9 @@ class TestParallelEvaluation:
 
     def test_parallel_evaluation_respects_num_workers(self):
         """Test that num_workers parameter is respected."""
-        from bucket_brigade.evolution.fitness import FitnessEvaluator
+        from bucket_brigade.evolution.fitness_rust import (
+            RustFitnessEvaluator as FitnessEvaluator,
+        )
 
         evaluator = FitnessEvaluator(games_per_individual=2, num_workers=4)
         assert evaluator.num_workers == 4
@@ -500,7 +504,9 @@ class TestParallelEvaluation:
 
     def test_parallel_evaluation_single_individual(self):
         """Test that single individual falls back to sequential."""
-        from bucket_brigade.evolution.fitness import FitnessEvaluator
+        from bucket_brigade.evolution.fitness_rust import (
+            RustFitnessEvaluator as FitnessEvaluator,
+        )
 
         pop = create_random_population(size=1, generation=0, seed=42)
         evaluator = FitnessEvaluator(games_per_individual=2, seed=100, num_workers=4)
@@ -510,7 +516,9 @@ class TestParallelEvaluation:
 
     def test_parallel_evaluation_empty_population(self):
         """Test handling of already-evaluated population."""
-        from bucket_brigade.evolution.fitness import FitnessEvaluator
+        from bucket_brigade.evolution.fitness_rust import (
+            RustFitnessEvaluator as FitnessEvaluator,
+        )
 
         pop = create_random_population(size=3, generation=0, seed=42)
         evaluator = FitnessEvaluator(games_per_individual=2, seed=100)
@@ -567,7 +575,9 @@ class TestParallelEvaluation:
     def test_parallel_with_scenario(self):
         """Test parallel evaluation with custom scenario."""
         from bucket_brigade.envs.scenarios import default_scenario
-        from bucket_brigade.evolution.fitness import FitnessEvaluator
+        from bucket_brigade.evolution.fitness_rust import (
+            RustFitnessEvaluator as FitnessEvaluator,
+        )
 
         scenario = default_scenario(num_agents=1)
         pop = create_random_population(size=3, generation=0, seed=42)
