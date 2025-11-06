@@ -245,3 +245,18 @@ data/experiments.db
 # Evolution experiment outputs
 experiments/evolved_experts/
 experiments/hyperparameter_tuning/
+
+# Research agent directories (TRACKED for scientific reproducibility)
+# experiments/scenarios/*/evolved/         - Phase 1.0 evolved agents (tracked)
+# experiments/scenarios/*/evolved_v3/      - Phase 1.5 specialists (tracked)
+# experiments/scenarios/*/evolved_v4/      - Phase 1.5 universal Nash (tracked)
+# experiments/scenarios/*/evolved_v5/      - Phase 2.0 robust agents (tracked)
+#
+# Note: evolution_trace.json files can be large (1-3 MB) but are kept for:
+# - Scientific reproducibility
+# - Evolution analysis and visualization
+# - Research transparency
+#
+# If repository size becomes an issue, consider:
+# experiments/scenarios/*/evolved*/evolution_trace.json
+# (But this reduces research transparency)
