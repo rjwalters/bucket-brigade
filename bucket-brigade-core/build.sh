@@ -31,6 +31,13 @@ rm -rf target/wheels
 echo "🔨 Building with maturin..."
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 uv run maturin develop --release
 
+# Clean up CFFI artifacts created during build
+echo "🧹 Cleaning up CFFI artifacts..."
+if [ -d bucket_brigade_core/bucket_brigade_core ]; then
+    rm -rf bucket_brigade_core/bucket_brigade_core
+    echo "   Removed nested CFFI directory"
+fi
+
 echo "✅ Build complete!"
 echo ""
 echo "Test import with:"
