@@ -13,6 +13,7 @@ import bucket_brigade_core as core
 def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario."""
     # Map Python scenario parameters to Rust parameter names
+    # Note: num_agents is NOT a Scenario parameter - it's specified when creating BucketBrigade env
     return core.Scenario(
         prob_fire_spreads_to_neighbor=scenario.beta,  # type: ignore[attr-defined]
         prob_solo_agent_extinguishes_fire=scenario.kappa,  # type: ignore[attr-defined]
@@ -21,7 +22,6 @@ def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
         team_penalty_house_burns=scenario.L,  # type: ignore[attr-defined]
         cost_to_work_one_night=scenario.c,  # type: ignore[attr-defined]
         min_nights=scenario.N_min,  # type: ignore[attr-defined]
-        num_agents=scenario.num_agents,  # type: ignore[attr-defined]
         # Use default individual rewards (not in our Python Scenario)
         reward_own_house_survives=10.0,
         reward_other_house_survives=5.0,
@@ -148,11 +148,14 @@ def _run_full_rust_simulation(args):
     # Convert to Rust scenario in worker
     rust_scenario = _convert_scenario_to_rust(python_scenario)
 
+    # Extract num_agents from Python scenario (Rust function needs it explicitly)
+    num_agents = python_scenario.num_agents
+
     # Run entire episode in Rust - single function call
     # Use focal-optimized function for Nash equilibrium computation
-    # Note: num_agents is now embedded in rust_scenario
     return core.run_heuristic_episode_focal(
         rust_scenario,
+        num_agents,
         theta_focal.tolist(),
         theta_opponents.tolist(),
         seed,
