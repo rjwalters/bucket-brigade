@@ -46,9 +46,127 @@ Each night follows this sequence:
 - **Action**: Choose (house_index ∈ [0,9], mode ∈ {Work, Rest})
 
 ### Rewards
-- **Team reward**: Based on houses saved/ruined and total work performed
-- **Individual reward**: Team share + own house bonus - work costs
-- **Social dilemma**: Individual incentives may encourage free-riding
+
+The reward system has two distinct phases:
+
+#### Per-Night Rewards
+Each night, agents receive immediate rewards based on their action choice:
+```python
+R_night_i = {
+    -cost_to_work_one_night  # if agent worked
+    +0.5                      # if agent rested
+}
+```
+
+This creates an immediate energy/effort tradeoff each turn.
+
+#### Final Rewards (Game End)
+At game termination, agents receive rewards based on final house states:
+
+**Team Component (Public Goods)**:
+```python
+team_reward = (saved_houses × team_reward_house_survives)
+            - (ruined_houses × team_penalty_house_burns)
+```
+
+**Critical**: Each agent receives the FULL team_reward (not divided). This creates a classic public goods dilemma where individual incentives diverge from team incentives.
+
+**Individual Components**:
+```python
+# Owned house outcome
+own_house_reward = {
+    +reward_own_house_survives   # if own house saved
+    -penalty_own_house_burns     # if own house ruined
+    0                             # if own house still burning
+}
+
+# Neighbor house outcomes (left and right neighbors)
+neighbor_reward = sum([
+    +reward_other_house_survives  # if neighbor saved
+    -penalty_other_house_burns    # if neighbor ruined
+    0                              # if neighbor still burning
+] for neighbor in [left_neighbor, right_neighbor])
+
+# Agent's final reward
+R_final_i = team_reward + own_house_reward + neighbor_reward
+```
+
+**Total Accumulated Reward**:
+```python
+R_agent_i = sum(R_night_i for all nights) + R_final_i
+```
+
+#### Key Properties
+
+1. **Public Goods Structure**: Each agent gets the FULL team reward, not a share. This means:
+   - Free-riders benefit from others' work without cost
+   - Individual rationality conflicts with collective welfare
+   - Classic social dilemma emerges naturally
+
+2. **Spatial Incentives**: Neighbor house rewards create spatial coordination incentives:
+   - Agents care more about nearby fires
+   - Distributed coverage is rewarded
+   - Agents can't ignore distant fires entirely (team reward)
+
+3. **Free-Rider Problem**:
+   - Resting gives +0.5 per night
+   - Working costs `cost_to_work_one_night` per night
+   - Both get same team reward regardless of contribution
+   - Optimal individual strategy may be resting (free-riding)
+
+4. **Work/Rest Tradeoff**:
+   - Short-term: Resting is better (+0.5 vs. -cost)
+   - Long-term: Working improves team outcome (more houses saved)
+   - Requires agents to sacrifice immediate reward for future benefit
+
+#### Examples
+
+**Scenario: Easy (default parameters)**
+```python
+# Parameters
+cost_to_work_one_night = 0.15
+team_reward_house_survives = 3.0
+team_penalty_house_burns = 1.0
+reward_own_house_survives = 5.0
+penalty_own_house_burns = 10.0
+reward_other_house_survives = 1.0
+penalty_other_house_burns = 2.0
+
+# Example game: 5 nights, 4 agents
+# Agent 0: Worked 3 nights, Rested 2 nights
+# Own house: Saved, Left neighbor: Ruined, Right neighbor: Saved
+# Team outcome: 7 saved, 3 ruined
+
+# Agent 0's reward:
+per_night = (3 × -0.15) + (2 × 0.5) = -0.45 + 1.0 = 0.55
+team = (7 × 3.0) - (3 × 1.0) = 21.0 - 3.0 = 18.0
+own = 5.0  # saved
+neighbors = -2.0 + 1.0 = -1.0  # left ruined, right saved
+R_agent_0 = 0.55 + 18.0 + 5.0 - 1.0 = 22.55
+
+# Agent 1: Rested all 5 nights
+# Own house: Saved, Both neighbors: Saved
+# (Same team outcome - gets full team reward despite free-riding!)
+
+per_night = 5 × 0.5 = 2.5
+team = 18.0  # Same as agent 0!
+own = 5.0
+neighbors = 1.0 + 1.0 = 2.0
+R_agent_1 = 2.5 + 18.0 + 5.0 + 2.0 = 27.5
+
+# Agent 1 earned MORE despite contributing nothing!
+# This is the free-rider problem in action.
+```
+
+#### Implementation Reference
+
+**Source of Truth**: `bucket-brigade-core/src/engine/rewards.rs`
+- Lines 12-22: Per-night work/rest rewards
+- Lines 30-33: Team reward calculation (public goods)
+- Lines 40-41: Each agent receives FULL team reward
+- Lines 43-61: Own house and neighbor house rewards
+
+⚠️ **Note**: Python environment (`bucket_brigade/environment.py`) is DEPRECATED for research use. Use Rust implementation via PyO3 bindings. See `experiments/evolution/RUST_SINGLE_SOURCE_OF_TRUTH.md` for migration details.
 
 ## Termination Conditions
 

@@ -200,17 +200,54 @@ assert result1 == result2  # Guaranteed identical
 
 ### 4. Clear Individual Contributions
 
-**Individual Rewards** decompose team performance:
-```python
-R_team = A × (SavedHouses/10) - L × (RuinedHouses/10) - c × TotalWork
+**Reward Structure** has two components:
 
-R_agent_i = TeamShare + OwnHouseBonus - WorkCost_i
+**Per-Night Rewards** (received each night):
+```python
+R_night_i = {
+    -cost_to_work_one_night  # if working
+    +0.5                      # if resting
+}
 ```
+
+**Final Rewards** (computed at game end):
+```python
+# Team component (PUBLIC GOODS - each agent receives FULL amount)
+team_reward = (saved_houses * team_reward_house_survives)
+            - (ruined_houses * team_penalty_house_burns)
+
+# Individual components
+own_house = {
+    +reward_own_house_survives   # if saved
+    -penalty_own_house_burns     # if ruined
+    0                             # if burning
+}
+
+neighbor_houses = sum([
+    +reward_other_house_survives  # if saved
+    -penalty_other_house_burns    # if ruined
+    0                              # if burning
+] for neighbor in [left, right])
+
+# Agent's final reward
+R_final_i = team_reward + own_house + neighbor_houses
+```
+
+**Total accumulated reward**:
+```python
+R_agent_i = sum(R_night_i for all nights) + R_final_i
+```
+
+**Key Properties**:
+1. 🔑 **Public goods structure**: Each agent receives FULL team reward (not divided)
+2. 🏘️ **Spatial incentives**: Neighbor bonuses encourage distributed coverage
+3. 🚴 **Free-rider problem**: Can rest while others work, still get team reward
+4. ⚖️ **Work/rest tradeoff**: Working costs energy but improves team outcome
 
 **This enables**:
 - Ranking individual policies in mixed teams
-- Estimating marginal contributions (Shapley values)
 - Identifying free-riders vs. contributors
+- Understanding emergence of cooperation/defection
 
 **Critical for tournament ranking** (see RANKING_METHODOLOGY.md)
 
