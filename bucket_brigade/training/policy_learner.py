@@ -249,13 +249,17 @@ class PolicyLearner:
             next_values = next_values * (1 - dones)  # Zero out if done
 
         # Compute advantages using GAE
-        advantages = compute_gae(
-            rewards.cpu(),
-            values.cpu(),
-            dones.cpu(),
-            self.gamma,
-            self.gae_lambda,
-        ).to(self.device)
+        advantages = torch.tensor(
+            compute_gae(
+                rewards.cpu().tolist(),
+                values.cpu().tolist(),
+                dones.cpu().tolist(),
+                self.gamma,
+                self.gae_lambda,
+            ),
+            dtype=torch.float32,
+            device=self.device,
+        )
 
         returns = advantages + values
 
