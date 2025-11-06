@@ -85,7 +85,11 @@ def train_ppo(
     for step in range(num_steps):
         # Collect experience
         with torch.no_grad():
-            action_logits, value, house_probs, mode_probs = policy(obs.unsqueeze(0))
+            action_logits, value = policy(obs.unsqueeze(0))
+
+            # action_logits is a list of tensors, one per action dimension
+            house_probs = torch.softmax(action_logits[0], dim=-1)
+            mode_probs = torch.softmax(action_logits[1], dim=-1)
 
             # Sample actions
             house_dist = torch.distributions.Categorical(house_probs)
