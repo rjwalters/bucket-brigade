@@ -22,6 +22,7 @@ import torch
 import numpy as np
 
 from bucket_brigade_core import BucketBrigade, Scenario
+from bucket_brigade.training.observation_utils import flatten_observation, create_scenario_info
 
 
 class Matchmaker:
@@ -111,6 +112,9 @@ class GameSimulator:
             for i in range(num_games)
         ]
 
+        # Cache scenario info for observation flattening
+        self.scenario_info = create_scenario_info(scenario)
+
         # Initialize matchmaker
         self.matchmaker = Matchmaker(population_size, num_agents_per_game)
 
@@ -187,8 +191,11 @@ class GameSimulator:
 
         # Reset environment
         env.reset()
-        # Get observations for all agents
-        observations = [env.get_observation(i) for i in range(self.num_agents_per_game)]
+        # Get observations for all agents (as flat arrays)
+        observations = [
+            flatten_observation(env.get_observation(i), self.scenario_info)
+            for i in range(self.num_agents_per_game)
+        ]
 
         # Storage for each agent's trajectory
         trajectories = {agent_id: [] for agent_id in agent_ids}
@@ -208,24 +215,26 @@ class GameSimulator:
                 actions.append([house, mode])
                 logprobs.append(logprob)
 
-            # Step environment
-            result = env.step(actions)
-            next_observations = [env.get_observation(i) for i in range(self.num_agents_per_game)]
+            # Step environment (returns tuple: rewards_list, done, info)
+            rewards_list, done, info = env.step(actions)
+            next_observations = [
+                flatten_observation(env.get_observation(i), self.scenario_info)
+                for i in range(self.num_agents_per_game)
+            ]
 
             # Record experience for each agent
             for i, agent_id in enumerate(agent_ids):
                 experience = {
                     'obs': observations[i],
                     'action': actions[i],
-                    'reward': result.rewards[i],
-                    'next_obs': next_observations[i] if not result.done else None,
-                    'done': result.done,
+                    'reward': rewards_list[i],
+                    'next_obs': next_observations[i] if not done else None,
+                    'done': done,
                     'logprob': logprobs[i],
                 }
                 trajectories[agent_id].append(experience)
 
             observations = next_observations
-            done = result.done
             step += 1
 
         # Update statistics

@@ -32,6 +32,7 @@ from bucket_brigade_core import SCENARIOS, Scenario
 from bucket_brigade.training import PolicyNetwork
 from bucket_brigade.training.game_simulator import GameSimulator
 from bucket_brigade.training.policy_learner import learner_process
+from bucket_brigade.training.observation_utils import flatten_observation, get_observation_dim, create_scenario_info
 
 
 class PopulationTrainer:
@@ -101,17 +102,27 @@ class PopulationTrainer:
             raise ValueError(f"Unknown scenario: {scenario_name}")
         self.scenario = SCENARIOS[scenario_name]
 
+        # Validate population size
+        if population_size < num_agents_per_game:
+            raise ValueError(
+                f"Population size ({population_size}) must be >= num_agents_per_game ({num_agents_per_game}). "
+                f"Each game needs {num_agents_per_game} agents, so the population must have at least that many."
+            )
+
         # Initialize dimensions (from scenario)
         # For now, we'll infer these from a test environment
         from bucket_brigade_core import BucketBrigade
         test_env = BucketBrigade(self.scenario, num_agents_per_game, seed=seed)
-        test_obs = test_env.get_observation(0)
-        self.obs_dim = len(test_obs)
 
-        # Infer action dimensions
-        # obs_dim = 3*num_agents + 3*num_houses
-        num_houses = (self.obs_dim - 3 * num_agents_per_game) // 3
-        self.action_dims = [num_houses, 3]  # houses, modes
+        # Get number of houses from a test observation
+        test_obs_obj = test_env.get_observation(0)
+        num_houses = len(test_obs_obj.houses)
+
+        # Calculate observation dimension
+        self.obs_dim = get_observation_dim(num_houses, num_agents_per_game)
+
+        # Action dimensions: [num_houses, 3 modes (idle, fill, pass)]
+        self.action_dims = [num_houses, 3]
 
         print(f"Inferred dimensions:")
         print(f"  Observation: {self.obs_dim}")
