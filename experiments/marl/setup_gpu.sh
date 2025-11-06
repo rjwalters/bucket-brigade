@@ -53,7 +53,7 @@ echo "🦀 Building Rust core..."
 cd bucket-brigade-core
 VIRTUAL_ENV="$(pwd)/../.venv" \
   PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-  maturin develop --release --features python
+  ../.venv/bin/maturin develop --release --features python
 cd ..
 
 # Verify installation
@@ -61,7 +61,7 @@ echo ""
 echo "✅ Verifying installation..."
 
 # Check CUDA
-python << 'EOF'
+.venv/bin/python << 'EOF'
 import torch
 cuda_available = torch.cuda.is_available()
 device_count = torch.cuda.device_count()
@@ -75,7 +75,7 @@ else:
 EOF
 
 # Check Rust environment
-python << 'EOF'
+.venv/bin/python << 'EOF'
 try:
     from bucket_brigade.envs.puffer_env_rust import make_rust_env
     import bucket_brigade_core as core
