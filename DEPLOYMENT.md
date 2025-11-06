@@ -1,460 +1,470 @@
 # 🚀 Bucket Brigade Deployment Guide
 
+> ⚠️ **IMPORTANT: Static Site Only**
+>
+> The Bucket Brigade platform currently operates as a **browser-only static site**. All computation happens client-side using WebAssembly. There is **no backend server required**.
+>
+> Backend API deployment options described later in this document are **future plans** that are not yet implemented. For current architecture, see [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md).
+
 This guide covers deploying the Bucket Brigade platform to various environments.
+
+---
 
 ## 📋 Prerequisites
 
-- Python 3.9+ with uv package manager
-- Node.js 18+ with pnpm
-- Docker (optional, for containerized deployment)
-- Web server (nginx, Apache, etc.) for production
+- **Node.js 18+** with pnpm package manager
+- **Rust toolchain** (for building WASM)
+- **Git** for version control
+
+**Optional** (for development only):
+- Python 3.9+ with uv (for running evolution experiments locally)
+- Docker (for future backend deployment)
+
+---
 
 ## 🏗️ Build Process
 
-### Frontend Build
+### 1. Build WASM Module
+
+```bash
+# Install wasm-pack if not already installed
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Build Rust core to WebAssembly
+cd bucket-brigade-core
+wasm-pack build --target web
+```
+
+This creates the WASM bindings in `bucket-brigade-core/pkg/`.
+
+### 2. Build Web Frontend
 
 ```bash
 # Install dependencies
+cd web
 pnpm install
 
 # Build for production
 pnpm run build
-
-# Preview production build locally
-pnpm run preview
 ```
 
 The built files will be in `web/dist/` ready for deployment.
 
-### Python Package Build (Optional)
+### 3. Preview Locally
 
 ```bash
-# Build wheel for Python package
-cd bucket-brigade-core
-python -m build
-
-# Install locally for testing
-pip install dist/*.whl
+# From web directory
+pnpm run preview
 ```
 
-## 🌐 Deployment Options
+Visit `http://localhost:4173` to test the production build.
 
-> 📝 **Note**: The backend API deployment option described below is for future implementation. The current version can be deployed as a static site only (Option 2). See API.md for details on the planned backend API.
+---
 
-### Option 1: Static Site + API (Future - Not Yet Implemented)
+## 🌐 Current Deployment: Static Site Hosting
 
-Deploy the frontend as static files and run the Python API separately.
+Since Bucket Brigade is a static site, you can deploy it to any static hosting provider. No server configuration needed!
 
-#### Frontend Deployment
+### Option 1: GitHub Pages (Recommended)
 
-**Netlify**
-```bash
-# Install Netlify CLI
-pnpm add -g netlify-cli
+**Automatic deployment via GitHub Actions:**
 
-# Deploy from web directory
-cd web
-netlify deploy --prod --dir=dist
-```
-
-**Vercel**
-```bash
-# Install Vercel CLI
-pnpm add -g vercel
-
-# Deploy from web directory
-cd web
-vercel --prod
-```
-
-**GitHub Pages**
 ```yaml
-# .github/workflows/deploy.yml
-name: Deploy to GitHub Pages
+# .github/workflows/deploy-web.yml
+name: Deploy Web Interface
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        run: |
+          cd bucket-brigade-core
+          wasm-pack build --target web
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 9
-      - uses: actions/setup-node@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm run build
-      - uses: peaceiris/actions-gh-pages@v3
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install and Build
+        run: |
+          cd web
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./web/dist
 ```
 
-#### Backend API Deployment
+**Manual deployment:**
 
-**Railway**
 ```bash
-# Install Railway CLI
-pnpm add -g @railway/cli
+# Build everything
+./scripts/build-web.sh  # or follow steps above
 
-# Deploy Python API
+# Deploy to gh-pages branch
+cd web
+npx gh-pages -d dist
+```
+
+**Configuration:**
+1. Go to repository Settings → Pages
+2. Source: Deploy from branch `gh-pages`
+3. Your site will be at: `https://[username].github.io/[repo-name]/`
+
+### Option 2: Netlify
+
+**Via Netlify CLI:**
+
+```bash
+# Install Netlify CLI globally
+npm install -g netlify-cli
+
+# Build the site
+cd bucket-brigade-core && wasm-pack build --target web && cd ..
+cd web && pnpm install && pnpm run build && cd ..
+
+# Deploy
+cd web
+netlify deploy --prod --dir=dist
+```
+
+**Via Netlify UI:**
+1. Connect your GitHub repository
+2. Configure build settings:
+   - **Base directory**: (leave empty)
+   - **Build command**: `cd bucket-brigade-core && wasm-pack build --target web && cd ../web && pnpm install && pnpm run build`
+   - **Publish directory**: `web/dist`
+3. Add build environment:
+   - Node version: `18`
+
+**netlify.toml** (optional):
+
+```toml
+[build]
+  command = "cd bucket-brigade-core && wasm-pack build --target web && cd ../web && pnpm install && pnpm run build"
+  publish = "web/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+### Option 3: Vercel
+
+**Via Vercel CLI:**
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Build and deploy
+vercel --prod
+```
+
+**Via Vercel UI:**
+1. Import your repository
+2. Framework Preset: **Vite**
+3. Root Directory: `web`
+4. Build Command: `cd ../bucket-brigade-core && wasm-pack build --target web && cd ../web && pnpm install && pnpm run build`
+5. Output Directory: `dist`
+
+**vercel.json** (optional):
+
+```json
+{
+  "buildCommand": "cd bucket-brigade-core && wasm-pack build --target web && cd web && pnpm install && pnpm run build",
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+### Option 4: Cloudflare Pages
+
+1. Connect repository via Cloudflare dashboard
+2. Build settings:
+   - **Build command**: `cd bucket-brigade-core && wasm-pack build --target web && cd ../web && pnpm install && pnpm run build`
+   - **Build output directory**: `web/dist`
+   - **Root directory**: (leave empty)
+3. Environment variables:
+   - `NODE_VERSION`: `18`
+
+### Option 5: Self-Hosted (nginx)
+
+**Build and copy files:**
+
+```bash
+# Build
+cd bucket-brigade-core && wasm-pack build --target web && cd ..
+cd web && pnpm install && pnpm run build
+
+# Copy to web server
+scp -r dist/* user@server:/var/www/bucket-brigade/
+```
+
+**nginx configuration:**
+
+```nginx
+server {
+    listen 80;
+    server_name bucket-brigade.example.com;
+    root /var/www/bucket-brigade;
+    index index.html;
+
+    # SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # WASM MIME type
+    location ~* \.wasm$ {
+        types { application/wasm wasm; }
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|wasm)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+}
+```
+
+---
+
+## 🔧 Build Optimization
+
+### Production Build Checklist
+
+- [ ] WASM built with `--release` (wasm-pack does this by default)
+- [ ] Vite production build (`pnpm run build`)
+- [ ] Assets minified and compressed
+- [ ] Source maps disabled in production (check `vite.config.ts`)
+- [ ] Analytics configured (if desired)
+
+### Performance Tips
+
+1. **Enable Brotli compression** on your hosting provider
+2. **Configure CDN caching** for `.wasm` and `.js` files
+3. **Use HTTP/2** for better WASM streaming
+4. **Set proper MIME types** for `.wasm` files (`application/wasm`)
+
+---
+
+## 🧪 Testing Deployment
+
+Before deploying to production:
+
+1. **Test production build locally:**
+   ```bash
+   cd web
+   pnpm run build
+   pnpm run preview
+   ```
+
+2. **Verify WASM loads correctly:**
+   - Open browser DevTools → Network tab
+   - Check that `.wasm` file loads with `200` status
+   - Check for any console errors
+
+3. **Test core functionality:**
+   - Run a tournament
+   - Verify scenario selection works
+   - Check that research data loads
+
+---
+
+## 📊 Monitoring & Analytics
+
+### Google Analytics (Optional)
+
+Add to `web/index.html`:
+
+```html
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+```
+
+### Performance Monitoring
+
+Consider adding:
+- **Sentry** for error tracking
+- **Web Vitals** for performance metrics
+- **LogRocket** for session replay (debugging)
+
+---
+
+## 🚨 Troubleshooting
+
+### WASM fails to load
+
+**Symptoms:** Blank page, console error about WASM
+
+**Solutions:**
+1. Check MIME type is set to `application/wasm`
+2. Verify CORS headers allow WASM loading
+3. Ensure `wasm-pack build` completed successfully
+4. Check browser compatibility (needs WebAssembly support)
+
+### Build fails
+
+**Common issues:**
+1. **Rust not installed**: Install from https://rustup.rs
+2. **wasm-pack missing**: `curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh`
+3. **Node version too old**: Upgrade to Node 18+
+4. **pnpm not installed**: `npm install -g pnpm`
+
+### 404 on page refresh
+
+**Cause:** Server doesn't handle SPA routing
+
+**Solution:** Add rewrite rules (see platform-specific configs above)
+
+---
+
+## 🔮 Future Plans: Backend API Deployment
+
+> ⚠️ **NOT YET IMPLEMENTED**
+>
+> The sections below describe future backend deployment options that **do not currently exist**. They are included for planning purposes.
+>
+> Current status: **Browser-only, no backend required**
+
+<details>
+<summary>Click to expand future backend plans</summary>
+
+### Planned Backend Architecture
+
+When implemented, the backend API will provide:
+- **Agent registry**: Submit and manage AI policies
+- **Tournament orchestration**: Run large-scale competitions
+- **Result persistence**: Store tournament results
+- **Leaderboards**: Rank policies across scenarios
+
+### Proposed Deployment Options
+
+#### Option 1: Railway
+
+```bash
+# Future deployment command (not yet implemented)
 railway login
 railway init
 railway up
 ```
 
-**Render**
+#### Option 2: Render
+
 ```yaml
-# render.yaml
+# Future render.yaml (not yet implemented)
 services:
   - type: web
     name: bucket-brigade-api
-    runtime: python3
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -m bucket_brigade.api
+    env: python
+    buildCommand: "pip install -e ."
+    startCommand: "uvicorn bucket_brigade.api:app"
 ```
 
-**Heroku**
-```yaml
-# Procfile
-web: python -m bucket_brigade.api
-
-# requirements.txt
-flask
-bucket-brigade-core
-# ... other dependencies
-```
-
-### Option 2: Docker Deployment
-
-#### Single Container (Development)
-
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-
-# Install Node.js and pnpm for building frontend
-RUN apt-get update && apt-get install -y curl
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-RUN apt-get install -y nodejs
-RUN curl -fsSL https://get.pnpm.io/install.sh | sh -
-
-# Copy and setup backend
-COPY . /app
-WORKDIR /app
-
-# Install Python dependencies
-RUN pip install -r requirements.txt
-RUN pip install -e .
-
-# Build frontend
-WORKDIR /app/web
-RUN pnpm install && pnpm run build
-
-# Expose port and run
-EXPOSE 8000
-WORKDIR /app
-CMD ["python", "-m", "bucket_brigade.api"]
-```
-
-#### Multi-Container (Production)
+#### Option 3: Docker Compose
 
 ```yaml
-# docker-compose.yml
+# Future docker-compose.yml (not yet implemented)
 version: '3.8'
 services:
   api:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      - ENVIRONMENT=production
-    volumes:
-      - ./data:/app/data
-
   web:
     build: ./web
     ports:
       - "3000:3000"
-    depends_on:
-      - api
 ```
 
-### Option 3: Cloud Platform Deployment
+#### Option 4: Cloud Platforms
 
-#### AWS
+- **AWS**: Lambda + API Gateway or ECS Fargate
+- **GCP**: Cloud Run or App Engine
+- **Azure**: Container Apps or App Service
 
-**API Gateway + Lambda (Serverless)**
-```python
-# lambda_function.py
-from bucket_brigade.api import app
+**Status**: All backend deployment options are in planning phase.
 
-def lambda_handler(event, context):
-    return app(event, context)
-```
-
-**ECS Fargate**
-```yaml
-# task-definition.json
-{
-  "family": "bucket-brigade",
-  "containerDefinitions": [
-    {
-      "name": "api",
-      "image": "your-registry/bucket-brigade:latest",
-      "portMappings": [
-        {
-          "containerPort": 8000,
-          "hostPort": 8000
-        }
-      ]
-    }
-  ]
-}
-```
-
-#### Google Cloud
-
-**Cloud Run**
-```bash
-# Build and deploy
-gcloud builds submit --tag gcr.io/PROJECT-ID/bucket-brigade
-gcloud run deploy --image gcr.io/PROJECT-ID/bucket-brigade --platform managed
-```
-
-**App Engine**
-```yaml
-# app.yaml
-runtime: python311
-entrypoint: python -m bucket_brigade.api
-
-handlers:
-- url: /.*
-  script: auto
-```
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-```bash
-# API Configuration
-BUCKET_BRIGADE_PORT=8000
-BUCKET_BRIGADE_HOST=0.0.0.0
-BUCKET_BRIGADE_DEBUG=false
-
-# Database (if using persistent storage)
-DATABASE_URL=postgresql://user:pass@localhost/bucket_brigade
-
-# CORS (for web deployment)
-CORS_ORIGINS=https://your-frontend-domain.com
-```
-
-### Runtime Configuration
-
-```python
-# config.py
-import os
-
-class Config:
-    PORT = int(os.getenv('BUCKET_BRIGADE_PORT', 8000))
-    HOST = os.getenv('BUCKET_BRIGADE_HOST', 'localhost')
-    DEBUG = os.getenv('BUCKET_BRIGADE_DEBUG', 'false').lower() == 'true'
-    DATABASE_URL = os.getenv('DATABASE_URL')
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
-```
-
-## 🔒 Security Considerations
-
-### API Security
-- Use HTTPS in production
-- Implement rate limiting
-- Validate all user inputs
-- Use secure headers (CSP, HSTS, etc.)
-
-### Agent Security
-- Sandbox agent execution
-- Limit resource usage per agent
-- Validate agent code statically
-- Implement timeouts for agent actions
-
-### Data Security
-- Encrypt sensitive data at rest
-- Use secure database connections
-- Implement proper authentication if needed
-- Regular security updates
-
-## 📊 Monitoring & Logging
-
-### Health Checks
-
-```python
-# health.py
-from flask import Blueprint, jsonify
-import psutil
-import time
-
-health_bp = Blueprint('health', __name__)
-
-@health_bp.route('/health')
-def health():
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': time.time(),
-        'memory_usage': psutil.virtual_memory().percent,
-        'cpu_usage': psutil.cpu_percent()
-    })
-```
-
-### Logging Configuration
-
-```python
-# logging.py
-import logging
-import os
-
-def setup_logging():
-    level = logging.INFO if os.getenv('ENVIRONMENT') == 'production' else logging.DEBUG
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-```
-
-## 🔄 Updates & Rollbacks
-
-### Blue-Green Deployment
-
-```bash
-# Deploy new version
-kubectl set image deployment/bucket-brigade api=new-version
-
-# Verify health
-curl https://api.example.com/health
-
-# Switch traffic (if using load balancer)
-kubectl patch service bucket-brigade -p '{"spec":{"selector":{"version":"v2"}}}'
-
-# Rollback if needed
-kubectl rollout undo deployment/bucket-brigade
-```
-
-### Rolling Updates
-
-```yaml
-# deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  template:
-    spec:
-      containers:
-      - name: api
-        image: your-registry/bucket-brigade:latest
-```
-
-## 🧪 Testing Deployments
-
-### Pre-deployment Checks
-
-```bash
-# Run full test suite
-pnpm run test
-
-# Test API endpoints
-curl -X POST http://localhost:8000/api/games \
-  -H "Content-Type: application/json" \
-  -d '{"scenario": "trivial_cooperation", "agents": ["firefighter", "coordinator"]}'
-
-# Test frontend build
-cd web && pnpm run build && pnpm run preview
-```
-
-### Production Validation
-
-```bash
-# Health check
-curl https://your-api.com/health
-
-# Load test
-ab -n 1000 -c 10 https://your-api.com/api/games
-
-# Monitor logs
-tail -f /var/log/bucket-brigade/app.log
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-**Frontend not loading**
-- Check build process completed successfully
-- Verify static file serving configuration
-- Check CORS settings
-
-**API returning 500 errors**
-- Check application logs
-- Verify database connectivity
-- Confirm environment variables
-
-**Performance issues**
-- Monitor resource usage
-- Check database query performance
-- Consider caching strategies
-
-**Agent timeouts**
-- Increase timeout limits
-- Optimize agent code
-- Check for infinite loops
-
-## 📈 Scaling
-
-### Horizontal Scaling
-
-```yaml
-# kubernetes deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: bucket-brigade-api
-spec:
-  replicas: 3  # Scale as needed
-  selector:
-    matchLabels:
-      app: bucket-brigade-api
-  template:
-    metadata:
-      labels:
-        app: bucket-brigade-api
-    spec:
-      containers:
-      - name: api
-        image: your-registry/bucket-brigade:latest
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-```
-
-### Database Scaling
-
-- Use connection pooling
-- Implement read replicas for analytics
-- Consider sharding for large datasets
-- Use caching (Redis/Memcached)
+</details>
 
 ---
 
-For questions about deployment, check the [CONTRIBUTING.md](CONTRIBUTING.md) guide or create an issue.
+## 📝 Deployment Checklist
+
+### Pre-Deployment
+
+- [ ] Update `package.json` version
+- [ ] Update `CHANGELOG.md` with changes
+- [ ] Run full test suite (`pytest`, `cargo test`)
+- [ ] Build and test production bundle locally
+- [ ] Review security headers configuration
+
+### During Deployment
+
+- [ ] Deploy to staging/preview environment first
+- [ ] Smoke test critical paths
+- [ ] Check browser console for errors
+- [ ] Verify WASM loads correctly
+- [ ] Test on multiple browsers (Chrome, Firefox, Safari)
+
+### Post-Deployment
+
+- [ ] Monitor error logs for 24 hours
+- [ ] Check analytics for unusual traffic
+- [ ] Verify SEO/social media previews work
+- [ ] Update documentation with new URL if changed
+
+---
+
+## 🔗 Related Documentation
+
+- [SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md) - System architecture
+- [API.md](API.md) - Data structures and future API plans
+- [web/README.md](web/README.md) - Web interface details
+- [bucket-brigade-core/README.md](bucket-brigade-core/README.md) - Rust core documentation
+
+---
+
+*Last Updated: 2025-11-05*
