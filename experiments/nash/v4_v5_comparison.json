@@ -1,0 +1,317 @@
+[
+  {
+    "scenario": "chain_reaction",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 803.8669857978821,
+      "v5": 803.8669857978821,
+      "diff": 0.0,
+      "pct_change": 0.0
+    },
+    "evolved_in_equilibrium": {
+      "v4": 0,
+      "v5": 0,
+      "same": true
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 71.84803009033203,
+      "v5_time": 148.78110718727112
+    },
+    "cooperation": {
+      "v4": 1.0,
+      "v5": 1.0,
+      "same": true
+    }
+  },
+  {
+    "scenario": "deceptive_calm",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 48.56375,
+      "v5": 403.3963940086365,
+      "diff": 354.8326440086365,
+      "pct_change": 730.653304179839
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 60.26684808731079,
+      "v5_time": 106.33145689964294
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "early_containment",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 64.866,
+      "v5": 946.8805,
+      "diff": 882.0145,
+      "pct_change": 1359.7485585668917
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 58.69640302658081,
+      "v5_time": 97.32039308547974
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "greedy_neighbor",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 64.866,
+      "v5": 710.5385,
+      "diff": 645.6725,
+      "pct_change": 995.3943514321834
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 57.99362564086914,
+      "v5_time": 116.72512483596802
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "mixed_motivation",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 61.02525,
+      "v5": 663.4365372028351,
+      "diff": 602.4112872028351,
+      "pct_change": 987.150871488171
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 3,
+      "v4_time": 59.37235403060913,
+      "v5_time": 283.89325761795044
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "overcrowding",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "mixed",
+      "same": false
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 2,
+      "same": false
+    },
+    "expected_payoff": {
+      "v4": 64.866,
+      "v5": 115.8444923376999,
+      "diff": 50.978492337699905,
+      "pct_change": 78.59046702078115
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 4,
+      "v4_time": 57.73896861076355,
+      "v5_time": 640.7436442375183
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "rest_trap",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 64.866,
+      "v5": 1007.2276209716797,
+      "diff": 942.3616209716797,
+      "pct_change": 1452.7820753116882
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 0,
+      "same": false
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 57.979243993759155,
+      "v5_time": 103.56219363212585
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "sparse_heroics",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 67.24725,
+      "v5": 792.9836073760987,
+      "diff": 725.7363573760987,
+      "pct_change": 1079.2060008046408
+    },
+    "evolved_in_equilibrium": {
+      "v4": 0,
+      "v5": 0,
+      "same": true
+    },
+    "convergence": {
+      "v4_iterations": 6,
+      "v5_iterations": 1,
+      "v4_time": 316.91029596328735,
+      "v5_time": 101.89309287071228
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 1.0,
+      "same": false
+    }
+  },
+  {
+    "scenario": "trivial_cooperation",
+    "equilibrium_type": {
+      "v4": "pure",
+      "v5": "pure",
+      "same": true
+    },
+    "support_size": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "expected_payoff": {
+      "v4": 26.5,
+      "v5": 1026.5,
+      "diff": 1000.0,
+      "pct_change": 3773.5849056603774
+    },
+    "evolved_in_equilibrium": {
+      "v4": 1,
+      "v5": 1,
+      "same": true
+    },
+    "convergence": {
+      "v4_iterations": 1,
+      "v5_iterations": 1,
+      "v4_time": 9.995432615280151,
+      "v5_time": 14.961468696594238
+    },
+    "cooperation": {
+      "v4": 0.0,
+      "v5": 0.0,
+      "same": true
+    }
+  }
+]

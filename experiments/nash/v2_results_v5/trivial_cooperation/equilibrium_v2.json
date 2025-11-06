@@ -1,0 +1,100 @@
+{
+  "scenario": "trivial_cooperation",
+  "version": "v2",
+  "parameters": {
+    "beta": 0.15,
+    "kappa": 0.9,
+    "c": 0.5,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.1,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle_v2",
+    "num_simulations": 2000,
+    "max_iterations": 20,
+    "epsilon": 0.01,
+    "seed": 42,
+    "evaluator": "RustPayoffEvaluator"
+  },
+  "initial_pool": {
+    "archetypes": 5,
+    "evolved_agents": 1,
+    "evolved_versions": [
+      "v5"
+    ],
+    "total": 6
+  },
+  "equilibrium": {
+    "type": "pure",
+    "support_size": 1,
+    "expected_payoff": 1026.5,
+    "distribution": {
+      "5": 1.0
+    },
+    "strategy_pool": [
+      {
+        "index": 5,
+        "probability": 1.0,
+        "is_evolved": true,
+        "evolved_info": {
+          "scenario": "trivial_cooperation",
+          "fitness": 68.29,
+          "generation": 12000,
+          "version": "v5",
+          "parameters": {
+            "honesty": 0.4759170126895064,
+            "work_tendency": 0.0,
+            "neighbor_help": 0.6406774874352585,
+            "own_priority": 0.2087471083556242,
+            "risk_aversion": 0.49636136529834957,
+            "coordination": 0.08188496238033055,
+            "exploration": 0.22139044327314694,
+            "fatigue_memory": 0.48994763966532384,
+            "rest_bias": 0.9287979924587335,
+            "altruism": 0.5181790254602929
+          }
+        },
+        "classification": "Mixed Strategy",
+        "closest_archetype": "Free Rider",
+        "archetype_distance": 1.3250336963519975,
+        "parameters": {
+          "honesty": 0.4759170126895064,
+          "work_tendency": 0.0,
+          "neighbor_help": 0.6406774874352585,
+          "own_priority": 0.2087471083556242,
+          "risk_aversion": 0.49636136529834957,
+          "coordination": 0.08188496238033055,
+          "exploration": 0.22139044327314694,
+          "fatigue_memory": 0.48994763966532384,
+          "rest_bias": 0.9287979924587335,
+          "altruism": 0.5181790254602929
+        },
+        "genome": [
+          0.4759170126895064,
+          0.0,
+          0.6406774874352585,
+          0.2087471083556242,
+          0.49636136529834957,
+          0.08188496238033055,
+          0.22139044327314694,
+          0.48994763966532384,
+          0.9287979924587335,
+          0.5181790254602929
+        ]
+      }
+    ],
+    "evolved_in_equilibrium": 1
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 1,
+    "elapsed_time": 14.961468696594238
+  },
+  "interpretation": {
+    "equilibrium_type": "pure",
+    "cooperation_rate": 0.0,
+    "free_riding_rate": 1.0
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "scenario": "sparse_heroics",
+  "version": "v2",
+  "parameters": {
+    "beta": 0.1,
+    "kappa": 0.5,
+    "c": 0.8,
+    "A": 100.0,
+    "L": 100.0,
+    "rho_ignite": 0.15,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle_v2",
+    "num_simulations": 2000,
+    "max_iterations": 20,
+    "epsilon": 0.01,
+    "seed": 42,
+    "evaluator": "RustPayoffEvaluator"
+  },
+  "initial_pool": {
+    "archetypes": 5,
+    "evolved_agents": 1,
+    "evolved_versions": [
+      "v5"
+    ],
+    "total": 6
+  },
+  "equilibrium": {
+    "type": "pure",
+    "support_size": 1,
+    "expected_payoff": 792.9836073760987,
+    "distribution": {
+      "2": 1.0
+    },
+    "strategy_pool": [
+      {
+        "index": 2,
+        "probability": 1.0,
+        "is_evolved": false,
+        "evolved_info": null,
+        "classification": "Firefighter/Hero",
+        "closest_archetype": "Hero",
+        "archetype_distance": 0.0,
+        "parameters": {
+          "honesty": 1.0,
+          "work_tendency": 1.0,
+          "neighbor_help": 1.0,
+          "own_priority": 0.5,
+          "risk_aversion": 0.1,
+          "coordination": 0.5,
+          "exploration": 0.0,
+          "fatigue_memory": 0.9,
+          "rest_bias": 0.0,
+          "altruism": 1.0
+        },
+        "genome": [
+          1.0,
+          1.0,
+          1.0,
+          0.5,
+          0.1,
+          0.5,
+          0.0,
+          0.9,
+          0.0,
+          1.0
+        ]
+      }
+    ],
+    "evolved_in_equilibrium": 0
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 1,
+    "elapsed_time": 101.89309287071228
+  },
+  "interpretation": {
+    "equilibrium_type": "pure",
+    "cooperation_rate": 1.0,
+    "free_riding_rate": 0.0
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "scenario": "overcrowding",
+  "version": "v2",
+  "parameters": {
+    "beta": 0.2,
+    "kappa": 0.3,
+    "c": 0.6,
+    "A": 50.0,
+    "L": 100.0,
+    "rho_ignite": 0.1,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle_v2",
+    "num_simulations": 2000,
+    "max_iterations": 20,
+    "epsilon": 0.01,
+    "seed": 42,
+    "evaluator": "RustPayoffEvaluator"
+  },
+  "initial_pool": {
+    "archetypes": 5,
+    "evolved_agents": 1,
+    "evolved_versions": [
+      "v5"
+    ],
+    "total": 6
+  },
+  "equilibrium": {
+    "type": "mixed",
+    "support_size": 2,
+    "expected_payoff": 115.8444923376999,
+    "distribution": {
+      "6": 0.993877359754142,
+      "8": 0.006122640245857958
+    },
+    "strategy_pool": [
+      {
+        "index": 6,
+        "probability": 0.993877359754142,
+        "is_evolved": false,
+        "evolved_info": null,
+        "classification": "Firefighter/Hero",
+        "closest_archetype": "Hero",
+        "archetype_distance": 6.804520659210655e-07,
+        "parameters": {
+          "honesty": 0.9999995234890555,
+          "work_tendency": 1.0,
+          "neighbor_help": 1.0,
+          "own_priority": 0.49999973088452776,
+          "risk_aversion": 0.10000020764029598,
+          "coordination": 0.499999698611508,
+          "exploration": 0.0,
+          "fatigue_memory": 0.900000171987295,
+          "rest_bias": 0.0,
+          "altruism": 0.999999999773813
+        },
+        "genome": [
+          0.9999995234890555,
+          1.0,
+          1.0,
+          0.49999973088452776,
+          0.10000020764029598,
+          0.499999698611508,
+          0.0,
+          0.900000171987295,
+          0.0,
+          0.999999999773813
+        ]
+      },
+      {
+        "index": 8,
+        "probability": 0.006122640245857958,
+        "is_evolved": false,
+        "evolved_info": null,
+        "classification": "Firefighter/Hero",
+        "closest_archetype": "Hero",
+        "archetype_distance": 1.1788296099483681e-06,
+        "parameters": {
+          "honesty": 0.9999995133521987,
+          "work_tendency": 0.9999998941643033,
+          "neighbor_help": 0.9999996754959207,
+          "own_priority": 0.5000000275262187,
+          "risk_aversion": 0.10000059210719149,
+          "coordination": 0.5000001337993375,
+          "exploration": 5.523019964764239e-07,
+          "fatigue_memory": 0.8999998881248445,
+          "rest_bias": 4.210396661431339e-07,
+          "altruism": 0.9999995849936786
+        },
+        "genome": [
+          0.9999995133521987,
+          0.9999998941643033,
+          0.9999996754959207,
+          0.5000000275262187,
+          0.10000059210719149,
+          0.5000001337993375,
+          5.523019964764239e-07,
+          0.8999998881248445,
+          4.210396661431339e-07,
+          0.9999995849936786
+        ]
+      }
+    ],
+    "evolved_in_equilibrium": 0
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 4,
+    "elapsed_time": 640.7436442375183
+  },
+  "interpretation": {
+    "equilibrium_type": "mixed",
+    "cooperation_rate": 1.0,
+    "free_riding_rate": 0.0
+  }
+}
