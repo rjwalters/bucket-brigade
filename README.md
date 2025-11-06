@@ -36,7 +36,9 @@ See [docs/game_mechanics.md](docs/game_mechanics.md) for the complete game rules
 - **Run large-scale tournaments** with diverse teams and scenarios (1000+ games)
 - **Extract individual policy performance** with statistical validation
 - **Evolve optimal heuristic agents** through evolutionary algorithms - see [Evolution Research](experiments/evolution/README.md)
-- **Train neural network policies** using PufferLib/PPO reinforcement learning - see [TRAINING_GUIDE.md](TRAINING_GUIDE.md)
+- **Train neural network policies** using reinforcement learning:
+  - Population-based training (recommended) - see [POPULATION_TRAINING.md](POPULATION_TRAINING.md)
+  - Single agent training - see [TRAINING_GUIDE.md](TRAINING_GUIDE.md)
 - **Analyze Nash equilibria** to find stable strategic configurations
 - **Understand cooperation dynamics** through scenario analysis and agent ranking
 
