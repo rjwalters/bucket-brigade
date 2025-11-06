@@ -15,7 +15,7 @@ def test_heterogeneous_team():
     scenario = core.SCENARIOS["trivial_cooperation"]
 
     # Create heterogeneous team with different strategies
-    num_agents = scenario.num_agents
+    num_agents = 4  # Standard team size
     agent_params = []
 
     for i in range(num_agents):
@@ -35,7 +35,7 @@ def test_heterogeneous_team():
 
     # Run episode
     seed = 42
-    rewards = core.run_heuristic_episode(scenario, agent_params, seed)
+    rewards = core.run_heuristic_episode(scenario, 4, agent_params, seed)
 
     print(f"Number of agents: {num_agents}")
     print(f"Rewards: {rewards}")
@@ -62,7 +62,7 @@ def test_homogeneous_team():
 
     # Run episode
     seed = 42
-    rewards = core.run_heuristic_episode(scenario, agent_params, seed)
+    rewards = core.run_heuristic_episode(scenario, 4, agent_params, seed)
 
     print("\nHomogeneous team:")
     print(f"Number of agents: {num_agents}")
@@ -84,7 +84,7 @@ def test_focal_wrapper():
 
     seed = 42
     focal_reward = core.run_heuristic_episode_focal(
-        scenario, theta_focal.tolist(), theta_opponents.tolist(), seed
+        scenario, 4, scenario, theta_focal.tolist(), theta_opponents.tolist(), seed
     )
 
     print("\nFocal wrapper test:")
@@ -95,7 +95,7 @@ def test_focal_wrapper():
     agent_params = [theta_focal.tolist()] + [theta_opponents.tolist()] * (
         num_agents - 1
     )
-    all_rewards = core.run_heuristic_episode(scenario, agent_params, seed)
+    all_rewards = core.run_heuristic_episode(scenario, 4, agent_params, seed)
 
     assert abs(focal_reward - all_rewards[0]) < 0.001, (
         "Focal wrapper should match generalized function"

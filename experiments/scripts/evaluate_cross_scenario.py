@@ -25,7 +25,6 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.equilibrium import (
     load_evolved_agent,
@@ -87,7 +86,9 @@ def evaluate_cross_scenario(
             f"No evolved agent found for {agent_scenario} {evolved_version}"
         )
 
-    agent_metadata = load_evolved_agent_metadata(agent_scenario, version=evolved_version)
+    agent_metadata = load_evolved_agent_metadata(
+        agent_scenario, version=evolved_version
+    )
 
     if verbose:
         print("Agent Parameters:")
@@ -190,7 +191,9 @@ def evaluate_all_combinations(
     print("Phase 1.5: Cross-Scenario Generalization Analysis")
     print("=" * 80)
     print()
-    print(f"Evaluating {len(SCENARIOS)}×{len(SCENARIOS)} = {len(SCENARIOS)**2} combinations")
+    print(
+        f"Evaluating {len(SCENARIOS)}×{len(SCENARIOS)} = {len(SCENARIOS) ** 2} combinations"
+    )
     print(f"Evolution version: {evolved_version}")
     print(f"Simulations per evaluation: {num_simulations}")
     print()
@@ -385,7 +388,9 @@ def main():
     else:
         parser.print_help()
         print()
-        print("Error: Either --all or both --agent-scenario and --test-scenario required")
+        print(
+            "Error: Either --all or both --agent-scenario and --test-scenario required"
+        )
         sys.exit(1)
 
 

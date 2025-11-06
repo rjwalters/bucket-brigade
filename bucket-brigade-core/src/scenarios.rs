@@ -20,7 +20,6 @@ pub struct Scenario {
     // Costs and structure
     pub cost_to_work_one_night: f32, // Cost incurred when agent chooses to work
     pub min_nights: u32,             // Minimum nights before game can end
-    pub num_agents: usize,           // Number of agents in game
 }
 
 pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
@@ -33,7 +32,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -48,7 +46,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 10,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -63,7 +60,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 15,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -79,7 +75,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -94,7 +89,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -109,7 +103,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 1.0, // High work cost creates social dilemma
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -124,7 +117,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.8,
         min_nights: 20, // Longer games
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -139,7 +131,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.2,
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -154,7 +145,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.7,
         min_nights: 15,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -169,7 +159,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.4,
         min_nights: 20, // Long games
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -184,7 +173,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.6,
         min_nights: 12,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -199,7 +187,6 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.6,
         min_nights: 15,
-        num_agents: 4,
         reward_own_house_survives: 100.0,
         reward_other_house_survives: 50.0,
         penalty_own_house_burns: 0.0,
@@ -246,7 +233,6 @@ mod tests {
         assert_eq!(scenario.cost_to_work_one_night, 0.5);
         assert_eq!(scenario.prob_house_catches_fire, 0.0); // Updated to match new value
         assert_eq!(scenario.min_nights, 12);
-        assert_eq!(scenario.num_agents, 4);
     }
 
     #[test]
@@ -272,17 +258,6 @@ mod tests {
         assert_eq!(scenario.prob_house_catches_fire, 0.02);
         assert_eq!(scenario.team_reward_house_survives, 100.0);
         assert_eq!(scenario.team_penalty_house_burns, 100.0);
-    }
-
-    #[test]
-    fn test_all_scenarios_have_4_agents() {
-        for (name, scenario) in SCENARIOS.entries() {
-            assert_eq!(
-                scenario.num_agents, 4,
-                "Scenario '{}' should have 4 agents",
-                name
-            );
-        }
     }
 
     #[test]
@@ -315,7 +290,6 @@ mod tests {
     fn test_scenario_clone() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
         assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.15);
-        assert_eq!(scenario.num_agents, 4);
     }
 
     #[test]
@@ -323,14 +297,12 @@ mod tests {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
         let json = serde_json::to_string(scenario).unwrap();
         assert!(json.contains("\"prob_fire_spreads_to_neighbor\":0.15"));
-        assert!(json.contains("\"num_agents\":4"));
 
         let deserialized: Scenario = serde_json::from_str(&json).unwrap();
         assert_eq!(
             deserialized.prob_fire_spreads_to_neighbor,
             scenario.prob_fire_spreads_to_neighbor
         );
-        assert_eq!(deserialized.num_agents, scenario.num_agents);
     }
 
     #[test]
@@ -459,15 +431,6 @@ mod tests {
                 assert_eq!(scenario.team_penalty_house_burns, 100.0,
                           "Scenario '{}' should use standard penalty (100)", name);
             }
-        }
-    }
-
-    #[test]
-    fn test_all_scenarios_use_4_agents() {
-        // All current scenarios should use 4 agents
-        for (name, scenario) in SCENARIOS.entries() {
-            assert_eq!(scenario.num_agents, 4,
-                      "Scenario '{}' should use 4 agents", name);
         }
     }
 }

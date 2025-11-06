@@ -20,7 +20,7 @@ try:
     )
 
     # Test environment creation
-    env = BucketBrigade(scenario)
+    env = BucketBrigade(scenario, 4)
     print("✅ Created BucketBrigade environment")
 
     # Test reset

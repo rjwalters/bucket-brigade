@@ -10,12 +10,12 @@ pub struct WasmBucketBrigade {
 #[wasm_bindgen]
 impl WasmBucketBrigade {
     #[wasm_bindgen(constructor)]
-    pub fn new(scenario_json: &str) -> Result<WasmBucketBrigade, JsValue> {
+    pub fn new(scenario_json: &str, num_agents: usize) -> Result<WasmBucketBrigade, JsValue> {
         let scenario: Scenario = serde_json::from_str(scenario_json)
             .map_err(|e| JsValue::from_str(&format!("Failed to parse scenario: {}", e)))?;
 
         Ok(Self {
-            inner: BucketBrigade::new(scenario, None),
+            inner: BucketBrigade::new(scenario, num_agents, None),
         })
     }
 
@@ -91,7 +91,6 @@ impl WasmScenario {
         team_penalty_house_burns: f32,
         cost_to_work_one_night: f32,
         min_nights: u32,
-        num_agents: usize,
         reward_own_house_survives: Option<f32>,
         reward_other_house_survives: Option<f32>,
         penalty_own_house_burns: Option<f32>,
@@ -106,7 +105,6 @@ impl WasmScenario {
                 team_penalty_house_burns,
                 cost_to_work_one_night,
                 min_nights,
-                num_agents,
                 reward_own_house_survives: reward_own_house_survives.unwrap_or(100.0),
                 reward_other_house_survives: reward_other_house_survives.unwrap_or(50.0),
                 penalty_own_house_burns: penalty_own_house_burns.unwrap_or(0.0),

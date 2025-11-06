@@ -4,17 +4,17 @@ use crate::SCENARIOS;
 #[test]
 fn test_engine_creation() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let engine = BucketBrigade::new(scenario.clone(), Some(42));
+    let engine = BucketBrigade::new(scenario.clone(), 4, Some(42));
 
     assert_eq!(engine.night, 0);
     assert!(!engine.done);
-    assert_eq!(engine.scenario.num_agents, 4);
+    assert_eq!(engine.num_agents, 4);
 }
 
 #[test]
 fn test_engine_initialization_fires() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let engine = BucketBrigade::new(scenario, Some(42));
+    let engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Count burning houses
     let burning = engine.houses.iter().filter(|&&h| h == 1).count();
@@ -26,7 +26,7 @@ fn test_engine_initialization_fires() {
 #[test]
 fn test_reset() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Take some steps
     let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
@@ -45,8 +45,8 @@ fn test_reset() {
 #[test]
 fn test_deterministic_with_seed() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine1 = BucketBrigade::new(scenario.clone(), Some(123));
-    let mut engine2 = BucketBrigade::new(scenario, Some(123));
+    let mut engine1 = BucketBrigade::new(scenario.clone(), 4, Some(123));
+    let mut engine2 = BucketBrigade::new(scenario, 4, Some(123));
 
     // Same seed should produce identical initial states
     assert_eq!(engine1.houses, engine2.houses);
@@ -63,7 +63,7 @@ fn test_deterministic_with_seed() {
 #[test]
 fn test_step_advances_night() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let initial_night = engine.night;
     let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
@@ -75,7 +75,7 @@ fn test_step_advances_night() {
 #[test]
 fn test_work_vs_rest_rewards() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // All agents rest
     let rest_actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
@@ -94,7 +94,7 @@ fn test_work_vs_rest_rewards() {
 fn test_fire_extinguishing() {
     let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     scenario.prob_solo_agent_extinguishes_fire = 0.99; // Very high extinguish probability
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Set up a burning house
     engine.houses = vec![0; 10];
@@ -120,7 +120,7 @@ fn test_fire_spreads_to_neighbors() {
     scenario.prob_fire_spreads_to_neighbor = 1.0; // 100% spread probability
     scenario.prob_solo_agent_extinguishes_fire = 0.0; // No extinguishing
 
-    let mut engine = BucketBrigade::new(scenario, Some(100));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(100));
 
     // Set up a controlled initial state with one burning house
     engine.houses = vec![0; 10];
@@ -141,7 +141,7 @@ fn test_fire_spreads_to_neighbors() {
 #[test]
 fn test_burn_out_phase() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Set a house on fire
     engine.houses[3] = 1;
@@ -163,7 +163,7 @@ fn test_spontaneous_ignition() {
     let mut scenario = SCENARIOS.get("early_containment").unwrap().clone();
     scenario.prob_house_catches_fire = 1.0; // 100% ignition probability for testing
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Clear all fires
     engine.houses = vec![0; 10];
@@ -186,7 +186,7 @@ fn test_continuous_spontaneous_ignition() {
     let mut scenario = SCENARIOS.get("early_containment").unwrap().clone();
     scenario.prob_house_catches_fire = 1.0; // 100% ignition probability
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10];
 
     // Step multiple nights
@@ -211,7 +211,7 @@ fn test_termination_all_safe() {
     let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     scenario.min_nights = 0; // Allow immediate termination
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10]; // All safe
 
     let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
@@ -225,7 +225,7 @@ fn test_termination_all_ruined() {
     let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     scenario.min_nights = 0;
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![2; 10]; // All ruined
 
     let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
@@ -239,7 +239,7 @@ fn test_minimum_nights_prevents_early_termination() {
     let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     scenario.min_nights = 5; // Require at least 5 nights
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10]; // All safe
 
     let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
@@ -254,7 +254,7 @@ fn test_minimum_nights_prevents_early_termination() {
 #[test]
 fn test_get_observation() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let engine = BucketBrigade::new(scenario, Some(42));
+    let engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let obs = engine.get_observation(0);
 
@@ -269,7 +269,7 @@ fn test_get_observation() {
 #[test]
 fn test_trajectory_recording() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
     engine.step(&actions);
@@ -288,7 +288,7 @@ fn test_trajectory_recording() {
 #[test]
 fn test_final_score_calculation() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
     engine.step(&actions);
@@ -303,7 +303,7 @@ fn test_final_score_calculation() {
 #[test]
 fn test_agent_positions_update() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let actions = vec![[5, 1], [6, 1], [7, 1], [8, 1]];
     engine.step(&actions);
@@ -315,7 +315,7 @@ fn test_agent_positions_update() {
 #[test]
 fn test_agent_signals_update() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let actions = vec![[0, 0], [1, 1], [2, 0], [3, 1]];
     engine.step(&actions);
@@ -330,7 +330,7 @@ fn test_step_after_done_panics() {
     let mut scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     scenario.min_nights = 0;
 
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10];
 
     let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
@@ -343,7 +343,7 @@ fn test_step_after_done_panics() {
 #[test]
 fn test_ownership_rewards() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Agent 0 owns house 0, agent 1 owns house 1, etc.
     engine.houses = vec![0; 10]; // All safe
@@ -372,7 +372,7 @@ fn test_ownership_rewards() {
 #[test]
 fn test_ownership_penalty() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
-    let mut engine = BucketBrigade::new(scenario, Some(42));
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Set agent 0's house (house 0) to ruined
     engine.houses = vec![0; 10];
