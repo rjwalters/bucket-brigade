@@ -253,7 +253,6 @@ class PolicyLearner:
             rewards.cpu(),
             values.cpu(),
             dones.cpu(),
-            next_values.cpu(),
             self.gamma,
             self.gae_lambda,
         ).to(self.device)
