@@ -25,16 +25,16 @@ KAPPA_SCENARIOS = [
 
 # p_spark sweep scenarios (varying ongoing fires, κ=0.90)
 SPARK_SCENARIOS = [
-    "easy_kappa_90",   # p_spark=0.00 (no ongoing fires - baseline)
-    "easy_spark_01",   # p_spark=0.01
-    "easy_spark_02",   # p_spark=0.02
-    "easy_spark_05",   # p_spark=0.05
+    "easy_kappa_90",  # p_spark=0.00 (no ongoing fires - baseline)
+    "easy_spark_01",  # p_spark=0.01
+    "easy_spark_02",  # p_spark=0.02
+    "easy_spark_05",  # p_spark=0.05
 ]
 
 # Reference scenarios for comparison
 REFERENCE_SCENARIOS = [
     "trivial_cooperation",  # κ=0.90, p_spark=0.0 (should match easy_kappa_90)
-    "sparse_heroics",       # κ=0.50, p_spark=0.02 (high performance baseline)
+    "sparse_heroics",  # κ=0.50, p_spark=0.02 (high performance baseline)
 ]
 
 
@@ -174,7 +174,9 @@ def main():
     print()
     print(f"κ range: {min(kappa_values):.2f} - {max(kappa_values):.2f}")
     print(f"Payoff range: {min(kappa_payoffs):.2f} - {max(kappa_payoffs):.2f}")
-    print(f"Performance degradation: {max(kappa_payoffs) - min(kappa_payoffs):.2f} points")
+    print(
+        f"Performance degradation: {max(kappa_payoffs) - min(kappa_payoffs):.2f} points"
+    )
     print()
 
     # p_spark sweep analysis
@@ -193,7 +195,9 @@ def main():
     print()
     print(f"p_spark range: {min(spark_values):.2f} - {max(spark_values):.2f}")
     print(f"Payoff range: {min(spark_payoffs):.2f} - {max(spark_payoffs):.2f}")
-    print(f"Performance improvement: {max(spark_payoffs) - min(spark_payoffs):.2f} points")
+    print(
+        f"Performance improvement: {max(spark_payoffs) - min(spark_payoffs):.2f} points"
+    )
     print()
 
     # Key findings
@@ -210,15 +214,27 @@ def main():
     spark_worst = min(spark_results, key=lambda x: x[1]["payoff"])
 
     print("κ Effect:")
-    print(f"  Best:  {kappa_best[0]} (κ={kappa_best[1]['kappa']:.2f}) → {kappa_best[1]['payoff']:.2f}")
-    print(f"  Worst: {kappa_worst[0]} (κ={kappa_worst[1]['kappa']:.2f}) → {kappa_worst[1]['payoff']:.2f}")
-    print(f"  Interpretation: {'Higher κ hurts performance' if kappa_best[1]['kappa'] < kappa_worst[1]['kappa'] else 'Higher κ helps performance'}")
+    print(
+        f"  Best:  {kappa_best[0]} (κ={kappa_best[1]['kappa']:.2f}) → {kappa_best[1]['payoff']:.2f}"
+    )
+    print(
+        f"  Worst: {kappa_worst[0]} (κ={kappa_worst[1]['kappa']:.2f}) → {kappa_worst[1]['payoff']:.2f}"
+    )
+    print(
+        f"  Interpretation: {'Higher κ hurts performance' if kappa_best[1]['kappa'] < kappa_worst[1]['kappa'] else 'Higher κ helps performance'}"
+    )
     print()
 
     print("p_spark Effect:")
-    print(f"  Best:  {spark_best[0]} (p_spark={spark_best[1]['p_spark']:.2f}) → {spark_best[1]['payoff']:.2f}")
-    print(f"  Worst: {spark_worst[0]} (p_spark={spark_worst[1]['p_spark']:.2f}) → {spark_worst[1]['payoff']:.2f}")
-    print(f"  Interpretation: {'Ongoing fires help performance' if spark_best[1]['p_spark'] > 0 else 'No ongoing fires is optimal'}")
+    print(
+        f"  Best:  {spark_best[0]} (p_spark={spark_best[1]['p_spark']:.2f}) → {spark_best[1]['payoff']:.2f}"
+    )
+    print(
+        f"  Worst: {spark_worst[0]} (p_spark={spark_worst[1]['p_spark']:.2f}) → {spark_worst[1]['payoff']:.2f}"
+    )
+    print(
+        f"  Interpretation: {'Ongoing fires help performance' if spark_best[1]['p_spark'] > 0 else 'No ongoing fires is optimal'}"
+    )
     print()
 
     # Verification
@@ -235,22 +251,26 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_file, "w") as f:
-        json.dump({
-            "universal_genome": universal_genome.tolist(),
-            "results": results,
-            "analysis": {
-                "kappa_effect": {
-                    "best": kappa_best[0],
-                    "worst": kappa_worst[0],
-                    "degradation": max(kappa_payoffs) - min(kappa_payoffs),
+        json.dump(
+            {
+                "universal_genome": universal_genome.tolist(),
+                "results": results,
+                "analysis": {
+                    "kappa_effect": {
+                        "best": kappa_best[0],
+                        "worst": kappa_worst[0],
+                        "degradation": max(kappa_payoffs) - min(kappa_payoffs),
+                    },
+                    "spark_effect": {
+                        "best": spark_best[0],
+                        "worst": spark_worst[0],
+                        "improvement": max(spark_payoffs) - min(spark_payoffs),
+                    },
                 },
-                "spark_effect": {
-                    "best": spark_best[0],
-                    "worst": spark_worst[0],
-                    "improvement": max(spark_payoffs) - min(spark_payoffs),
-                },
-            }
-        }, f, indent=2)
+            },
+            f,
+            indent=2,
+        )
 
     print(f"Results saved to: {output_file}")
     print()

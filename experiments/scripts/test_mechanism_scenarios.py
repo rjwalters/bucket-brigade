@@ -18,17 +18,17 @@ from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
 # Phase 2D mechanism scenarios
 MECHANISM_SCENARIOS = [
-    "nearly_free_work",      # c=0.01 (nearly free work)
-    "front_loaded_crisis",   # High initial fires, p_spark=0
-    "sustained_pressure",    # Very high p_spark=0.10
-    "high_stakes",           # A=500, L=500 (high variance)
+    "nearly_free_work",  # c=0.01 (nearly free work)
+    "front_loaded_crisis",  # High initial fires, p_spark=0
+    "sustained_pressure",  # Very high p_spark=0.10
+    "high_stakes",  # A=500, L=500 (high variance)
 ]
 
 # Reference scenarios for comparison
 REFERENCE_SCENARIOS = [
-    "chain_reaction",        # Baseline (universal optimum)
-    "free_work",            # c=0.05 (Phase 2A extreme)
-    "crisis_cheap",         # β=0.60, c=0.10 (Phase 2A extreme)
+    "chain_reaction",  # Baseline (universal optimum)
+    "free_work",  # c=0.05 (Phase 2A extreme)
+    "crisis_cheap",  # β=0.60, c=0.10 (Phase 2A extreme)
     "trivial_cooperation",  # p_spark=0 (known failure case)
 ]
 
@@ -95,7 +95,9 @@ def main():
             "type": "mechanism",
         }
 
-        print(f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}")
+        print(
+            f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("Testing reference scenarios...")
@@ -131,7 +133,9 @@ def main():
             "type": "reference",
         }
 
-        print(f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}")
+        print(
+            f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("=" * 80)
@@ -187,12 +191,16 @@ def main():
 
     print("Best Mechanism:")
     print(f"  {best_mechanism[0]}: {best_mechanism[1]['payoff']:.2f}")
-    print(f"  c={best_mechanism[1]['c']:.2f}, p_spark={best_mechanism[1]['p_spark']:.2f}")
+    print(
+        f"  c={best_mechanism[1]['c']:.2f}, p_spark={best_mechanism[1]['p_spark']:.2f}"
+    )
     print()
 
     print("Worst Mechanism:")
     print(f"  {worst_mechanism[0]}: {worst_mechanism[1]['payoff']:.2f}")
-    print(f"  c={worst_mechanism[1]['c']:.2f}, p_spark={worst_mechanism[1]['p_spark']:.2f}")
+    print(
+        f"  c={worst_mechanism[1]['c']:.2f}, p_spark={worst_mechanism[1]['p_spark']:.2f}"
+    )
     print()
 
     # Check for cooperation induction
@@ -211,14 +219,19 @@ def main():
 
     # Identify potentially interesting scenarios
     threshold = reference_mean * 0.8  # 80% of reference performance
-    weak_scenarios = [(name, data) for name, data in results.items()
-                      if data["type"] == "mechanism" and data["payoff"] < threshold]
+    weak_scenarios = [
+        (name, data)
+        for name, data in results.items()
+        if data["type"] == "mechanism" and data["payoff"] < threshold
+    ]
 
     if weak_scenarios:
         print(f"⚠️  Scenarios where universal strategy struggles (< {threshold:.2f}):")
         for name, data in weak_scenarios:
             print(f"  - {name}: {data['payoff']:.2f}")
-            print(f"    β={data['beta']:.2f}, c={data['c']:.2f}, p_spark={data['p_spark']:.2f}")
+            print(
+                f"    β={data['beta']:.2f}, c={data['c']:.2f}, p_spark={data['p_spark']:.2f}"
+            )
         print()
         print("These scenarios might benefit from more cooperative strategies.")
     else:
@@ -231,19 +244,23 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_file, "w") as f:
-        json.dump({
-            "universal_genome": universal_genome.tolist(),
-            "work_tendency": work_tendency,
-            "results": results,
-            "summary": {
-                "mechanism_mean": mechanism_mean,
-                "reference_mean": reference_mean,
-                "difference": mechanism_mean - reference_mean,
-                "best_mechanism": best_mechanism[0],
-                "worst_mechanism": worst_mechanism[0],
-                "weak_scenarios": [name for name, _ in weak_scenarios],
-            }
-        }, f, indent=2)
+        json.dump(
+            {
+                "universal_genome": universal_genome.tolist(),
+                "work_tendency": work_tendency,
+                "results": results,
+                "summary": {
+                    "mechanism_mean": mechanism_mean,
+                    "reference_mean": reference_mean,
+                    "difference": mechanism_mean - reference_mean,
+                    "best_mechanism": best_mechanism[0],
+                    "worst_mechanism": worst_mechanism[0],
+                    "weak_scenarios": [name for name, _ in weak_scenarios],
+                },
+            },
+            f,
+            indent=2,
+        )
 
     print(f"Results saved to: {output_file}")
     print()
