@@ -369,10 +369,17 @@ def main():
     test_obs = vecenv.reset()
     obs_dim = len(test_obs[0])  # Flattened observation dimension
 
+    # Infer number of houses from observation dimension
+    # obs_dim = 3 (agent state) + 3*(num_agents-1) (other agents) + 3*num_houses (houses)
+    # For 4 agents: obs_dim = 3 + 3*3 + 3*num_houses = 12 + 3*num_houses
+    # So: num_houses = (obs_dim - 12) / 3
+    num_houses = (obs_dim - 3 * args.num_agents) // 3
+
     # Action space: house selection and mode
-    action_dims = [scenario.num_houses, 3]  # 3 modes: idle, fill, pass
+    action_dims = [num_houses, 3]  # 3 modes: idle, fill, pass
 
     print(f"   Observation dim: {obs_dim}")
+    print(f"   Num houses (inferred): {num_houses}")
     print(f"   Action dims: {action_dims}")
 
     policy = PolicyNetwork(
