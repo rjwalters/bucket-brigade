@@ -16,9 +16,9 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # Check Rust version
 echo "✅ Rust version: $(rustc --version)"
 
-# Install cffi if needed
-echo "📦 Installing cffi..."
-uv pip install cffi
+# Install Python build dependencies
+echo "📦 Installing Python dependencies..."
+uv pip install cffi maturin
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
