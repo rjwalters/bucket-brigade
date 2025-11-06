@@ -25,10 +25,11 @@ import time
 
 from bucket_brigade.evolution import (
     EvolutionConfig,
+    FitnessEvaluator,
     GeneticAlgorithm,
     Population,
 )
-from bucket_brigade.envs.scenarios import get_scenario_by_name, list_scenarios
+from bucket_brigade.envs.scenarios import list_scenarios
 
 
 def progress_callback(generation: int, population: Population, output_dir: Path) -> None:
@@ -242,8 +243,18 @@ def main():
     print(f"  Early stopping: {config.early_stopping}")
     print()
 
-    # Create GA (will use Rust-backed FitnessEvaluator automatically)
-    ga = GeneticAlgorithm(config)
+    # Create Rust-backed FitnessEvaluator with correct scenario
+    fitness_evaluator = FitnessEvaluator(
+        scenario_name=args.scenario,
+        num_agents=args.num_agents,
+        games_per_individual=config.games_per_individual,
+        seed=config.seed,
+        parallel=config.parallel,
+        num_workers=config.num_workers,
+    )
+
+    # Create GA with custom fitness evaluator
+    ga = GeneticAlgorithm(config, fitness_evaluator=fitness_evaluator)
 
     # Run evolution
     print("Starting evolution...")

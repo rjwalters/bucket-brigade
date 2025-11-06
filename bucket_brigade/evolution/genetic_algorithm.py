@@ -125,7 +125,8 @@ class GeneticAlgorithm:
             self.fitness_evaluator = fitness_evaluator
         else:
             self.fitness_evaluator = FitnessEvaluator(
-                scenario=None,  # Use default scenario
+                scenario_name="trivial_cooperation",  # Default scenario for Rust evaluator
+                num_agents=4,  # Default agent count
                 games_per_individual=config.games_per_individual,
                 seed=int(self.rng.integers(0, 2**31))
                 if config.seed is not None
