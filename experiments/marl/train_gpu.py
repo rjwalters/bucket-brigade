@@ -36,7 +36,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade.envs.puffer_env_rust import make_rust_env
-from bucket_brigade.training import PolicyNetwork, compute_gae
+from bucket_brigade.training import PolicyNetwork, TransformerPolicyNetwork, compute_gae
 
 
 def train_ppo(
@@ -183,6 +183,13 @@ def main():
     parser.add_argument("--eval-interval", type=int, default=10000, help="Steps between eval prints")
     parser.add_argument("--cpu", action="store_true", help="Force CPU usage (default: auto-detect GPU)")
 
+    # Architecture options
+    parser.add_argument("--architecture", type=str, default="mlp", choices=["mlp", "transformer"],
+                        help="Network architecture: 'mlp' (default, ~4K params) or 'transformer' (~650K params)")
+    parser.add_argument("--d-model", type=int, default=192, help="Transformer embedding dimension (default: 192)")
+    parser.add_argument("--num-layers", type=int, default=2, help="Number of transformer layers (default: 2)")
+    parser.add_argument("--nhead", type=int, default=4, help="Number of attention heads (default: 4)")
+
     args = parser.parse_args()
 
     # Setup
@@ -224,13 +231,27 @@ def main():
     action_space = env.action_space
 
     print(f"\n🧠 Creating policy network")
+    print(f"   Architecture: {args.architecture}")
     print(f"   Observation dim: {obs_space.shape[0]}")
     print(f"   Action dims: {action_space.nvec.tolist()}")
 
-    policy = PolicyNetwork(
-        obs_dim=obs_space.shape[0],
-        action_dims=action_space.nvec.tolist()
-    ).to(device)
+    if args.architecture == "transformer":
+        policy = TransformerPolicyNetwork(
+            obs_dim=obs_space.shape[0],
+            action_dims=action_space.nvec.tolist(),
+            d_model=args.d_model,
+            num_layers=args.num_layers,
+            nhead=args.nhead,
+        ).to(device)
+    else:
+        policy = PolicyNetwork(
+            obs_dim=obs_space.shape[0],
+            action_dims=action_space.nvec.tolist()
+        ).to(device)
+
+    # Print parameter count
+    total_params = sum(p.numel() for p in policy.parameters())
+    print(f"   Total parameters: {total_params:,}")
 
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 

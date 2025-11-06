@@ -4,10 +4,12 @@ This module provides neural network architectures for multi-discrete action
 spaces, commonly used in reinforcement learning scenarios.
 """
 
+import math
 from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class PolicyNetwork(nn.Module):
@@ -245,3 +247,259 @@ def compute_gae(
         advantages.insert(0, gae)
 
     return advantages
+
+
+class TransformerPolicyNetwork(nn.Module):
+    """Transformer-based actor-critic policy for multi-agent coordination.
+
+    This network uses self-attention to process house observations, allowing
+    the agent to reason about spatial relationships and coordination needs.
+    Designed for ~200-500K parameters to better utilize GPU resources.
+
+    Architecture:
+        - Input embedding: Linear projection of flattened observation
+        - Positional encoding: Learned positional embeddings for houses
+        - Transformer encoder: Multi-head self-attention layers
+        - Action/value heads: Separate MLPs for actions and value estimation
+
+    Args:
+        obs_dim: Total dimension of flattened observation (e.g., 42 for 10 houses x 4 features + 2 global)
+        action_dims: List of action space sizes for each action dimension
+        num_houses: Number of houses in the environment (default: 10)
+        house_features: Number of features per house (default: 4: fire_level, bucket_count, distance, threatened)
+        d_model: Transformer embedding dimension (default: 256)
+        nhead: Number of attention heads (default: 4)
+        num_layers: Number of transformer layers (default: 3)
+        dim_feedforward: Dimension of feedforward network in transformer (default: 512)
+        dropout: Dropout rate (default: 0.1)
+
+    Example:
+        >>> # Create policy for bucket brigade (10 houses, 42-dim obs)
+        >>> policy = TransformerPolicyNetwork(
+        ...     obs_dim=42,
+        ...     action_dims=[10, 2],  # house selection + mode
+        ...     num_houses=10,
+        ...     d_model=256,
+        ...     num_layers=3
+        ... )
+        >>> # Approximately 350K parameters
+        >>> sum(p.numel() for p in policy.parameters())
+        ~350000
+    """
+
+    def __init__(
+        self,
+        obs_dim: int,
+        action_dims: List[int],
+        num_houses: int = None,  # Auto-detect if not provided
+        house_features: int = 4,
+        d_model: int = 256,
+        nhead: int = 4,
+        num_layers: int = 3,
+        dim_feedforward: int = 512,
+        dropout: float = 0.1,
+    ) -> None:
+        super().__init__()
+
+        self.obs_dim = obs_dim
+        self.house_features = house_features
+        self.d_model = d_model
+
+        # Auto-detect number of houses if not provided
+        # Assume all features are house features (common case)
+        if num_houses is None:
+            if obs_dim % house_features == 0:
+                num_houses = obs_dim // house_features
+                self.global_dim = 0
+            else:
+                # If not evenly divisible, assume remainder is global features
+                num_houses = obs_dim // house_features
+                self.global_dim = obs_dim % house_features
+        else:
+            # Calculate global features dimension (everything except houses)
+            self.global_dim = obs_dim - (num_houses * house_features)
+
+        self.num_houses = num_houses
+
+        # Input projection: house features -> d_model
+        self.house_embed = nn.Linear(house_features, d_model)
+
+        # Global features embedding
+        if self.global_dim > 0:
+            self.global_embed = nn.Linear(self.global_dim, d_model)
+
+        # Learnable positional encoding for houses
+        self.pos_embed = nn.Parameter(torch.randn(1, num_houses, d_model) * 0.02)
+
+        # Transformer encoder
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            activation='gelu',
+            batch_first=True,
+            norm_first=True,  # Pre-norm for better training stability
+        )
+        self.transformer = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_layers,
+            norm=nn.LayerNorm(d_model),
+        )
+
+        # Action heads (2-layer MLPs)
+        self.action_heads = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(d_model, d_model // 2),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(d_model // 2, dim),
+            )
+            for dim in action_dims
+        ])
+
+        # Value head (2-layer MLP)
+        self.value_head = nn.Sequential(
+            nn.Linear(d_model, d_model // 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model // 2, 1),
+        )
+
+        # Initialize weights
+        self._init_weights()
+
+    def _init_weights(self) -> None:
+        """Initialize weights using scaled initialization for transformers."""
+        # Use Xavier/Glorot initialization for better gradient flow
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.xavier_uniform_(module.weight, gain=0.5)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+
+    def forward(self, x: torch.Tensor) -> Tuple[List[torch.Tensor], torch.Tensor]:
+        """Forward pass through transformer network.
+
+        Args:
+            x: Observation tensor of shape (batch_size, obs_dim)
+
+        Returns:
+            Tuple containing:
+                - List of action logits for each action dimension
+                - Value estimates of shape (batch_size, 1)
+        """
+        batch_size = x.shape[0]
+
+        # Split observation into house features and global features
+        # Assuming obs layout: [house_0_features..., house_1_features..., ..., global_features]
+        house_obs = x[:, : self.num_houses * self.house_features]
+        house_obs = house_obs.reshape(batch_size, self.num_houses, self.house_features)
+
+        # Embed house observations
+        house_embeds = self.house_embed(house_obs)  # (batch, num_houses, d_model)
+
+        # Add positional encoding
+        house_embeds = house_embeds + self.pos_embed
+
+        # If we have global features, embed and prepend as [CLS] token
+        if self.global_dim > 0:
+            global_obs = x[:, self.num_houses * self.house_features :]
+            global_embed = self.global_embed(global_obs).unsqueeze(1)  # (batch, 1, d_model)
+
+            # Concatenate: [global, house_0, house_1, ...]
+            tokens = torch.cat([global_embed, house_embeds], dim=1)
+        else:
+            tokens = house_embeds
+
+        # Apply transformer
+        features = self.transformer(tokens)  # (batch, num_tokens, d_model)
+
+        # Use [CLS] token (first token) for policy/value
+        cls_features = features[:, 0, :]  # (batch, d_model)
+
+        # Generate action logits
+        action_logits = [head(cls_features) for head in self.action_heads]
+
+        # Generate value estimate
+        value = self.value_head(cls_features)
+
+        return action_logits, value
+
+    def get_action(
+        self, x: torch.Tensor, deterministic: bool = False
+    ) -> Tuple[List[torch.Tensor], Optional[torch.Tensor], torch.Tensor]:
+        """Sample or select actions from the policy.
+
+        Args:
+            x: Observation tensor of shape (batch_size, obs_dim)
+            deterministic: If True, select argmax action. If False, sample
+
+        Returns:
+            Tuple containing:
+                - List of action tensors (one per action dimension)
+                - Log probabilities of selected actions (None if deterministic)
+                - Value estimates
+        """
+        action_logits, value = self.forward(x)
+
+        actions = []
+        log_probs = []
+
+        for logits in action_logits:
+            probs = torch.softmax(logits, dim=-1)
+
+            if deterministic:
+                action = torch.argmax(probs, dim=-1)
+            else:
+                dist = torch.distributions.Categorical(probs)
+                action = dist.sample()
+                log_probs.append(dist.log_prob(action))
+
+            actions.append(action)
+
+        log_prob = torch.stack(log_probs).sum(0) if log_probs else None
+
+        return actions, log_prob, value
+
+    def get_action_and_value(
+        self, x: torch.Tensor, action: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Get actions and values in batch-compatible format.
+
+        Args:
+            x: Observation tensor of shape (batch_size, obs_dim)
+            action: Optional action tensor for computing log probabilities
+
+        Returns:
+            Tuple containing:
+                - Actions tensor of shape (batch_size, num_action_dims)
+                - Log probabilities of shape (batch_size,)
+                - Entropy of shape (batch_size,)
+                - Value estimates of shape (batch_size,)
+        """
+        action_logits, value = self.forward(x)
+
+        actions = []
+        log_probs = []
+        entropies = []
+
+        for i, logits in enumerate(action_logits):
+            probs = torch.softmax(logits, dim=-1)
+            dist = torch.distributions.Categorical(probs)
+
+            if action is None:
+                a = dist.sample()
+            else:
+                a = action[:, i]
+
+            actions.append(a)
+            log_probs.append(dist.log_prob(a))
+            entropies.append(dist.entropy())
+
+        return (
+            torch.stack(actions, dim=1),
+            torch.stack(log_probs, dim=1).sum(dim=1),
+            torch.stack(entropies, dim=1).mean(dim=1),
+            value.squeeze(-1),
+        )

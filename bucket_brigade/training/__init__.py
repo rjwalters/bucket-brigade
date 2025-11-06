@@ -5,7 +5,7 @@ RL algorithms and curriculum learning strategies.
 """
 
 from .curriculum import CurriculumStage, CurriculumTrainer
-from .networks import PolicyNetwork, compute_gae
+from .networks import PolicyNetwork, TransformerPolicyNetwork, compute_gae
 from .game_simulator import GameSimulator, Matchmaker
 from .policy_learner import PolicyLearner, learner_process
 from .population_trainer import PopulationTrainer
@@ -13,6 +13,7 @@ from .observation_utils import flatten_observation, get_observation_dim, create_
 
 __all__ = [
     "PolicyNetwork",
+    "TransformerPolicyNetwork",
     "CurriculumTrainer",
     "CurriculumStage",
     "compute_gae",
