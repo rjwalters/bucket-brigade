@@ -27,3 +27,9 @@ packages = ["bucket_brigade_core"]
 
 [tool.setuptools-rust]
 features = ["python"]
+
+[[tool.setuptools-rust.ext-modules]]
+target = "bucket_brigade_core.bucket_brigade_core"
+path = "Cargo.toml"
+binding = "PyO3"
+features = ["python"]

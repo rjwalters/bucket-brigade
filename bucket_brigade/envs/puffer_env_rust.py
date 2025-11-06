@@ -12,28 +12,11 @@ from typing import Dict, Optional, Tuple, List, Any
 import logging
 import bucket_brigade_core as core
 
-from .scenarios import Scenario, default_scenario
 from ..agents import create_random_agent, create_archetype_agent
 
 logger = logging.getLogger(__name__)
 
 
-def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
-    """Convert Python Scenario to Rust PyScenario."""
-    return core.Scenario(
-        prob_fire_spreads_to_neighbor=scenario.beta,
-        prob_solo_agent_extinguishes_fire=scenario.kappa,
-        prob_house_catches_fire=scenario.p_spark,
-        team_reward_house_survives=scenario.A,
-        team_penalty_house_burns=scenario.L,
-        cost_to_work_one_night=scenario.c,
-        min_nights=scenario.N_min,
-        num_agents=scenario.num_agents,
-        reward_own_house_survives=10.0,
-        reward_other_house_survives=5.0,
-        penalty_own_house_burns=-10.0,
-        penalty_other_house_burns=-5.0,
-    )
 
 
 def _heuristic_action(
@@ -74,7 +57,7 @@ class RustPufferBucketBrigade(gym.Env):
 
     def __init__(
         self,
-        scenario: Optional[Scenario] = None,
+        scenario: Optional[str] = None,
         num_opponents: int = 3,
         opponent_policies: Optional[List[str]] = None,
         max_steps: int = 50,
@@ -83,7 +66,7 @@ class RustPufferBucketBrigade(gym.Env):
         Initialize the Rust-backed PufferLib environment.
 
         Args:
-            scenario: Game scenario (uses default if None)
+            scenario: Scenario name from core.SCENARIOS (uses "trivial_cooperation" if None)
             num_opponents: Number of opponent agents
             opponent_policies: List of opponent policy types
             max_steps: Maximum steps per episode
@@ -100,11 +83,15 @@ class RustPufferBucketBrigade(gym.Env):
             opponent_policies = ["random", "random", "firefighter", "coordinator"]
         self.opponent_policies = opponent_policies[:num_opponents]
 
-        # Create scenario
-        if scenario is None:
-            scenario = default_scenario(self.num_agents)
-        self.python_scenario = scenario
-        self.rust_scenario = _convert_scenario_to_rust(scenario)
+        # Get scenario from Rust core (single source of truth)
+        scenario_name = scenario or "trivial_cooperation"
+        if scenario_name not in core.SCENARIOS:
+            raise ValueError(
+                f"Unknown scenario '{scenario_name}'. "
+                f"Available: {list(core.SCENARIOS.keys())}"
+            )
+        self.rust_scenario = core.SCENARIOS[scenario_name]
+        self.scenario_name = scenario_name
 
         # Initialize Rust environment
         self.env: Optional[core.BucketBrigade] = None  # Will be created in reset()
@@ -146,7 +133,7 @@ class RustPufferBucketBrigade(gym.Env):
 
         # Create new Rust environment for this episode
         episode_seed = self.rng.randint(0, 2**31 - 1) if seed is not None else None
-        self.env = core.BucketBrigade(self.rust_scenario, seed=episode_seed)
+        self.env = core.BucketBrigade(self.rust_scenario, self.num_agents, seed=episode_seed)
 
         # Create new opponent agents for this episode
         self._create_opponent_agents()
@@ -160,13 +147,13 @@ class RustPufferBucketBrigade(gym.Env):
             "last_actions": np.zeros((self.num_agents, 2)),  # No actions yet
             "scenario_info": np.array(
                 [
-                    self.python_scenario.beta,
-                    self.python_scenario.kappa,
-                    self.python_scenario.p_spark,
-                    self.python_scenario.A,
-                    self.python_scenario.L,
-                    self.python_scenario.c,
-                    self.python_scenario.N_min,
+                    self.rust_scenario.prob_fire_spreads_to_neighbor,
+                    self.rust_scenario.prob_solo_agent_extinguishes_fire,
+                    self.rust_scenario.prob_house_catches_fire,
+                    self.rust_scenario.team_reward_house_survives,
+                    self.rust_scenario.team_penalty_house_burns,
+                    self.rust_scenario.cost_to_work_one_night,
+                    float(self.rust_scenario.min_nights),
                     float(self.num_agents),
                     0.0,  # Padding
                     0.0,  # Padding
@@ -327,38 +314,22 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
 
 # Factory functions for easy environment creation
 def make_rust_env(
-    scenario_name: str = "default", num_opponents: int = 3
+    scenario_name: str = "trivial_cooperation", num_opponents: int = 3
 ) -> RustPufferBucketBrigade:
-    """Create a Rust-backed PufferLib environment with specified scenario."""
+    """Create a Rust-backed PufferLib environment with specified scenario.
 
-    # Import scenario functions locally to avoid circular imports
-    from .scenarios import (
-        trivial_cooperation_scenario,
-        early_containment_scenario,
-        greedy_neighbor_scenario,
-        sparse_heroics_scenario,
-        default_scenario,
-    )
-
-    # Map scenario names to functions
-    scenario_map = {
-        "default": default_scenario,
-        "trivial_cooperation": trivial_cooperation_scenario,
-        "early_containment": early_containment_scenario,
-        "greedy_neighbor": greedy_neighbor_scenario,
-        "sparse_heroics": sparse_heroics_scenario,
-    }
-
-    scenario_func = scenario_map.get(scenario_name, default_scenario)
-    scenario = scenario_func(num_opponents + 1)  # +1 for trained agent
-
-    return RustPufferBucketBrigade(scenario, num_opponents)
+    Scenarios are loaded directly from bucket_brigade_core.SCENARIOS (Rust source of truth).
+    """
+    return RustPufferBucketBrigade(scenario_name, num_opponents)
 
 
 def make_rust_vectorized_env(
-    num_envs: int = 8, scenario_name: str = "default", num_opponents: int = 3
+    num_envs: int = 8, scenario_name: str = "trivial_cooperation", num_opponents: int = 3
 ) -> RustPufferBucketBrigadeVectorized:
-    """Create a vectorized Rust-backed environment for parallel training."""
+    """Create a vectorized Rust-backed environment for parallel training.
+
+    Scenarios are loaded directly from bucket_brigade_core.SCENARIOS (Rust source of truth).
+    """
     return RustPufferBucketBrigadeVectorized(
-        num_envs=num_envs, scenario_name=scenario_name, num_opponents=num_opponents
+        num_envs=num_envs, scenario=scenario_name, num_opponents=num_opponents
     )

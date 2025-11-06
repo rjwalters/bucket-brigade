@@ -13,27 +13,7 @@ import numpy as np
 from typing import Any
 import bucket_brigade_core as core
 
-from ..envs.scenarios import Scenario, default_scenario
 from .population import Individual
-
-
-def _convert_scenario_to_rust(scenario: Scenario) -> core.Scenario:
-    """Convert Python Scenario to Rust PyScenario."""
-    return core.Scenario(
-        prob_fire_spreads_to_neighbor=scenario.beta,
-        prob_solo_agent_extinguishes_fire=scenario.kappa,
-        prob_house_catches_fire=scenario.p_spark,
-        team_reward_house_survives=scenario.A,
-        team_penalty_house_burns=scenario.L,
-        cost_to_work_one_night=scenario.c,
-        min_nights=scenario.N_min,
-        num_agents=scenario.num_agents,
-        # Use default individual rewards
-        reward_own_house_survives=10.0,
-        reward_other_house_survives=5.0,
-        penalty_own_house_burns=-10.0,
-        penalty_other_house_burns=-5.0,
-    )
 
 
 def _heuristic_action(
@@ -74,29 +54,26 @@ def _heuristic_action(
     return [house, mode]
 
 
-def _run_rust_game(args: tuple[np.ndarray, Scenario, int]) -> float:
+def _run_rust_game(args: tuple[np.ndarray, str, int, int]) -> float:
     """
     Run a single game using Rust core.
 
     Args:
-        args: Tuple of (genome, python_scenario, seed)
+        args: Tuple of (genome, scenario_name, num_agents, seed)
 
     Returns:
         Scenario payoff (team final score)
     """
-    genome, python_scenario, seed = args
+    genome, scenario_name, num_agents, seed = args
 
-    # Convert to Rust scenario in worker
-    rust_scenario = _convert_scenario_to_rust(python_scenario)
+    # Get Rust scenario (single source of truth)
+    rust_scenario = core.SCENARIOS[scenario_name]
 
     # Create Rust game
-    game = core.BucketBrigade(rust_scenario, seed=seed)
+    game = core.BucketBrigade(rust_scenario, num_agents, seed=seed)
 
     # Python RNG for heuristic decisions
     rng = np.random.RandomState(seed)
-
-    # Get number of agents from scenario
-    num_agents = python_scenario.num_agents
 
     # Run until done
     done = False
@@ -137,7 +114,8 @@ class RustFitnessEvaluator:
 
     def __init__(
         self,
-        scenario: Optional[Scenario] = None,
+        scenario_name: str = "trivial_cooperation",
+        num_agents: int = 4,
         games_per_individual: int = 10,
         seed: Optional[int] = None,
         parallel: bool = True,
@@ -147,15 +125,20 @@ class RustFitnessEvaluator:
         Initialize Rust-backed fitness evaluator.
 
         Args:
-            scenario: Game scenario to use (None = default)
+            scenario_name: Scenario name from core.SCENARIOS
+            num_agents: Number of agents in the game
             games_per_individual: Number of games per agent evaluation
             seed: Random seed for reproducibility
             parallel: Whether to use parallel execution
             num_workers: Number of worker processes (default: cpu_count())
         """
-        self.scenario = (
-            scenario if scenario is not None else default_scenario(num_agents=1)
-        )
+        if scenario_name not in core.SCENARIOS:
+            raise ValueError(
+                f"Unknown scenario '{scenario_name}'. "
+                f"Available: {list(core.SCENARIOS.keys())}"
+            )
+        self.scenario_name = scenario_name
+        self.num_agents = num_agents
         self.games_per_individual = games_per_individual
         self.seed = seed
         self.rng = np.random.RandomState(seed)
@@ -180,8 +163,8 @@ class RustFitnessEvaluator:
         else:
             seeds = [None] * self.games_per_individual
 
-        # Prepare arguments (pass Python scenario, not Rust - can't pickle Rust objects)
-        args_list = [(individual.genome, self.scenario, seed) for seed in seeds]
+        # Prepare arguments
+        args_list = [(individual.genome, self.scenario_name, self.num_agents, seed) for seed in seeds]
 
         if self.parallel:
             # Parallel execution
