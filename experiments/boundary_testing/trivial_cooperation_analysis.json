@@ -1,0 +1,91 @@
+{
+  "universal_genome": [
+    0.3060885233641002,
+    0.06352264031873198,
+    0.014818693619284187,
+    0.9073119055652519,
+    0.9477873275024511,
+    0.5571028379732136,
+    0.5980114834945792,
+    0.7947088089477861,
+    1.0,
+    0.8501413166770448
+  ],
+  "results": {
+    "easy_kappa_60": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.6,
+      "c": 0.5,
+      "p_spark": 0.0
+    },
+    "easy_kappa_70": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.7,
+      "c": 0.5,
+      "p_spark": 0.0
+    },
+    "easy_kappa_80": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.8,
+      "c": 0.5,
+      "p_spark": 0.0
+    },
+    "easy_kappa_90": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.0
+    },
+    "easy_spark_01": {
+      "payoff": 59.27975,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.01
+    },
+    "easy_spark_02": {
+      "payoff": 65.13575,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.02
+    },
+    "easy_spark_05": {
+      "payoff": 48.52575,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.05
+    },
+    "trivial_cooperation": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.0
+    },
+    "sparse_heroics": {
+      "payoff": 67.1755,
+      "beta": 0.1,
+      "kappa": 0.5,
+      "c": 0.8,
+      "p_spark": 0.02
+    }
+  },
+  "analysis": {
+    "kappa_effect": {
+      "best": "easy_kappa_60",
+      "worst": "easy_kappa_60",
+      "degradation": 0.0
+    },
+    "spark_effect": {
+      "best": "easy_spark_02",
+      "worst": "easy_kappa_90",
+      "improvement": 38.63575
+    }
+  }
+}

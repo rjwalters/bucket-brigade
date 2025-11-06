@@ -451,6 +451,123 @@ def calm_expensive_scenario(num_agents: int) -> Scenario:
     )
 
 
+# Phase 2A.1: Trivial Cooperation Investigation
+# Testing κ (extinguish rate) and p_spark (ongoing fire generation) to understand
+# when universal strategy's over-cooperation becomes problematic
+
+
+def easy_kappa_60_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with κ=0.60 (baseline)."""
+    return Scenario(
+        beta=0.15,  # low spread (same as trivial_cooperation)
+        kappa=0.60,  # moderate-high extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,  # moderate cost (same as trivial_cooperation)
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.0,  # no ongoing fires (same as trivial_cooperation)
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_kappa_70_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with κ=0.70."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.70,  # high extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.0,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_kappa_80_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with κ=0.80."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.80,  # very high extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.0,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_kappa_90_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with κ=0.90 (same as trivial_cooperation)."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.90,  # extremely high extinguish (trivial_cooperation value)
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.0,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_spark_01_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with p_spark=0.01 (minimal ongoing fires)."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.90,  # keep high extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.01,  # minimal ongoing fires
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_spark_02_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with p_spark=0.02 (moderate ongoing fires)."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.90,
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.02,  # moderate ongoing fires
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def easy_spark_05_scenario(num_agents: int) -> Scenario:
+    """Phase 2A.1: Easy scenario with p_spark=0.05 (high ongoing fires)."""
+    return Scenario(
+        beta=0.15,
+        kappa=0.90,
+        A=100.0,
+        L=100.0,
+        c=0.5,
+        rho_ignite=0.1,
+        N_min=12,
+        p_spark=0.05,  # high ongoing fires
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
 # Named distributions for random sampling
 
 
@@ -553,6 +670,14 @@ SCENARIO_REGISTRY = {
     "prohibitive_work": prohibitive_work_scenario,
     "crisis_cheap": crisis_cheap_scenario,
     "calm_expensive": calm_expensive_scenario,
+    # Phase 2A.1: Trivial cooperation investigation (κ and p_spark sweeps)
+    "easy_kappa_60": easy_kappa_60_scenario,
+    "easy_kappa_70": easy_kappa_70_scenario,
+    "easy_kappa_80": easy_kappa_80_scenario,
+    "easy_kappa_90": easy_kappa_90_scenario,
+    "easy_spark_01": easy_spark_01_scenario,
+    "easy_spark_02": easy_spark_02_scenario,
+    "easy_spark_05": easy_spark_05_scenario,
 }
 
 
