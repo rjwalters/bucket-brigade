@@ -12,6 +12,7 @@ import time
 import argparse
 from pathlib import Path
 from typing import Optional
+from multiprocessing import Pool, cpu_count
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -35,49 +36,79 @@ SCENARIOS = [
     "trivial_cooperation",
 ]
 
+# Global worker state (initialized in each process)
+_worker_evaluators = None
+_worker_scenario_names = None
+
+
+def _init_worker(scenario_names, games_per_scenario, seed):
+    """Initialize worker process with evaluators."""
+    global _worker_evaluators, _worker_scenario_names
+    _worker_scenario_names = scenario_names
+    _worker_evaluators = {}
+
+    rng = np.random.RandomState(seed)
+    for scenario_name in scenario_names:
+        scenario = get_scenario_by_name(scenario_name, num_agents=1)
+        _worker_evaluators[scenario_name] = RustFitnessEvaluator(
+            scenario=scenario,
+            games_per_individual=games_per_scenario,
+            seed=rng.randint(0, 2**31 - 1) if seed is not None else None,
+            parallel=False,  # Workers handle parallelism
+        )
+
+
+def _evaluate_individual_worker(individual):
+    """Worker function to evaluate individual across all scenarios."""
+    scenario_scores = []
+    for scenario_name in _worker_scenario_names:
+        evaluator = _worker_evaluators[scenario_name]
+        score = evaluator.evaluate_individual(individual)
+        scenario_scores.append(score)
+    return float(np.mean(scenario_scores))
+
 
 class CrossScenarioFitnessEvaluator:
-    """Fitness evaluator that tests agents across multiple scenarios."""
+    """Fitness evaluator that tests agents across multiple scenarios using parallel workers."""
 
     def __init__(
         self,
         scenario_names: list[str],
         games_per_scenario: int = 5,
         seed: Optional[int] = None,
+        num_workers: Optional[int] = None,
     ):
         self.scenario_names = scenario_names
         self.games_per_scenario = games_per_scenario
         self.seed = seed
-        self.rng = np.random.RandomState(seed)
-
-        # Create evaluators for each scenario (using Rust for 100x speedup)
-        self.evaluators = {}
-        for scenario_name in scenario_names:
-            scenario = get_scenario_by_name(scenario_name, num_agents=1)
-            self.evaluators[scenario_name] = RustFitnessEvaluator(
-                scenario=scenario,
-                games_per_individual=games_per_scenario,
-                seed=self.rng.randint(0, 2**31 - 1) if seed is not None else None,
-                parallel=True,  # Enable parallel evaluation within each scenario
-            )
+        self.num_workers = num_workers if num_workers is not None else cpu_count()
 
     def evaluate_individual(self, individual: Individual) -> float:
-        """Evaluate individual across all scenarios."""
-        scenario_scores = []
-
-        for scenario_name in self.scenario_names:
-            evaluator = self.evaluators[scenario_name]
-            score = evaluator.evaluate_individual(individual)
-            scenario_scores.append(score)
-
-        # Return mean performance across scenarios
-        return float(np.mean(scenario_scores))
+        """Evaluate individual across all scenarios (used for non-parallel mode)."""
+        # This is a fallback - normally we use the worker function
+        return _evaluate_individual_worker(individual)
 
     def evaluate_population(self, population, parallel: Optional[bool] = None) -> None:
-        """Evaluate all individuals in population."""
-        for individual in population:
-            if individual.fitness is None:
-                individual.fitness = self.evaluate_individual(individual)
+        """Evaluate all individuals in population in parallel."""
+        # Filter individuals that need evaluation
+        unevaluated = [ind for ind in population if ind.fitness is None]
+
+        if not unevaluated:
+            return
+
+        # Evaluate in parallel using multiprocessing with worker initialization
+        print(f"  Evaluating {len(unevaluated)} individuals using {self.num_workers} workers...")
+
+        with Pool(
+            processes=self.num_workers,
+            initializer=_init_worker,
+            initargs=(self.scenario_names, self.games_per_scenario, self.seed),
+        ) as pool:
+            fitnesses = pool.map(_evaluate_individual_worker, unevaluated)
+
+        # Assign fitness values
+        for individual, fitness in zip(unevaluated, fitnesses):
+            individual.fitness = fitness
 
 
 def run_generalist_evolution(
@@ -131,11 +162,16 @@ def run_generalist_evolution(
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Custom fitness evaluator
+    # Custom fitness evaluator with parallel population evaluation
+    num_workers = cpu_count()
+    print(f"Using {num_workers} workers for parallel population evaluation")
+    print()
+
     fitness_evaluator = CrossScenarioFitnessEvaluator(
         scenario_names=SCENARIOS,
         games_per_scenario=games_per_scenario,
         seed=seed,
+        num_workers=num_workers,
     )
 
     # Track evolution history
