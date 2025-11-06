@@ -97,7 +97,9 @@ class CrossScenarioFitnessEvaluator:
             return
 
         # Evaluate in parallel using multiprocessing with worker initialization
-        print(f"  Evaluating {len(unevaluated)} individuals using {self.num_workers} workers...")
+        print(
+            f"  Evaluating {len(unevaluated)} individuals using {self.num_workers} workers..."
+        )
 
         with Pool(
             processes=self.num_workers,

@@ -21,10 +21,10 @@ POPULATION_SIZES = [4, 6, 8, 10]
 
 # Representative scenarios
 TEST_SCENARIOS = [
-    "chain_reaction",    # Baseline
-    "sparse_heroics",    # High performance
-    "crisis_cheap",      # Extreme parameters
-    "easy_spark_02",     # Optimal p_spark
+    "chain_reaction",  # Baseline
+    "sparse_heroics",  # High performance
+    "crisis_cheap",  # Extreme parameters
+    "easy_spark_02",  # Optimal p_spark
 ]
 
 
@@ -118,11 +118,11 @@ def main():
 
         # Flag if significant degradation
         if abs(mean_deg) > 20:
-            print(f"  ⚠️  SIGNIFICANT DEGRADATION (>20%)")
+            print("  ⚠️  SIGNIFICANT DEGRADATION (>20%)")
         elif abs(mean_deg) > 10:
-            print(f"  ⚠️  Moderate degradation (>10%)")
+            print("  ⚠️  Moderate degradation (>10%)")
         else:
-            print(f"  ✓ Good scaling (<10% degradation)")
+            print("  ✓ Good scaling (<10% degradation)")
 
         print()
 
@@ -196,19 +196,23 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_file, "w") as f:
-        json.dump({
-            "universal_genome": universal_genome.tolist(),
-            "results": results,
-            "failures": [
-                {"scenario": s, "N": N, "degradation_pct": d}
-                for s, N, d in failures
-            ],
-            "summary": {
-                "total_tests": len(TEST_SCENARIOS) * len([6, 8, 10]),
-                "failures": len(failures),
-                "success_rate": 1 - len(failures) / (len(TEST_SCENARIOS) * 3),
-            }
-        }, f, indent=2)
+        json.dump(
+            {
+                "universal_genome": universal_genome.tolist(),
+                "results": results,
+                "failures": [
+                    {"scenario": s, "N": N, "degradation_pct": d}
+                    for s, N, d in failures
+                ],
+                "summary": {
+                    "total_tests": len(TEST_SCENARIOS) * len([6, 8, 10]),
+                    "failures": len(failures),
+                    "success_rate": 1 - len(failures) / (len(TEST_SCENARIOS) * 3),
+                },
+            },
+            f,
+            indent=2,
+        )
 
     print(f"Results saved to: {output_file}")
     print()

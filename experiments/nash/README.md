@@ -214,24 +214,86 @@ See **[V2_PLAN.md](./V2_PLAN.md)** for:
 
 ---
 
-## Future Work (Phase 2+)
+## Phase 2 Goals: Closing the Prediction Gap
 
-1. **Heterogeneous equilibria** (Phase 2)
-   - Nash with diverse agent types
-   - Team composition optimization
+**See**: [Phase 2 Research Agenda](../../docs/PHASE_2_RESEARCH_AGENDA.md#nash-track-closing-the-prediction-gap)
 
-2. **Robustness analysis** (Phase 2)
-   - Test equilibrium stability to parameter perturbations
-   - Identify critical parameter thresholds
+### Core Research Questions
 
-3. **Mechanism design** (Phase 3+)
+1. **Why does evolution beat Nash by 20×?** (chain_reaction: 2.94 → 58.50)
+   - Are evolved strategies outside the archetype space?
+   - Is the Nash prediction wrong or incomplete?
+   - What does the true strategy space look like?
+
+2. **Can Double Oracle find evolved-quality strategies?**
+   - Integrate evolved agents (v3/v4/v5) into strategy pool
+   - Compute equilibria over expanded space
+   - Compare: Nash V1 (archetypes) vs. Nash V2 (with evolution)
+
+3. **Are evolved strategies actually equilibria?**
+   - Test if evolved strategies are best-responses to themselves
+   - Compute epsilon-equilibrium bounds
+   - Validate robustness to perturbations
+
+### Phase 2 Experiments
+
+| Experiment | Description | Status |
+|------------|-------------|--------|
+| **V2 Nash Computation** | Run Double Oracle with evolved agents as initial strategies | 🚀 Planned |
+| **Gap Analysis** | Explain 2.94 → 58.50 discrepancy via strategy space coverage | 🚀 Planned |
+| **Epsilon-Equilibrium Testing** | Measure how close evolved strategies are to true equilibria | 🚀 Planned |
+| **Cross-Validation** | Do Nash predictions match evolution in expanded space? | 🚀 Planned |
+| **Heterogeneous Equilibria** | Mixed agent types, team composition optimization | 📋 Q2 |
+| **Robustness Analysis** | Parameter perturbations, stability testing | 📋 Q3 |
+
+### Success Criteria
+
+✅ **Close the gap**: Explain and resolve 2.94 → 58.50 discrepancy
+✅ **Formal characterization**: When does Nash V1 fail?
+✅ **Integration framework**: Add external strategies to Double Oracle
+✅ **All scenarios**: V2 Nash for all 12 scenarios
+
+### Deliverables
+
+- `experiments/nash/V2_RESULTS.md`: Nash computation with evolved strategies
+- `experiments/nash/GAP_ANALYSIS.md`: Detailed explanation of chain_reaction gap
+- Updated equilibrium tables: V1 (archetypes) vs. V2 (evolved)
+- Paper draft: "From Archetypes to Evolution: Expanding Nash Equilibrium Strategy Spaces"
+
+### Timeline
+
+**Q1 (Months 1-3)**:
+- ✅ Implement evolved agent integration into Double Oracle
+- ✅ Run V2 Nash on chain_reaction with evolved strategies
+- ✅ Document gap analysis (2.94 → 58.50 explanation)
+
+**Q2 (Months 4-6)**:
+- ✅ V2 Nash for all 12 scenarios
+- ✅ Epsilon-equilibrium analysis
+- ✅ Heterogeneous team equilibria
+
+**Q3 (Months 7-9)**:
+- ✅ Robustness testing (parameter perturbations)
+- ✅ Final V2 cross-scenario report
+- 🎯 Paper draft
+
+---
+
+## Future Work (Phase 3+)
+
+1. **Mechanism design** (Phase 3+)
    - Design incentives to improve equilibrium outcomes
    - Reduce price of anarchy where applicable
+
+2. **Adaptive equilibria** (Phase 3+)
+   - Equilibria for scenario-switching environments
+   - Meta-strategies that infer and respond to context
 
 ---
 
 **Version**: V1 (Baseline)
 **Status**: Complete - provides foundation for V2
 **Next**: [V2 Plan](./V2_PLAN.md) - Evolution integration
+**Phase 2**: [Research Agenda](../../docs/PHASE_2_RESEARCH_AGENDA.md) - Understanding effectiveness
 
 *Analysis generated using Double Oracle algorithm with 2000 simulations per evaluation.*

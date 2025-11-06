@@ -9,24 +9,22 @@
 
 This audit covers:
 - **5 behavioral archetypes** defining agent strategies
-- **32 scenarios** organized into 5 research categories
-- **12 scenarios** with active experiment directories (core 9 + 3 basic)
-- **20 scenarios** defined but not yet used in experiments
+- **12 scenarios** in the registry (core 9 + 3 basic)
+- **All 12 scenarios** have active experiment directories and research results
+- **20 exploratory scenarios removed** to maintain focused research scope (see `REMOVED_SCENARIOS_ARCHIVE.md`)
 
 ### Key Findings
 
 ✅ **Strengths**:
 - Clear 10-parameter behavioral model consistently applied across all archetypes
-- Well-organized scenario categorization by research phase
+- Focused scenario set of 12 tested configurations covering cooperation dynamics space
 - Parameter consistency between Python definitions and experiment configs
 - Core 9 scenarios thoroughly tested with Nash V1, Nash V2, and evolution
+- **2025-11-06 Update**: Pruned 20 untested scenarios to maintain ~10 scenario target
 
-⚠️ **Gaps**:
-- 20 scenarios defined in registry but lack experiment directories
-- Phase 2A extreme scenarios (9) not tested yet
-- Phase 2A.1 kappa/spark sweep scenarios (7) not tested yet
-- Phase 2D mechanism design scenarios (4) not tested yet
+⚠️ **Remaining Gaps**:
 - No archetype for "neutral/random" baseline strategy
+- Nash V2 winning evolved agents not yet cataloged as archetypes
 - Documentation could benefit from cross-references between related scenarios
 
 ---
@@ -300,132 +298,19 @@ These scenarios form the primary research dataset, with full experiment historie
 
 ---
 
-## Phase 2A: Extreme Scenarios (9)
-
-**Purpose**: Test universality boundaries by exploring extreme parameter values.
-**Status**: ⚠️ Defined in registry but no experiment directories yet
-
-### Spread Extremes
-
-#### glacial_spread
-**Parameters**: β=0.02, κ=0.5, c=0.5, ρ=0.15
-**Story**: Fires barely spread - tests minimal threat scenarios.
-**Expected Behavior**: Strong free-riding incentive.
-
-#### explosive_spread
-**Parameters**: β=0.60, κ=0.5, c=0.5, ρ=0.2
-**Story**: Fires spread very aggressively - tests crisis response.
-**Expected Behavior**: Requires immediate, coordinated action.
-
-#### wildfire
-**Parameters**: β=0.75, κ=0.5, c=0.5, ρ=0.25
-**Story**: Near-uncontrollable spread - tests extreme crisis.
-**Expected Behavior**: May be unwinnable without perfect cooperation.
-
-### Cost Extremes
-
-#### free_work
-**Parameters**: β=0.20, κ=0.5, c=0.05, ρ=0.15
-**Story**: Work costs almost nothing.
-**Expected Behavior**: Should eliminate free-riding incentive.
-
-#### cheap_work
-**Parameters**: β=0.20, κ=0.5, c=0.10, ρ=0.15
-**Story**: Very affordable work.
-**Expected Behavior**: Strong cooperation incentive.
-
-#### expensive_work
-**Parameters**: β=0.20, κ=0.5, c=2.0, ρ=0.15
-**Story**: Work is costly.
-**Expected Behavior**: Increased free-riding pressure.
-
-#### prohibitive_work
-**Parameters**: β=0.20, κ=0.5, c=5.0, ρ=0.15
-**Story**: Work is extremely expensive.
-**Expected Behavior**: Rational agents should minimize work.
-
-### Combined Extremes
-
-#### crisis_cheap
-**Parameters**: β=0.60, κ=0.5, c=0.10, ρ=0.25
-**Story**: Fast spread but affordable work.
-**Expected Behavior**: High-volume cooperation should emerge.
-
-#### calm_expensive
-**Parameters**: β=0.02, κ=0.5, c=5.0, ρ=0.1
-**Story**: Slow spread but costly work.
-**Expected Behavior**: Minimal cooperation, strategic rest.
-
 ---
 
-## Phase 2A.1: Kappa and Spark Sweep (7)
+## Removed Scenarios
 
-**Purpose**: Investigate trivial_cooperation scenario by varying κ (extinguish rate) and p_spark (ongoing fires).
-**Status**: ⚠️ Defined in registry but no experiment directories yet
-**Motivation**: Understand when universal strategy's over-cooperation becomes problematic.
+**Note**: On 2025-11-06, we removed 20 exploratory scenarios from the registry to maintain a focused research scope of ~10 scenarios. These included:
 
-### Kappa Sweep (β=0.15, p_spark=0.0, varying κ)
+- **9 Phase 2A extreme scenarios**: Parameter boundary testing (glacial_spread, explosive_spread, wildfire, etc.)
+- **7 Phase 2A.1 scenarios**: Kappa and spark parameter sweeps of trivial_cooperation
+- **4 Phase 2D scenarios**: Mechanism design experiments (nearly_free_work, front_loaded_crisis, etc.)
 
-#### easy_kappa_60
-**Parameters**: κ=0.60 (baseline)
-**Purpose**: Lower bound for easy scenarios.
+**Rationale**: These scenarios represented parameter sweeps and exploratory ideas that would be better implemented as programmatic experiment scripts rather than hardcoded scenario definitions. The core 12 scenarios already cover the meaningful cooperation dynamics space.
 
-#### easy_kappa_70
-**Parameters**: κ=0.70
-**Purpose**: Mid-range extinguish rate.
-
-#### easy_kappa_80
-**Parameters**: κ=0.80
-**Purpose**: High extinguish rate.
-
-#### easy_kappa_90
-**Parameters**: κ=0.90 (same as trivial_cooperation)
-**Purpose**: Upper bound, matches trivial_cooperation baseline.
-
-### Spark Sweep (β=0.15, κ=0.90, varying p_spark)
-
-#### easy_spark_01
-**Parameters**: p_spark=0.01
-**Purpose**: Minimal ongoing fires.
-
-#### easy_spark_02
-**Parameters**: p_spark=0.02
-**Purpose**: Moderate ongoing fires.
-
-#### easy_spark_05
-**Parameters**: p_spark=0.05
-**Purpose**: High ongoing fires.
-
----
-
-## Phase 2D: Mechanism Design (4)
-
-**Purpose**: Test scenario designs that attempt to break the universal free-riding equilibrium.
-**Status**: ⚠️ Defined in registry but no experiment directories yet
-
-### nearly_free_work
-**Parameters**: β=0.30, κ=0.60, c=0.01, ρ=0.15, p_spark=0.02
-**Story**: Work cost approaching zero.
-**Hypothesis**: Free work should induce cooperation by removing cost barrier.
-**Mechanism**: Eliminates work disincentive.
-
-### front_loaded_crisis
-**Parameters**: β=0.70, κ=0.40, c=0.30, ρ=0.40, p_spark=0.0, N_min=8
-**Story**: Overwhelming initial fires requiring immediate response.
-**Hypothesis**: One-time crisis may coordinate agents better than sustained threat.
-**Mechanism**: Urgency and common knowledge of threat timing.
-
-### sustained_pressure
-**Parameters**: β=0.50, κ=0.30, c=0.40, ρ=0.20, p_spark=0.10, N_spark=8
-**Story**: Continuous high threat requiring persistent effort.
-**Hypothesis**: Overwhelming sustained pressure induces cooperation.
-**Mechanism**: Constant danger makes defection obviously costly.
-
-### high_stakes
-**Parameters**: β=0.40, κ=0.50, A=500, L=500, c=1.0, ρ=0.20
-**Story**: Extreme asset values creating high-variance outcomes.
-**Hypothesis**: Increased payoff variance induces risk-averse coordination.
-**Mechanism**: Large stakes amplify cost of coordination failure.
+**For details**: See `docs/REMOVED_SCENARIOS_ARCHIVE.md` for complete descriptions and parameters of all removed scenarios.
 
 ---
 
@@ -469,18 +354,15 @@ These scenarios form the primary research dataset, with full experiment historie
 - Opportunity: Convert the 7 evolved agents that won Nash V2 into archetypes
 - Benefit: Create library of empirically validated strategies
 
-### Untested Scenarios
+### Scenario Coverage
 
-| Category | Defined | Tested | Gap |
-|----------|---------|--------|-----|
-| Basic | 3 | 3 | 0 |
-| Core | 9 | 9 | 0 |
-| Phase 2A Extreme | 9 | 0 | 9 |
-| Phase 2A.1 Kappa/Spark | 7 | 0 | 7 |
-| Phase 2D Mechanism | 4 | 0 | 4 |
-| **Total** | **32** | **12** | **20** |
+| Category | In Registry | With Experiments | Status |
+|----------|-------------|------------------|--------|
+| Basic | 3 | 3 | ✅ Complete |
+| Core | 9 | 9 | ✅ Complete |
+| **Total** | **12** | **12** | **100% Coverage** |
 
-**Priority**: Phase 2A.1 and Phase 2D scenarios should be prioritized as they directly address the Nash V2 findings.
+**2025-11-06 Update**: Removed 20 exploratory scenarios to maintain focused scope. All scenarios in the registry now have full experiment coverage.
 
 ### Scenario Design Opportunities
 
@@ -558,49 +440,25 @@ These scenarios form the primary research dataset, with full experiment historie
 
 ## Appendix: Scenario Registry
 
-Complete list of all 32 scenarios in `SCENARIO_REGISTRY`:
+Complete list of all 12 scenarios in `SCENARIO_REGISTRY`:
 
-### Active Research Scenarios (12)
-1. ✅ `default` - Basic
-2. ✅ `easy` - Basic
-3. ✅ `hard` - Basic
-4. ✅ `trivial_cooperation` - Core
-5. ✅ `early_containment` - Core
-6. ✅ `greedy_neighbor` - Core
-7. ✅ `sparse_heroics` - Core
-8. ✅ `rest_trap` - Core
-9. ✅ `chain_reaction` - Core 🌟
-10. ✅ `deceptive_calm` - Core
-11. ✅ `overcrowding` - Core
-12. ✅ `mixed_motivation` - Core
+### Basic Scenarios (3)
+1. ✅ `default` - Standard balanced scenario
+2. ✅ `easy` - Low difficulty with favorable conditions
+3. ✅ `hard` - High difficulty with challenging conditions
 
-### Defined but Untested (20)
+### Core Research Scenarios (9)
+4. ✅ `trivial_cooperation` - Fires rare and easy (Nash V2: Evolved optimal, 26.5)
+5. ✅ `early_containment` - Aggressive start, early teamwork (Nash V2: Evolved optimal, 64.9)
+6. ✅ `greedy_neighbor` - High work cost social dilemma (Nash V2: Evolved optimal, 64.9)
+7. ✅ `sparse_heroics` - Few workers make difference (Nash V2: Liar archetype, 67.2)
+8. ✅ `rest_trap` - Self-extinguishing temptation (Nash V2: Evolved optimal, 64.9)
+9. ✅ `chain_reaction` - High spread distributed teams 🌟 (Nash V2: Hero archetype, 803.9)
+10. ✅ `deceptive_calm` - Occasional flare-ups (Nash V2: Evolved optimal, 48.6)
+11. ✅ `overcrowding` - Too many workers (Nash V2: Evolved optimal, 64.9)
+12. ✅ `mixed_motivation` - Ownership conflicts (Nash V2: Evolved optimal, 61.0)
 
-**Phase 2A Extreme (9)**:
-13. ⚠️ `glacial_spread`
-14. ⚠️ `explosive_spread`
-15. ⚠️ `wildfire`
-16. ⚠️ `free_work`
-17. ⚠️ `cheap_work`
-18. ⚠️ `expensive_work`
-19. ⚠️ `prohibitive_work`
-20. ⚠️ `crisis_cheap`
-21. ⚠️ `calm_expensive`
-
-**Phase 2A.1 Kappa/Spark Sweep (7)**:
-22. ⚠️ `easy_kappa_60`
-23. ⚠️ `easy_kappa_70`
-24. ⚠️ `easy_kappa_80`
-25. ⚠️ `easy_kappa_90`
-26. ⚠️ `easy_spark_01`
-27. ⚠️ `easy_spark_02`
-28. ⚠️ `easy_spark_05`
-
-**Phase 2D Mechanism Design (4)**:
-29. ⚠️ `nearly_free_work`
-30. ⚠️ `front_loaded_crisis`
-31. ⚠️ `sustained_pressure`
-32. ⚠️ `high_stakes`
+**Note**: 20 exploratory scenarios were removed on 2025-11-06. See `docs/REMOVED_SCENARIOS_ARCHIVE.md` for details.
 
 ---
 

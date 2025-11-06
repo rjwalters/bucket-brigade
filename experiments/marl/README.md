@@ -218,7 +218,75 @@ Based on universal Nash equilibrium research:
 ### Comparison to Universal Equilibrium
 Our research found a universal free-riding strategy dominates across all scenarios. Key question: **Can PPO learn to beat it?**
 
-## 🔬 Research Questions
+## 🔬 Phase 2 Research Goals
+
+**See**: [Phase 2 Research Agenda](../../docs/PHASE_2_RESEARCH_AGENDA.md#marl-track-learning-dynamics-and-baselines)
+
+### Core Research Questions
+
+1. **Can neural networks match evolution?**
+   - Train PPO on chain_reaction
+   - Compare final performance: PPO vs. evolved (58.50)
+   - Analyze learning curves: How fast does PPO reach 58.50?
+
+2. **What do neural policies learn?**
+   - Behavioral analysis: Action distributions, cooperation rates
+   - Compare to evolved heuristics: Are they learning similar strategies?
+   - Ablation studies: Which network components matter?
+
+3. **How does population-based training compare?**
+   - Single-agent PPO vs. population training (8-32 agents)
+   - Diversity metrics: Do populations discover varied strategies?
+   - GPU utilization: Can we achieve 60-95% efficiency?
+
+### Phase 2 Experiments
+
+| Experiment | Description | Status |
+|------------|-------------|--------|
+| **Baseline Establishment** | Train PPO on chain_reaction, compare to 58.50 evolved baseline | 🚀 Q1 |
+| **Learning Curve Analysis** | Track convergence speed, sample efficiency | 📋 Q1 |
+| **Behavioral Comparison** | Extract cooperation rates, action patterns from trained policies | 📋 Q1-Q2 |
+| **Population Training Pilot** | Test vectorized population training (train_vectorized_population.py) | 📋 Q1 |
+| **GPU Optimization Study** | Measure utilization, identify bottlenecks | 📋 Q1 |
+| **Multi-Scenario Baselines** | Train PPO on all 12 scenarios | 📋 Q2 |
+
+### Success Criteria
+
+✅ **Performance**: PPO matches or exceeds evolved performance (≥58.50)
+✅ **Documentation**: Learning curve documentation showing convergence patterns
+✅ **Behavioral analysis**: Policy interpretations and comparisons
+✅ **GPU efficiency**: Population training achieving >60% GPU utilization
+✅ **Coverage**: Baselines for all 12 scenarios
+
+### Deliverables
+
+- `experiments/marl/BASELINE_RESULTS.md`: PPO vs. Evolution comparison
+- `experiments/marl/LEARNING_CURVES.md`: Convergence analysis across scenarios
+- `experiments/marl/POPULATION_TRAINING_RESULTS.md`: Multi-agent training outcomes
+- `experiments/marl/GPU_OPTIMIZATION.md`: Performance tuning findings
+- Technical report: "Neural vs. Heuristic: Learning Dynamics in Cooperative MARL"
+
+### Timeline
+
+**Q1 (Months 1-3)**:
+- ✅ Baseline PPO training on chain_reaction (10M steps)
+- ✅ Learning curve documentation
+- ✅ Fix VectorEnv GPU integration
+- ⚠️ Population training pilot (4-8 agents)
+
+**Q2 (Months 4-6)**:
+- ✅ PPO training on 6 scenarios
+- ✅ Behavioral analysis (cooperation rates, action distributions)
+- ✅ Population training at scale (16-32 agents)
+
+**Q3 (Months 7-9)**:
+- ✅ Complete PPO baseline suite (all 12 scenarios)
+- ✅ GPU optimization report
+- 🎯 Technical report
+
+---
+
+## 🔬 Original Research Questions
 
 1. **Baseline vs Evolved**: Can neural policies match heuristic evolution?
 2. **Generalization**: Do policies transfer across scenarios?

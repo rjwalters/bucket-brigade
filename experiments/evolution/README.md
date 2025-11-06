@@ -205,13 +205,78 @@ experiments/scenarios/{scenario}/
 
 ---
 
-## Future Work: Beyond Phase 1
+## Phase 2 Goals: Scenario-Wide Understanding
 
-The ideas below are valuable but belong to later research phases per the roadmap.
+**See**: [Phase 2 Research Agenda](../../docs/PHASE_2_RESEARCH_AGENDA.md#evolution-track-scenario-wide-understanding)
 
-### Phase 2: Multi-Scenario Agents
+### Core Research Questions
 
-Once Phase 1 closed-world mastery is complete, we can explore:
+1. **Do evolved strategies generalize across scenarios?**
+   - Run V4/V5 evolution on all 9 remaining scenarios
+   - Compare parameter values: Are there universal patterns?
+   - Test transfer: Can chain_reaction strategies work on greedy_neighbor?
+
+2. **What parameters matter most?**
+   - Sensitivity analysis across scenarios
+   - Identify critical vs. negligible parameters
+   - Discover scenario archetypes by parameter clustering
+
+3. **How does the fitness landscape vary?**
+   - Compare convergence rates across scenarios
+   - Identify easy vs. hard optimization problems
+   - Characterize local optima and plateau regions
+
+### Phase 2 Experiments
+
+| Experiment | Description | Status |
+|------------|-------------|--------|
+| **Scenario Sweep** | Run V4 evolution (15K gen, 200 pop) on all 9 remaining scenarios | 🚀 Q1-Q2 |
+| **Parameter Analysis** | Extract and compare best-agent genomes across scenarios | 📋 Q2 |
+| **Transfer Testing** | Evaluate cross-scenario performance (train on A, test on B) | 📋 Q1-Q2 |
+| **Convergence Study** | Analyze generation-by-generation fitness curves | 📋 Q2 |
+| **Fitness Landscape** | Characterize local optima, convergence difficulty | 📋 Q2-Q3 |
+
+### Success Criteria
+
+✅ **Complete coverage**: Evolution results for all 12 scenarios
+✅ **Parameter insights**: Sensitivity map showing which genes matter where
+✅ **Scenario taxonomy**: Classification based on optimal strategy profiles
+✅ **Transfer matrix**: Cross-scenario performance matrix
+
+### Deliverables
+
+- `experiments/evolution/SCENARIO_SWEEP_RESULTS.md`: Performance across all scenarios
+- `experiments/evolution/PARAMETER_PATTERNS.md`: Analysis of genome convergence
+- `experiments/evolution/TRANSFER_ANALYSIS.md`: Cross-scenario generalization study
+- `experiments/evolution/FITNESS_LANDSCAPE.md`: Convergence and optimization difficulty
+- Paper draft: "Evolutionary Discovery of Cooperation Strategies in Multi-Agent Fire-Fighting"
+
+### Timeline
+
+**Q1 (Months 1-3)**:
+- ✅ Complete V4/V5 evolution for 3 priority scenarios (greedy_neighbor, mixed_motivation, easy)
+- ✅ Initial parameter sensitivity analysis
+- ⚠️ Transfer testing infrastructure (train on A, test on B)
+
+**Q2 (Months 4-6)**:
+- ✅ Complete scenario sweep (all 12 scenarios)
+- ✅ Full parameter analysis report
+- ✅ Cross-scenario transfer matrix
+
+**Q3 (Months 7-9)**:
+- ✅ Final parameter pattern analysis
+- ✅ Scenario taxonomy by strategy requirements
+- 🎯 Paper draft
+
+---
+
+## Future Work: Beyond Phase 2
+
+The ideas below belong to later research phases per the roadmap.
+
+### Phase 3: Multi-Scenario Agents
+
+Once Phase 2 scenario-wide understanding is complete, we can explore:
 
 **Scenario Generalization**:
 - Train agents robust to scenario switching

@@ -11,7 +11,7 @@ from .bucket_brigade_core import (
     PyAgentObservation as AgentObservation,
     PyGameState as GameState,
     PyGameResult as GameResult,
-    # PyVectorEnv as VectorEnv,  # Temporarily disabled - needs rebuild
+    PyVectorEnv as VectorEnv,
     SCENARIOS,
     run_heuristic_episode,
     run_heuristic_episode_focal,
@@ -23,7 +23,7 @@ __all__ = [
     "AgentObservation",
     "GameState",
     "GameResult",
-    # "VectorEnv",  # Temporarily disabled
+    "VectorEnv",
     "SCENARIOS",
     "run_heuristic_episode",
     "run_heuristic_episode_focal",
