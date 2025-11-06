@@ -12,7 +12,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import json
-import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
@@ -210,13 +209,13 @@ def main():
     spark_best = max(spark_results, key=lambda x: x[1]["payoff"])
     spark_worst = min(spark_results, key=lambda x: x[1]["payoff"])
 
-    print(f"κ Effect:")
+    print("κ Effect:")
     print(f"  Best:  {kappa_best[0]} (κ={kappa_best[1]['kappa']:.2f}) → {kappa_best[1]['payoff']:.2f}")
     print(f"  Worst: {kappa_worst[0]} (κ={kappa_worst[1]['kappa']:.2f}) → {kappa_worst[1]['payoff']:.2f}")
     print(f"  Interpretation: {'Higher κ hurts performance' if kappa_best[1]['kappa'] < kappa_worst[1]['kappa'] else 'Higher κ helps performance'}")
     print()
 
-    print(f"p_spark Effect:")
+    print("p_spark Effect:")
     print(f"  Best:  {spark_best[0]} (p_spark={spark_best[1]['p_spark']:.2f}) → {spark_best[1]['payoff']:.2f}")
     print(f"  Worst: {spark_worst[0]} (p_spark={spark_worst[1]['p_spark']:.2f}) → {spark_worst[1]['payoff']:.2f}")
     print(f"  Interpretation: {'Ongoing fires help performance' if spark_best[1]['p_spark'] > 0 else 'No ongoing fires is optimal'}")
@@ -225,7 +224,7 @@ def main():
     # Verification
     tc_payoff = results["trivial_cooperation"]["payoff"]
     easy_90_payoff = results["easy_kappa_90"]["payoff"]
-    print(f"Verification:")
+    print("Verification:")
     print(f"  trivial_cooperation: {tc_payoff:.2f}")
     print(f"  easy_kappa_90:       {easy_90_payoff:.2f}")
     print(f"  Match: {'✓' if abs(tc_payoff - easy_90_payoff) < 1.0 else '✗'}")
