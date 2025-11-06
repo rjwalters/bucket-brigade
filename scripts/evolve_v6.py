@@ -98,8 +98,8 @@ def create_tournament_fitness(
 
     # 3. Random mutations (2 variants for diversity)
     rng = np.random.default_rng(42)
-    opponent_pool["mutation_1"] = rng.randn(10) * 0.3
-    opponent_pool["mutation_2"] = rng.randn(10) * 0.5
+    opponent_pool["mutation_1"] = rng.standard_normal(10) * 0.3
+    opponent_pool["mutation_2"] = rng.standard_normal(10) * 0.5
 
     print(f"Opponent pool: {len(opponent_pool)} types")
     for name in opponent_pool.keys():
