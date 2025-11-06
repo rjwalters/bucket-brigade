@@ -265,7 +265,10 @@ All 9 independent evolutionary runs (different scenarios, different starting con
 
 **Timeline:** 2-3 months development + experiments
 
-**Status**: PLANNED (design in progress)
+**Status**: 🔄 IN PROGRESS (Phase 2A complete, 2A.1 in progress)
+
+**Completed Work**:
+* ✅ **Phase 2A**: Universality boundary testing (extreme parameter scenarios)
 
 **Motivation**: Phase 1.5 found that a single strategy is optimal across all tested scenarios (β: 0.10-0.30, c: 0.30-1.00). Phase 2 investigates:
 * Where does universality break down? (extreme parameters)
@@ -281,31 +284,44 @@ All 9 independent evolutionary runs (different scenarios, different starting con
 
 Phase 2 investigates four complementary research directions:
 
-#### 2A. Universality Boundary Testing
+#### 2A. Universality Boundary Testing ✅ COMPLETED
 
 **Goal**: Map the parameter space where universal equilibrium breaks down.
 
-**Approach**:
-* **Extreme β testing**: Test β ∈ [0.01, 0.50] (10× range expansion)
-  * β → 0: Fires never spread (trivial scenarios)
-  * β → 1: Fires spread explosively (crisis scenarios)
-* **Extreme c testing**: Test c ∈ [0.05, 5.00] (50× range expansion)
-  * c → 0: Work is free (no social dilemma)
-  * c → ∞: Work is prohibitive (coordination critical)
-* **Team size variation**: Test num_agents ∈ {2, 8, 16, 32}
-* **Grid size variation**: Test larger grids (20×20, 50×50)
+**Status**: ✅ Completed 2025-11-05
 
-**Hypotheses**:
-* H1: Universal strategy fails when β > 0.40 (fire spreads too fast)
-* H2: Universal strategy fails when c < 0.10 (optimal to always work)
-* H3: Universal strategy scales to larger teams (symmetry preserved)
+**Key Finding**: Universal strategy is **more robust than expected** - performs better on extreme scenarios than baseline scenarios!
 
-**Metrics**:
-* Performance relative to Nash equilibrium in new parameter ranges
-* Genome distance from universal strategy
-* Identification of parameter discontinuities
+**Results**:
+* **Tested Parameter Ranges**:
+  * β ∈ [0.02, 0.75] (37.5× range)
+  * c ∈ [0.05, 5.00] (100× range)
+* **Performance**:
+  * Extreme scenarios mean: **63.78** payoff
+  * Baseline scenarios mean: **51.63** payoff
+  * "Degradation": **-23.5%** (actually improvement!)
+* **Convergence**: 6/9 extreme scenarios achieved identical payoff (65.14), suggesting robust equilibrium
+* **Exception**: Only `trivial_cooperation` (κ=0.90, p_spark=0.0) shows poor performance (26.50)
+  * Hypothesis: Universal strategy optimized for persistent threats, over-cooperates in trivial scenarios
 
-**Deliverable**: Parameter space map showing universality regions
+**Hypotheses Results**:
+* ❌ H1 (fails when β > 0.40): False - strategy works well even at β=0.75 (wildfire)
+* ❌ H2 (fails when c < 0.10): False - strategy achieves 65.14 at c=0.05 (free work)
+* ⏳ H3 (scales to larger teams): Not yet tested
+
+**Implications**:
+* Universality extends far beyond training distribution
+* No need to evolve specialized strategies for extreme parameters
+* Strategy may have bounded applicability to transient/trivial threat scenarios
+
+**Documentation**:
+* [Phase 2A Analysis](../experiments/boundary_testing/PHASE_2A_ANALYSIS.md)
+* Results: `experiments/boundary_testing/universal_strategy_test.json`
+
+**Next Steps**:
+* **2A.1**: Investigate trivial cooperation anomaly (κ and p_spark extremes)
+* **2A.2**: Team size variation (N=6, 8, 10) - deferred to later
+* **2A.3**: Grid size variation - deferred to later
 
 #### 2B. Heterogeneous Team Equilibria
 
