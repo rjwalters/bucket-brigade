@@ -1,0 +1,106 @@
+{
+  "universal_genome": [
+    0.3060885233641002,
+    0.06352264031873198,
+    0.014818693619284187,
+    0.9073119055652519,
+    0.9477873275024511,
+    0.5571028379732136,
+    0.5980114834945792,
+    0.7947088089477861,
+    1.0,
+    0.8501413166770448
+  ],
+  "results": {
+    "chain_reaction": {
+      "baseline_N4": 41.054,
+      "results": {
+        "N4": {
+          "payoff": 41.054,
+          "num_agents": 4
+        },
+        "N6": {
+          "payoff": 41.054,
+          "num_agents": 6
+        },
+        "N8": {
+          "payoff": 41.054,
+          "num_agents": 8
+        },
+        "N10": {
+          "payoff": 41.054,
+          "num_agents": 10
+        }
+      }
+    },
+    "sparse_heroics": {
+      "baseline_N4": 47.14,
+      "results": {
+        "N4": {
+          "payoff": 47.14,
+          "num_agents": 4
+        },
+        "N6": {
+          "payoff": 47.14,
+          "num_agents": 6
+        },
+        "N8": {
+          "payoff": 47.14,
+          "num_agents": 8
+        },
+        "N10": {
+          "payoff": 47.14,
+          "num_agents": 10
+        }
+      }
+    },
+    "crisis_cheap": {
+      "baseline_N4": 40.245,
+      "results": {
+        "N4": {
+          "payoff": 40.245,
+          "num_agents": 4
+        },
+        "N6": {
+          "payoff": 40.245,
+          "num_agents": 6
+        },
+        "N8": {
+          "payoff": 40.245,
+          "num_agents": 8
+        },
+        "N10": {
+          "payoff": 40.245,
+          "num_agents": 10
+        }
+      }
+    },
+    "easy_spark_02": {
+      "baseline_N4": 44.718,
+      "results": {
+        "N4": {
+          "payoff": 44.718,
+          "num_agents": 4
+        },
+        "N6": {
+          "payoff": 44.718,
+          "num_agents": 6
+        },
+        "N8": {
+          "payoff": 44.718,
+          "num_agents": 8
+        },
+        "N10": {
+          "payoff": 44.718,
+          "num_agents": 10
+        }
+      }
+    }
+  },
+  "failures": [],
+  "summary": {
+    "total_tests": 12,
+    "failures": 0,
+    "success_rate": 1.0
+  }
+}
