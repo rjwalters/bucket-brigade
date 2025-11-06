@@ -207,12 +207,9 @@ def main():
     # Create output directory
     args.output.mkdir(parents=True, exist_ok=True)
 
-    # Load scenario
+    # Load scenario (for FitnessEvaluator)
     print(f"Loading scenario: {args.scenario}")
-    scenario = get_scenario_by_name(args.scenario, args.num_agents)
     print(f"  Agents: {args.num_agents}")
-    print(f"  Fire count: {scenario.fire_count}")
-    print(f"  Max steps: {scenario.max_steps}")
     print()
 
     # Create evolution configuration (V6 parameters)
