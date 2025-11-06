@@ -356,6 +356,7 @@ def main():
     parser.add_argument("--minibatch-size", type=int, default=256, help="Minibatch size for updates")
     parser.add_argument("--epochs", type=int, default=4, help="Epochs per batch")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--hidden-size", type=int, default=2048, help="Hidden layer size (larger = more GPU usage)")
     parser.add_argument("--run-name", type=str, default=None, help="Name for this run")
     parser.add_argument("--checkpoint-interval", type=int, default=100000, help="Steps between checkpoints")
     parser.add_argument("--eval-interval", type=int, default=10000, help="Steps between eval prints")
@@ -410,10 +411,15 @@ def main():
     print(f"   Observation dim: {obs_space.shape[0]}")
     print(f"   Action dims: {action_space.nvec.tolist()}")
 
+    # Use large hidden size to saturate GPU
     policy = PolicyNetwork(
         obs_dim=obs_space.shape[0],
-        action_dims=action_space.nvec.tolist()
+        action_dims=action_space.nvec.tolist(),
+        hidden_size=args.hidden_size
     ).to(device)
+
+    total_params = sum(p.numel() for p in policy.parameters())
+    print(f"   Model parameters: {total_params:,} ({total_params * 4 / 1024 / 1024:.1f} MB)")
 
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
 
