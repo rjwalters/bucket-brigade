@@ -185,12 +185,12 @@ def main():
     print(f"Difference: {mechanism_mean - reference_mean:+.2f}")
     print()
 
-    print(f"Best Mechanism:")
+    print("Best Mechanism:")
     print(f"  {best_mechanism[0]}: {best_mechanism[1]['payoff']:.2f}")
     print(f"  c={best_mechanism[1]['c']:.2f}, p_spark={best_mechanism[1]['p_spark']:.2f}")
     print()
 
-    print(f"Worst Mechanism:")
+    print("Worst Mechanism:")
     print(f"  {worst_mechanism[0]}: {worst_mechanism[1]['payoff']:.2f}")
     print(f"  c={worst_mechanism[1]['c']:.2f}, p_spark={worst_mechanism[1]['p_spark']:.2f}")
     print()
