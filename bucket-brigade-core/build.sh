@@ -20,23 +20,18 @@ echo "✅ Rust version: $(rustc --version)"
 echo "📦 Installing Python dependencies..."
 uv pip install cffi maturin
 
-# Clean previous builds
-echo "🧹 Cleaning previous builds..."
-rm -rf bucket_brigade_core/bucket_brigade_core
-rm -rf bucket_brigade_core/*.so
+# Clean CFFI artifacts but keep main .so file
+echo "🧹 Cleaning CFFI artifacts..."
+if [ -d bucket_brigade_core/bucket_brigade_core ]; then
+    rm -rf bucket_brigade_core/bucket_brigade_core
+fi
 rm -rf target/wheels
 
 # Build with maturin
 echo "🔨 Building with maturin..."
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 uv run maturin develop --release
 
-# Clean up CFFI artifacts (only keep .so file)
-echo "🧹 Cleaning up CFFI artifacts..."
-if [ -d bucket_brigade_core/bucket_brigade_core ]; then
-    rm -rf bucket_brigade_core/bucket_brigade_core
-fi
-
 echo "✅ Build complete!"
 echo ""
 echo "Test import with:"
-echo "  uv run python -c 'from bucket_brigade_core import VectorEnv; print(VectorEnv)'"
+echo "  cd /tmp && uv run python -c 'from bucket_brigade_core import VectorEnv; print(VectorEnv)'"
