@@ -6,6 +6,14 @@
 
 ---
 
+> **📖 Terminology Note:** This project uses "agent" in two distinct contexts:
+> - **Game Policies/Strategies**: AI decision-makers in the bucket brigade game (the focus of this research)
+> - **Loom Roles**: Development automation workers (see [LOOM_AGENTS.md](LOOM_AGENTS.md) for development workflow)
+>
+> When we say "agent" in the game context below, we mean the AI policies that play the bucket brigade game.
+>
+> See [GLOSSARY.md](GLOSSARY.md) for complete terminology definitions.
+
 ## 🧭 The Story & Challenge
 
 Imagine a frontier town where **10 houses stand in a circle**, connected by paths that carry not just people, but also the relentless spread of fire. When flames erupt, they leap from house to house with terrifying speed. The townsfolk have formed a **Bucket Brigade** — but not everyone wants to be a hero.

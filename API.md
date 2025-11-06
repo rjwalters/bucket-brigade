@@ -1,5 +1,11 @@
 # 🔌 Bucket Brigade API Reference
 
+> ⚠️ **IMPORTANT: Backend API Not Yet Implemented**
+>
+> The Bucket Brigade platform currently operates as a **browser-only static site**. All computation happens in the browser using WebAssembly. The "Future API Endpoints" section describes planned features that **DO NOT exist yet**.
+>
+> For current architecture, see [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md).
+
 This document describes the data structures and interfaces used in the Bucket Brigade platform.
 
 *For game mechanics and rules, see [docs/game_mechanics.md](docs/game_mechanics.md).*
