@@ -20,8 +20,8 @@ import {
   type Agent,
   type GameResult,
 } from './browserEngine';
-import { generateScenarioSet } from './scenarioGenerator';
-import type { ScenarioType } from './scenarioGenerator';
+import { generateScenarioSet } from './scenarioGenerator.generated';
+import type { ScenarioType } from './scenarioGenerator.generated';
 import { BrowserAgent } from './browserAgents';
 import type { AgentArchetype } from '../types/teamBuilder';
 import { createGameEngine, initWasm, isWasmInitialized } from './wasmEngine';

@@ -1,0 +1,149 @@
+{
+  "version": "1.0",
+  "scenarios": {
+    "default": {
+      "beta": 0.25,
+      "kappa": 0.5,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.5,
+      "rho_ignite": 0.2,
+      "N_min": 12,
+      "p_spark": 0.02,
+      "N_spark": 12,
+      "description": "Standard balanced scenario for general testing"
+    },
+    "easy": {
+      "beta": 0.1,
+      "kappa": 0.8,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.5,
+      "rho_ignite": 0.1,
+      "N_min": 10,
+      "p_spark": 0.01,
+      "N_spark": 10,
+      "description": "Low difficulty with favorable conditions - low fire spread, high extinguish rate"
+    },
+    "hard": {
+      "beta": 0.4,
+      "kappa": 0.3,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.5,
+      "rho_ignite": 0.3,
+      "N_min": 15,
+      "p_spark": 0.05,
+      "N_spark": 15,
+      "description": "High difficulty with challenging conditions - high fire spread, low extinguish rate"
+    },
+    "trivial_cooperation": {
+      "beta": 0.15,
+      "kappa": 0.9,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.5,
+      "rho_ignite": 0.1,
+      "N_min": 12,
+      "p_spark": 0.0,
+      "N_spark": 12,
+      "description": "Easy fires reward universal cooperation"
+    },
+    "early_containment": {
+      "beta": 0.35,
+      "kappa": 0.6,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.5,
+      "rho_ignite": 0.3,
+      "N_min": 12,
+      "p_spark": 0.02,
+      "N_spark": 12,
+      "description": "Fires start aggressive but can be stopped early"
+    },
+    "greedy_neighbor": {
+      "beta": 0.15,
+      "kappa": 0.4,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 1.0,
+      "rho_ignite": 0.2,
+      "N_min": 12,
+      "p_spark": 0.02,
+      "N_spark": 12,
+      "description": "Social dilemma between self-interest and cooperation"
+    },
+    "sparse_heroics": {
+      "beta": 0.1,
+      "kappa": 0.5,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.8,
+      "rho_ignite": 0.15,
+      "N_min": 20,
+      "p_spark": 0.02,
+      "N_spark": 20,
+      "description": "Few workers can make the difference"
+    },
+    "rest_trap": {
+      "beta": 0.05,
+      "kappa": 0.95,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.2,
+      "rho_ignite": 0.1,
+      "N_min": 12,
+      "p_spark": 0.02,
+      "N_spark": 12,
+      "description": "Fires usually extinguish themselves, but not always"
+    },
+    "chain_reaction": {
+      "beta": 0.45,
+      "kappa": 0.6,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.7,
+      "rho_ignite": 0.3,
+      "N_min": 15,
+      "p_spark": 0.03,
+      "N_spark": 15,
+      "description": "High spread demands distributed firefighting teams"
+    },
+    "deceptive_calm": {
+      "beta": 0.25,
+      "kappa": 0.6,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.4,
+      "rho_ignite": 0.1,
+      "N_min": 20,
+      "p_spark": 0.05,
+      "N_spark": 20,
+      "description": "Honest signaling rewarded during occasional flare-ups"
+    },
+    "overcrowding": {
+      "beta": 0.2,
+      "kappa": 0.3,
+      "A": 50.0,
+      "L": 100.0,
+      "c": 0.6,
+      "rho_ignite": 0.1,
+      "N_min": 12,
+      "p_spark": 0.02,
+      "N_spark": 12,
+      "description": "Too many workers reduce efficiency"
+    },
+    "mixed_motivation": {
+      "beta": 0.3,
+      "kappa": 0.5,
+      "A": 100.0,
+      "L": 100.0,
+      "c": 0.6,
+      "rho_ignite": 0.2,
+      "N_min": 15,
+      "p_spark": 0.03,
+      "N_spark": 15,
+      "description": "House ownership creates conflicting incentives"
+    }
+  }
+}

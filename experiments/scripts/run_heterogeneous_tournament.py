@@ -38,10 +38,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs.scenarios import get_scenario_by_name
-from bucket_brigade.evolution.fitness_rust import (
-    _heuristic_action,
-    _convert_scenario_to_rust,
-)
+from bucket_brigade.evolution.fitness_rust import _heuristic_action
+from bucket_brigade.equilibrium.payoff_evaluator_rust import _convert_scenario_to_rust
 from bucket_brigade.agents.archetypes import (
     FIREFIGHTER_PARAMS,
     FREE_RIDER_PARAMS,
@@ -139,7 +137,7 @@ def play_heterogeneous_game(
     rust_scenario = _convert_scenario_to_rust(python_scenario)
 
     # Create Rust game
-    game = core.BucketBrigade(rust_scenario, seed=seed)
+    game = core.BucketBrigade(rust_scenario, num_agents=len(team_genomes), seed=seed)
 
     # Python RNG for heuristic decisions
     rng = np.random.RandomState(seed)

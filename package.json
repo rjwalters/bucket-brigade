@@ -14,7 +14,10 @@
     "test:web:headed": "cd web && pnpm run test:headed",
     "clean": "find . -type f -name '*.pyc' -delete && find . -type d -name __pycache__ -delete && rm -rf .pytest_cache",
     "dev": "cd web && pnpm run dev",
-    "build": "cd web && pnpm run build"
+    "build": "cd web && pnpm run build",
+    "generate": "pnpm run generate:python && pnpm run generate:typescript",
+    "generate:python": "uv run python scripts/generate_python.py",
+    "generate:typescript": "uv run python scripts/generate_typescript.py"
   },
   "devDependencies": {
   }

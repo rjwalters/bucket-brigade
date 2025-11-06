@@ -2,6 +2,53 @@
 
 This repository uses **Loom** for AI-powered development orchestration.
 
+---
+
+## ⚠️ COMPUTE RESOURCE GUIDELINES
+
+**CRITICAL**: Local machine (localhost) is NOT a compute platform!
+
+### Where to Run Different Tasks
+
+**✅ Run Locally (Safe)**:
+- Code editing and file operations
+- Git operations (commit, push, pull)
+- Quick tests (`pytest tests/test_foo.py -k specific_test`)
+- Documentation updates
+- Installing dependencies (`uv sync`)
+
+**❌ NEVER Run Locally (Will Melt CPU)**:
+- Nash equilibrium analysis (`compute_nash.py`, `compute_nash_v2.py`)
+- Evolution experiments (`run_evolution.py` with large populations)
+- Training runs (any `train_*.py` script)
+- Large-scale tournaments or benchmarks
+- Parallel experiments (multiple scenarios at once)
+
+**🚀 Use Remote Servers Instead**:
+- **rwalters-sandbox-1**: CPU-intensive tasks (evolution, Nash analysis)
+- **rwalters-sandbox-2**: GPU training (MARL, neural network training)
+
+**How to Use Remote Servers**:
+```bash
+# SSH into remote server
+ssh rwalters-sandbox-1  # or rwalters-sandbox-2
+
+# Run in tmux for persistence
+tmux new -s experiment
+cd bucket-brigade
+git pull
+
+# Run heavy computation
+uv run python experiments/scripts/compute_nash_v2.py ...
+
+# Detach: Ctrl+B, D
+# Reattach later: tmux attach -s experiment
+```
+
+**See `experiments/REMOTE_EXECUTION.md` for detailed remote workflow guide.**
+
+---
+
 ## What is Loom?
 
 Loom is a multi-terminal desktop application for macOS that orchestrates AI-powered development workers using git worktrees and GitHub as the coordination layer. It enables both automated orchestration (Tauri App Mode) and manual coordination (Manual Orchestration Mode).

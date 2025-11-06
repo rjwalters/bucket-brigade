@@ -4,12 +4,14 @@ import { z } from 'zod';
 export const HouseStateSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 
 // Scenario schema
+// Must match bucket_brigade/envs/scenarios.py Scenario dataclass
 export const ScenarioSchema = z.object({
   beta: z.number().min(0).max(1), // Fire spread probability
   kappa: z.number().min(0).max(2), // Extinguish efficiency
   A: z.number().positive(), // Reward per saved house
   L: z.number().positive(), // Penalty per ruined house
   c: z.number().nonnegative(), // Cost per worker per night
+  rho_ignite: z.number().min(0).max(1), // Initial fraction of houses burning
   N_min: z.number().int().positive(), // Minimum nights before termination
   p_spark: z.number().min(0).max(1), // Probability of spontaneous ignition
   N_spark: z.number().int().nonnegative(), // Number of nights with sparks active

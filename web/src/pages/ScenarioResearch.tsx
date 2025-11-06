@@ -10,7 +10,7 @@ import {
   type NashResults,
 } from '../types/research';
 import { AgentRadarChart } from '../components/AgentRadarChart';
-import type { ArchetypeParams } from '../data/archetypes';
+import type { ArchetypeParams } from '../data/archetypes.generated';
 
 interface ScenarioData {
   config: any;

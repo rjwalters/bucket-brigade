@@ -1,8 +1,8 @@
 import React from 'react';
 import { Modal } from './Modal';
 import { AgentRadarChart } from './AgentRadarChart';
-import { getArchetype, PARAMETER_DESCRIPTIONS } from '../data/archetypes';
-import type { ArchetypeParams } from '../data/archetypes';
+import { getArchetype, PARAMETER_DESCRIPTIONS } from '../data/archetypes.generated';
+import type { ArchetypeParams } from '../data/archetypes.generated';
 
 interface AgentDetailModalProps {
   isOpen: boolean;

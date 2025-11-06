@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Dices } from 'lucide-react';
 import { AgentRadarChart } from './AgentRadarChart';
-import { getArchetype, PARAMETER_DESCRIPTIONS } from '../data/archetypes';
-import type { ArchetypeParams } from '../data/archetypes';
+import { getArchetype, PARAMETER_DESCRIPTIONS } from '../data/archetypes.generated';
+import type { ArchetypeParams } from '../data/archetypes.generated';
 
 interface ScenarioParams {
   beta: number;

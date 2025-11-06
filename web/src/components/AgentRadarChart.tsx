@@ -1,7 +1,7 @@
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { calculateRadarProfile, formatForChart, RADAR_DIMENSIONS } from '../utils/agentRadarChart';
-import type { ArchetypeParams } from '../data/archetypes';
+import type { ArchetypeParams } from '../data/archetypes.generated';
 
 interface AgentRadarChartProps {
   params: ArchetypeParams;

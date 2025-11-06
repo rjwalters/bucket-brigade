@@ -155,7 +155,10 @@
       "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 uv run maturin develop:*)",
       "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 uv run:*)",
       "Bash(timeout 60 uv run:*)",
-      "Bash(./scripts/launch_remote_training.sh:*)"
+      "Bash(./scripts/launch_remote_training.sh:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(/tmp/run_nash_v5_all.sh)",
+      "Bash(scp:*)"
     ],
     "deny": [],
     "ask": []
