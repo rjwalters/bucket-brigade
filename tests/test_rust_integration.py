@@ -98,7 +98,11 @@ class TestRustCoreIntegration:
             actions = [
                 [step % 2, (step + j) % 2] for j in range(4)
             ]  # Deterministic actions
-            env.step(actions)
+            _, done, _ = env.step(actions)
+
+            # Reset if game finishes
+            if done:
+                env = BucketBrigade(scenario, 4, seed=42 + step)
 
         end_time = time.time()
         total_time = end_time - start_time
@@ -159,21 +163,19 @@ class TestRustCoreIntegration:
         )
 
         python_scenarios = [
-            ("trivial_cooperation", trivial_cooperation_scenario()),
-            ("early_containment", early_containment_scenario()),
-            ("greedy_neighbor", greedy_neighbor_scenario()),
-            ("sparse_heroics", sparse_heroics_scenario()),
+            ("trivial_cooperation", trivial_cooperation_scenario(num_agents=4)),
+            ("early_containment", early_containment_scenario(num_agents=4)),
+            ("greedy_neighbor", greedy_neighbor_scenario(num_agents=4)),
+            ("sparse_heroics", sparse_heroics_scenario(num_agents=4)),
         ]
 
         for name, python_scenario in python_scenarios:
             assert name in SCENARIOS
             rust_scenario = SCENARIOS[name]
 
-            # Check key parameters match
-            assert rust_scenario.prob_fire_spreads_to_neighbor == python_scenario.beta
-            assert (
-                rust_scenario.prob_solo_agent_extinguishes_fire == python_scenario.kappa
-            )
-            assert rust_scenario.team_reward_house_survives == python_scenario.A
-            assert rust_scenario.team_penalty_house_burns == python_scenario.L
-            assert rust_scenario.num_agents == python_scenario.num_agents
+            # Check key parameters match (use approximate comparison for floats)
+            assert abs(rust_scenario.prob_fire_spreads_to_neighbor - python_scenario.beta) < 1e-6
+            assert abs(rust_scenario.prob_solo_agent_extinguishes_fire - python_scenario.kappa) < 1e-6
+            assert abs(rust_scenario.team_reward_house_survives - python_scenario.A) < 1e-6
+            assert abs(rust_scenario.team_penalty_house_burns - python_scenario.L) < 1e-6
+            # Note: num_agents is now a team composition parameter, not part of Scenario
