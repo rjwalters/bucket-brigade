@@ -53,7 +53,7 @@ echo "🦀 Building Rust core..."
 cd bucket-brigade-core
 VIRTUAL_ENV="$(pwd)/../.venv" \
   PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-  ../.venv/bin/maturin develop --release --features python
+  uv tool run maturin develop --release --features python
 cd ..
 
 # Verify installation
