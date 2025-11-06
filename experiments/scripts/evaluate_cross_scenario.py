@@ -25,7 +25,6 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-import numpy as np
 from bucket_brigade.envs.scenarios import get_scenario_by_name
 from bucket_brigade.equilibrium import (
     load_evolved_agent,
