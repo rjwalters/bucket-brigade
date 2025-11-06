@@ -1,0 +1,96 @@
+{
+  "universal_genome": [
+    0.3060885233641002,
+    0.06352264031873198,
+    0.014818693619284187,
+    0.9073119055652519,
+    0.9477873275024511,
+    0.5571028379732136,
+    0.5980114834945792,
+    0.7947088089477861,
+    1.0,
+    0.8501413166770448
+  ],
+  "results": {
+    "glacial_spread": {
+      "payoff": 65.13575,
+      "beta": 0.02,
+      "c": 0.5,
+      "kappa": 0.5
+    },
+    "explosive_spread": {
+      "payoff": 65.13575,
+      "beta": 0.6,
+      "c": 0.5,
+      "kappa": 0.5
+    },
+    "wildfire": {
+      "payoff": 60.4925,
+      "beta": 0.75,
+      "c": 0.5,
+      "kappa": 0.5
+    },
+    "free_work": {
+      "payoff": 65.13575,
+      "beta": 0.2,
+      "c": 0.05,
+      "kappa": 0.5
+    },
+    "cheap_work": {
+      "payoff": 65.13575,
+      "beta": 0.2,
+      "c": 0.1,
+      "kappa": 0.5
+    },
+    "expensive_work": {
+      "payoff": 65.13575,
+      "beta": 0.2,
+      "c": 2.0,
+      "kappa": 0.5
+    },
+    "prohibitive_work": {
+      "payoff": 65.13575,
+      "beta": 0.2,
+      "c": 5.0,
+      "kappa": 0.5
+    },
+    "crisis_cheap": {
+      "payoff": 60.4925,
+      "beta": 0.6,
+      "c": 0.1,
+      "kappa": 0.5
+    },
+    "calm_expensive": {
+      "payoff": 62.19775,
+      "beta": 0.02,
+      "c": 5.0,
+      "kappa": 0.5
+    },
+    "chain_reaction": {
+      "payoff": 61.22875,
+      "beta": 0.45,
+      "c": 0.7,
+      "kappa": 0.6
+    },
+    "sparse_heroics": {
+      "payoff": 67.1755,
+      "beta": 0.1,
+      "c": 0.8,
+      "kappa": 0.5
+    },
+    "trivial_cooperation": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "c": 0.5,
+      "kappa": 0.9
+    }
+  },
+  "summary": {
+    "baseline_mean": 51.63475,
+    "extreme_mean": 63.77747222222222,
+    "degradation_pct": -23.516570182333073,
+    "worst": "trivial_cooperation",
+    "best": "sparse_heroics",
+    "failures": 0
+  }
+}
