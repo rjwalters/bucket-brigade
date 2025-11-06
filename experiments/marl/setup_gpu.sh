@@ -32,6 +32,14 @@ if ! command -v nvidia-smi &> /dev/null; then
     echo "⚠️  Warning: nvidia-smi not found. Are you on a GPU instance?"
 fi
 
+# Install Rust if not present
+if ! command -v rustc &> /dev/null; then
+    echo "🦀 Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    export PATH="$HOME/.cargo/bin:$PATH"
+    source "$HOME/.cargo/env"
+fi
+
 # Install uv if not present
 if ! command -v uv &> /dev/null; then
     echo "📦 Installing uv..."
