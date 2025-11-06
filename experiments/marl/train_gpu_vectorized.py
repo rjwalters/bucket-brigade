@@ -36,7 +36,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade.envs.puffer_env_rust import make_rust_env
-from bucket_brigade.training import PolicyNetwork, compute_gae
+from bucket_brigade.training import PolicyNetwork
 
 
 class VectorizedEnv:
@@ -203,14 +203,21 @@ def train_ppo_vectorized(
                 _, next_values = policy(obs_tensor)
                 next_values = next_values.squeeze(-1)
 
-            advantages = compute_gae(
-                rollout_rewards_batch,
-                rollout_values_batch,
-                rollout_dones_batch,
-                next_values,
-                gamma=0.99,
-                gae_lambda=0.95
-            )
+                # Compute GAE advantages (tensor version)
+                T, B = rollout_rewards_batch.shape  # [rollout_length, num_envs]
+                advantages = torch.zeros_like(rollout_rewards_batch)
+                lastgaelam = 0
+
+                for t in reversed(range(T)):
+                    if t == T - 1:
+                        nextnonterminal = 1.0 - rollout_dones_batch[t]
+                        nextvalues = next_values
+                    else:
+                        nextnonterminal = 1.0 - rollout_dones_batch[t + 1]
+                        nextvalues = rollout_values_batch[t + 1]
+
+                    delta = rollout_rewards_batch[t] + 0.99 * nextvalues * nextnonterminal - rollout_values_batch[t]
+                    advantages[t] = lastgaelam = delta + 0.99 * 0.95 * nextnonterminal * lastgaelam
             returns = advantages + rollout_values_batch
 
             # Flatten batch [rollout_length, num_envs, ...] -> [rollout_length * num_envs, ...]
