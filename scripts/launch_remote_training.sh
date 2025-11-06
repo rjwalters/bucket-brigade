@@ -6,14 +6,17 @@
 #   ./scripts/launch_remote_training.sh [options]
 #
 # Options:
-#   -h, --host       Remote host (default: rwalters-sandbox-2)
-#   -s, --scenario   Scenario name (default: trivial_cooperation)
-#   -p, --pop-size   Population size (default: 16)
-#   -e, --episodes   Number of episodes (default: 100000)
-#   -n, --name       Run name (auto-generated if not specified)
-#   -t, --tmux       Use tmux session (default: nohup)
-#   -d, --detach     Detach from tmux immediately (only with --tmux)
-#   --help           Show this help message
+#   -h, --host        Remote host (default: rwalters-sandbox-2)
+#   -s, --scenario    Scenario name (default: trivial_cooperation)
+#   -p, --pop-size    Population size (default: 16)
+#   -e, --episodes    Number of episodes (default: 100000)
+#   -n, --name        Run name (auto-generated if not specified)
+#   -t, --tmux        Use tmux session (default: nohup)
+#   -d, --detach      Detach from tmux immediately (only with --tmux)
+#   --num-games       Parallel game environments (default: 256)
+#   --batch-size      Learner batch size (default: 1024)
+#   --hidden-size     Network hidden size (default: 1024)
+#   --help            Show this help message
 #
 # Examples:
 #   # Quick test (tmux, manual monitor)
@@ -33,6 +36,9 @@ REMOTE_HOST="rwalters-sandbox-2"
 SCENARIO="trivial_cooperation"
 POP_SIZE=16
 EPISODES=100000
+NUM_GAMES=256
+BATCH_SIZE=1024
+HIDDEN_SIZE=1024
 RUN_NAME=""
 USE_TMUX=false
 DETACH=false
@@ -68,6 +74,18 @@ while [[ $# -gt 0 ]]; do
       DETACH=true
       shift
       ;;
+    --num-games)
+      NUM_GAMES="$2"
+      shift 2
+      ;;
+    --batch-size)
+      BATCH_SIZE="$2"
+      shift 2
+      ;;
+    --hidden-size)
+      HIDDEN_SIZE="$2"
+      shift 2
+      ;;
     --help)
       head -n 30 "$0" | grep '^#' | sed 's/^# //; s/^#//'
       exit 0
@@ -93,6 +111,9 @@ echo "========================================"
 echo "Host:         $REMOTE_HOST"
 echo "Scenario:     $SCENARIO"
 echo "Population:   $POP_SIZE agents"
+echo "Parallel games: $NUM_GAMES"
+echo "Batch size:   $BATCH_SIZE"
+echo "Hidden size:  $HIDDEN_SIZE"
 echo "Episodes:     $EPISODES"
 echo "Run name:     $RUN_NAME"
 echo "Mode:         $([ "$USE_TMUX" = true ] && echo "tmux" || echo "nohup background")"
@@ -122,6 +143,9 @@ ssh "$REMOTE_HOST" "mkdir -p bucket-brigade/logs"
 TRAIN_CMD="cd bucket-brigade && uv run python experiments/marl/train_population.py \
   --scenario $SCENARIO \
   --population-size $POP_SIZE \
+  --num-games $NUM_GAMES \
+  --batch-size $BATCH_SIZE \
+  --hidden-size $HIDDEN_SIZE \
   --num-episodes $EPISODES \
   --device cuda \
   --run-name $RUN_NAME \
