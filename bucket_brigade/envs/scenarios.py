@@ -304,6 +304,153 @@ def mixed_motivation_scenario(num_agents: int) -> Scenario:
     )
 
 
+# Phase 2A: Extreme scenarios for universality boundary testing
+
+
+def glacial_spread_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Glacial Spread - fires barely spread (β=0.02)."""
+    return Scenario(
+        beta=0.02,  # extremely low spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,  # moderate work cost
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def explosive_spread_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Explosive Spread - fires spread very aggressively (β=0.60)."""
+    return Scenario(
+        beta=0.60,  # extremely high spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,  # moderate work cost
+        rho_ignite=0.2,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def wildfire_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Wildfire - fires spread almost uncontrollably (β=0.75)."""
+    return Scenario(
+        beta=0.75,  # near-maximum spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.5,  # moderate work cost
+        rho_ignite=0.25,
+        N_min=10,
+        p_spark=0.03,
+        N_spark=10,
+        num_agents=num_agents,
+    )
+
+
+def free_work_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Free Work - work costs almost nothing (c=0.05)."""
+    return Scenario(
+        beta=0.20,  # moderate spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.05,  # extremely low work cost
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def cheap_work_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Cheap Work - work is very affordable (c=0.10)."""
+    return Scenario(
+        beta=0.20,  # moderate spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.10,  # very low work cost
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def expensive_work_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Expensive Work - work is costly (c=2.0)."""
+    return Scenario(
+        beta=0.20,  # moderate spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=2.0,  # high work cost
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def prohibitive_work_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Prohibitive Work - work is extremely expensive (c=5.0)."""
+    return Scenario(
+        beta=0.20,  # moderate spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=5.0,  # extremely high work cost
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def crisis_cheap_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Crisis + Cheap - fast spread but affordable work (β=0.60, c=0.10)."""
+    return Scenario(
+        beta=0.60,  # very high spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.10,  # very low work cost
+        rho_ignite=0.25,
+        N_min=10,
+        p_spark=0.03,
+        N_spark=10,
+        num_agents=num_agents,
+    )
+
+
+def calm_expensive_scenario(num_agents: int) -> Scenario:
+    """Phase 2A: Calm + Expensive - slow spread but costly work (β=0.02, c=5.0)."""
+    return Scenario(
+        beta=0.02,  # extremely low spread
+        kappa=0.5,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=5.0,  # extremely high work cost
+        rho_ignite=0.1,
+        N_min=15,
+        p_spark=0.01,
+        N_spark=15,
+        num_agents=num_agents,
+    )
+
+
 # Named distributions for random sampling
 
 
@@ -396,6 +543,16 @@ SCENARIO_REGISTRY = {
     "deceptive_calm": deceptive_calm_scenario,
     "overcrowding": overcrowding_scenario,
     "mixed_motivation": mixed_motivation_scenario,
+    # Phase 2A: Extreme scenarios for boundary testing
+    "glacial_spread": glacial_spread_scenario,
+    "explosive_spread": explosive_spread_scenario,
+    "wildfire": wildfire_scenario,
+    "free_work": free_work_scenario,
+    "cheap_work": cheap_work_scenario,
+    "expensive_work": expensive_work_scenario,
+    "prohibitive_work": prohibitive_work_scenario,
+    "crisis_cheap": crisis_cheap_scenario,
+    "calm_expensive": calm_expensive_scenario,
 }
 
 

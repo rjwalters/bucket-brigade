@@ -1,0 +1,36 @@
+{
+  "agent_scenario": "chain_reaction",
+  "test_scenario": "crisis_cheap",
+  "evolved_version": "v4",
+  "payoff": 60.4925,
+  "num_simulations": 2000,
+  "seed": 42,
+  "elapsed_time": 2.549999237060547,
+  "agent_metadata": {
+    "scenario": "chain_reaction",
+    "fitness": 68.8,
+    "generation": 15000,
+    "version": "v4",
+    "parameters": {
+      "honesty": 0.3060885233641002,
+      "work_tendency": 0.06352264031873198,
+      "neighbor_help": 0.014818693619284187,
+      "own_priority": 0.9073119055652519,
+      "risk_aversion": 0.9477873275024511,
+      "coordination": 0.5571028379732136,
+      "exploration": 0.5980114834945792,
+      "fatigue_memory": 0.7947088089477861,
+      "rest_bias": 1.0,
+      "altruism": 0.8501413166770448
+    }
+  },
+  "test_scenario_params": {
+    "beta": 0.6,
+    "kappa": 0.5,
+    "c": 0.1,
+    "A": 100.0,
+    "L": 100.0,
+    "num_agents": 4
+  },
+  "on_scenario_fitness": 68.8
+}
