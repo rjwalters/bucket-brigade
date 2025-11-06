@@ -150,9 +150,9 @@ def _run_full_rust_simulation(args):
 
     # Run entire episode in Rust - single function call
     # Use focal-optimized function for Nash equilibrium computation
+    # Note: num_agents is now embedded in rust_scenario
     return core.run_heuristic_episode_focal(
         rust_scenario,
-        4,  # num_agents
         theta_focal.tolist(),
         theta_opponents.tolist(),
         seed,

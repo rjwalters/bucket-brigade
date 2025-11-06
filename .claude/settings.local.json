@@ -134,7 +134,10 @@
       "Bash(else)",
       "Bash(if [ -f \"$web_config\" ])",
       "Bash(../.venv/bin/python:*)",
-      "Bash(./build.sh:*)"
+      "Bash(./build.sh:*)",
+      "Bash(Scenario generation and parameter management for Bucket Brigade environments.)",
+      "Bash(__NEW_LINE__ This package provides the Scenario dataclass and factory functions for creating)",
+      "Bash(game configurations.)"
     ],
     "deny": [],
     "ask": []

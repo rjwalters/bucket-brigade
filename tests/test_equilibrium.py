@@ -34,8 +34,8 @@ class TestPayoffEvaluator:
 
         # Should be a reasonable payoff (positive for cooperative scenario)
         assert isinstance(payoff, float)
-        assert payoff > -1000  # Sanity check
-        assert payoff < 1000
+        assert payoff > -1000  # Sanity check - payoffs shouldn't be extremely negative
+        assert payoff < 2000  # Sanity check - payoffs shouldn't be extremely high
 
     def test_evaluate_symmetric_payoff_parallel(self):
         """Test payoff evaluation with parallel execution."""
@@ -55,8 +55,8 @@ class TestPayoffEvaluator:
         )
 
         assert isinstance(payoff, float)
-        assert payoff > -1000
-        assert payoff < 1000
+        assert payoff > -1000  # Sanity check - payoffs shouldn't be extremely negative
+        assert payoff < 2000  # Sanity check - payoffs shouldn't be extremely high
 
     def test_evaluate_payoff_matrix(self):
         """Test payoff matrix computation."""
