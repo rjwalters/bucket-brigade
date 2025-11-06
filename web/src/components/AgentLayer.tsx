@@ -5,6 +5,7 @@ interface AgentLayerProps {
   signals: number[]; // Agent signals (0=REST, 1=WORK)
   actions: number[][]; // Agent actions [[house, mode], ...]
   className?: string;
+  phase?: 'day' | 'night'; // Controlled phase from parent
   onPhaseChange?: (phase: 'day' | 'night') => void;
 }
 
@@ -13,26 +14,17 @@ const AgentLayer: React.FC<AgentLayerProps> = ({
   signals,
   actions,
   className = '',
+  phase: controlledPhase = 'day',
   onPhaseChange
 }) => {
-  // Day/night phase animation state
-  const [phase, setPhase] = useState<'day' | 'night'>('day');
+  // Use controlled phase from parent
+  const phase = controlledPhase;
   const [animationKey, setAnimationKey] = useState(0);
 
-  // Reset animation when locations change (new night)
+  // Update animation key when data changes
   useEffect(() => {
-    setPhase('day');
-    if (onPhaseChange) onPhaseChange('day');
     setAnimationKey(prev => prev + 1);
-
-    // Transition to night phase after day phase animation
-    const dayTimer = setTimeout(() => {
-      setPhase('night');
-      if (onPhaseChange) onPhaseChange('night');
-    }, 1000); // 1 second for day phase
-
-    return () => clearTimeout(dayTimer);
-  }, [locations, signals, actions, onPhaseChange]);
+  }, [locations, signals, actions, phase]);
 
   const centerX = 320; // Updated to match Town component (symmetric)
   const centerY = 320; // Updated to match Town component (symmetric)

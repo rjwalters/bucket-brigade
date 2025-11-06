@@ -16,10 +16,9 @@ const GameReplayPage: React.FC = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameReplay[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameReplay | null>(null);
-  const [currentNight, setCurrentNight] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0); // 0 to nights*2 - even=day, odd=night
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000); // milliseconds
-  const [phase, setPhase] = useState<'day' | 'night'>('day');
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationProgress, setSimulationProgress] = useState({ completed: 0, total: 0 });
   const [simulationStats, setSimulationStats] = useState<any>(null);
@@ -325,15 +324,33 @@ const GameReplayPage: React.FC = () => {
     }
   };
 
+  // Derive current night and phase from step (even=day, odd=night)
+  const currentNight = Math.floor(currentStep / 2);
+  const phase: 'day' | 'night' = currentStep % 2 === 0 ? 'day' : 'night';
+
+  // Get the appropriate night data based on phase
+  // Day phase: show state from previous night (or initial for day 0)
+  // Night phase: show state from current night
+  const displayNight = phase === 'day' ? Math.max(0, currentNight - 1) : currentNight;
   const currentNightData = selectedGame?.nights[currentNight];
+  const displayNightData = selectedGame?.nights[displayNight];
+
+  // For step 0 (Day 0), create initial state with all houses safe
+  const initialHouses = selectedGame ? Array(10).fill(0) : [];
+  const displayHouses = (currentStep === 0 && phase === 'day')
+    ? initialHouses
+    : displayNightData?.houses || [];
+
+  const totalSteps = selectedGame ? selectedGame.nights.length * 2 : 0;
 
   // Auto-play functionality
   useEffect(() => {
     if (!isPlaying || !selectedGame) return;
 
     const interval = setInterval(() => {
-      setCurrentNight(prev => {
-        if (prev >= selectedGame.nights.length - 1) {
+      setCurrentStep(prev => {
+        const maxStep = selectedGame.nights.length * 2 - 1;
+        if (prev >= maxStep) {
           setIsPlaying(false);
           return prev;
         }
@@ -349,17 +366,18 @@ const GameReplayPage: React.FC = () => {
   }, [isPlaying]);
 
   const handleReset = useCallback(() => {
-    setCurrentNight(0);
+    setCurrentStep(0);
     setIsPlaying(false);
   }, []);
 
-  const handlePrevNight = useCallback(() => {
-    setCurrentNight(prev => Math.max(0, prev - 1));
+  const handlePrevStep = useCallback(() => {
+    setCurrentStep(prev => Math.max(0, prev - 1));
   }, []);
 
-  const handleNextNight = useCallback(() => {
+  const handleNextStep = useCallback(() => {
     if (!selectedGame) return;
-    setCurrentNight(prev => Math.min(selectedGame.nights.length - 1, prev + 1));
+    const maxStep = selectedGame.nights.length * 2 - 1;
+    setCurrentStep(prev => Math.min(maxStep, prev + 1));
   }, [selectedGame]);
 
   const handleSpeedChange = useCallback((newSpeed: number) => {
@@ -368,7 +386,7 @@ const GameReplayPage: React.FC = () => {
 
   const handleGameSelect = useCallback((game: GameReplay) => {
     setSelectedGame(game);
-    setCurrentNight(0);
+    setCurrentStep(0);
     setIsPlaying(false);
   }, []);
 
@@ -574,6 +592,8 @@ const GameReplayPage: React.FC = () => {
         <>
           {/* Replay Controls */}
           <ReplayControls
+          currentStep={currentStep}
+          totalSteps={totalSteps}
           currentNight={currentNight}
           totalNights={selectedGame.nights.length}
           isPlaying={isPlaying}
@@ -581,8 +601,8 @@ const GameReplayPage: React.FC = () => {
           phase={phase}
           onPlayPause={handlePlayPause}
           onReset={handleReset}
-          onPrev={handlePrevNight}
-          onNext={handleNextNight}
+          onPrev={handlePrevStep}
+          onNext={handleNextStep}
           onSpeedChange={handleSpeedChange}
             nights={selectedGame.nights}
             />
@@ -598,9 +618,9 @@ const GameReplayPage: React.FC = () => {
                     {phase === 'day' ? '☀️' : '🌙'}
                   </div>
 
-                  {/* Town (houses) */}
+                  {/* Town (houses) - show appropriate state based on phase */}
                   <Town
-                    houses={currentNightData.houses}
+                    houses={displayHouses}
                     numAgents={selectedGame.scenario.num_agents}
                     archetypes={selectedGame.archetypes}
                   />
@@ -610,7 +630,7 @@ const GameReplayPage: React.FC = () => {
                     locations={currentNightData.locations}
                     signals={currentNightData.signals}
                     actions={currentNightData.actions}
-                    onPhaseChange={setPhase}
+                    phase={phase}
                   />
                 </div>
               </div>

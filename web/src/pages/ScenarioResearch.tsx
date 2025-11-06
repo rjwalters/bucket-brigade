@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Info, X } from 'lucide-react';
 import {
   SCENARIOS,
   type ScenarioName,
@@ -47,6 +48,8 @@ export default function ScenarioResearch() {
   const [data, setData] = useState<ScenarioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEvolutionInfo, setShowEvolutionInfo] = useState(false);
+  const [showNashInfo, setShowNashInfo] = useState(false);
 
   useEffect(() => {
     loadScenarioData(selectedScenario);
@@ -130,7 +133,7 @@ export default function ScenarioResearch() {
           <h2 className="text-2xl font-bold mb-4 text-content-primary">{data.config.description}</h2>
           <p className="text-content-secondary mb-4">{data.config.story}</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <div className="text-sm text-content-secondary">Fire Spread (β)</div>
               <div className="text-xl font-bold text-content-primary">{data.config.parameters.beta}</div>
@@ -140,8 +143,32 @@ export default function ScenarioResearch() {
               <div className="text-xl font-bold text-content-primary">{data.config.parameters.kappa}</div>
             </div>
             <div>
+              <div className="text-sm text-content-secondary">Reward/A (saved)</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.A}</div>
+            </div>
+            <div>
+              <div className="text-sm text-content-secondary">Penalty/L (ruined)</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.L}</div>
+            </div>
+            <div>
               <div className="text-sm text-content-secondary">Work Cost (c)</div>
               <div className="text-xl font-bold text-content-primary">{data.config.parameters.c}</div>
+            </div>
+            <div>
+              <div className="text-sm text-content-secondary">Ignition Prob (ρ)</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.rho_ignite}</div>
+            </div>
+            <div>
+              <div className="text-sm text-content-secondary">Min Nights</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.N_min}</div>
+            </div>
+            <div>
+              <div className="text-sm text-content-secondary">Spark Prob</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.p_spark}</div>
+            </div>
+            <div>
+              <div className="text-sm text-content-secondary">Spark Duration</div>
+              <div className="text-xl font-bold text-content-primary">{data.config.parameters.N_spark}</div>
             </div>
             <div>
               <div className="text-sm text-content-secondary">Agents</div>
@@ -178,6 +205,35 @@ export default function ScenarioResearch() {
                   </div>
                 );
               })}
+              {/* Add Nash equilibrium if available */}
+              {data.nash && data.nash.equilibrium.support_size === 1 && (
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="text-xl font-bold text-content-tertiary">#{data.comparison.ranking.length + 1}</div>
+                    <h4 className="text-lg font-semibold capitalize text-content-primary">
+                      Nash Equilibrium
+                    </h4>
+                  </div>
+                  <div className="text-sm text-content-secondary mb-2">
+                    Payoff: {data.nash.equilibrium.expected_payoff.toFixed(2)}
+                  </div>
+                  <AgentRadarChart params={data.nash.equilibrium.strategy_pool[0].parameters as ArchetypeParams} />
+                </div>
+              )}
+              {/* Placeholder for third strategy if needed */}
+              {data.comparison.ranking.length < 2 && !data.nash && (
+                <div className="text-center flex flex-col items-center justify-center min-h-[300px] bg-surface-tertiary rounded-lg border-2 border-dashed border-outline-primary">
+                  <div className="text-content-tertiary mb-2">
+                    <Info className="w-12 h-12 opacity-30" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-content-secondary">
+                    Additional Strategy
+                  </h4>
+                  <p className="text-sm text-content-tertiary mt-1">
+                    Coming Soon
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -289,7 +345,16 @@ export default function ScenarioResearch() {
       {/* Evolution Results */}
       {data.evolution && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-content-primary">Evolutionary Optimization</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-2xl font-bold text-content-primary">Evolutionary Optimization</h2>
+            <button
+              onClick={() => setShowEvolutionInfo(true)}
+              className="p-1 rounded-full hover:bg-surface-tertiary text-content-secondary hover:text-content-primary transition-colors"
+              title="Technical details"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+          </div>
           <div className="bg-surface-secondary p-6 rounded-lg shadow border border-outline-primary">
             <div className="grid md:grid-cols-3 gap-4 mb-6">
               <div>
@@ -302,7 +367,7 @@ export default function ScenarioResearch() {
               </div>
               <div>
                 <div className="text-sm text-content-secondary">Time</div>
-                <div className="text-2xl font-bold text-content-primary">{data.evolution.trace.convergence.elapsed_time.toFixed(1)}s</div>
+                <div className="text-2xl font-bold text-content-primary">{data.evolution.trace.convergence?.elapsed_time?.toFixed(1) ?? 'N/A'}s</div>
               </div>
             </div>
 
@@ -397,7 +462,16 @@ export default function ScenarioResearch() {
       {/* Nash Equilibrium Results */}
       {data.nash && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-content-primary">Nash Equilibrium Analysis</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-2xl font-bold text-content-primary">Nash Equilibrium Analysis</h2>
+            <button
+              onClick={() => setShowNashInfo(true)}
+              className="p-1 rounded-full hover:bg-surface-tertiary text-content-secondary hover:text-content-primary transition-colors"
+              title="Technical details"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Key Metrics */}
           <div className="grid md:grid-cols-4 gap-4 mb-6">
@@ -417,7 +491,7 @@ export default function ScenarioResearch() {
             </div>
             <div className="bg-surface-secondary p-6 rounded-lg shadow border border-outline-primary">
               <div className="text-sm text-content-secondary mb-1">Convergence Time</div>
-              <div className="text-2xl font-bold text-content-primary">{data.nash.convergence.elapsed_time.toFixed(1)}s</div>
+              <div className="text-2xl font-bold text-content-primary">{data.nash.convergence?.elapsed_time?.toFixed(1) ?? 'N/A'}s</div>
             </div>
           </div>
 
@@ -485,7 +559,7 @@ export default function ScenarioResearch() {
               </div>
               <div>
                 <div className="text-sm text-content-secondary">Iterations</div>
-                <div className="font-bold text-content-primary">{data.nash.convergence.iterations} / {data.nash.algorithm.max_iterations}</div>
+                <div className="font-bold text-content-primary">{data.nash.convergence?.iterations ?? 'N/A'} / {data.nash.algorithm.max_iterations}</div>
               </div>
               <div>
                 <div className="text-sm text-content-secondary">Epsilon</div>
@@ -493,8 +567,8 @@ export default function ScenarioResearch() {
               </div>
               <div>
                 <div className="text-sm text-content-secondary">Converged</div>
-                <div className={`font-bold ${data.nash.convergence.converged ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {data.nash.convergence.converged ? 'Yes' : 'No'}
+                <div className={`font-bold ${data.nash.convergence?.converged ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {data.nash.convergence?.converged ? 'Yes' : 'No'}
                 </div>
               </div>
               <div>
@@ -783,6 +857,186 @@ export default function ScenarioResearch() {
                 <li key={idx} className="text-content-secondary">{question}</li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Evolution Info Modal */}
+      {showEvolutionInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-overlay">
+          <div className="bg-surface-primary rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto modal-content">
+            <div className="sticky top-0 bg-surface-primary border-b border-outline-primary p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-content-primary">Evolutionary Optimization: Technical Details</h3>
+              <button
+                onClick={() => setShowEvolutionInfo(false)}
+                className="p-2 rounded-full hover:bg-surface-tertiary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Genetic Algorithm Overview</h4>
+                <p className="text-content-secondary mb-3">
+                  We employ a genetic algorithm to evolve agent strategies that maximize expected payoff in the Bucket Brigade game. Each agent is represented by a 10-dimensional parameter vector (genome) that encodes behavioral traits.
+                </p>
+                <p className="text-content-secondary">
+                  The algorithm maintains a population of candidate strategies and iteratively improves them through selection, crossover, and mutation operators inspired by biological evolution.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Fitness Function</h4>
+                <p className="text-content-secondary mb-3">
+                  The fitness of an agent strategy θ is measured as the expected reward over multiple game simulations:
+                </p>
+                <div className="bg-surface-tertiary p-4 rounded-lg font-mono text-sm mb-3">
+                  f(θ) = 𝔼[R(θ)] = (1/N) Σᵢ Rᵢ(θ)
+                </div>
+                <p className="text-content-secondary text-sm">
+                  where N is the number of evaluation games and Rᵢ(θ) is the total reward in game i.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Evolutionary Operators</h4>
+                <div className="space-y-3">
+                  <div>
+                    <h5 className="font-semibold text-content-primary mb-1">Selection (Tournament)</h5>
+                    <p className="text-content-secondary text-sm">
+                      Parents are selected via tournament selection with size k=3. We randomly sample k individuals and select the one with highest fitness. This balances exploration and exploitation.
+                    </p>
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-content-primary mb-1">Crossover (Uniform)</h5>
+                    <p className="text-content-secondary text-sm mb-2">
+                      Two parents θ₁, θ₂ produce offspring θ' where each parameter is inherited from parent 1 with probability p=0.5:
+                    </p>
+                    <div className="bg-surface-tertiary p-3 rounded-lg font-mono text-xs">
+                      θ'ᵢ = θ₁ᵢ if rand() &lt; 0.5, else θ₂ᵢ
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-content-primary mb-1">Mutation (Gaussian)</h5>
+                    <p className="text-content-secondary text-sm mb-2">
+                      Each parameter is mutated with probability pₘ=0.1 by adding Gaussian noise:
+                    </p>
+                    <div className="bg-surface-tertiary p-3 rounded-lg font-mono text-xs mb-2">
+                      θ'ᵢ = clip(θᵢ + 𝒩(0, σ²), 0, 1)
+                    </div>
+                    <p className="text-content-secondary text-sm">
+                      where σ=0.1 is the mutation scale and clip ensures parameters remain in [0,1].
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Elitism</h4>
+                <p className="text-content-secondary">
+                  The top 5 individuals are preserved unchanged across generations, ensuring monotonic improvement in best fitness and preventing loss of good solutions due to stochastic noise.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Convergence Criteria</h4>
+                <p className="text-content-secondary">
+                  Evolution terminates after a fixed number of generations (typically 15,000). We track population diversity using the average pairwise Euclidean distance between genomes to monitor convergence.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nash Info Modal */}
+      {showNashInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-overlay">
+          <div className="bg-surface-primary rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto modal-content">
+            <div className="sticky top-0 bg-surface-primary border-b border-outline-primary p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-content-primary">Nash Equilibrium Analysis: Technical Details</h3>
+              <button
+                onClick={() => setShowNashInfo(false)}
+                className="p-2 rounded-full hover:bg-surface-tertiary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Symmetric Game Formulation</h4>
+                <p className="text-content-secondary mb-3">
+                  We model the Bucket Brigade as a symmetric multi-agent game where all players share the same strategy space Θ (the 10-dimensional parameter space). A Nash equilibrium is a probability distribution over strategies such that no player can improve their expected payoff by unilaterally deviating.
+                </p>
+                <div className="bg-surface-tertiary p-4 rounded-lg font-mono text-sm mb-3">
+                  π* ∈ arg max_π 𝔼<sub>θ~π</sub>[u(θ, π*)]
+                </div>
+                <p className="text-content-secondary text-sm">
+                  where u(θ, π) is the expected payoff when playing strategy θ against population distribution π.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Support Enumeration Method</h4>
+                <p className="text-content-secondary mb-3">
+                  We use a support enumeration algorithm that searches over candidate support sets S ⊂ Θ. For each support size k, we:
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-content-secondary text-sm mb-3">
+                  <li>Sample k strategies from the parameter space</li>
+                  <li>Compute the payoff matrix A where A<sub>ij</sub> = u(θᵢ, θⱼ)</li>
+                  <li>Solve for the mixed strategy equilibrium over these k strategies</li>
+                  <li>Verify the equilibrium condition: all support strategies have equal payoff and all non-support strategies have weakly lower payoff</li>
+                </ol>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Payoff Estimation via Monte Carlo</h4>
+                <p className="text-content-secondary mb-3">
+                  Each payoff matrix entry requires estimating the expected payoff of strategy θᵢ when playing against θⱼ:
+                </p>
+                <div className="bg-surface-tertiary p-4 rounded-lg font-mono text-sm mb-3">
+                  u(θᵢ, θⱼ) ≈ (1/M) Σₘ R<sub>m</sub>(θᵢ | opponent=θⱼ)
+                </div>
+                <p className="text-content-secondary text-sm">
+                  where M is the number of Monte Carlo simulations per strategy pair (typically 1000).
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Linear Programming Solution</h4>
+                <p className="text-content-secondary mb-3">
+                  Given a candidate support S with payoff matrix A, we find the equilibrium probabilities by solving:
+                </p>
+                <div className="bg-surface-tertiary p-4 rounded-lg space-y-2 font-mono text-xs mb-3">
+                  <div>maximize: v</div>
+                  <div>subject to: Aᵀp ≥ v·1</div>
+                  <div className="ml-16">1ᵀp = 1</div>
+                  <div className="ml-16">p ≥ 0</div>
+                </div>
+                <p className="text-content-secondary text-sm">
+                  where p is the probability distribution over the support and v is the equilibrium payoff.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Equilibrium Classification</h4>
+                <p className="text-content-secondary mb-3">
+                  We classify equilibria based on their support size and strategic characteristics:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-content-secondary text-sm">
+                  <li><strong>Pure equilibrium</strong>: Single strategy with probability 1.0</li>
+                  <li><strong>Mixed equilibrium</strong>: Multiple strategies in support with varying probabilities</li>
+                  <li><strong>Cooperation rate</strong>: Expected probability of working (weighted by strategy probabilities and work_tendency parameters)</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-content-primary">Convergence Guarantees</h4>
+                <p className="text-content-secondary">
+                  For finite games with symmetric strategy spaces, Nash equilibria are guaranteed to exist (by Brouwer's fixed-point theorem). Our algorithm systematically explores support sizes k=1,2,...,K<sub>max</sub> and verifies equilibrium conditions numerically with tolerance ε=0.001.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

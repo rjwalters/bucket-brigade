@@ -3,7 +3,9 @@ import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import type { GameNight } from '../types';
 
 interface ReplayControlsProps {
-  currentNight: number;
+  currentStep: number; // Current step (even=day, odd=night)
+  totalSteps: number; // Total steps (nights * 2)
+  currentNight: number; // Derived night number
   totalNights: number;
   isPlaying: boolean;
   speed: number;
@@ -18,6 +20,8 @@ interface ReplayControlsProps {
 }
 
 const ReplayControls: React.FC<ReplayControlsProps> = ({
+  currentStep,
+  totalSteps,
   currentNight,
   totalNights,
   isPlaying,
@@ -38,10 +42,10 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
     { label: '4x', value: 250, multiplier: 4 }
   ];
 
-  const progressPercentage = totalNights > 0 ? ((currentNight + 1) / totalNights) * 100 : 0;
+  const progressPercentage = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
 
-  // Find nights where fires occurred (any house became burning)
-  const fireEventNights = nights ? nights.reduce((acc, night, index) => {
+  // Find steps where fires occurred (convert night index to step index - night phase is odd)
+  const fireEventSteps = nights ? nights.reduce((acc, night, index) => {
     // Check if any house is burning (state = 1) in this night
     const hasFire = night.houses.some(house => house === 1);
     if (hasFire && index > 0) {
@@ -51,10 +55,12 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
         house === 1 && prevNight.houses[houseIndex] !== 1
       );
       if (newFires) {
-        acc.push(index);
+        // Fire happens during night phase (odd step)
+        acc.push(index * 2 + 1);
       }
     } else if (hasFire && index === 0) {
-      acc.push(index);
+      // Fire in first night (step 1)
+      acc.push(1);
     }
     return acc;
   }, [] as number[]) : [];
@@ -92,14 +98,15 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
           ></div>
         </div>
         {/* Fire event markers */}
-        {fireEventNights.map((nightIndex) => {
-          const markerPosition = ((nightIndex + 1) / totalNights) * 100;
+        {fireEventSteps.map((stepIndex) => {
+          const markerPosition = ((stepIndex + 1) / totalSteps) * 100;
+          const nightNum = Math.floor(stepIndex / 2) + 1;
           return (
             <div
-              key={`fire-${nightIndex}`}
+              key={`fire-${stepIndex}`}
               className="absolute top-0 bottom-0 w-0.5 bg-red-500"
               style={{ left: `${markerPosition}%` }}
-              title={`Fire event at night ${nightIndex + 1}`}
+              title={`Fire event at night ${nightNum}`}
             >
               <div className="absolute -top-1 -left-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
             </div>
@@ -119,9 +126,9 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
 
         <button
           onClick={onPrev}
-          disabled={currentNight === 0}
+          disabled={currentStep === 0}
           className="control-button p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Previous night"
+          title="Previous step"
         >
           <SkipBack className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>
@@ -140,9 +147,9 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({
 
         <button
           onClick={onNext}
-          disabled={currentNight >= totalNights - 1}
+          disabled={currentStep >= totalSteps - 1}
           className="control-button p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Next night"
+          title="Next step"
         >
           <SkipForward className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>

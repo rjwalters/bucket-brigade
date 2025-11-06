@@ -74,17 +74,15 @@ const Town: React.FC<TownProps> = ({ houses, numAgents = 4, archetypes, classNam
 
           return (
             <g key={`house-${i}`} className="town-house-group">
-              {/* House circle - only for safe houses */}
-              {houseState === 0 && (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="50"
-                  className={`town-house ${getHouseClass(houseState)}`}
-                  data-house-index={i}
-                  data-house-state={houseState}
-                />
-              )}
+              {/* House circle - for all house states */}
+              <circle
+                cx={pos.x}
+                cy={pos.y}
+                r="50"
+                className={`town-house ${getHouseClass(houseState)}`}
+                data-house-index={i}
+                data-house-state={houseState}
+              />
 
               {/* House symbol */}
               <text
