@@ -293,6 +293,151 @@ impl PyGameResult {
     }
 }
 
+/// Vectorized Bucket Brigade environment for efficient batch processing.
+///
+/// This class manages multiple independent BucketBrigade environments in Rust,
+/// allowing for efficient parallel rollouts without Python loop overhead.
+#[pyclass]
+pub struct PyVectorEnv {
+    envs: Vec<BucketBrigade>,
+    num_envs: usize,
+    num_agents: usize,
+}
+
+#[pymethods]
+impl PyVectorEnv {
+    #[new]
+    #[pyo3(signature = (scenario, num_envs, num_agents, seed=None))]
+    fn new(scenario: PyScenario, num_envs: usize, num_agents: usize, seed: Option<u64>) -> Self {
+        // Create multiple independent environments with different seeds
+        let envs = (0..num_envs)
+            .map(|i| {
+                let env_seed = seed.map(|s| s.wrapping_add(i as u64 * 12345));
+                BucketBrigade::new(scenario.inner.clone(), num_agents, env_seed)
+            })
+            .collect();
+
+        Self { envs, num_envs, num_agents }
+    }
+
+    /// Reset all environments and return batched observations for agent 0
+    fn reset(&mut self, py: Python) -> PyResult<PyObject> {
+        for env in &mut self.envs {
+            env.reset();
+        }
+
+        // Get observations for agent 0 from all environments
+        self.get_observations_batch(py, 0)
+    }
+
+    /// Step all environments with given actions
+    ///
+    /// Args:
+    ///     actions: List of actions, shape (num_envs, 2) where each action is [house_id, mode]
+    ///
+    /// Returns:
+    ///     Tuple of (observations, rewards, dones, infos) where each is batched
+    fn step(&mut self, py: Python, actions: Vec<Vec<u8>>) -> PyResult<(PyObject, PyObject, PyObject, PyObject)> {
+        if actions.len() != self.num_envs {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Expected {} actions, got {}",
+                self.num_envs,
+                actions.len()
+            )));
+        }
+
+        let mut all_rewards = Vec::with_capacity(self.num_envs);
+        let mut all_dones = Vec::with_capacity(self.num_envs);
+
+        // Step each environment
+        for (env, action) in self.envs.iter_mut().zip(actions.iter()) {
+            if action.len() != 2 {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Each action must have exactly 2 elements [house_id, mode]"
+                ));
+            }
+
+            let rust_action = [action[0], action[1]];
+            let result = env.step(&[rust_action]);
+
+            all_rewards.push(result.rewards[0]); // Get reward for agent 0
+            all_dones.push(result.done);
+
+            // Auto-reset if done
+            if result.done {
+                env.reset();
+            }
+        }
+
+        // Get batched observations for agent 0
+        let observations = self.get_observations_batch(py, 0)?;
+
+        // Convert rewards and dones to numpy arrays
+        use pyo3::types::PyList;
+        let rewards = PyList::new_bound(py, &all_rewards).into_py(py);
+        let dones = PyList::new_bound(py, &all_dones).into_py(py);
+        let infos = PyList::new_bound(py, Vec::<PyObject>::new()).into_py(py);
+
+        Ok((observations, rewards, dones, infos))
+    }
+
+    /// Get batched observations for a specific agent across all environments
+    fn get_observations_batch(&self, py: Python, agent_id: usize) -> PyResult<PyObject> {
+        // Collect observations from all environments
+        let observations: Vec<Vec<f32>> = self.envs
+            .iter()
+            .map(|env| {
+                let obs = env.get_observation(agent_id);
+                // Convert observation to flat f32 vector
+                obs_to_vector(&obs)
+            })
+            .collect();
+
+        // Convert to Python list of lists (will be converted to numpy array in Python)
+        let obs_list: Vec<PyObject> = observations
+            .iter()
+            .map(|obs| obs.clone().into_py(py))
+            .collect();
+
+        use pyo3::types::PyList;
+        Ok(PyList::new_bound(py, &obs_list).into_py(py))
+    }
+
+    #[getter]
+    fn num_envs(&self) -> usize {
+        self.num_envs
+    }
+}
+
+/// Convert AgentObservation to flat f32 vector (matches Python observation space)
+fn obs_to_vector(obs: &AgentObservation) -> Vec<f32> {
+    let mut vec = Vec::new();
+
+    // Add signals (num_agents elements)
+    vec.extend(obs.signals.iter().map(|&x| x as f32));
+
+    // Add locations (num_agents elements)
+    vec.extend(obs.locations.iter().map(|&x| x as f32));
+
+    // Add houses (num_agents elements)
+    vec.extend(obs.houses.iter().map(|&x| x as f32));
+
+    // Add flattened last_actions (num_agents * 2 elements)
+    for action in &obs.last_actions {
+        vec.push(action[0] as f32);
+        vec.push(action[1] as f32);
+    }
+
+    // Add scenario_info (11 elements)
+    vec.extend(obs.scenario_info.iter());
+
+    // Add agent_id and night
+    vec.push(obs.agent_id as f32);
+    vec.push(obs.night as f32);
+
+    vec
+}
+
 /// Run a complete heuristic episode with arbitrary agent team compositions.
 ///
 /// This is the generalized version that supports heterogeneous teams where
@@ -428,6 +573,7 @@ fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyAgentObservation>()?;
     m.add_class::<PyGameState>()?;
     m.add_class::<PyGameResult>()?;
+    m.add_class::<PyVectorEnv>()?;
 
     // Add functions
     m.add_function(wrap_pyfunction!(run_heuristic_episode, m)?)?;
