@@ -1,0 +1,116 @@
+{
+  "universal_genome": [
+    0.3060885233641002,
+    0.06352264031873198,
+    0.014818693619284187,
+    0.9073119055652519,
+    0.9477873275024511,
+    0.5571028379732136,
+    0.5980114834945792,
+    0.7947088089477861,
+    1.0,
+    0.8501413166770448
+  ],
+  "work_tendency": 0.06352264031873198,
+  "results": {
+    "nearly_free_work": {
+      "payoff": 65.13575,
+      "beta": 0.3,
+      "kappa": 0.6,
+      "c": 0.01,
+      "p_spark": 0.02,
+      "rho_ignite": 0.15,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "mechanism"
+    },
+    "front_loaded_crisis": {
+      "payoff": 24.5,
+      "beta": 0.7,
+      "kappa": 0.4,
+      "c": 0.3,
+      "p_spark": 0.0,
+      "rho_ignite": 0.4,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "mechanism"
+    },
+    "sustained_pressure": {
+      "payoff": 34.3725,
+      "beta": 0.5,
+      "kappa": 0.3,
+      "c": 0.4,
+      "p_spark": 0.1,
+      "rho_ignite": 0.2,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "mechanism"
+    },
+    "high_stakes": {
+      "payoff": 60.90775,
+      "beta": 0.4,
+      "kappa": 0.5,
+      "c": 1.0,
+      "p_spark": 0.03,
+      "rho_ignite": 0.2,
+      "A": 500.0,
+      "L": 500.0,
+      "type": "mechanism"
+    },
+    "chain_reaction": {
+      "payoff": 61.22875,
+      "beta": 0.45,
+      "kappa": 0.6,
+      "c": 0.7,
+      "p_spark": 0.03,
+      "rho_ignite": 0.3,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "reference"
+    },
+    "free_work": {
+      "payoff": 65.13575,
+      "beta": 0.2,
+      "kappa": 0.5,
+      "c": 0.05,
+      "p_spark": 0.02,
+      "rho_ignite": 0.15,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "reference"
+    },
+    "crisis_cheap": {
+      "payoff": 60.4925,
+      "beta": 0.6,
+      "kappa": 0.5,
+      "c": 0.1,
+      "p_spark": 0.03,
+      "rho_ignite": 0.25,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "reference"
+    },
+    "trivial_cooperation": {
+      "payoff": 26.5,
+      "beta": 0.15,
+      "kappa": 0.9,
+      "c": 0.5,
+      "p_spark": 0.0,
+      "rho_ignite": 0.1,
+      "A": 100.0,
+      "L": 100.0,
+      "type": "reference"
+    }
+  },
+  "summary": {
+    "mechanism_mean": 46.229,
+    "reference_mean": 53.33925,
+    "difference": -7.110250000000001,
+    "best_mechanism": "nearly_free_work",
+    "worst_mechanism": "front_loaded_crisis",
+    "weak_scenarios": [
+      "front_loaded_crisis",
+      "sustained_pressure"
+    ]
+  }
+}

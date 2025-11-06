@@ -568,6 +568,89 @@ def easy_spark_05_scenario(num_agents: int) -> Scenario:
     )
 
 
+# Phase 2D: Mechanism Design for Cooperation
+# Testing scenario designs that attempt to induce cooperation
+# and break the universal free-riding equilibrium
+
+
+def nearly_free_work_scenario(num_agents: int) -> Scenario:
+    """Phase 2D: Nearly Free Work - work cost approaching zero (c=0.01).
+
+    Tests if free work breaks free-riding equilibrium.
+    """
+    return Scenario(
+        beta=0.30,  # moderate spread
+        kappa=0.60,  # moderate extinguish
+        A=100.0,
+        L=100.0,
+        c=0.01,  # nearly free work (vs 0.05 in free_work)
+        rho_ignite=0.15,
+        N_min=12,
+        p_spark=0.02,  # persistent threat
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def front_loaded_crisis_scenario(num_agents: int) -> Scenario:
+    """Phase 2D: Front-Loaded Crisis - overwhelming initial fires requiring immediate response.
+
+    Many fires at start, spread explosively, but no ongoing fires.
+    Tests crisis response vs sustained threat.
+    """
+    return Scenario(
+        beta=0.70,  # very fast spread
+        kappa=0.40,  # hard to extinguish
+        A=100.0,
+        L=100.0,
+        c=0.30,  # affordable work
+        rho_ignite=0.40,  # very high initial fires (vs 0.15-0.25 typical)
+        N_min=8,  # fires spread easily
+        p_spark=0.0,  # no ongoing fires - one-time crisis
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
+def sustained_pressure_scenario(num_agents: int) -> Scenario:
+    """Phase 2D: Sustained Pressure - continuous high threat requiring persistent effort.
+
+    Very high ongoing fires with fast spread and difficult extinguishing.
+    Tests if overwhelming sustained pressure induces cooperation.
+    """
+    return Scenario(
+        beta=0.50,  # fast spread
+        kappa=0.30,  # difficult to extinguish
+        A=100.0,
+        L=100.0,
+        c=0.40,  # moderate cost
+        rho_ignite=0.20,
+        N_min=10,
+        p_spark=0.10,  # very high ongoing fires (vs 0.02 typical)
+        N_spark=8,  # easy spontaneous ignition
+        num_agents=num_agents,
+    )
+
+
+def high_stakes_scenario(num_agents: int) -> Scenario:
+    """Phase 2D: High Stakes - extreme asset values creating high-variance outcomes.
+
+    Tests if increased payoff variance induces coordination.
+    """
+    return Scenario(
+        beta=0.40,  # moderate-high spread
+        kappa=0.50,  # moderate extinguish
+        A=500.0,  # 5x normal asset value
+        L=500.0,  # 5x normal loss
+        c=1.0,  # work cost remains same (relatively cheaper)
+        rho_ignite=0.20,
+        N_min=12,
+        p_spark=0.03,  # persistent threat
+        N_spark=12,
+        num_agents=num_agents,
+    )
+
+
 # Named distributions for random sampling
 
 
@@ -678,6 +761,11 @@ SCENARIO_REGISTRY = {
     "easy_spark_01": easy_spark_01_scenario,
     "easy_spark_02": easy_spark_02_scenario,
     "easy_spark_05": easy_spark_05_scenario,
+    # Phase 2D: Mechanism design for cooperation
+    "nearly_free_work": nearly_free_work_scenario,
+    "front_loaded_crisis": front_loaded_crisis_scenario,
+    "sustained_pressure": sustained_pressure_scenario,
+    "high_stakes": high_stakes_scenario,
 }
 
 
