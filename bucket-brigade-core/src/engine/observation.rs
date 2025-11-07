@@ -41,7 +41,8 @@ impl BucketBrigade {
 
     pub fn get_result(&self) -> GameResult {
         // Sum up per-step rewards from trajectory
-        let mut agent_scores =
+        // All rewards (work/rest costs, team rewards, ownership bonuses) are computed per-step
+        let agent_scores =
             self.trajectory
                 .iter()
                 .fold(vec![0.0; self.num_agents], |mut acc, night| {
@@ -50,12 +51,6 @@ impl BucketBrigade {
                     }
                     acc
                 });
-
-        // Add final rewards based on house outcomes
-        let final_rewards = self.compute_final_rewards();
-        for (i, &final_reward) in final_rewards.iter().enumerate() {
-            agent_scores[i] += final_reward;
-        }
 
         let final_score = agent_scores.iter().sum();
 
