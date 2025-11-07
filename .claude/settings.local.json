@@ -62,7 +62,7 @@
       "Bash(do echo \"=== $f ===\")",
       "Bash(PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo build:*)",
       "Bash(make build-wasm:*)",
-      "WebFetch(domain:rjwalters.github.io)",
+      "WebFetch(domain:rjwalters.info)",
       "Bash(VITE_BASE_PATH=/bucket-brigade/ pnpm run build:*)",
       "Bash(export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1)",
       "Bash(uv lock:*)",

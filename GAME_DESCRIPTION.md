@@ -562,7 +562,7 @@ But the game is **mechanically abstract** — you could reskin it as "computer v
 
 ### Q: Can humans play it?
 
-**A**: Yes! Browser version at https://rjwalters.github.io/bucket-brigade/
+**A**: Yes! Browser version at https://rjwalters.info/bucket-brigade/
 
 - Intuitive UI (click houses, choose work/rest)
 - Real-time visualization (see fires spread)
@@ -610,7 +610,7 @@ But it's designed for **AI vs. AI**, not human play. Human reaction time doesn't
 ## Getting Started
 
 ### Play in Browser
-https://rjwalters.github.io/bucket-brigade/
+https://rjwalters.info/bucket-brigade/
 
 ### Run Locally
 ```bash
