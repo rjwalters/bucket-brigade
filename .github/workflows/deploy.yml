@@ -42,6 +42,14 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
       - name: Build WASM package
         run: cd bucket-brigade-core && wasm-pack build --target web
 
@@ -49,6 +57,11 @@ jobs:
         run: |
           mkdir -p web/public/research
           cp -r experiments/scenarios web/public/research/
+
+      - name: Build research content (notebook + library)
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          uv run python scripts/build_research_content.py
 
       - name: Install dependencies
         run: cd web && pnpm install --frozen-lockfile
