@@ -156,9 +156,11 @@ produce complete numerical results for ranking or reinforcement learning.
 
 TERMINATION GUARANTEE
 ---------------------
-The process is finite. Fires either extinguish or burn out,
-and sparks cease after N_spark nights. Therefore, all houses
-eventually reach a non-burning state and the game ends.
+The process is finite. Fires either extinguish or burn out.
+While spontaneous ignition continues throughout the game, the
+probability is low enough that all houses eventually reach a
+non-burning state and the game ends (or the 100-night safety
+limit is reached).
 
 IMPLEMENTATION STATUS
 --------------------
