@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "num_games": 100,
+    "num_scenarios": 1,
+    "scenarios": [
+      "chain_reaction"
+    ],
+    "alpha": 1.0
+  },
+  "aggregate": {
+    "free_rider": {
+      "theta": 8.217467006594308,
+      "std_error": 3.9579282351186893,
+      "ci_lower": 0.4599276657616773,
+      "ci_upper": 15.97500634742694,
+      "num_games": 60,
+      "rank": 1
+    },
+    "coordinator": {
+      "theta": -2.290492909155395,
+      "std_error": 3.956947766282684,
+      "ci_lower": -10.046110531069456,
+      "ci_upper": 5.465124712758666,
+      "num_games": 62,
+      "rank": 2
+    },
+    "firefighter": {
+      "theta": -5.361864001941089,
+      "std_error": 3.8829767172819714,
+      "ci_lower": -12.972498367813753,
+      "ci_upper": 2.248770363931575,
+      "num_games": 61,
+      "rank": 3
+    },
+    "evolved_v6": {
+      "theta": -8.30976577236892,
+      "std_error": 3.980719623321012,
+      "ci_lower": -16.111976234078103,
+      "ci_upper": -0.5075553106597361,
+      "num_games": 62,
+      "rank": 4
+    },
+    "hero": {
+      "theta": -8.480066938663684,
+      "std_error": 3.9871700991645564,
+      "ci_lower": -16.294920333026216,
+      "ci_upper": -0.665213544301154,
+      "num_games": 53,
+      "rank": 5
+    }
+  },
+  "by_scenario": {
+    "chain_reaction": {
+      "free_rider": {
+        "theta": 8.217467006594308,
+        "std_error": 3.9579282351186893,
+        "ci_lower": 0.4599276657616773,
+        "ci_upper": 15.97500634742694,
+        "num_games": 60,
+        "rank": 1
+      },
+      "coordinator": {
+        "theta": -2.290492909155395,
+        "std_error": 3.956947766282684,
+        "ci_lower": -10.046110531069456,
+        "ci_upper": 5.465124712758666,
+        "num_games": 62,
+        "rank": 2
+      },
+      "firefighter": {
+        "theta": -5.361864001941089,
+        "std_error": 3.8829767172819714,
+        "ci_lower": -12.972498367813753,
+        "ci_upper": 2.248770363931575,
+        "num_games": 61,
+        "rank": 3
+      },
+      "evolved_v6": {
+        "theta": -8.30976577236892,
+        "std_error": 3.980719623321012,
+        "ci_lower": -16.111976234078103,
+        "ci_upper": -0.5075553106597361,
+        "num_games": 62,
+        "rank": 4
+      },
+      "hero": {
+        "theta": -8.480066938663684,
+        "std_error": 3.9871700991645564,
+        "ci_lower": -16.294920333026216,
+        "ci_upper": -0.665213544301154,
+        "num_games": 53,
+        "rank": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: greedy_neighbor
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: -87.0000
+  Generation: 200
+  Genome: [0.0, 1.0, 0.3410062523006459, 1.0, 0.3152957454044154, 0.037647044787458644, 0.7592232095756907, 0.8485215925912563, 0.0, 0.49322709384153157]
+
+Final Population Stats:
+  Best: -87.0000
+  Mean: -164.2000
+  Std:  58.3383
+  Diversity: 0.7667

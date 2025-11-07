@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: early_containment
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 3347.0000
+  Generation: 200
+  Genome: [0.84036455240938, 1.0, 0.3008040167154563, 1.0, 0.8163010954874103, 0.9731773287376535, 0.23592300031376723, 0.754347055054393, 0.0, 0.08903309780380808]
+
+Final Population Stats:
+  Best: 3347.0000
+  Mean: 3098.8804
+  Std:  296.6728
+  Diversity: 0.9036

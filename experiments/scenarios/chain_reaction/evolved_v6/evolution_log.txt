@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: chain_reaction
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 129.9999
+  Generation: 200
+  Genome: [0.5110749365237339, 1.0, 0.15005454870558227, 1.0, 0.9485538158848668, 0.1315793919659046, 0.9302836028895219, 0.569256102769967, 0.0, 0.6945110633170654]
+
+Final Population Stats:
+  Best: 129.9999
+  Mean: 65.3786
+  Std:  90.1513
+  Diversity: 0.9130

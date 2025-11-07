@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: sparse_heroics
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 1714.5000
+  Generation: 200
+  Genome: [0.41849443809991455, 1.0, 0.9700505158765127, 1.0, 0.1354020736894431, 0.4156388339803123, 0.6581619540510635, 0.3233904432548837, 0.0, 0.7685605700843611]
+
+Final Population Stats:
+  Best: 1714.5000
+  Mean: 1489.9817
+  Std:  292.0885
+  Diversity: 0.9102

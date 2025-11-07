@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: hard
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: -2739.5000
+  Generation: 200
+  Genome: [0.3359292758244093, 1.0, 0.4470452305301784, 0.0, 0.9872286679843838, 0.7886420042979033, 0.2804150653252564, 0.04601189770985489, 0.0, 0.43848785405161395]
+
+Final Population Stats:
+  Best: -2739.5000
+  Mean: -2978.6582
+  Std:  94.8852
+  Diversity: 0.7717

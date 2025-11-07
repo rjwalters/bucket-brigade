@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: overcrowding
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: -1204.9998
+  Generation: 200
+  Genome: [0.36065759471594516, 1.0, 0.8507900110873275, 1.0, 0.0, 0.7837125599956455, 0.2805810618274498, 0.5708099440916188, 0.0, 0.8158764797187014]
+
+Final Population Stats:
+  Best: -1204.9998
+  Mean: -1365.8537
+  Std:  133.9253
+  Diversity: 0.7450

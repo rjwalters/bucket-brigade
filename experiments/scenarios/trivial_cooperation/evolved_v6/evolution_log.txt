@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: trivial_cooperation
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 4826.0000
+  Generation: 200
+  Genome: [0.14019225537776947, 0.8460312485694885, 0.8405144214630127, 0.704816460609436, 0.9285238992429282, 0.7800180912017822, 0.9529381394386292, 0.8968650102615356, 1.0, 0.2813848853111267]
+
+Final Population Stats:
+  Best: 4826.0000
+  Mean: 4825.9027
+  Std:  0.6656
+  Diversity: 1.1059

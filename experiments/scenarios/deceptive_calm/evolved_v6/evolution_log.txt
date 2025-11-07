@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: deceptive_calm
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 158.5000
+  Generation: 200
+  Genome: [0.5373182313002789, 1.0, 1.0, 1.0, 0.7581752319807561, 0.2402402130820735, 0.5171936504976781, 0.16660568656086913, 0.0, 0.2674385281224384]
+
+Final Population Stats:
+  Best: 158.5000
+  Mean: -133.9005
+  Std:  223.1111
+  Diversity: 0.8332

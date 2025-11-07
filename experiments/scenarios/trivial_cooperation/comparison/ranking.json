@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "num_games": 100,
+    "num_scenarios": 1,
+    "scenarios": [
+      "trivial_cooperation"
+    ],
+    "alpha": 1.0
+  },
+  "aggregate": {
+    "evolved_v6": {
+      "theta": 1.5639463923977603,
+      "std_error": 0.12116058939245317,
+      "ci_lower": 1.326471637188552,
+      "ci_upper": 1.8014211476069686,
+      "num_games": 62,
+      "rank": 1
+    },
+    "free_rider": {
+      "theta": 1.4563461362193428,
+      "std_error": 0.12046689119489916,
+      "ci_lower": 1.2202310294773404,
+      "ci_upper": 1.6924612429613453,
+      "num_games": 60,
+      "rank": 2
+    },
+    "coordinator": {
+      "theta": 0.12605805765653377,
+      "std_error": 0.12043704880626285,
+      "ci_lower": -0.10999855800374142,
+      "ci_upper": 0.36211467331680897,
+      "num_games": 62,
+      "rank": 3
+    },
+    "firefighter": {
+      "theta": -1.254215277814657,
+      "std_error": 0.11818560265004567,
+      "ci_lower": -1.4858590590087464,
+      "ci_upper": -1.0225714966205675,
+      "num_games": 61,
+      "rank": 4
+    },
+    "hero": {
+      "theta": -1.611273256085958,
+      "std_error": 0.12135692159592887,
+      "ci_lower": -1.8491328224139785,
+      "ci_upper": -1.3734136897579374,
+      "num_games": 53,
+      "rank": 5
+    }
+  },
+  "by_scenario": {
+    "trivial_cooperation": {
+      "evolved_v6": {
+        "theta": 1.5639463923977603,
+        "std_error": 0.12116058939245317,
+        "ci_lower": 1.326471637188552,
+        "ci_upper": 1.8014211476069686,
+        "num_games": 62,
+        "rank": 1
+      },
+      "free_rider": {
+        "theta": 1.4563461362193428,
+        "std_error": 0.12046689119489916,
+        "ci_lower": 1.2202310294773404,
+        "ci_upper": 1.6924612429613453,
+        "num_games": 60,
+        "rank": 2
+      },
+      "coordinator": {
+        "theta": 0.12605805765653377,
+        "std_error": 0.12043704880626285,
+        "ci_lower": -0.10999855800374142,
+        "ci_upper": 0.36211467331680897,
+        "num_games": 62,
+        "rank": 3
+      },
+      "firefighter": {
+        "theta": -1.254215277814657,
+        "std_error": 0.11818560265004567,
+        "ci_lower": -1.4858590590087464,
+        "ci_upper": -1.0225714966205675,
+        "num_games": 61,
+        "rank": 4
+      },
+      "hero": {
+        "theta": -1.611273256085958,
+        "std_error": 0.12135692159592887,
+        "ci_lower": -1.8491328224139785,
+        "ci_upper": -1.3734136897579374,
+        "num_games": 53,
+        "rank": 5
+      }
+    }
+  }
+}

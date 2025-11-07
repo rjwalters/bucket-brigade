@@ -1,0 +1,19 @@
+V6 Evolution Results
+================================================================================
+
+Scenario: rest_trap
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Converged At: None
+
+Best Individual:
+  Fitness: 4409.4079
+  Generation: 200
+  Genome: [0.4454771688375846, 1.0, 0.35088177634918244, 1.0, 0.3860494527070829, 0.5091234932833113, 0.29108377191996476, 0.8649238791298859, 0.0, 0.11188526571389555]
+
+Final Population Stats:
+  Best: 4409.4079
+  Mean: 4229.7202
+  Std:  108.1473
+  Diversity: 0.6524
