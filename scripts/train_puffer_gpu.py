@@ -251,6 +251,20 @@ def train_ppo_vectorized(
                 flush=True,
             )
 
+        # Save periodic checkpoints every 500K steps
+        if global_step > 0 and global_step % 500000 == 0:
+            checkpoint_path = f"{writer.log_dir}/checkpoint_{global_step}.pt"
+            torch.save(
+                {
+                    "policy_state_dict": policy.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "global_step": global_step,
+                    "avg_reward": np.mean(episode_rewards) if episode_rewards else 0,
+                },
+                checkpoint_path,
+            )
+            print(f"💾 Checkpoint saved: {checkpoint_path}", flush=True)
+
     print(
         f"\n{'=' * 60}\n"
         f"✅ Training complete!\n"
