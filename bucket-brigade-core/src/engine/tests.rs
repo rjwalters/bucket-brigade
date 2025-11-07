@@ -351,18 +351,18 @@ fn test_ownership_rewards() {
     let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
     let result = engine.step(&actions);
 
-    // Per-step rewards should only reflect work/rest costs
-    // All agents resting, so should get +0.5
+    // Per-step rewards now include rest bonus + team rewards (all houses safe)
+    // All agents resting (+0.5) + team reward for saved houses
     assert!(
-        result.rewards.iter().all(|&r| r == 0.5),
-        "Agents should get rest reward only"
+        result.rewards.iter().all(|&r| r > 0.5),
+        "Agents should get rest reward + team rewards"
     );
 
     // Complete the game and check final rewards
     engine.done = true;
     let game_result = engine.get_result();
 
-    // All agents should have positive final scores (ownership bonus for safe houses + neighbor bonuses)
+    // All agents should have positive final scores (accumulated per-step rewards)
     assert!(
         game_result.agent_scores.iter().all(|&s| s > 0.0),
         "All agents should have positive scores with all houses safe"
@@ -381,13 +381,14 @@ fn test_ownership_penalty() {
     let actions = vec![[5, 0], [5, 0], [5, 0], [5, 0]];
     let result = engine.step(&actions);
 
-    // Per-step rewards should be equal (only work/rest costs)
-    // All agents resting, so should get +0.5
-    assert_eq!(result.rewards[0], 0.5, "Agent 0 should have rest reward");
-    assert_eq!(result.rewards[1], 0.5, "Agent 1 should have rest reward");
-    assert_eq!(
-        result.rewards[0], result.rewards[1],
-        "Per-step rewards should be equal"
+    // Per-step rewards now include rest, team rewards, and ownership penalties
+    // Agent 0: rest (+0.5) + team reward (~80) + ownership penalty (-2.0) = ~78.5
+    // Others: rest (+0.5) + team reward (~80) = ~80.5
+    assert!(result.rewards[0] < result.rewards[1], "Agent 0 should have lower reward due to ruined house");
+    // Agent 0's reward should still be positive due to large team reward
+    assert!(
+        result.rewards[0] > 70.0,
+        "Agent 0 should have positive reward (rest + large team reward - penalty)"
     );
 
     // Complete the game and check final rewards
@@ -607,14 +608,13 @@ mod proptests {
 
             let result = engine.step(&actions);
 
-            // Per-step rewards should be bounded by costs
-            // Work cost: -c = -0.5
-            // Rest reward: +c = +0.5
-            // So per-step rewards should be in [-1.0, 1.0]
+            // Per-step rewards now include team rewards and ownership bonuses
+            // No strict bounds since team rewards scale with saved/ruined houses
+            // But we can check they're reasonable (not NaN or infinite)
             for (i, &reward) in result.rewards.iter().enumerate() {
                 prop_assert!(
-                    reward >= -1.0 && reward <= 1.0,
-                    "Agent {} per-step reward {} out of bounds [-1.0, 1.0]",
+                    reward.is_finite(),
+                    "Agent {} per-step reward {} should be finite",
                     i, reward
                 );
             }
