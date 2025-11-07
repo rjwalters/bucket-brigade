@@ -6,9 +6,9 @@ This guide explains how to train reinforcement learning policies to play Bucket 
 
 ## Quick Start
 
-### 1. Train a Policy
+### 1. Train a Policy (Simple)
 
-Train a simple policy using PPO:
+Train a simple policy using PPO (single environment):
 
 ```bash
 uv run python scripts/train_simple.py \
@@ -19,6 +19,27 @@ uv run python scripts/train_simple.py \
     --save-path models/my_policy.pt \
     --run-name my_experiment
 ```
+
+### 1b. Train with GPU Acceleration (Recommended)
+
+For much faster training using vectorized environments and GPU:
+
+```bash
+uv run python scripts/train_puffer_gpu.py \
+    --scenario hard \
+    --num-steps 5000000 \
+    --num-envs 8 \
+    --batch-size 2048 \
+    --minibatch-size 512 \
+    --run-name my_gpu_experiment \
+    --save-path models/my_gpu_policy.pt
+```
+
+**GPU Training Advantages:**
+- **10-100x faster** than single-environment training
+- Runs 8+ game instances in parallel
+- Optimized GPU batching with minibatches
+- Better sample efficiency from parallel data collection
 
 **Key Parameters:**
 - `--num-steps`: Total training steps (more = better learning but slower)
@@ -268,12 +289,104 @@ If you use this training infrastructure, please cite:
 }
 ```
 
+## Troubleshooting
+
+### GPU Training Issues
+
+**Problem: Training collects 0 episodes**
+
+If your training runs but shows `Total episodes: 0` and `Final avg reward: 0.00`, this was a known issue that has been fixed.
+
+**Solution:** The issue was that `PufferBucketBrigade` was using `GymnasiumPufferEnv` wrapper which doesn't properly share buffers with PufferLib's vectorization layer. This has been fixed in commit `63dc5c2c` by converting `PufferBucketBrigade` to inherit directly from `pufferlib.PufferEnv`.
+
+**If you still see this issue:**
+1. Make sure you have the latest code: `git pull`
+2. Reinstall dependencies: `uv sync`
+3. Rebuild the Rust core module: `uv pip install -e .`
+4. Verify the fix with a test:
+   ```bash
+   uv run python -c "
+   from bucket_brigade.envs.puffer_env import PufferBucketBrigade
+   import pufferlib
+   assert issubclass(PufferBucketBrigade, pufferlib.PufferEnv)
+   print('✅ PufferEnv inheritance OK')
+   "
+   ```
+
+**Problem: Multiprocessing backend error about num_workers > cores**
+
+```
+APIUsageError: num_workers (8) > hardware cores (4) is disallowed
+```
+
+**Solution:** The remote machine has fewer cores than expected. Use Serial backend or fewer workers:
+```bash
+# Option 1: Use serial backend (simpler, works for ≤16 envs)
+--vectorization serial --num-envs 8
+
+# Option 2: Reduce workers to match cores
+--num-workers 4  # Match your machine's core count
+```
+
+**Problem: Training hangs on "Creating policy network"**
+
+This can happen when creating many (>16) serial vectorized environments.
+
+**Solution:** Use fewer environments or stick to 8-16 envs with serial backend:
+```bash
+--num-envs 8 --vectorization serial
+```
+
+### Rust Module Issues
+
+**Problem: `ModuleNotFoundError: No module named 'bucket_brigade_core'`**
+
+The Rust extension module didn't build or install correctly.
+
+**Solution:**
+```bash
+# Install build dependencies
+uv pip install setuptools setuptools-rust
+
+# Build and install
+uv pip install -e .
+
+# Verify
+python -c "import bucket_brigade_core; print('✅ Rust module OK')"
+```
+
+### Performance Tips
+
+**Recommended configurations for different machines:**
+
+**Local development (no GPU):**
+```bash
+--num-envs 4 --batch-size 1024 --minibatch-size 256
+```
+
+**Remote CPU server (4 cores):**
+```bash
+--num-envs 8 --batch-size 2048 --minibatch-size 512
+```
+
+**GPU server (NVIDIA L4 or better):**
+```bash
+--num-envs 8 --batch-size 2048 --minibatch-size 512
+# GPU is used automatically if CUDA is available
+```
+
+**High-performance GPU (A100, H100):**
+```bash
+--num-envs 32 --batch-size 8192 --minibatch-size 2048 --vectorization multiprocessing
+```
+
 ## Support
 
 For issues or questions:
 1. Check the main README.md
 2. Review environment documentation in `API.md`
-3. Open an issue on GitHub
+3. Check troubleshooting section above
+4. Open an issue on GitHub
 
 ## License
 
