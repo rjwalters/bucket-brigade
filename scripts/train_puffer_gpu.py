@@ -106,6 +106,7 @@ def train_ppo_vectorized(
     next_done = torch.zeros(num_envs).to(device)
 
     num_updates = num_steps // batch_size
+    print(f"✅ Environments initialized, starting training loop ({num_updates} updates)...", flush=True)
 
     for update in range(1, num_updates + 1):
         # Collect rollout
