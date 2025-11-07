@@ -135,21 +135,31 @@ Typical defaults:
 
 REWARDS
 -------
-TEAM REWARD
-  R_team = A * SavedFraction
-            - L * BurnedFraction
-            - c * total number of workers over all nights
+All rewards are computed PER-STEP (each night) for RL training compatibility.
 
-INDIVIDUAL REWARD
-  R_i = sum_t r_i(t)
-        + gamma * (A * SavedFraction - L * BurnedFraction)
-        - lambda_own * OwnedRuined_i(T)
+PER-STEP REWARD FOR AGENT i:
+  R_i(t) = work_rest_component
+           + ownership_bonus
+           + ownership_penalty
+           + team_reward_component
 
-  where
-    r_i(t) =
-       -c_i if working,
-       +r_rest if resting,
-       +alpha_own * change in owned Safe houses during the night.
+Components:
+  1. Work/Rest:
+     - If working: -cost_to_work_one_night
+     - If resting: +0.5
+
+  2. Ownership Bonus:
+     +1.0 if owned house transitions from burning/ruined to safe
+
+  3. Ownership Penalty:
+     -2.0 if owned house is currently ruined
+
+  4. Team Reward (shared by all agents):
+     team_reward_house_survives * (saved_houses / 10)
+     - team_penalty_house_burns * (ruined_houses / 10)
+
+TOTAL GAME REWARD:
+  Final agent score = sum of all per-step rewards across all nights
 
 All rewards are computed within the environment so that episodes
 produce complete numerical results for ranking or reinforcement learning.

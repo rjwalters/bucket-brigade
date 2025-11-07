@@ -1,6 +1,10 @@
 BUCKET BRIGADE — VISUALIZER DESIGN
 -----------------------------------
 
+**NOTE**: This is an archival design document. Parameter names in this file
+(beta, kappa, etc.) reflect early development naming conventions. See
+`definitions/scenarios.json` for current parameter definitions.
+
 PURPOSE
 --------
 The visualizer presents saved Bucket Brigade games in an interactive 2D display.

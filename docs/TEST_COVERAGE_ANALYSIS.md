@@ -3,6 +3,10 @@
 **Date**: 2025-11-05
 **Coverage**: 48% (2048 statements, 1062 missed)
 
+**NOTE**: This document contains code examples using old parameter naming
+conventions (beta, kappa, etc.). See `definitions/scenarios.json` for current
+parameter definitions.
+
 ## Current Status
 
 ### Python Tests

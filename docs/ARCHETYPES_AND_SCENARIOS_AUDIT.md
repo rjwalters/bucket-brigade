@@ -175,15 +175,17 @@ All scenarios share the same parameter structure:
 
 | Parameter | Type | Range | Description |
 |-----------|------|-------|-------------|
-| `beta` | float | [0.02, 0.75] | Fire spread probability per neighbor |
-| `kappa` | float | [0.3, 0.95] | Solo agent extinguish probability |
-| `A` | float | [50, 500] | Team reward per saved house |
-| `L` | float | [100, 500] | Team penalty per burned house |
-| `c` | float | [0.01, 5.0] | Cost per worker per night |
-| `rho_ignite` | float | [0.1, 0.4] | Initial fraction of houses burning |
-| `N_min` | int | [8, 20] | Minimum nights before termination |
-| `p_spark` | float | [0.0, 0.10] | Spontaneous ignition probability |
-| `N_spark` | int | [0, 20] | Nights with sparks active |
+| `prob_fire_spreads_to_neighbor` | float | [0.02, 0.75] | Fire spread probability per neighbor |
+| `prob_solo_agent_extinguishes_fire` | float | [0.3, 0.95] | Solo agent extinguish probability |
+| `team_reward_house_survives` | float | [50, 500] | Team reward per saved house |
+| `team_penalty_house_burns` | float | [100, 500] | Team penalty per burned house |
+| `cost_to_work_one_night` | float | [0.01, 5.0] | Cost per worker per night |
+| `prob_house_catches_fire` | float | [0.0, 0.10] | Spontaneous ignition probability (every night) |
+| `min_nights` | int | [8, 20] | Minimum nights before termination |
+| `reward_own_house_survives` | float | [0, 100] | Individual reward when own house survives |
+| `reward_other_house_survives` | float | [0, 50] | Individual reward when neighbor house survives |
+| `penalty_own_house_burns` | float | [0, 100] | Individual penalty when own house burns |
+| `penalty_other_house_burns` | float | [0, 50] | Individual penalty when other house burns |
 | `num_agents` | int | [4] | Number of agents (typically 4) |
 
 ### Scenario Categories

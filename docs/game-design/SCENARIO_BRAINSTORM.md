@@ -1,6 +1,11 @@
 BUCKET BRIGADE — SCENARIO BRAINSTORM
 -------------------------------------
 
+**NOTE**: This is an archival design document. Parameter names in this file
+(beta, kappa, etc.) reflect early development naming conventions. See
+`definitions/scenarios.json` for current parameter definitions and
+`GAME_DYNAMICS.md` for the authoritative specification.
+
 PURPOSE
 --------
 To design and catalog a set of game scenarios where the optimal strategy or
