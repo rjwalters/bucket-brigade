@@ -47,10 +47,11 @@ def progress_callback(generation: int, population: Population, output_dir: Path)
     # Save checkpoint every 20 generations
     if generation > 0 and generation % 20 == 0:
         checkpoint_path = output_dir / f"checkpoint_gen{generation}.json"
+        best_individual = population.get_best(n=1)[0]  # get_best returns a list
         checkpoint_data = {
             "generation": generation,
             "population": population.to_dict(),
-            "best_individual": population.get_best_individual().to_dict(),
+            "best_individual": best_individual.to_dict(),
             "fitness_stats": stats,
             "diversity": diversity,
         }

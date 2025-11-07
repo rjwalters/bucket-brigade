@@ -158,7 +158,9 @@
       "Bash(./scripts/launch_remote_training.sh:*)",
       "Bash(npm run type-check:*)",
       "Bash(/tmp/run_nash_v5_all.sh)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(/tmp/launch_v6_fixed.sh)",
+      "Bash(/tmp/restart_v6_fixed.sh)"
     ],
     "deny": [],
     "ask": []
