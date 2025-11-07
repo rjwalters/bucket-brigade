@@ -5,8 +5,8 @@ This wraps the BucketBrigadeEnv to work with PufferLib's multi-agent training fr
 """
 
 import numpy as np
-import gymnasium as gym
-from gymnasium import spaces
+import pufferlib
+from gymnasium import spaces as gym_spaces
 from typing import Dict, Optional, Tuple, List, Any
 import logging
 
@@ -17,7 +17,7 @@ from ..agents import create_random_agent, create_archetype_agent
 logger = logging.getLogger(__name__)
 
 
-class PufferBucketBrigade(gym.Env):
+class PufferBucketBrigade(pufferlib.PufferEnv):
     """
     PufferLib-compatible wrapper for Bucket Brigade multi-agent environment.
 
@@ -27,27 +27,25 @@ class PufferBucketBrigade(gym.Env):
 
     def __init__(
         self,
+        buf=None,
         scenario: Optional[Scenario] = None,
         num_opponents: int = 3,
         opponent_policies: Optional[List[str]] = None,
         max_steps: int = 50,
+        seed: Optional[int] = None,
     ):
         """
         Initialize the PufferLib environment.
 
         Args:
+            buf: Shared buffers from vectorization layer (optional)
             scenario: Game scenario (uses default if None)
             num_opponents: Number of opponent agents
             opponent_policies: List of opponent policy types
             max_steps: Maximum steps per episode
         """
-        super().__init__()
-
-        # PufferLib compatibility
-        self.emulated = False  # Not an emulated environment
-
         self.num_opponents = num_opponents
-        self.num_agents = num_opponents + 1  # +1 for trained agent
+        self.num_agents = 1  # PufferEnv expects num_agents for a single agent
         self.max_steps = max_steps
         self.steps_taken = 0
 
@@ -58,7 +56,7 @@ class PufferBucketBrigade(gym.Env):
 
         # Create scenario
         if scenario is None:
-            scenario = default_scenario(self.num_agents)
+            scenario = default_scenario(num_opponents + 1)  # +1 for trained agent
         self.scenario = scenario
 
         # Initialize underlying environment
@@ -67,24 +65,29 @@ class PufferBucketBrigade(gym.Env):
         # Create opponent agents (will be refreshed each episode)
         self.opponent_agents: List[Any] = []
 
-        # PufferLib observation/action spaces
+        # PufferLib single observation/action spaces (for one agent)
         # Observation: [houses(10), agent_signals(N), agent_locations(N), last_actions(N,2), scenario_info(10)]
-        obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
-        self.observation_space = spaces.Box(
+        total_agents = num_opponents + 1
+        obs_size = 10 + total_agents + total_agents + (total_agents * 2) + 10
+        self.single_observation_space = gym_spaces.Box(
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
 
         # Action: [house_index, mode] where house_index ∈ [0,9], mode ∈ [0,1]
-        self.action_space = spaces.MultiDiscrete([10, 2])
+        self.single_action_space = gym_spaces.MultiDiscrete([10, 2])
+
+        # Initialize PufferEnv (sets up buffers and joint spaces)
+        # PufferLib's __init__ will call set_buffers() which assigns directly to attributes
+        super().__init__(buf=buf)
 
         # Track episode statistics
         self.episode_rewards: List[float] = []
         self.episode_lengths: List[int] = []
 
     def reset(
-        self, seed: Optional[int] = None, options: Optional[Dict] = None
-    ) -> Tuple[np.ndarray, Dict]:
-        """Reset the environment."""
+        self, seed: Optional[int] = None
+    ) -> Tuple[np.ndarray, List[Dict]]:
+        """Reset the environment. Returns (observations, list of info dicts)."""
         if seed is not None:
             np.random.seed(seed)
 
@@ -97,17 +100,44 @@ class PufferBucketBrigade(gym.Env):
         # Reset underlying environment
         obs = self.env.reset(seed=seed)
 
-        # Convert observation to flat array for PufferLib
+        # Convert observation to flat array and write to buffer
         flat_obs = self._flatten_observation(obs, agent_id=0)
+        self.observations[0] = flat_obs
 
-        return flat_obs, {}
+        # Reset episode tracking
+        self.terminals[0] = False
+        self.truncations[0] = False
+        self.rewards[0] = 0.0
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
-        """Take a step in the environment."""
+        # Must return info as LIST of dicts (one per agent)
+        return self.observations, [{}]
+
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+        """
+        Take a step in the environment.
+
+        PufferEnv.step() returns a tuple of (obs, rewards, terminals, truncations, infos).
+        Infos must be a LIST of dicts.
+
+        Args:
+            action: Action from the agent, shape depends on action space
+
+        Returns:
+            Tuple of (observations, rewards, terminals, truncations, list of info dicts)
+        """
+        # Handle auto-reset: if previous episode ended, reset before stepping
+        if self.terminals[0] or self.truncations[0]:
+            self.reset()
+
         self.steps_taken += 1
 
         # Convert action to [house, mode] format
-        agent_action = [int(action[0]), int(action[1])]
+        # Action comes as array from MultiDiscrete space
+        if len(action.shape) > 1:
+            # If batched, take first element
+            agent_action = [int(action[0][0]), int(action[0][1])]
+        else:
+            agent_action = [int(action[0]), int(action[1])]
 
         # Get actions from all agents
         all_actions = [agent_action]  # Trained agent first
@@ -121,17 +151,26 @@ class PufferBucketBrigade(gym.Env):
         # Step the environment
         obs, rewards, dones, info = self.env.step(np.array(all_actions))
 
-        # Extract reward for trained agent (first agent)
-        reward = float(rewards[0])
+        # Write results to buffers (PufferLib assigned these in __init__)
+        flat_obs = self._flatten_observation(obs, agent_id=0)
+        self.observations[0] = flat_obs
+        self.rewards[0] = float(rewards[0])
 
         # Check termination conditions
         terminated = self.env.done
         truncated = self.steps_taken >= self.max_steps
 
-        # Convert observation for trained agent
-        flat_obs = self._flatten_observation(obs, agent_id=0)
+        self.terminals[0] = terminated
+        self.truncations[0] = truncated
 
-        return flat_obs, reward, terminated, truncated, info
+        # Return tuple - info must be LIST of dicts (one per agent)
+        return (
+            self.observations,
+            self.rewards,
+            self.terminals,
+            self.truncations,
+            [info if isinstance(info, dict) else {}],
+        )
 
     def _create_opponent_agents(self) -> None:
         """Create opponent agents for this episode."""

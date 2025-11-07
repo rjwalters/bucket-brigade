@@ -27,7 +27,6 @@ from bucket_brigade.training import PolicyNetwork
 
 def make_env_func(scenario=None, num_opponents=3, **kwargs):
     """Factory function to create a single environment instance."""
-    import pufferlib.emulation
     from bucket_brigade.envs import get_scenario_by_name
 
     if scenario is None:
@@ -35,9 +34,8 @@ def make_env_func(scenario=None, num_opponents=3, **kwargs):
     else:
         scenario_obj = get_scenario_by_name(scenario, num_agents=num_opponents + 1)
 
-    env = PufferBucketBrigade(scenario=scenario_obj, num_opponents=num_opponents)
-    # Wrap in PufferLib's Gymnasium wrapper
-    env = pufferlib.emulation.GymnasiumPufferEnv(env=env)
+    # PufferBucketBrigade is now a native PufferEnv, no wrapping needed
+    env = PufferBucketBrigade(scenario=scenario_obj, num_opponents=num_opponents, **kwargs)
     return env
 
 
