@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, Play, FlaskConical, Trophy, Github, Sun, Moon, BookOpen } from 'lucide-react';
+import { Flame, Play, FlaskConical, Trophy, Github, Sun, Moon, BookOpen, Home } from 'lucide-react';
 import SimpleDashboard from './pages/SimpleDashboard';
 import GameReplay from './pages/GameReplay';
 import ScenarioResearch from './pages/ScenarioResearch';
@@ -66,6 +66,15 @@ function App() {
                   );
                 })}
               </nav>
+              <a
+                href="https://rjwalters.info"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-3 py-2 text-content-secondary hover:text-content-primary hover:bg-interactive-hover rounded-md transition-colors"
+                title="RJ Walters - Developer Homepage"
+              >
+                <Home className="w-5 h-5" />
+              </a>
               <a
                 href="https://github.com/rjwalters/bucket-brigade"
                 target="_blank"
