@@ -46,12 +46,12 @@ echo ""
 
 # Step 4: Build Rust module
 echo "[4/5] Building bucket-brigade-core Rust module..."
-cd bucket-brigade-core
 
-# Install cffi if needed
+# Install build dependencies (from parent dir to use correct venv)
 uv pip install cffi maturin
 
 # Build and install the Rust module
+cd bucket-brigade-core
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 export VIRTUAL_ENV="$(pwd)/../.venv"
 
