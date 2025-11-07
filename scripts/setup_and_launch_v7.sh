@@ -55,7 +55,8 @@ cd bucket-brigade-core
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 export VIRTUAL_ENV="$(pwd)/../.venv"
 
-~/.local/bin/maturin develop --release
+# Build with PyO3 (not CFFI)
+~/.local/bin/maturin develop --release --features python
 
 echo "  ✓ Rust module built and installed"
 cd ..
