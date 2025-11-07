@@ -11,22 +11,25 @@ import bucket_brigade_core as core
 
 
 def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
-    """Convert Python Scenario to Rust PyScenario."""
-    # Map Python scenario parameters to Rust parameter names
+    """Convert Python Scenario to Rust PyScenario.
+
+    Python and Rust Scenario classes now use identical parameter names,
+    so this is a straightforward pass-through.
+    """
     # Note: num_agents is NOT a Scenario parameter - it's specified when creating BucketBrigade env
     return core.Scenario(
-        prob_fire_spreads_to_neighbor=scenario.beta,  # type: ignore[attr-defined]
-        prob_solo_agent_extinguishes_fire=scenario.kappa,  # type: ignore[attr-defined]
-        prob_house_catches_fire=scenario.p_spark,  # type: ignore[attr-defined]
-        team_reward_house_survives=scenario.A,  # type: ignore[attr-defined]
-        team_penalty_house_burns=scenario.L,  # type: ignore[attr-defined]
-        cost_to_work_one_night=scenario.c,  # type: ignore[attr-defined]
-        min_nights=scenario.N_min,  # type: ignore[attr-defined]
-        # Use default individual rewards (not in our Python Scenario)
-        reward_own_house_survives=10.0,
-        reward_other_house_survives=5.0,
-        penalty_own_house_burns=-10.0,
-        penalty_other_house_burns=-5.0,
+        prob_fire_spreads_to_neighbor=scenario.prob_fire_spreads_to_neighbor,
+        prob_solo_agent_extinguishes_fire=scenario.prob_solo_agent_extinguishes_fire,
+        prob_house_catches_fire=scenario.prob_house_catches_fire,
+        team_reward_house_survives=scenario.team_reward_house_survives,
+        team_penalty_house_burns=scenario.team_penalty_house_burns,
+        cost_to_work_one_night=scenario.cost_to_work_one_night,
+        min_nights=scenario.min_nights,
+        # Individual ownership rewards from Python Scenario
+        reward_own_house_survives=scenario.reward_own_house_survives,
+        reward_other_house_survives=scenario.reward_other_house_survives,
+        penalty_own_house_burns=scenario.penalty_own_house_burns,
+        penalty_other_house_burns=scenario.penalty_other_house_burns,
     )
 
 
