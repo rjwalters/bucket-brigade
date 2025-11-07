@@ -7,7 +7,7 @@ import json
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 
-from .scenarios import Scenario
+from .scenarios_generated import Scenario
 
 
 class BucketBrigadeEnv:
@@ -36,7 +36,7 @@ class BucketBrigadeEnv:
             num_agents: Number of agents (4-10). Ignored if scenario is provided.
         """
         if scenario is None:
-            from .scenarios import default_scenario
+            from .scenarios_generated import default_scenario
 
             scenario = default_scenario(num_agents)
 
