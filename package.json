@@ -17,7 +17,8 @@
     "build": "cd web && pnpm run build",
     "generate": "pnpm run generate:python && pnpm run generate:typescript",
     "generate:python": "uv run python scripts/generate_python.py",
-    "generate:typescript": "uv run python scripts/generate_typescript.py"
+    "generate:typescript": "uv run python scripts/generate_typescript.py",
+    "build:research": "uv run python scripts/build_research_content.py"
   },
   "devDependencies": {
   }
