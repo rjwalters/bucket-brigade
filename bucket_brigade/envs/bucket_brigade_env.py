@@ -162,11 +162,11 @@ class BucketBrigadeEnv:
         )
 
     def _initialize_houses(self) -> None:
-        """Initialize houses with some burning based on rho_ignite."""
-        num_burning = int(np.round(self.scenario.rho_ignite * 10))
-        burning_indices = self.rng.choice(10, size=num_burning, replace=False)
-        self.houses = np.zeros(10, dtype=np.int8)
-        self.houses[burning_indices] = self.BURNING
+        """Initialize houses with probabilistic fires based on prob_house_catches_fire."""
+        # Each house has independent probability of starting on fire
+        for house_idx in range(10):
+            if self.rng.random() < self.scenario.prob_house_catches_fire:
+                self.houses[house_idx] = self.BURNING
 
     def _extinguish_fires(self, actions: np.ndarray) -> None:
         """Extinguish fires based on worker presence using independent probabilities.
@@ -186,7 +186,7 @@ class BucketBrigadeEnv:
 
             # Probability of extinguishing: independent probabilities model
             # P(at least one success) = 1 - P(all fail) = 1 - (1-p)^k
-            p_extinguish = 1.0 - (1.0 - self.scenario.kappa) ** workers_here
+            p_extinguish = 1.0 - (1.0 - self.scenario.prob_solo_agent_extinguishes_fire) ** workers_here
 
             if self.rng.random() < p_extinguish:
                 self.houses[house_idx] = self.SAFE
@@ -202,7 +202,7 @@ class BucketBrigadeEnv:
             for neighbor_offset in [-1, 1]:
                 neighbor_idx = (house_idx + neighbor_offset) % 10
                 if self.houses[neighbor_idx] == self.SAFE:
-                    if self.rng.random() < self.scenario.beta:
+                    if self.rng.random() < self.scenario.prob_fire_spreads_to_neighbor:
                         self.houses[neighbor_idx] = self.BURNING
 
     def _burn_out_houses(self) -> None:
@@ -212,11 +212,11 @@ class BucketBrigadeEnv:
         self.houses[burning_mask] = self.RUINED
 
     def _spark_fires(self) -> None:
-        """Add spontaneous fires if spark phase is active."""
+        """Add spontaneous fires."""
         for house_idx in range(10):
             if (
                 self.houses[house_idx] == self.SAFE
-                and self.rng.random() < self.scenario.p_spark
+                and self.rng.random() < self.scenario.prob_house_catches_fire
             ):
                 self.houses[house_idx] = self.BURNING
 
@@ -238,8 +238,8 @@ class BucketBrigadeEnv:
 
         # Team reward component (shared by all)
         team_reward = (
-            self.scenario.A * total_saved_fraction
-            - self.scenario.L * total_burned_fraction
+            self.scenario.team_reward_house_survives * total_saved_fraction
+            - self.scenario.team_penalty_house_burns * total_burned_fraction
         )
 
         # Individual rewards
@@ -248,7 +248,7 @@ class BucketBrigadeEnv:
         for agent_idx in range(self.num_agents):
             # Work/rest component
             if actions[agent_idx, 1] == self.WORK:
-                individual_rewards[agent_idx] -= self.scenario.c  # Cost of working
+                individual_rewards[agent_idx] -= self.scenario.cost_to_work_one_night  # Cost of working
             else:
                 individual_rewards[agent_idx] += 0.5  # Rest reward
 
@@ -272,8 +272,8 @@ class BucketBrigadeEnv:
 
     def _check_termination(self) -> bool:
         """Check if the game should end."""
-        # Must play at least N_min nights
-        if self.night < self.scenario.N_min:
+        # Must play at least min_nights
+        if self.night < self.scenario.min_nights:
             return False
 
         # End if all houses are safe or all are ruined
@@ -316,15 +316,17 @@ class BucketBrigadeEnv:
         """
         replay_data = {
             "scenario": {
-                "beta": self.scenario.beta,
-                "kappa": self.scenario.kappa,
-                "A": self.scenario.A,
-                "L": self.scenario.L,
-                "c": self.scenario.c,
-                "rho_ignite": self.scenario.rho_ignite,
-                "N_min": self.scenario.N_min,
-                "p_spark": self.scenario.p_spark,
-                "N_spark": self.scenario.N_spark,
+                "prob_fire_spreads_to_neighbor": self.scenario.prob_fire_spreads_to_neighbor,
+                "prob_solo_agent_extinguishes_fire": self.scenario.prob_solo_agent_extinguishes_fire,
+                "prob_house_catches_fire": self.scenario.prob_house_catches_fire,
+                "team_reward_house_survives": self.scenario.team_reward_house_survives,
+                "team_penalty_house_burns": self.scenario.team_penalty_house_burns,
+                "reward_own_house_survives": self.scenario.reward_own_house_survives,
+                "reward_other_house_survives": self.scenario.reward_other_house_survives,
+                "penalty_own_house_burns": self.scenario.penalty_own_house_burns,
+                "penalty_other_house_burns": self.scenario.penalty_other_house_burns,
+                "cost_to_work_one_night": self.scenario.cost_to_work_one_night,
+                "min_nights": self.scenario.min_nights,
                 "num_agents": self.scenario.num_agents,
             },
             "nights": self.trajectory,

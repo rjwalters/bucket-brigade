@@ -24,9 +24,8 @@ except ImportError:
     PufferBucketBrigadeVectorized: Optional[Type[Any]] = None  # type: ignore[assignment, misc, no-redef]
     make_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
     make_vectorized_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
-from .scenarios import (
+from .scenarios_generated import (
     Scenario,
-    random_scenario,
     default_scenario,
     easy_scenario,
     hard_scenario,
@@ -40,11 +39,6 @@ from .scenarios import (
     deceptive_calm_scenario,
     overcrowding_scenario,
     mixed_motivation_scenario,
-    # Sampling distributions
-    sample_easy_coop_scenario,
-    sample_crisis_scenario,
-    sample_sparse_work_scenario,
-    sample_deception_scenario,
     # Scenario registry
     get_scenario_by_name,
     list_scenarios,
@@ -58,7 +52,6 @@ __all__ = [
     "make_env",
     "make_vectorized_env",
     "Scenario",
-    "random_scenario",
     "default_scenario",
     "easy_scenario",
     "hard_scenario",
@@ -72,11 +65,6 @@ __all__ = [
     "deceptive_calm_scenario",
     "overcrowding_scenario",
     "mixed_motivation_scenario",
-    # Sampling distributions
-    "sample_easy_coop_scenario",
-    "sample_crisis_scenario",
-    "sample_sparse_work_scenario",
-    "sample_deception_scenario",
     # Scenario registry
     "get_scenario_by_name",
     "list_scenarios",
