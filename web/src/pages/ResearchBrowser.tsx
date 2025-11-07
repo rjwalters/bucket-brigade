@@ -53,7 +53,7 @@ export default function ResearchBrowser() {
 
 	// Load content index
 	useEffect(() => {
-		fetch("/research/content_index.json")
+		fetch(`${import.meta.env.BASE_URL}research/content_index.json`)
 			.then((res) => res.json())
 			.then((data) => {
 				setIndex(data);
@@ -74,8 +74,8 @@ export default function ResearchBrowser() {
 
 		const path =
 			viewMode === "notebook"
-				? `/research/notebook/${selectedEntry}.md`
-				: `/research/library/${selectedEntry}.md`;
+				? `${import.meta.env.BASE_URL}research/notebook/${selectedEntry}.md`
+				: `${import.meta.env.BASE_URL}research/library/${selectedEntry}.md`;
 
 		fetch(path)
 			.then((res) => res.text())
