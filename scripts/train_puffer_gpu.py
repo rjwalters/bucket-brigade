@@ -51,7 +51,7 @@ def train_ppo_vectorized(
     value_coef=0.5,
     entropy_coef=0.01,
     max_grad_norm=0.5,
-    eval_interval=10000,
+    eval_interval=1000,
     gamma=0.99,
     gae_lambda=0.95,
     writer=None,
@@ -109,6 +109,10 @@ def train_ppo_vectorized(
     print(f"✅ Environments initialized, starting training loop ({num_updates} updates)...", flush=True)
 
     for update in range(1, num_updates + 1):
+        # DEBUG: Log progress every update
+        if update % 10 == 0:
+            print(f"[DEBUG] Starting update {update}/{num_updates}, global_step={global_step}", flush=True)
+
         # Collect rollout
         for step in range(num_steps_per_env):
             global_step += num_envs
