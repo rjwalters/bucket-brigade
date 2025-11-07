@@ -61,8 +61,15 @@ NIGHTLY SEQUENCE
 4. Extinguish phase:
    Agents respond to fires visible at start of turn.
    For each burning house with k agents working there,
-   extinguish with probability (independent probabilities):
+   extinguish with probability using independent probabilities model:
        P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^k
+
+   This formula represents k independent attempts, each with success
+   probability prob_solo_agent_extinguishes_fire. At least one success
+   extinguishes the fire.
+
+   Example: prob_solo=0.5, k=2 workers → P = 1 - (0.5)² = 0.75
+
    Extinguished houses become Safe.
 
 5. Burn-out phase:
@@ -74,9 +81,13 @@ NIGHTLY SEQUENCE
    **New fires are visible NEXT turn.**
 
 7. Spontaneous ignition phase:
-   On every night, each Safe house can catch fire spontaneously
-   with probability prob_house_catches_fire.
+   On EVERY NIGHT throughout the entire game, each Safe house can catch
+   fire spontaneously with probability prob_house_catches_fire.
    **New fires are visible NEXT turn.**
+
+   NOTE: Spontaneous ignition continues indefinitely - there is no night
+   limit (no N_spark cutoff). This maintains pressure on agents to keep
+   working cooperatively.
 
 8. Reward and logging phase:
    Compute team and individual rewards, record all actions,

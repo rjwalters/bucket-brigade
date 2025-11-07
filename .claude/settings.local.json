@@ -168,7 +168,14 @@
       "Bash(RUN_NAME=\"ppo_hard_test_8envs\")",
       "Bash(do echo \"=== Running tournament for $scenario ===\" uv run python experiments/scripts/run_heterogeneous_tournament.py --agents evolved_v6 firefighter hero free_rider coordinator --scenarios $scenario --num-games 100 --output experiments/scenarios/$scenario/tournament_v6_results.csv)",
       "Bash(/tmp/launch_v7_evolution.sh)",
-      "Bash(/tmp/launch_v7_remote.sh)"
+      "Bash(/tmp/launch_v7_remote.sh)",
+      "Bash(do echo \"=== $scenario ===\")",
+      "Bash(do dir=\"experiments/scenarios/$scenario/evolved_$version\")",
+      "Bash(if [ -f \"$dir/best_agent.json\" ])",
+      "Bash(then echo -n \"  $version: ✓\")",
+      "Bash(if [ -f \"$dir/fitness.txt\" ])",
+      "Bash(do if ssh rwalters-sandbox-1 \"[ -f /root/bucket-brigade/experiments/scenarios/$scenario/evolved_v7/best_agent.json ]\")",
+      "Bash(then echo -n \"$scenario: \")"
     ],
     "deny": [],
     "ask": []

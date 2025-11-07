@@ -137,10 +137,10 @@ class BucketBrigadeEnv:
         # Fires spread to neighbors (visible next turn)
         self._spread_fires()
 
-        # 6. Spark phase (if active)
-        # New fires ignite (visible next turn)
-        if self.night < self.scenario.N_spark:
-            self._spark_fires()
+        # 6. Spontaneous ignition phase
+        # New fires can ignite on any night (visible next turn)
+        # This matches the Rust implementation and game design specification
+        self._spark_fires()
 
         # 7. Compute rewards
         self.rewards = self._compute_rewards(actions)
@@ -169,7 +169,12 @@ class BucketBrigadeEnv:
         self.houses[burning_indices] = self.BURNING
 
     def _extinguish_fires(self, actions: np.ndarray) -> None:
-        """Extinguish fires based on worker presence and kappa parameter."""
+        """Extinguish fires based on worker presence using independent probabilities.
+
+        Each worker has probability `kappa` of extinguishing the fire independently.
+        Formula: P(extinguish with k workers) = 1 - (1 - kappa)^k
+        This matches the Rust implementation and game design specification.
+        """
         for house_idx in range(10):
             if self.houses[house_idx] != self.BURNING:
                 continue
@@ -179,8 +184,9 @@ class BucketBrigadeEnv:
                 (actions[:, 0] == house_idx) & (actions[:, 1] == self.WORK)
             )
 
-            # Probability of extinguishing: 1 - exp(-kappa * k)
-            p_extinguish = 1.0 - np.exp(-self.scenario.kappa * workers_here)
+            # Probability of extinguishing: independent probabilities model
+            # P(at least one success) = 1 - P(all fail) = 1 - (1-p)^k
+            p_extinguish = 1.0 - (1.0 - self.scenario.kappa) ** workers_here
 
             if self.rng.random() < p_extinguish:
                 self.houses[house_idx] = self.SAFE

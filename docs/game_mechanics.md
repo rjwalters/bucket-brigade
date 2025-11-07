@@ -38,8 +38,11 @@ Each night follows this sequence:
 
 ### Fire Dynamics
 - **Spread**: Burning houses ignite neighbors with probability `prob_fire_spreads_to_neighbor`
-- **Spontaneous ignition**: Safe houses catch fire with probability `prob_house_catches_fire`
-- **Extinguishing**: Success probability = `1 - (1 - prob_solo_agent_extinguishes_fire)^num_workers`
+- **Spontaneous ignition**: Safe houses catch fire with probability `prob_house_catches_fire` on **every night** throughout the game
+- **Extinguishing**: Uses independent probabilities model
+  - Formula: `P(extinguish) = 1 - (1 - prob_solo_agent_extinguishes_fire)^num_workers`
+  - Each worker has independent probability `prob_solo_agent_extinguishes_fire` of success
+  - Example: With `prob_solo=0.5` and 2 workers: `P = 1 - (0.5)² = 0.75` (75% chance)
 
 ### Agent Decisions
 - **Signal**: Choose to signal "Work" or "Rest" (cheap talk, may be deceptive)
