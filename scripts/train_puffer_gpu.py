@@ -252,8 +252,12 @@ def train_ppo_vectorized(
             )
 
         # Save periodic checkpoints every 500K steps
-        if global_step > 0 and global_step % 500000 == 0:
-            checkpoint_path = f"{writer.log_dir}/checkpoint_{global_step}.pt"
+        # Use floor division to detect when we cross a checkpoint boundary
+        checkpoint_interval = 500000
+        current_checkpoint = global_step // checkpoint_interval
+        if current_checkpoint > 0 and not hasattr(train_ppo_vectorized, f'_checkpoint_{current_checkpoint}_saved'):
+            checkpoint_step = current_checkpoint * checkpoint_interval
+            checkpoint_path = f"{writer.log_dir}/checkpoint_{checkpoint_step}.pt"
             torch.save(
                 {
                     "policy_state_dict": policy.state_dict(),
@@ -263,7 +267,9 @@ def train_ppo_vectorized(
                 },
                 checkpoint_path,
             )
-            print(f"💾 Checkpoint saved: {checkpoint_path}", flush=True)
+            # Mark this checkpoint as saved to avoid duplicates
+            setattr(train_ppo_vectorized, f'_checkpoint_{current_checkpoint}_saved', True)
+            print(f"💾 Checkpoint saved: {checkpoint_path} (at step {global_step})", flush=True)
 
     print(
         f"\n{'=' * 60}\n"
