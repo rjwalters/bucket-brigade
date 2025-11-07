@@ -52,6 +52,10 @@ uv pip install cffi maturin
 
 # Build and install the Rust module
 cd bucket-brigade-core
+
+# Clean any previous CFFI build artifacts
+rm -rf bucket_brigade_core/bucket_brigade_core/
+
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 export VIRTUAL_ENV="$(pwd)/../.venv"
 
