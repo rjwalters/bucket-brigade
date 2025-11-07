@@ -76,6 +76,8 @@ def generate_scenarios(json_path: Path, output_path: Path):
 
     To modify scenarios, edit definitions/scenarios.json and run:
         python scripts/generate_python.py
+
+    Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)
     """
 
     from dataclasses import dataclass
@@ -84,22 +86,29 @@ def generate_scenarios(json_path: Path, output_path: Path):
 
     @dataclass
     class Scenario:
-        """Represents the stochastic configuration of a game."""
+        """Represents the stochastic configuration of a game.
 
-        # Fire spread and extinguishing parameters
-        beta: float  # Fire spread probability per neighbor
-        kappa: float  # Extinguish efficiency
+        All parameter names match the Rust implementation for consistency.
+        """
 
-        # Reward parameters
-        A: float  # Reward per saved house
-        L: float  # Penalty per ruined house
-        c: float  # Cost per worker per night
+        # Fire dynamics
+        prob_fire_spreads_to_neighbor: float  # Probability fire spreads to adjacent house
+        prob_solo_agent_extinguishes_fire: float  # Probability one agent extinguishes fire
+        prob_house_catches_fire: float  # Probability house catches fire each night
 
-        # Initial conditions
-        rho_ignite: float  # Initial fraction of houses burning
-        N_min: int  # Minimum nights before termination
-        p_spark: float  # Probability of spontaneous ignition
-        N_spark: int  # Number of nights with sparks active
+        # Team scoring (collective outcome)
+        team_reward_house_survives: float  # Team reward for each house that survives
+        team_penalty_house_burns: float  # Team penalty for each house that burns
+
+        # Individual rewards (ownership-based)
+        reward_own_house_survives: float  # Individual reward when own house survives
+        reward_other_house_survives: float  # Individual reward when other house survives
+        penalty_own_house_burns: float  # Individual penalty when own house burns
+        penalty_other_house_burns: float  # Individual penalty when other house burns
+
+        # Costs and structure
+        cost_to_work_one_night: float  # Cost incurred when agent chooses to work
+        min_nights: int  # Minimum nights before game can end
 
         # Game setup
         num_agents: int  # Number of agents participating
@@ -111,15 +120,17 @@ def generate_scenarios(json_path: Path, output_path: Path):
             """
             return np.array(
                 [
-                    self.beta,
-                    self.kappa,
-                    self.A,
-                    self.L,
-                    self.c,
-                    self.rho_ignite,
-                    self.N_min,
-                    self.p_spark,
-                    self.N_spark,
+                    self.prob_fire_spreads_to_neighbor,
+                    self.prob_solo_agent_extinguishes_fire,
+                    self.prob_house_catches_fire,
+                    self.team_reward_house_survives,
+                    self.team_penalty_house_burns,
+                    self.reward_own_house_survives,
+                    self.reward_other_house_survives,
+                    self.penalty_own_house_burns,
+                    self.penalty_other_house_burns,
+                    self.cost_to_work_one_night,
+                    self.min_nights,
                     self.num_agents,
                 ],
                 dtype=np.float32,
@@ -134,15 +145,17 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f'def {function_name}(num_agents: int) -> Scenario:\n'
         code += f'    """{spec["description"]}"""\n'
         code += f'    return Scenario(\n'
-        code += f'        beta={spec["beta"]},\n'
-        code += f'        kappa={spec["kappa"]},\n'
-        code += f'        A={spec["A"]},\n'
-        code += f'        L={spec["L"]},\n'
-        code += f'        c={spec["c"]},\n'
-        code += f'        rho_ignite={spec["rho_ignite"]},\n'
-        code += f'        N_min={spec["N_min"]},\n'
-        code += f'        p_spark={spec["p_spark"]},\n'
-        code += f'        N_spark={spec["N_spark"]},\n'
+        code += f'        prob_fire_spreads_to_neighbor={spec["prob_fire_spreads_to_neighbor"]},\n'
+        code += f'        prob_solo_agent_extinguishes_fire={spec["prob_solo_agent_extinguishes_fire"]},\n'
+        code += f'        prob_house_catches_fire={spec["prob_house_catches_fire"]},\n'
+        code += f'        team_reward_house_survives={spec["team_reward_house_survives"]},\n'
+        code += f'        team_penalty_house_burns={spec["team_penalty_house_burns"]},\n'
+        code += f'        reward_own_house_survives={spec["reward_own_house_survives"]},\n'
+        code += f'        reward_other_house_survives={spec["reward_other_house_survives"]},\n'
+        code += f'        penalty_own_house_burns={spec["penalty_own_house_burns"]},\n'
+        code += f'        penalty_other_house_burns={spec["penalty_other_house_burns"]},\n'
+        code += f'        cost_to_work_one_night={spec["cost_to_work_one_night"]},\n'
+        code += f'        min_nights={spec["min_nights"]},\n'
         code += f'        num_agents=num_agents,\n'
         code += f'    )\n\n\n'
 

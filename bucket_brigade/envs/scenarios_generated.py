@@ -6,6 +6,8 @@ DO NOT EDIT MANUALLY - changes will be overwritten
 
 To modify scenarios, edit definitions/scenarios.json and run:
     python scripts/generate_python.py
+
+Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)
 """
 
 from dataclasses import dataclass
@@ -14,22 +16,29 @@ import numpy as np
 
 @dataclass
 class Scenario:
-    """Represents the stochastic configuration of a game."""
+    """Represents the stochastic configuration of a game.
 
-    # Fire spread and extinguishing parameters
-    beta: float  # Fire spread probability per neighbor
-    kappa: float  # Extinguish efficiency
+    All parameter names match the Rust implementation for consistency.
+    """
 
-    # Reward parameters
-    A: float  # Reward per saved house
-    L: float  # Penalty per ruined house
-    c: float  # Cost per worker per night
+    # Fire dynamics
+    prob_fire_spreads_to_neighbor: float  # Probability fire spreads to adjacent house
+    prob_solo_agent_extinguishes_fire: float  # Probability one agent extinguishes fire
+    prob_house_catches_fire: float  # Probability house catches fire each night
 
-    # Initial conditions
-    rho_ignite: float  # Initial fraction of houses burning
-    N_min: int  # Minimum nights before termination
-    p_spark: float  # Probability of spontaneous ignition
-    N_spark: int  # Number of nights with sparks active
+    # Team scoring (collective outcome)
+    team_reward_house_survives: float  # Team reward for each house that survives
+    team_penalty_house_burns: float  # Team penalty for each house that burns
+
+    # Individual rewards (ownership-based)
+    reward_own_house_survives: float  # Individual reward when own house survives
+    reward_other_house_survives: float  # Individual reward when other house survives
+    penalty_own_house_burns: float  # Individual penalty when own house burns
+    penalty_other_house_burns: float  # Individual penalty when other house burns
+
+    # Costs and structure
+    cost_to_work_one_night: float  # Cost incurred when agent chooses to work
+    min_nights: int  # Minimum nights before game can end
 
     # Game setup
     num_agents: int  # Number of agents participating
@@ -41,15 +50,17 @@ class Scenario:
         """
         return np.array(
             [
-                self.beta,
-                self.kappa,
-                self.A,
-                self.L,
-                self.c,
-                self.rho_ignite,
-                self.N_min,
-                self.p_spark,
-                self.N_spark,
+                self.prob_fire_spreads_to_neighbor,
+                self.prob_solo_agent_extinguishes_fire,
+                self.prob_house_catches_fire,
+                self.team_reward_house_survives,
+                self.team_penalty_house_burns,
+                self.reward_own_house_survives,
+                self.reward_other_house_survives,
+                self.penalty_own_house_burns,
+                self.penalty_other_house_burns,
+                self.cost_to_work_one_night,
+                self.min_nights,
                 self.num_agents,
             ],
             dtype=np.float32,
@@ -59,15 +70,17 @@ class Scenario:
 def default_scenario(num_agents: int) -> Scenario:
     """Standard balanced scenario for general testing"""
     return Scenario(
-        beta=0.25,
-        kappa=0.5,
-        A=100.0,
-        L=100.0,
-        c=0.5,
-        rho_ignite=0.2,
-        N_min=12,
-        p_spark=0.02,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -75,15 +88,17 @@ def default_scenario(num_agents: int) -> Scenario:
 def easy_scenario(num_agents: int) -> Scenario:
     """Low difficulty with favorable conditions - low fire spread, high extinguish rate"""
     return Scenario(
-        beta=0.1,
-        kappa=0.8,
-        A=100.0,
-        L=100.0,
-        c=0.5,
-        rho_ignite=0.1,
-        N_min=10,
-        p_spark=0.01,
-        N_spark=10,
+        prob_fire_spreads_to_neighbor=0.1,
+        prob_solo_agent_extinguishes_fire=0.8,
+        prob_house_catches_fire=0.01,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=10,
         num_agents=num_agents,
     )
 
@@ -91,15 +106,17 @@ def easy_scenario(num_agents: int) -> Scenario:
 def hard_scenario(num_agents: int) -> Scenario:
     """High difficulty with challenging conditions - high fire spread, low extinguish rate"""
     return Scenario(
-        beta=0.4,
-        kappa=0.3,
-        A=100.0,
-        L=100.0,
-        c=0.5,
-        rho_ignite=0.3,
-        N_min=15,
-        p_spark=0.05,
-        N_spark=15,
+        prob_fire_spreads_to_neighbor=0.4,
+        prob_solo_agent_extinguishes_fire=0.3,
+        prob_house_catches_fire=0.05,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=15,
         num_agents=num_agents,
     )
 
@@ -107,15 +124,17 @@ def hard_scenario(num_agents: int) -> Scenario:
 def trivial_cooperation_scenario(num_agents: int) -> Scenario:
     """Easy fires reward universal cooperation"""
     return Scenario(
-        beta=0.15,
-        kappa=0.9,
-        A=100.0,
-        L=100.0,
-        c=0.5,
-        rho_ignite=0.1,
-        N_min=12,
-        p_spark=0.0,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.15,
+        prob_solo_agent_extinguishes_fire=0.9,
+        prob_house_catches_fire=0.0,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -123,15 +142,17 @@ def trivial_cooperation_scenario(num_agents: int) -> Scenario:
 def early_containment_scenario(num_agents: int) -> Scenario:
     """Fires start aggressive but can be stopped early"""
     return Scenario(
-        beta=0.35,
-        kappa=0.6,
-        A=100.0,
-        L=100.0,
-        c=0.5,
-        rho_ignite=0.3,
-        N_min=12,
-        p_spark=0.02,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.35,
+        prob_solo_agent_extinguishes_fire=0.6,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -139,15 +160,17 @@ def early_containment_scenario(num_agents: int) -> Scenario:
 def greedy_neighbor_scenario(num_agents: int) -> Scenario:
     """Social dilemma between self-interest and cooperation"""
     return Scenario(
-        beta=0.15,
-        kappa=0.4,
-        A=100.0,
-        L=100.0,
-        c=1.0,
-        rho_ignite=0.2,
-        N_min=12,
-        p_spark=0.02,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.15,
+        prob_solo_agent_extinguishes_fire=0.4,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=1.0,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -155,15 +178,17 @@ def greedy_neighbor_scenario(num_agents: int) -> Scenario:
 def sparse_heroics_scenario(num_agents: int) -> Scenario:
     """Few workers can make the difference"""
     return Scenario(
-        beta=0.1,
-        kappa=0.5,
-        A=100.0,
-        L=100.0,
-        c=0.8,
-        rho_ignite=0.15,
-        N_min=20,
-        p_spark=0.02,
-        N_spark=20,
+        prob_fire_spreads_to_neighbor=0.1,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.8,
+        min_nights=20,
         num_agents=num_agents,
     )
 
@@ -171,15 +196,17 @@ def sparse_heroics_scenario(num_agents: int) -> Scenario:
 def rest_trap_scenario(num_agents: int) -> Scenario:
     """Fires usually extinguish themselves, but not always"""
     return Scenario(
-        beta=0.05,
-        kappa=0.95,
-        A=100.0,
-        L=100.0,
-        c=0.2,
-        rho_ignite=0.1,
-        N_min=12,
-        p_spark=0.02,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.05,
+        prob_solo_agent_extinguishes_fire=0.95,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.2,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -187,15 +214,17 @@ def rest_trap_scenario(num_agents: int) -> Scenario:
 def chain_reaction_scenario(num_agents: int) -> Scenario:
     """High spread demands distributed firefighting teams"""
     return Scenario(
-        beta=0.45,
-        kappa=0.6,
-        A=100.0,
-        L=100.0,
-        c=0.7,
-        rho_ignite=0.3,
-        N_min=15,
-        p_spark=0.03,
-        N_spark=15,
+        prob_fire_spreads_to_neighbor=0.45,
+        prob_solo_agent_extinguishes_fire=0.6,
+        prob_house_catches_fire=0.03,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.7,
+        min_nights=15,
         num_agents=num_agents,
     )
 
@@ -203,15 +232,17 @@ def chain_reaction_scenario(num_agents: int) -> Scenario:
 def deceptive_calm_scenario(num_agents: int) -> Scenario:
     """Honest signaling rewarded during occasional flare-ups"""
     return Scenario(
-        beta=0.25,
-        kappa=0.6,
-        A=100.0,
-        L=100.0,
-        c=0.4,
-        rho_ignite=0.1,
-        N_min=20,
-        p_spark=0.05,
-        N_spark=20,
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.6,
+        prob_house_catches_fire=0.05,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.4,
+        min_nights=20,
         num_agents=num_agents,
     )
 
@@ -219,15 +250,17 @@ def deceptive_calm_scenario(num_agents: int) -> Scenario:
 def overcrowding_scenario(num_agents: int) -> Scenario:
     """Too many workers reduce efficiency"""
     return Scenario(
-        beta=0.2,
-        kappa=0.3,
-        A=50.0,
-        L=100.0,
-        c=0.6,
-        rho_ignite=0.1,
-        N_min=12,
-        p_spark=0.02,
-        N_spark=12,
+        prob_fire_spreads_to_neighbor=0.2,
+        prob_solo_agent_extinguishes_fire=0.3,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=50.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.6,
+        min_nights=12,
         num_agents=num_agents,
     )
 
@@ -235,15 +268,17 @@ def overcrowding_scenario(num_agents: int) -> Scenario:
 def mixed_motivation_scenario(num_agents: int) -> Scenario:
     """House ownership creates conflicting incentives"""
     return Scenario(
-        beta=0.3,
-        kappa=0.5,
-        A=100.0,
-        L=100.0,
-        c=0.6,
-        rho_ignite=0.2,
-        N_min=15,
-        p_spark=0.03,
-        N_spark=15,
+        prob_fire_spreads_to_neighbor=0.3,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.03,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=100.0,
+        reward_other_house_survives=50.0,
+        penalty_own_house_burns=0.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.6,
+        min_nights=15,
         num_agents=num_agents,
     )
 
