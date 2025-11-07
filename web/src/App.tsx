@@ -1,8 +1,9 @@
 import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { Flame, Play, FlaskConical, Trophy, Github, Sun, Moon } from 'lucide-react';
+import { Flame, Play, FlaskConical, Trophy, Github, Sun, Moon, BookOpen } from 'lucide-react';
 import SimpleDashboard from './pages/SimpleDashboard';
 import GameReplay from './pages/GameReplay';
 import ScenarioResearch from './pages/ScenarioResearch';
+import ResearchBrowser from './pages/ResearchBrowser';
 import Tournament from './pages/Tournament';
 import { useTheme } from './contexts/ThemeContext';
 
@@ -16,6 +17,7 @@ function App() {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     if (path.startsWith('/replay')) return 'replay';
     if (path === '/research') return 'research';
+    if (path === '/notebook') return 'notebook';
     if (path === '/tournament') return 'tournament';
     return 'dashboard';
   };
@@ -26,7 +28,8 @@ function App() {
     { id: 'dashboard', label: 'Dashboard', icon: Flame, path: '/' },
     { id: 'replay', label: 'Game Replay', icon: Play, path: '/replay' },
     { id: 'tournament', label: 'Tournament', icon: Trophy, path: '/tournament' },
-    { id: 'research', label: 'Research', icon: FlaskConical, path: '/research' }
+    { id: 'research', label: 'Research', icon: FlaskConical, path: '/research' },
+    { id: 'notebook', label: 'Notebook', icon: BookOpen, path: '/notebook' }
   ];
 
   return (
@@ -91,6 +94,7 @@ function App() {
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/tournament" element={<Tournament />} />
           <Route path="/research" element={<ScenarioResearch />} />
+          <Route path="/notebook" element={<ResearchBrowser />} />
           <Route path="/replay/:gameId?" element={<GameReplay />} />
         </Routes>
       </main>
