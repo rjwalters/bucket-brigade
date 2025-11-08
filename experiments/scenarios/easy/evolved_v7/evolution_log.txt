@@ -1,0 +1,20 @@
+V7 Evolution Results - Heterogeneous Tournament Training
+================================================================================
+
+Scenario: easy
+Population: 200
+Generations: 200
+Mutation Rate: 0.15
+Fitness Type: heterogeneous_tournament
+Converged At: None
+
+Best Individual:
+  Fitness: 17.1050
+  Generation: 200
+  Genome: [0.45678329562296416, 0.0, 0.7461516667802448, 0.0, 0.5976749441890712, 0.42658211085785624, 0.8668617758590692, 0.529640630316585, 1.0, 0.06715575176390803]
+
+Final Population Stats:
+  Best: 17.1050
+  Mean: 13.4609
+  Std:  1.3142
+  Diversity: 0.8924
