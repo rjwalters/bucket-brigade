@@ -9,7 +9,7 @@ import numpy as np
 from typing import Optional
 from multiprocessing import Pool, cpu_count
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios import Scenario
+from bucket_brigade.envs.scenarios_generated import Scenario
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
 
 

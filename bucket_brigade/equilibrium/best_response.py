@@ -8,7 +8,7 @@ Uses numerical optimization over the heuristic parameter space.
 import numpy as np
 from scipy.optimize import minimize, differential_evolution
 from typing import Optional
-from bucket_brigade.envs.scenarios import Scenario
+from bucket_brigade.envs.scenarios_generated import Scenario
 from bucket_brigade.equilibrium.payoff_evaluator_rust import (
     RustPayoffEvaluator as PayoffEvaluator,
 )

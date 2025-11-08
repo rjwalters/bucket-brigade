@@ -8,7 +8,7 @@ of a Nash equilibrium by adding best responses to a strategy pool.
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
-from bucket_brigade.envs.scenarios import Scenario
+from bucket_brigade.envs.scenarios_generated import Scenario
 from bucket_brigade.agents.archetypes import (
     FIREFIGHTER_PARAMS,
     FREE_RIDER_PARAMS,
