@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple, List, Any
 import logging
 
 from .bucket_brigade_env import BucketBrigadeEnv
-from .scenarios import Scenario, default_scenario
+from .scenarios_generated import Scenario, default_scenario
 from ..agents import create_random_agent, create_archetype_agent
 
 logger = logging.getLogger(__name__)
@@ -279,7 +279,7 @@ def make_env(
     """Create a PufferLib environment with specified scenario."""
 
     # Import scenario functions locally to avoid circular imports
-    from .scenarios import (
+    from .scenarios_generated import (
         trivial_cooperation_scenario,
         early_containment_scenario,
         greedy_neighbor_scenario,
