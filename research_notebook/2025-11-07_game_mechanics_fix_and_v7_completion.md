@@ -1,11 +1,12 @@
-# Research Notebook Entry: November 7, 2025
-
-**Date**: 2025-11-07
-**Author**: Research Team
-**Status**: Major Milestone - First Correct-Mechanics Results
-**Tags**: `game-mechanics`, `v7-evolution`, `ppo-training`, `nash-equilibrium`, `milestone`
-
 ---
+title: "Research Notebook Entry: November 7, 2025"
+date: "2025-11-07"
+author: "Research Team"
+tags: ["game-mechanics", "v7-evolution", "ppo-training", "nash-equilibrium", "milestone"]
+status: "Major Milestone - First Correct-Mechanics Results"
+---
+
+# Research Notebook Entry: November 7, 2025
 
 ## The Story So Far
 

@@ -28,12 +28,43 @@ class ResearchContentBuilder:
         self.output_dir = root_dir / "web" / "public" / "research"
 
     def parse_frontmatter(self, content: str) -> tuple[Dict[str, Any], str]:
-        """Extract YAML-like frontmatter from markdown content."""
+        """Extract YAML frontmatter from markdown content."""
         frontmatter = {}
         body = content
 
-        # Look for metadata in first heading section
         lines = content.split("\n")
+
+        # Check for YAML frontmatter (--- ... ---)
+        if lines[0].strip() == "---":
+            # Find closing ---
+            end_idx = None
+            for i, line in enumerate(lines[1:], start=1):
+                if line.strip() == "---":
+                    end_idx = i
+                    break
+
+            if end_idx:
+                # Parse YAML frontmatter
+                yaml_lines = lines[1:end_idx]
+                for line in yaml_lines:
+                    if ":" in line:
+                        key, value = line.split(":", 1)
+                        key = key.strip()
+                        value = value.strip().strip('"\'')
+
+                        # Parse arrays
+                        if value.startswith("[") and value.endswith("]"):
+                            # Simple array parsing
+                            items = value[1:-1].split(",")
+                            frontmatter[key] = [item.strip().strip('"\'') for item in items]
+                        else:
+                            frontmatter[key] = value
+
+                # Body starts after closing ---
+                body = "\n".join(lines[end_idx + 1:])
+                return frontmatter, body
+
+        # Fall back to old format if no YAML frontmatter
         if lines[0].startswith("# "):
             title = lines[0][2:].strip()
             frontmatter["title"] = title
