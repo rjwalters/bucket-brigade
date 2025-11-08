@@ -175,7 +175,9 @@
       "Bash(then echo -n \"  $version: ✓\")",
       "Bash(if [ -f \"$dir/fitness.txt\" ])",
       "Bash(do if ssh rwalters-sandbox-1 \"[ -f /root/bucket-brigade/experiments/scenarios/$scenario/evolved_v7/best_agent.json ]\")",
-      "Bash(then echo -n \"$scenario: \")"
+      "Bash(then echo -n \"$scenario: \")",
+      "Bash(open http://localhost:3000/research/notebook)",
+      "Bash(do if [ -f \"experiments/scenarios/$scenario/evolved_v7/best_agent.json\" ])"
     ],
     "deny": [],
     "ask": []

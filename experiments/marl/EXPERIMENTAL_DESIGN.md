@@ -6,7 +6,21 @@
 
 ---
 
-## Overview
+## ⚠️ NOTICE: Updated Plan Available
+
+**This document (V1)** contains the original experimental design.
+
+**See [EXPERIMENTAL_DESIGN_V2.md](EXPERIMENTAL_DESIGN_V2.md)** for the updated plan reflecting:
+- ✅ Actual progress (hard baseline complete)
+- ✅ Aligned with Phase 2.5 priorities
+- ✅ Tier-based scenario prioritization
+- ✅ Overnight execution plan ready
+
+**Status**: V1 archived for reference, use V2 for active planning.
+
+---
+
+## Overview (V1 - Original Plan)
 
 This document provides a step-by-step experimental protocol for Phase 2 MARL research. Phase 1 established GPU-accelerated PPO infrastructure with vectorized environments. Phase 2 focuses on **understanding what neural networks learn** and **comparing to evolution/Nash baselines**.
 

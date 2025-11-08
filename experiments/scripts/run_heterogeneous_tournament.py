@@ -37,7 +37,7 @@ import pandas as pd
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.evolution.fitness_rust import _heuristic_action
 from bucket_brigade.equilibrium.payoff_evaluator_rust import _convert_scenario_to_rust
 from bucket_brigade.agents.archetypes import (
