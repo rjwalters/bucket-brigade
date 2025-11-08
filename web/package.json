@@ -21,6 +21,7 @@
     "generate:types": "cd .. && uv run python scripts/generate_typescript.py"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
@@ -28,6 +29,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.5",
     "recharts": "^2.8.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "zod": "^3.22.4"
   },

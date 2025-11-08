@@ -20,6 +20,7 @@
     "generate:typescript": "uv run python scripts/generate_typescript.py",
     "build:research": "uv run python scripts/build_research_content.py"
   },
-  "devDependencies": {
+  "dependencies": {
+    "highlight.js": "^11.11.1"
   }
 }

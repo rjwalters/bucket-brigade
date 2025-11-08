@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import "highlight.js/styles/github-dark.css";
 
 interface NotebookEntry {
 	id: string;
@@ -268,9 +271,36 @@ export default function ResearchBrowser() {
 					<div className="lg:col-span-2">
 						{selectedEntry && entryContent ? (
 							<div className="bg-gray-800 rounded-lg p-8">
-								<div className="prose prose-invert prose-blue prose-lg max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-gray-700 prose-h2:pb-2 prose-h3:text-xl prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-code:text-blue-300 prose-code:bg-gray-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-gray-900 prose-blockquote:py-1 prose-img:rounded-lg prose-img:shadow-lg prose-table:border prose-table:border-gray-700 prose-th:bg-gray-900 prose-td:border prose-td:border-gray-700 prose-li:marker:text-blue-400">
-									<ReactMarkdown remarkPlugins={[remarkGfm]}>{entryContent}</ReactMarkdown>
-								</div>
+								<article className="prose prose-invert prose-slate prose-lg max-w-none
+									prose-headings:font-bold prose-headings:tracking-tight
+									prose-h1:text-4xl prose-h1:mb-4 prose-h1:text-blue-400
+									prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-700 prose-h2:pb-3 prose-h2:text-blue-300
+									prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-blue-200
+									prose-h4:text-xl prose-h4:mt-4 prose-h4:mb-2
+									prose-p:text-gray-300 prose-p:leading-relaxed prose-p:my-4
+									prose-a:text-blue-400 prose-a:no-underline prose-a:font-medium hover:prose-a:text-blue-300 hover:prose-a:underline
+									prose-strong:text-white prose-strong:font-semibold
+									prose-em:text-gray-300 prose-em:italic
+									prose-code:text-emerald-400 prose-code:bg-gray-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+									prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-700 prose-pre:rounded-lg prose-pre:shadow-xl prose-pre:my-6
+									prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-gray-900/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-gray-400
+									prose-ul:my-4 prose-ul:list-disc prose-ul:list-inside
+									prose-ol:my-4 prose-ol:list-decimal prose-ol:list-inside
+									prose-li:text-gray-300 prose-li:my-2 prose-li:marker:text-blue-400
+									prose-table:w-full prose-table:border-collapse prose-table:my-6
+									prose-thead:border-b-2 prose-thead:border-gray-600
+									prose-th:bg-gray-900 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:font-semibold prose-th:text-gray-200
+									prose-td:border prose-td:border-gray-700 prose-td:px-4 prose-td:py-3 prose-td:text-gray-300
+									prose-tr:border-b prose-tr:border-gray-700 last:prose-tr:border-0
+									prose-img:rounded-lg prose-img:shadow-2xl prose-img:my-8
+									prose-hr:border-gray-700 prose-hr:my-8">
+									<ReactMarkdown
+										remarkPlugins={[remarkGfm]}
+										rehypePlugins={[rehypeRaw, rehypeHighlight]}
+									>
+										{entryContent}
+									</ReactMarkdown>
+								</article>
 							</div>
 						) : (
 							<div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
