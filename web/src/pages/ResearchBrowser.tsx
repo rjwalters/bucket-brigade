@@ -268,7 +268,7 @@ export default function ResearchBrowser() {
 					<div className="lg:col-span-2">
 						{selectedEntry && entryContent ? (
 							<div className="bg-gray-800 rounded-lg p-8">
-								<div className="prose prose-invert prose-blue max-w-none">
+								<div className="prose prose-invert prose-blue prose-lg max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h2:border-b prose-h2:border-gray-700 prose-h2:pb-2 prose-h3:text-xl prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-code:text-blue-300 prose-code:bg-gray-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-gray-900 prose-blockquote:py-1 prose-img:rounded-lg prose-img:shadow-lg prose-table:border prose-table:border-gray-700 prose-th:bg-gray-900 prose-td:border prose-td:border-gray-700 prose-li:marker:text-blue-400">
 									<ReactMarkdown remarkPlugins={[remarkGfm]}>{entryContent}</ReactMarkdown>
 								</div>
 							</div>
