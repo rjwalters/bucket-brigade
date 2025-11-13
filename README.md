@@ -325,6 +325,9 @@ cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 pip install -e .
 ```
 
 🚀 Quickstart
+
+⚠️ **Important**: For research and performance-critical work, use the **Rust-backed environment** (`bucket-brigade-core`) via PyO3 bindings. The pure Python environment (`bucket_brigade/envs/bucket_brigade_env.py`) is provided for reference and demos only. See `experiments/evolution/RUST_SINGLE_SOURCE_OF_TRUTH.md` for migration details.
+
 ```bash
 # Install uv (Python package manager)
 curl -LsSf https://astral.sh/uv/install.sh | sh

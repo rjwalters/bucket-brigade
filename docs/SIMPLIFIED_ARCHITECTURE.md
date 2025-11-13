@@ -51,11 +51,16 @@
 │              ▼               ▼               ▼                  │
 │  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐           │
 │  │ TypeScript   │  │ WASM        │  │ Python      │           │
-│  │ (fallback)   │  │ (browser)   │  │ (research)  │           │
+│  │ (fallback)   │  │ (browser)   │  │ (research)* │           │
 │  │              │  │             │  │             │           │
 │  │ browserEng.  │  │ wasmEng.    │  │ PyO3        │           │
 │  │ ~50ms/game   │  │ ~5ms/game   │  │ ~2ms/game   │           │
 │  └──────────────┘  └─────────────┘  └─────────────┘           │
+│                                                                  │
+│  * Python: Use Rust-backed PyO3 bindings (bucket-brigade-core) │
+│    for research. Pure Python env (bucket_brigade.envs) is      │
+│    DEPRECATED - see experiments/evolution/                      │
+│    RUST_SINGLE_SOURCE_OF_TRUTH.md                               │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
                               │
