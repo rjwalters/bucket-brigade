@@ -65,16 +65,18 @@ class TestEvolutionPipeline:
         assert result.best_individual.fitness is not None
         assert result.best_individual.fitness > 0  # Should achieve positive fitness
         assert len(result.fitness_history) == 5  # Should have 5 generations
-        assert result.converged_at is None or isinstance(result.converged_at, int)  # Should have convergence status
+        assert result.converged_at is None or isinstance(
+            result.converged_at, int
+        )  # Should have convergence status
 
         # Check that fitness improved or stayed reasonable
         first_gen_best = result.fitness_history[0]["max"]
         final_gen_best = result.fitness_history[-1]["max"]
 
         assert final_gen_best > 0, "Final generation should achieve positive fitness"
-        assert (
-            final_gen_best >= first_gen_best * 0.8
-        ), "Fitness should not degrade significantly"
+        assert final_gen_best >= first_gen_best * 0.8, (
+            "Fitness should not degrade significantly"
+        )
 
     def test_evolution_produces_valid_genome(self):
         """Test that evolution produces a valid genome."""
@@ -274,9 +276,9 @@ class TestResearchDataPipeline:
 
         # Should achieve reasonable fitness (within 50% of recorded fitness)
         recorded_fitness = data["fitness"]
-        assert (
-            fitness > recorded_fitness * 0.5
-        ), f"Genome fitness {fitness} too low compared to recorded {recorded_fitness}"
+        assert fitness > recorded_fitness * 0.5, (
+            f"Genome fitness {fitness} too low compared to recorded {recorded_fitness}"
+        )
 
     def test_scenario_evolution_roundtrip(self):
         """Test complete scenario → evolution → evaluation roundtrip."""
@@ -314,9 +316,9 @@ class TestResearchDataPipeline:
 
         # Fitness should be positive and reasonable
         assert fitness > 0, "Best evolved genome should have positive fitness"
-        assert (
-            fitness <= result.best_individual.fitness * 1.5
-        ), "Re-evaluation shouldn't differ by more than 50% (stochasticity)"
+        assert fitness <= result.best_individual.fitness * 1.5, (
+            "Re-evaluation shouldn't differ by more than 50% (stochasticity)"
+        )
 
 
 @pytest.mark.integration

@@ -159,20 +159,28 @@ class PolicyLearner:
         batch = [self.experience_buffer.popleft() for _ in range(batch_size)]
 
         # Convert to tensors
-        observations = torch.FloatTensor(np.array([exp['obs'] for exp in batch])).to(self.device)
-        actions = torch.LongTensor(np.array([exp['action'] for exp in batch])).to(self.device)
-        rewards = torch.FloatTensor([exp['reward'] for exp in batch]).to(self.device)
-        dones = torch.FloatTensor([float(exp['done']) for exp in batch]).to(self.device)
-        old_logprobs = torch.FloatTensor([exp['logprob'] for exp in batch]).to(self.device)
+        observations = torch.FloatTensor(np.array([exp["obs"] for exp in batch])).to(
+            self.device
+        )
+        actions = torch.LongTensor(np.array([exp["action"] for exp in batch])).to(
+            self.device
+        )
+        rewards = torch.FloatTensor([exp["reward"] for exp in batch]).to(self.device)
+        dones = torch.FloatTensor([float(exp["done"]) for exp in batch]).to(self.device)
+        old_logprobs = torch.FloatTensor([exp["logprob"] for exp in batch]).to(
+            self.device
+        )
 
         # Handle next observations (may be None if done)
         next_observations = []
         for exp in batch:
-            if exp['next_obs'] is not None:
-                next_observations.append(exp['next_obs'])
+            if exp["next_obs"] is not None:
+                next_observations.append(exp["next_obs"])
             else:
-                next_observations.append(np.zeros_like(exp['obs']))
-        next_observations = torch.FloatTensor(np.array(next_observations)).to(self.device)
+                next_observations.append(np.zeros_like(exp["obs"]))
+        next_observations = torch.FloatTensor(np.array(next_observations)).to(
+            self.device
+        )
 
         return observations, actions, rewards, next_observations, dones, old_logprobs
 
@@ -215,7 +223,10 @@ class PolicyLearner:
         # PPO policy loss
         ratio = torch.exp(new_logprobs - old_logprobs)
         surr1 = ratio * advantages
-        surr2 = torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon) * advantages
+        surr2 = (
+            torch.clamp(ratio, 1 - self.clip_epsilon, 1 + self.clip_epsilon)
+            * advantages
+        )
         policy_loss = -torch.min(surr1, surr2).mean()
 
         # Value loss
@@ -225,7 +236,9 @@ class PolicyLearner:
         entropy = (house_dist.entropy() + mode_dist.entropy()).mean()
 
         # Total loss
-        total_loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy
+        total_loss = (
+            policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy
+        )
 
         return total_loss, policy_loss, value_loss, entropy
 
@@ -237,7 +250,9 @@ class PolicyLearner:
             Dictionary of training statistics
         """
         # Prepare batch
-        observations, actions, rewards, next_observations, dones, old_logprobs = self.prepare_batch()
+        observations, actions, rewards, next_observations, dones, old_logprobs = (
+            self.prepare_batch()
+        )
 
         # Compute values for GAE
         with torch.no_grad():
@@ -301,11 +316,11 @@ class PolicyLearner:
         self.entropy_history.append(mean_entropy)
 
         return {
-            'batch': self.total_batches,
-            'policy_loss': mean_policy_loss,
-            'value_loss': mean_value_loss,
-            'entropy': mean_entropy,
-            'mean_reward': rewards.mean().item(),
+            "batch": self.total_batches,
+            "policy_loss": mean_policy_loss,
+            "value_loss": mean_value_loss,
+            "entropy": mean_entropy,
+            "mean_reward": rewards.mean().item(),
         }
 
     def send_policy_update(self):
@@ -322,14 +337,14 @@ class PolicyLearner:
         Args:
             max_batches: Maximum number of batches to train (None for infinite)
         """
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"🧠 Starting Policy Learner for Agent {self.agent_id}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Device: {self.device}")
         print(f"Batch size: {self.batch_size}")
         print(f"PPO epochs: {self.num_epochs}")
         print(f"Update interval: {self.update_interval}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         start_time = time.time()
         last_report = start_time
@@ -352,32 +367,34 @@ class PolicyLearner:
                 elapsed = time.time() - last_report
                 batches_per_sec = self.update_interval / elapsed
 
-                print(f"[Agent {self.agent_id}] Batch {stats['batch']:,} | "
-                      f"Policy Loss: {stats['policy_loss']:.4f} | "
-                      f"Value Loss: {stats['value_loss']:.4f} | "
-                      f"Entropy: {stats['entropy']:.4f} | "
-                      f"Reward: {stats['mean_reward']:.3f} | "
-                      f"Speed: {batches_per_sec:.1f} batch/s")
+                print(
+                    f"[Agent {self.agent_id}] Batch {stats['batch']:,} | "
+                    f"Policy Loss: {stats['policy_loss']:.4f} | "
+                    f"Value Loss: {stats['value_loss']:.4f} | "
+                    f"Entropy: {stats['entropy']:.4f} | "
+                    f"Reward: {stats['mean_reward']:.3f} | "
+                    f"Speed: {batches_per_sec:.1f} batch/s"
+                )
 
                 last_report = time.time()
 
         total_time = time.time() - start_time
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"✅ Training Complete for Agent {self.agent_id}!")
         print(f"Total batches: {self.total_batches:,}")
         print(f"Total policy updates sent: {self.total_updates}")
-        print(f"Time: {total_time/60:.1f} minutes")
-        print(f"Speed: {self.total_batches/total_time:.1f} batches/s")
-        print(f"{'='*60}\n")
+        print(f"Time: {total_time / 60:.1f} minutes")
+        print(f"Speed: {self.total_batches / total_time:.1f} batches/s")
+        print(f"{'=' * 60}\n")
 
     def get_statistics(self) -> dict:
         """Get training statistics."""
         return {
-            'total_batches': self.total_batches,
-            'total_updates': self.total_updates,
-            'policy_loss_history': self.policy_loss_history,
-            'value_loss_history': self.value_loss_history,
-            'entropy_history': self.entropy_history,
+            "total_batches": self.total_batches,
+            "total_updates": self.total_updates,
+            "policy_loss_history": self.policy_loss_history,
+            "value_loss_history": self.value_loss_history,
+            "entropy_history": self.entropy_history,
         }
 
 

@@ -164,7 +164,10 @@ class RustFitnessEvaluator:
             seeds = [None] * self.games_per_individual
 
         # Prepare arguments
-        args_list = [(individual.genome, self.scenario_name, self.num_agents, seed) for seed in seeds]
+        args_list = [
+            (individual.genome, self.scenario_name, self.num_agents, seed)
+            for seed in seeds
+        ]
 
         if self.parallel:
             # Parallel execution
@@ -206,7 +209,9 @@ class RustFitnessEvaluator:
                     seeds = [None] * self.games_per_individual
 
                 for seed in seeds:
-                    all_args.append((individual.genome, self.scenario_name, self.num_agents, seed))  # type: ignore[attr-defined]
+                    all_args.append(
+                        (individual.genome, self.scenario_name, self.num_agents, seed)
+                    )  # type: ignore[attr-defined]
 
             # Run all games in parallel
             with Pool(processes=self.num_workers) as pool:

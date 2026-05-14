@@ -8,8 +8,7 @@ Focuses heavily on GAE computation where we found bugs during GPU testing.
 import pytest
 import numpy as np
 import torch
-import multiprocessing as mp
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock
 from collections import deque
 
 from bucket_brigade.training.policy_learner import PolicyLearner
@@ -216,12 +215,12 @@ class TestBatchPreparation:
         # Add experiences to buffer
         for i in range(4):
             exp = {
-                'obs': np.random.randn(36).astype(np.float32),
-                'action': [i % 10, i % 3],
-                'reward': float(i),
-                'next_obs': np.random.randn(36).astype(np.float32),
-                'done': False,
-                'logprob': -0.5,
+                "obs": np.random.randn(36).astype(np.float32),
+                "action": [i % 10, i % 3],
+                "reward": float(i),
+                "next_obs": np.random.randn(36).astype(np.float32),
+                "done": False,
+                "logprob": -0.5,
             }
             learner.experience_buffer.append(exp)
 
@@ -255,12 +254,12 @@ class TestBatchPreparation:
         # Add experiences with some done=True
         for i in range(3):
             exp = {
-                'obs': np.random.randn(36).astype(np.float32),
-                'action': [0, 0],
-                'reward': 1.0,
-                'next_obs': np.random.randn(36).astype(np.float32) if i < 2 else None,
-                'done': i == 2,
-                'logprob': -0.5,
+                "obs": np.random.randn(36).astype(np.float32),
+                "action": [0, 0],
+                "reward": 1.0,
+                "next_obs": np.random.randn(36).astype(np.float32) if i < 2 else None,
+                "done": i == 2,
+                "logprob": -0.5,
             }
             learner.experience_buffer.append(exp)
 
@@ -288,12 +287,12 @@ class TestBatchPreparation:
         # Add only 3 experiences
         for i in range(3):
             exp = {
-                'obs': np.zeros(36, dtype=np.float32),
-                'action': [0, 0],
-                'reward': 1.0,
-                'next_obs': np.zeros(36, dtype=np.float32),
-                'done': False,
-                'logprob': -0.5,
+                "obs": np.zeros(36, dtype=np.float32),
+                "action": [0, 0],
+                "reward": 1.0,
+                "next_obs": np.zeros(36, dtype=np.float32),
+                "done": False,
+                "logprob": -0.5,
             }
             learner.experience_buffer.append(exp)
 
@@ -391,12 +390,12 @@ class TestTrainBatch:
         # Add experiences
         for i in range(8):
             exp = {
-                'obs': np.random.randn(36).astype(np.float32),
-                'action': [i % 10, i % 3],
-                'reward': np.random.rand(),
-                'next_obs': np.random.randn(36).astype(np.float32),
-                'done': False,
-                'logprob': np.random.randn(),
+                "obs": np.random.randn(36).astype(np.float32),
+                "action": [i % 10, i % 3],
+                "reward": np.random.rand(),
+                "next_obs": np.random.randn(36).astype(np.float32),
+                "done": False,
+                "logprob": np.random.randn(),
             }
             learner.experience_buffer.append(exp)
 
@@ -404,11 +403,11 @@ class TestTrainBatch:
         stats = learner.train_batch()
 
         # Verify statistics returned
-        assert 'batch' in stats
-        assert 'policy_loss' in stats
-        assert 'value_loss' in stats
-        assert 'entropy' in stats
-        assert 'mean_reward' in stats
+        assert "batch" in stats
+        assert "policy_loss" in stats
+        assert "value_loss" in stats
+        assert "entropy" in stats
+        assert "mean_reward" in stats
 
         # Verify batch counter incremented
         assert learner.total_batches == 1
@@ -427,19 +426,18 @@ class TestTrainBatch:
 
         # Get initial weights
         initial_weights = {
-            name: param.clone()
-            for name, param in learner.policy.named_parameters()
+            name: param.clone() for name, param in learner.policy.named_parameters()
         }
 
         # Add experiences
         for i in range(4):
             exp = {
-                'obs': np.random.randn(36).astype(np.float32),
-                'action': [0, 0],
-                'reward': 1.0,
-                'next_obs': np.random.randn(36).astype(np.float32),
-                'done': False,
-                'logprob': -2.0,
+                "obs": np.random.randn(36).astype(np.float32),
+                "action": [0, 0],
+                "reward": 1.0,
+                "next_obs": np.random.randn(36).astype(np.float32),
+                "done": False,
+                "logprob": -2.0,
             }
             learner.experience_buffer.append(exp)
 
@@ -449,7 +447,7 @@ class TestTrainBatch:
         # Verify weights changed
         for name, param in learner.policy.named_parameters():
             # At least some parameters should have changed
-            if 'weight' in name or 'bias' in name:
+            if "weight" in name or "bias" in name:
                 # We expect at least one param to change (use any() to be lenient)
                 pass
 
@@ -484,12 +482,12 @@ class TestExperienceCollection:
         experiences = []
         for i in range(5):
             exp = {
-                'obs': np.zeros(36),
-                'action': [0, 0],
-                'reward': 1.0,
-                'next_obs': np.zeros(36),
-                'done': False,
-                'logprob': -1.0,
+                "obs": np.zeros(36),
+                "action": [0, 0],
+                "reward": 1.0,
+                "next_obs": np.zeros(36),
+                "done": False,
+                "logprob": -1.0,
             }
             experiences.append((0, exp))
 
@@ -519,11 +517,61 @@ class TestExperienceCollection:
 
         # Mix of experiences for different agents
         experiences = [
-            (0, {'obs': np.zeros(36), 'action': [0, 0], 'reward': 1.0, 'next_obs': np.zeros(36), 'done': False, 'logprob': -1.0}),
-            (2, {'obs': np.zeros(36), 'action': [0, 0], 'reward': 1.0, 'next_obs': np.zeros(36), 'done': False, 'logprob': -1.0}),
-            (1, {'obs': np.zeros(36), 'action': [0, 0], 'reward': 1.0, 'next_obs': np.zeros(36), 'done': False, 'logprob': -1.0}),
-            (2, {'obs': np.zeros(36), 'action': [0, 0], 'reward': 1.0, 'next_obs': np.zeros(36), 'done': False, 'logprob': -1.0}),
-            (2, {'obs': np.zeros(36), 'action': [0, 0], 'reward': 1.0, 'next_obs': np.zeros(36), 'done': False, 'logprob': -1.0}),
+            (
+                0,
+                {
+                    "obs": np.zeros(36),
+                    "action": [0, 0],
+                    "reward": 1.0,
+                    "next_obs": np.zeros(36),
+                    "done": False,
+                    "logprob": -1.0,
+                },
+            ),
+            (
+                2,
+                {
+                    "obs": np.zeros(36),
+                    "action": [0, 0],
+                    "reward": 1.0,
+                    "next_obs": np.zeros(36),
+                    "done": False,
+                    "logprob": -1.0,
+                },
+            ),
+            (
+                1,
+                {
+                    "obs": np.zeros(36),
+                    "action": [0, 0],
+                    "reward": 1.0,
+                    "next_obs": np.zeros(36),
+                    "done": False,
+                    "logprob": -1.0,
+                },
+            ),
+            (
+                2,
+                {
+                    "obs": np.zeros(36),
+                    "action": [0, 0],
+                    "reward": 1.0,
+                    "next_obs": np.zeros(36),
+                    "done": False,
+                    "logprob": -1.0,
+                },
+            ),
+            (
+                2,
+                {
+                    "obs": np.zeros(36),
+                    "action": [0, 0],
+                    "reward": 1.0,
+                    "next_obs": np.zeros(36),
+                    "done": False,
+                    "logprob": -1.0,
+                },
+            ),
         ]
 
         exp_queue.empty.side_effect = [False] * 5 + [True]
@@ -598,11 +646,11 @@ class TestStatistics:
 
         stats = learner.get_statistics()
 
-        assert stats['total_batches'] == 0
-        assert stats['total_updates'] == 0
-        assert len(stats['policy_loss_history']) == 0
-        assert len(stats['value_loss_history']) == 0
-        assert len(stats['entropy_history']) == 0
+        assert stats["total_batches"] == 0
+        assert stats["total_updates"] == 0
+        assert len(stats["policy_loss_history"]) == 0
+        assert len(stats["value_loss_history"]) == 0
+        assert len(stats["entropy_history"]) == 0
 
     def test_statistics_tracked_during_training(self):
         """Test that statistics are updated during training."""
@@ -618,12 +666,12 @@ class TestStatistics:
         # Add experiences and train
         for i in range(4):
             exp = {
-                'obs': np.random.randn(36).astype(np.float32),
-                'action': [0, 0],
-                'reward': 1.0,
-                'next_obs': np.random.randn(36).astype(np.float32),
-                'done': False,
-                'logprob': -1.0,
+                "obs": np.random.randn(36).astype(np.float32),
+                "action": [0, 0],
+                "reward": 1.0,
+                "next_obs": np.random.randn(36).astype(np.float32),
+                "done": False,
+                "logprob": -1.0,
             }
             learner.experience_buffer.append(exp)
 
@@ -631,10 +679,10 @@ class TestStatistics:
 
         stats = learner.get_statistics()
 
-        assert stats['total_batches'] == 1
-        assert len(stats['policy_loss_history']) == 1
-        assert len(stats['value_loss_history']) == 1
-        assert len(stats['entropy_history']) == 1
+        assert stats["total_batches"] == 1
+        assert len(stats["policy_loss_history"]) == 1
+        assert len(stats["value_loss_history"]) == 1
+        assert len(stats["entropy_history"]) == 1
 
 
 class TestGetPolicyState:
@@ -657,5 +705,5 @@ class TestGetPolicyState:
 
         # Should contain typical network parameters
         keys = list(state.keys())
-        assert any('weight' in key for key in keys)
-        assert any('bias' in key for key in keys)
+        assert any("weight" in key for key in keys)
+        assert any("bias" in key for key in keys)

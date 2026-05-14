@@ -20,11 +20,12 @@ Bias correction:
     entropy, MI, CMI) are corrected as differences of MM-corrected entropies.
     For very small samples consider Panzeri-Treves or NSB instead.
 """
+
 from __future__ import annotations
 
 import math
 from collections import Counter
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 
@@ -364,7 +365,6 @@ def is_degenerate_conditioner(
     """
     diag = conditioner_diagnostics(z)
     degenerate = (
-        diag["n_distinct"] < min_distinct
-        or diag["modal_fraction"] > max_modal_fraction
+        diag["n_distinct"] < min_distinct or diag["modal_fraction"] > max_modal_fraction
     )
     return degenerate, diag

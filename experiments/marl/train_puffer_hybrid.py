@@ -25,6 +25,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import argparse
@@ -70,9 +71,9 @@ def train_ppo_hybrid(
     # PufferLib vecenv interface
     num_envs = vec_env.num_envs
 
-    print(f"\n{'='*60}")
-    print(f"🚀 Starting Hybrid PPO Training")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("🚀 Starting Hybrid PPO Training")
+    print(f"{'=' * 60}")
     print(f"📊 Total steps: {num_steps:,}")
     print(f"🌍 Parallel environments: {num_envs} (multiprocessing)")
     print(f"📦 Rollout length: {rollout_length}")
@@ -81,8 +82,8 @@ def train_ppo_hybrid(
     print(f"💾 Checkpoint interval: {checkpoint_interval:,} steps")
     print(f"📈 Eval interval: {eval_interval:,} steps")
     print(f"🖥️  Device: {device}")
-    print(f"⚡ Expected GPU util: 60-80%")
-    print(f"{'='*60}\n")
+    print("⚡ Expected GPU util: 60-80%")
+    print(f"{'=' * 60}\n")
 
     # Initialize
     obs = vec_env.reset()
@@ -154,8 +155,12 @@ def train_ppo_hybrid(
                     episode_lengths[i] = 0
 
                     if writer:
-                        writer.add_scalar("episode/reward", completed_rewards[-1], total_env_steps)
-                        writer.add_scalar("episode/length", completed_lengths[-1], total_env_steps)
+                        writer.add_scalar(
+                            "episode/reward", completed_rewards[-1], total_env_steps
+                        )
+                        writer.add_scalar(
+                            "episode/length", completed_lengths[-1], total_env_steps
+                        )
 
             obs_tensor = torch.FloatTensor(next_obs).to(device)
             total_env_steps += num_envs
@@ -190,21 +195,31 @@ def train_ppo_hybrid(
                         nextnonterminal = 1.0 - rollout_dones_batch[t + 1]
                         nextvalues = rollout_values_batch[t + 1]
 
-                    delta = rollout_rewards_batch[t] + 0.99 * nextvalues * nextnonterminal - rollout_values_batch[t]
-                    advantages[t] = lastgaelam = delta + 0.99 * 0.95 * nextnonterminal * lastgaelam
+                    delta = (
+                        rollout_rewards_batch[t]
+                        + 0.99 * nextvalues * nextnonterminal
+                        - rollout_values_batch[t]
+                    )
+                    advantages[t] = lastgaelam = (
+                        delta + 0.99 * 0.95 * nextnonterminal * lastgaelam
+                    )
 
             returns = advantages + rollout_values_batch
 
             # Flatten batch
             b_obs = rollout_obs_batch.reshape(-1, rollout_obs_batch.shape[-1])
-            b_actions = rollout_actions_batch.reshape(-1, rollout_actions_batch.shape[-1])
+            b_actions = rollout_actions_batch.reshape(
+                -1, rollout_actions_batch.shape[-1]
+            )
             b_logprobs = rollout_logprobs_batch.reshape(-1)
             b_advantages = advantages.reshape(-1)
             b_returns = returns.reshape(-1)
             b_values = rollout_values_batch.reshape(-1)
 
             # Normalize advantages
-            b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-8)
+            b_advantages = (b_advantages - b_advantages.mean()) / (
+                b_advantages.std() + 1e-8
+            )
 
             # Multiple epochs over the data
             batch_size = b_obs.shape[0]
@@ -220,7 +235,7 @@ def train_ppo_hybrid(
                     mb_logprobs = b_logprobs[mb_indices]
                     mb_advantages = b_advantages[mb_indices]
                     mb_returns = b_returns[mb_indices]
-                    mb_values = b_values[mb_indices]
+                    _mb_values = b_values[mb_indices]
 
                     # Forward pass
                     action_logits, new_values = policy(mb_obs)
@@ -242,7 +257,9 @@ def train_ppo_hybrid(
                     ratio = logratio.exp()
 
                     pg_loss1 = -mb_advantages * ratio
-                    pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon)
+                    pg_loss2 = -mb_advantages * torch.clamp(
+                        ratio, 1 - clip_epsilon, 1 + clip_epsilon
+                    )
                     pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
                     value_loss = 0.5 * ((new_values - mb_returns) ** 2).mean()
@@ -276,56 +293,96 @@ def train_ppo_hybrid(
                 steps_per_sec = eval_interval / elapsed if elapsed > 0 else 0
                 progress = total_env_steps / num_steps * 100
 
-                print(f"Step {total_env_steps:,}/{num_steps:,} ({progress:.1f}%) | "
-                      f"Reward: {avg_reward:.2f} | "
-                      f"Length: {avg_length:.1f} | "
-                      f"Episodes: {len(completed_rewards)} | "
-                      f"Speed: {steps_per_sec:.0f} steps/s")
+                print(
+                    f"Step {total_env_steps:,}/{num_steps:,} ({progress:.1f}%) | "
+                    f"Reward: {avg_reward:.2f} | "
+                    f"Length: {avg_length:.1f} | "
+                    f"Episodes: {len(completed_rewards)} | "
+                    f"Speed: {steps_per_sec:.0f} steps/s"
+                )
 
                 if writer:
-                    writer.add_scalar("train/avg_reward_100ep", avg_reward, total_env_steps)
-                    writer.add_scalar("train/avg_length_100ep", avg_length, total_env_steps)
-                    writer.add_scalar("train/steps_per_sec", steps_per_sec, total_env_steps)
+                    writer.add_scalar(
+                        "train/avg_reward_100ep", avg_reward, total_env_steps
+                    )
+                    writer.add_scalar(
+                        "train/avg_length_100ep", avg_length, total_env_steps
+                    )
+                    writer.add_scalar(
+                        "train/steps_per_sec", steps_per_sec, total_env_steps
+                    )
 
         # === CHECKPOINTING ===
-        if checkpoint_dir and total_env_steps % checkpoint_interval < num_envs * rollout_length:
+        if (
+            checkpoint_dir
+            and total_env_steps % checkpoint_interval < num_envs * rollout_length
+        ):
             checkpoint_path = checkpoint_dir / f"checkpoint_step_{total_env_steps}.pt"
-            torch.save({
-                'step': total_env_steps,
-                'model_state_dict': policy.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'episode_rewards': completed_rewards,
-                'episode_lengths': completed_lengths,
-            }, checkpoint_path)
+            torch.save(
+                {
+                    "step": total_env_steps,
+                    "model_state_dict": policy.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "episode_rewards": completed_rewards,
+                    "episode_lengths": completed_lengths,
+                },
+                checkpoint_path,
+            )
             print(f"💾 Saved checkpoint: {checkpoint_path}")
 
     total_time = time.time() - start_time
-    print(f"\n{'='*60}")
-    print(f"✅ Training Complete!")
-    print(f"⏱️  Total time: {total_time/60:.1f} minutes ({total_time/3600:.2f} hours)")
+    print(f"\n{'=' * 60}")
+    print("✅ Training Complete!")
+    print(
+        f"⏱️  Total time: {total_time / 60:.1f} minutes ({total_time / 3600:.2f} hours)"
+    )
     print(f"📊 Total episodes: {len(completed_rewards)}")
     if completed_rewards:
-        print(f"📈 Final avg reward (last 100): {np.mean(completed_rewards[-100:]):.2f}")
-    print(f"⚡ Average speed: {total_env_steps/total_time:.0f} steps/s")
-    print(f"{'='*60}\n")
+        print(
+            f"📈 Final avg reward (last 100): {np.mean(completed_rewards[-100:]):.2f}"
+        )
+    print(f"⚡ Average speed: {total_env_steps / total_time:.0f} steps/s")
+    print(f"{'=' * 60}\n")
 
     return completed_rewards, completed_lengths
 
 
 def main():
     parser = argparse.ArgumentParser(description="Hybrid PufferLib + GPU PPO Training")
-    parser.add_argument("--steps", type=int, default=10000000, help="Total training steps")
-    parser.add_argument("--scenario", type=str, default="trivial_cooperation", help="Scenario name")
+    parser.add_argument(
+        "--steps", type=int, default=10000000, help="Total training steps"
+    )
+    parser.add_argument(
+        "--scenario", type=str, default="trivial_cooperation", help="Scenario name"
+    )
     parser.add_argument("--opponents", type=int, default=3, help="Number of opponents")
-    parser.add_argument("--num-envs", type=int, default=128, help="Parallel environments")
-    parser.add_argument("--num-cores", type=int, default=8, help="CPU cores for multiprocessing")
-    parser.add_argument("--rollout-length", type=int, default=128, help="Steps per rollout")
-    parser.add_argument("--minibatch-size", type=int, default=1024, help="Minibatch size for PPO updates")
+    parser.add_argument(
+        "--num-envs", type=int, default=128, help="Parallel environments"
+    )
+    parser.add_argument(
+        "--num-cores", type=int, default=8, help="CPU cores for multiprocessing"
+    )
+    parser.add_argument(
+        "--rollout-length", type=int, default=128, help="Steps per rollout"
+    )
+    parser.add_argument(
+        "--minibatch-size",
+        type=int,
+        default=1024,
+        help="Minibatch size for PPO updates",
+    )
     parser.add_argument("--epochs", type=int, default=4, help="Epochs per batch")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--run-name", type=str, default=None, help="Run name")
-    parser.add_argument("--checkpoint-interval", type=int, default=100000, help="Steps between checkpoints")
-    parser.add_argument("--eval-interval", type=int, default=10000, help="Steps between eval prints")
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=100000,
+        help="Steps between checkpoints",
+    )
+    parser.add_argument(
+        "--eval-interval", type=int, default=10000, help="Steps between eval prints"
+    )
     parser.add_argument("--cpu", action="store_true", help="Force CPU")
 
     args = parser.parse_args()
@@ -343,12 +400,12 @@ def main():
 
     # Save config
     config = vars(args).copy()
-    config['timestamp'] = timestamp
-    config['hybrid_pufferlib'] = True
-    with open(runs_dir / "config.json", 'w') as f:
+    config["timestamp"] = timestamp
+    config["hybrid_pufferlib"] = True
+    with open(runs_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
-    print(f"\n🎮 Creating PufferLib multiprocessing vectorized environment")
+    print("\n🎮 Creating PufferLib multiprocessing vectorized environment")
     print(f"   Scenario: {args.scenario}")
     print(f"   Opponents: {args.opponents}")
     print(f"   Num envs: {args.num_envs}")
@@ -359,7 +416,7 @@ def main():
         return make_rust_env(args.scenario, num_opponents=args.opponents)
 
     # Create PufferLib vectorized environment with multiprocessing
-    backend = 'multiprocessing' if args.num_cores > 1 else 'serial'
+    backend = "multiprocessing" if args.num_cores > 1 else "serial"
     print(f"   Backend: {backend}")
 
     vecenv = pufferlib.vector.make(
@@ -372,26 +429,25 @@ def main():
     # Device
     if args.cpu:
         device = torch.device("cpu")
-        print(f"🖥️  Using CPU (forced)")
+        print("🖥️  Using CPU (forced)")
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if device.type == "cuda":
             print(f"🚀 Using GPU: {torch.cuda.get_device_name(0)}")
         else:
-            print(f"🖥️  Using CPU (no GPU available)")
+            print("🖥️  Using CPU (no GPU available)")
 
     # Policy network
     single_env = env_creator()
     obs_space = single_env.observation_space
     action_space = single_env.action_space
 
-    print(f"\n🧠 Creating policy network")
+    print("\n🧠 Creating policy network")
     print(f"   Observation dim: {obs_space.shape[0]}")
     print(f"   Action dims: {action_space.nvec.tolist()}")
 
     policy = PolicyNetwork(
-        obs_dim=obs_space.shape[0],
-        action_dims=action_space.nvec.tolist()
+        obs_dim=obs_space.shape[0], action_dims=action_space.nvec.tolist()
     ).to(device)
 
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
@@ -399,7 +455,7 @@ def main():
     # TensorBoard
     writer = SummaryWriter(runs_dir)
     print(f"📊 TensorBoard: {runs_dir}")
-    print(f"   View with: tensorboard --logdir experiments/marl/runs/")
+    print("   View with: tensorboard --logdir experiments/marl/runs/")
 
     # Train
     episode_rewards, episode_lengths = train_ppo_hybrid(

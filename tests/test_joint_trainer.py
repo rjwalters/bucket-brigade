@@ -27,7 +27,9 @@ def _env_fn():
     return BucketBrigadeEnv(num_agents=NUM_AGENTS)
 
 
-def _make_trainer(redundancy_coef: float = 0.0, hidden_size: int = 16) -> JointPPOTrainer:
+def _make_trainer(
+    redundancy_coef: float = 0.0, hidden_size: int = 16
+) -> JointPPOTrainer:
     env = _env_fn()
     obs = env.reset(seed=0)
     obs_dim = flatten_dict_obs(obs).shape[0]

@@ -8,7 +8,6 @@ This module provides:
 """
 
 import pytest
-import sys
 
 
 def pytest_configure(config):
@@ -42,7 +41,7 @@ def pytest_collection_modifyitems(config, items):
     """
     # Check for torch availability
     try:
-        import torch
+        import torch  # noqa: F401
 
         torch_available = True
     except ImportError:
@@ -148,10 +147,9 @@ def random_genome(seed=42):
 
 def pytest_report_header(config):
     """Add custom information to pytest header."""
-    import bucket_brigade_core
 
     headers = []
-    headers.append(f"bucket-brigade-core available: Yes")
+    headers.append("bucket-brigade-core available: Yes")
 
     # Check optional dependencies
     try:
@@ -194,5 +192,7 @@ def pytest_runtest_setup(item):
         pytest.skip("need --run-slow option to run slow tests")
 
     # Skip integration tests unless --run-integration is passed
-    if "integration" in item.keywords and not item.config.getoption("--run-integration"):
+    if "integration" in item.keywords and not item.config.getoption(
+        "--run-integration"
+    ):
         pytest.skip("need --run-integration option to run integration tests")

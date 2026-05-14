@@ -41,6 +41,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import argparse
@@ -54,47 +55,76 @@ def main():
     parser = argparse.ArgumentParser(description="Train agent population with PPO")
 
     # Scenario and population
-    parser.add_argument("--scenario", type=str, default="trivial_cooperation",
-                        help="Scenario name")
-    parser.add_argument("--population-size", type=int, default=8,
-                        help="Number of agents in population")
-    parser.add_argument("--num-games", type=int, default=64,
-                        help="Number of parallel game environments")
-    parser.add_argument("--num-agents-per-game", type=int, default=4,
-                        help="Number of agents per game")
+    parser.add_argument(
+        "--scenario", type=str, default="trivial_cooperation", help="Scenario name"
+    )
+    parser.add_argument(
+        "--population-size", type=int, default=8, help="Number of agents in population"
+    )
+    parser.add_argument(
+        "--num-games", type=int, default=64, help="Number of parallel game environments"
+    )
+    parser.add_argument(
+        "--num-agents-per-game", type=int, default=4, help="Number of agents per game"
+    )
 
     # Training
-    parser.add_argument("--num-episodes", type=int, default=10000,
-                        help="Total simulation episodes")
-    parser.add_argument("--hidden-size", type=int, default=512,
-                        help="Hidden layer size for policy networks")
-    parser.add_argument("--learning-rate", type=float, default=3e-4,
-                        help="Learning rate")
+    parser.add_argument(
+        "--num-episodes", type=int, default=10000, help="Total simulation episodes"
+    )
+    parser.add_argument(
+        "--hidden-size",
+        type=int,
+        default=512,
+        help="Hidden layer size for policy networks",
+    )
+    parser.add_argument(
+        "--learning-rate", type=float, default=3e-4, help="Learning rate"
+    )
 
     # Learner parameters
-    parser.add_argument("--batch-size", type=int, default=256,
-                        help="Batch size for learners")
-    parser.add_argument("--num-epochs", type=int, default=4,
-                        help="PPO epochs per batch")
-    parser.add_argument("--update-interval", type=int, default=100,
-                        help="Learners send policy updates every N batches")
+    parser.add_argument(
+        "--batch-size", type=int, default=256, help="Batch size for learners"
+    )
+    parser.add_argument(
+        "--num-epochs", type=int, default=4, help="PPO epochs per batch"
+    )
+    parser.add_argument(
+        "--update-interval",
+        type=int,
+        default=100,
+        help="Learners send policy updates every N batches",
+    )
 
     # System
-    parser.add_argument("--device", type=str, default="cuda",
-                        help="Device for GPU learners (cuda or cpu)")
-    parser.add_argument("--matchmaking", type=str, default="round_robin",
-                        choices=["round_robin", "random"],
-                        help="Matchmaking strategy")
-    parser.add_argument("--seed", type=int, default=None,
-                        help="Random seed")
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda",
+        help="Device for GPU learners (cuda or cpu)",
+    )
+    parser.add_argument(
+        "--matchmaking",
+        type=str,
+        default="round_robin",
+        choices=["round_robin", "random"],
+        help="Matchmaking strategy",
+    )
+    parser.add_argument("--seed", type=int, default=None, help="Random seed")
 
     # Logging and checkpoints
-    parser.add_argument("--run-name", type=str, default=None,
-                        help="Run name for logging")
-    parser.add_argument("--log-interval", type=int, default=100,
-                        help="Log progress every N episodes")
-    parser.add_argument("--checkpoint-interval", type=int, default=1000,
-                        help="Save checkpoint every N episodes")
+    parser.add_argument(
+        "--run-name", type=str, default=None, help="Run name for logging"
+    )
+    parser.add_argument(
+        "--log-interval", type=int, default=100, help="Log progress every N episodes"
+    )
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=1000,
+        help="Save checkpoint every N episodes",
+    )
 
     args = parser.parse_args()
 
@@ -107,9 +137,9 @@ def main():
     checkpoint_dir = exp_dir / "checkpoints" / run_name
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n{'='*60}")
-    print(f"🎮 Population-Based Multi-Agent Training")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("🎮 Population-Based Multi-Agent Training")
+    print(f"{'=' * 60}")
     print(f"Run: {run_name}")
     print(f"Scenario: {args.scenario}")
     print(f"Population: {args.population_size} agents")
@@ -118,7 +148,7 @@ def main():
     print(f"Device: {args.device}")
     print(f"Matchmaking: {args.matchmaking}")
     print(f"Seed: {args.seed}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Create trainer
     trainer = PopulationTrainer(
@@ -147,7 +177,7 @@ def main():
         trainer.train(num_episodes=args.num_episodes)
 
         # Save final checkpoint
-        final_checkpoint = checkpoint_dir / f"final_checkpoint.pt"
+        final_checkpoint = checkpoint_dir / "final_checkpoint.pt"
         trainer.save_checkpoint(final_checkpoint)
 
     except KeyboardInterrupt:
@@ -157,6 +187,7 @@ def main():
     except Exception as e:
         print(f"\n\n❌ Training failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         trainer.cleanup()
         raise
@@ -166,5 +197,5 @@ def main():
 
 if __name__ == "__main__":
     # Required for multiprocessing on some platforms
-    mp.set_start_method('spawn', force=True)
+    mp.set_start_method("spawn", force=True)
     main()

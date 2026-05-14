@@ -6,7 +6,9 @@ import numpy as np
 from bucket_brigade_core import AgentObservation
 
 
-def flatten_observation(obs: AgentObservation, scenario_info: np.ndarray = None) -> np.ndarray:
+def flatten_observation(
+    obs: AgentObservation, scenario_info: np.ndarray = None
+) -> np.ndarray:
     """
     Convert PyAgentObservation to flat numpy array for neural network input.
 
@@ -39,13 +41,15 @@ def flatten_observation(obs: AgentObservation, scenario_info: np.ndarray = None)
         scenario_info = np.array(scenario_info, dtype=np.float32)
 
     # Concatenate all components
-    flat_obs = np.concatenate([
-        houses,
-        signals,
-        locations,
-        last_actions,
-        scenario_info,
-    ])
+    flat_obs = np.concatenate(
+        [
+            houses,
+            signals,
+            locations,
+            last_actions,
+            scenario_info,
+        ]
+    )
 
     return flat_obs
 
@@ -62,11 +66,11 @@ def get_observation_dim(num_houses: int, num_agents: int) -> int:
         Total observation dimension
     """
     return (
-        num_houses +      # houses
-        num_agents +      # signals
-        num_agents +      # locations
-        num_agents * 2 +  # last_actions (house + mode per agent)
-        10                # scenario_info
+        num_houses  # houses
+        + num_agents  # signals
+        + num_agents  # locations
+        + num_agents * 2  # last_actions (house + mode per agent)
+        + 10  # scenario_info
     )
 
 
@@ -80,15 +84,18 @@ def create_scenario_info(scenario) -> np.ndarray:
     Returns:
         10-element array with scenario parameters
     """
-    return np.array([
-        scenario.prob_fire_spreads_to_neighbor,
-        scenario.prob_solo_agent_extinguishes_fire,
-        scenario.prob_house_catches_fire,
-        scenario.team_reward_house_survives,
-        scenario.team_penalty_house_burns,
-        scenario.cost_to_work_one_night,
-        float(scenario.min_nights),
-        0.0,  # Padding
-        0.0,  # Padding
-        0.0,  # Padding
-    ], dtype=np.float32)
+    return np.array(
+        [
+            scenario.prob_fire_spreads_to_neighbor,
+            scenario.prob_solo_agent_extinguishes_fire,
+            scenario.prob_house_catches_fire,
+            scenario.team_reward_house_survives,
+            scenario.team_penalty_house_burns,
+            scenario.cost_to_work_one_night,
+            float(scenario.min_nights),
+            0.0,  # Padding
+            0.0,  # Padding
+            0.0,  # Padding
+        ],
+        dtype=np.float32,
+    )

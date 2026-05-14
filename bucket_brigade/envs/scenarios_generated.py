@@ -283,7 +283,6 @@ def mixed_motivation_scenario(num_agents: int) -> Scenario:
     )
 
 
-
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -299,7 +298,6 @@ SCENARIO_REGISTRY = {
     "overcrowding": overcrowding_scenario,
     "mixed_motivation": mixed_motivation_scenario,
 }
-
 
 
 def get_scenario_by_name(name: str, num_agents: int) -> Scenario:

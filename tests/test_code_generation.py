@@ -89,9 +89,9 @@ class TestJSONDefinitions:
         for name, spec in data["archetypes"].items():
             assert "params" in spec, f"Archetype {name} missing params"
             assert isinstance(spec["params"], list), f"{name} params must be list"
-            assert (
-                len(spec["params"]) == EXPECTED_PARAM_COUNT
-            ), f"{name} should have {EXPECTED_PARAM_COUNT} params, got {len(spec['params'])}"
+            assert len(spec["params"]) == EXPECTED_PARAM_COUNT, (
+                f"{name} should have {EXPECTED_PARAM_COUNT} params, got {len(spec['params'])}"
+            )
 
     def test_all_archetypes_have_descriptions(self):
         """All archetypes have descriptions."""
@@ -100,7 +100,9 @@ class TestJSONDefinitions:
 
         for name, spec in data["archetypes"].items():
             assert "description" in spec, f"Archetype {name} missing description"
-            assert isinstance(spec["description"], str), f"{name} description must be string"
+            assert isinstance(spec["description"], str), (
+                f"{name} description must be string"
+            )
             assert len(spec["description"]) > 0, f"{name} description is empty"
 
     def test_all_scenarios_have_required_params(self):
@@ -111,9 +113,9 @@ class TestJSONDefinitions:
         for name, spec in data["scenarios"].items():
             for param in REQUIRED_SCENARIO_PARAMS:
                 assert param in spec, f"Scenario {name} missing {param}"
-                assert isinstance(
-                    spec[param], (int, float)
-                ), f"{name}.{param} must be numeric"
+                assert isinstance(spec[param], (int, float)), (
+                    f"{name}.{param} must be numeric"
+                )
 
     def test_all_scenarios_have_descriptions(self):
         """All scenarios have descriptions."""
@@ -122,7 +124,9 @@ class TestJSONDefinitions:
 
         for name, spec in data["scenarios"].items():
             assert "description" in spec, f"Scenario {name} missing description"
-            assert isinstance(spec["description"], str), f"{name} description must be string"
+            assert isinstance(spec["description"], str), (
+                f"{name} description must be string"
+            )
             assert len(spec["description"]) > 0, f"{name} description is empty"
 
 
@@ -136,9 +140,9 @@ class TestPythonGeneration:
 
         for name, spec in json_data["archetypes"].items():
             # Check archetype exists in Python
-            assert (
-                name in PY_ARCHETYPES
-            ), f"Archetype {name} not found in Python ARCHETYPES"
+            assert name in PY_ARCHETYPES, (
+                f"Archetype {name} not found in Python ARCHETYPES"
+            )
 
             # Check parameters match
             expected_params = np.array(spec["params"], dtype=np.float32)
@@ -166,7 +170,9 @@ class TestPythonGeneration:
         }
 
         for name, expected_params in archetype_constants.items():
-            json_params = np.array(json_data["archetypes"][name]["params"], dtype=np.float32)
+            json_params = np.array(
+                json_data["archetypes"][name]["params"], dtype=np.float32
+            )
             np.testing.assert_array_almost_equal(
                 expected_params,
                 json_params,
@@ -181,25 +187,27 @@ class TestPythonGeneration:
 
         # Test scenario registry
         for name, spec in json_data["scenarios"].items():
-            assert (
-                name in PY_SCENARIOS
-            ), f"Scenario {name} not found in Python SCENARIO_REGISTRY"
+            assert name in PY_SCENARIOS, (
+                f"Scenario {name} not found in Python SCENARIO_REGISTRY"
+            )
 
             # Get factory function
             factory = PY_SCENARIOS[name]
             scenario = factory(num_agents=10)
 
             # Verify it's a Scenario instance
-            assert isinstance(scenario, Scenario), f"{name} factory didn't return Scenario"
+            assert isinstance(scenario, Scenario), (
+                f"{name} factory didn't return Scenario"
+            )
 
             # Check each parameter matches JSON
             for param in REQUIRED_SCENARIO_PARAMS:
                 actual_value = getattr(scenario, param)
                 expected_value = spec[param]
 
-                assert (
-                    actual_value == expected_value
-                ), f"Scenario {name}.{param}: expected {expected_value}, got {actual_value}"
+                assert actual_value == expected_value, (
+                    f"Scenario {name}.{param}: expected {expected_value}, got {actual_value}"
+                )
 
     def test_python_scenario_factories(self):
         """Python scenario factories work correctly."""
@@ -252,9 +260,9 @@ class TestTypeScriptGeneration:
 
         # Check all archetypes are present
         for name in json_data["archetypes"].keys():
-            assert (
-                f"{name}:" in content
-            ), f"Archetype {name} not found in TypeScript file"
+            assert f"{name}:" in content, (
+                f"Archetype {name} not found in TypeScript file"
+            )
 
         # Check interfaces exist
         assert "export interface ArchetypeParams" in content
@@ -278,9 +286,9 @@ class TestTypeScriptGeneration:
         # Check all scenarios are present
         for name in json_data["scenarios"].keys():
             constant_name = name.upper()
-            assert (
-                f"{constant_name}:" in content
-            ), f"Scenario constant {constant_name} not found in TypeScript file"
+            assert f"{constant_name}:" in content, (
+                f"Scenario constant {constant_name} not found in TypeScript file"
+            )
 
         # Check types and constants exist
         assert "export const SCENARIO_TYPES" in content
@@ -294,7 +302,9 @@ class TestTypeScriptGeneration:
 
     def test_typescript_has_proper_escaping(self):
         """TypeScript strings are properly escaped."""
-        ts_archetype_file = ROOT_DIR / "web" / "src" / "data" / "archetypes.generated.ts"
+        ts_archetype_file = (
+            ROOT_DIR / "web" / "src" / "data" / "archetypes.generated.ts"
+        )
         content = ts_archetype_file.read_text()
 
         # Check that apostrophes in strings are escaped
@@ -365,9 +375,7 @@ class TestCodeGenerationWarnings:
 
     def test_python_archetypes_has_warning(self):
         """Generated Python archetypes file has DO NOT EDIT warning."""
-        py_file = (
-            ROOT_DIR / "bucket_brigade" / "agents" / "archetypes_generated.py"
-        )
+        py_file = ROOT_DIR / "bucket_brigade" / "agents" / "archetypes_generated.py"
         content = py_file.read_text()
 
         assert "GENERATED FILE" in content or "DO NOT EDIT" in content, (

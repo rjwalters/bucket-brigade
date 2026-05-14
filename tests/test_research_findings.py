@@ -22,7 +22,7 @@ These tests use the evolved_v4 genomes and validate that:
 import json
 import itertools
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
 
 import pytest
 import numpy as np
@@ -39,13 +39,8 @@ from bucket_brigade.envs.scenarios import (
     mixed_motivation_scenario,
     # Boundary scenarios
     glacial_spread_scenario,
-    explosive_spread_scenario,
     wildfire_scenario,
     # Mechanism design scenarios
-    free_work_scenario,
-    cheap_work_scenario,
-    expensive_work_scenario,
-    prohibitive_work_scenario,
     Scenario,
 )
 from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
@@ -103,7 +98,7 @@ def load_all_evolved_v4_genomes() -> Dict[str, np.ndarray]:
     for scenario_name in BASE_SCENARIOS:
         try:
             genomes[scenario_name] = load_evolved_genome(scenario_name, "v4")
-        except:
+        except Exception:
             pass  # Skip if missing
     return genomes
 
@@ -401,7 +396,7 @@ class TestPopulationSizeInvariance:
 
             # Should have <10% degradation
             assert degradation < 0.10, (
-                f"Population size N={N} shows {degradation*100:.1f}% degradation "
+                f"Population size N={N} shows {degradation * 100:.1f}% degradation "
                 f"from baseline (N=4: {baseline_payoff:.1f}, N={N}: {payoff_n:.1f})"
             )
 

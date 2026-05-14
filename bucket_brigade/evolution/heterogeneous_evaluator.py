@@ -91,7 +91,7 @@ class HeterogeneousEvaluator:
         scenario_name: str,
         num_agents: int = 4,
         opponent_types: Optional[list[str]] = None,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ):
         """Initialize heterogeneous evaluator.
 
@@ -124,10 +124,7 @@ class HeterogeneousEvaluator:
         self.rng = np.random.RandomState(seed)
 
     def evaluate(
-        self,
-        candidate_genome: np.ndarray,
-        num_games: int = 100,
-        verbose: bool = False
+        self, candidate_genome: np.ndarray, num_games: int = 100, verbose: bool = False
     ) -> float:
         """Evaluate candidate in heterogeneous tournament.
 
@@ -148,9 +145,7 @@ class HeterogeneousEvaluator:
             # Sample teammates (candidate is always agent 0)
             num_teammates = self.num_agents - 1
             teammate_types = self.rng.choice(
-                self.opponent_types,
-                size=num_teammates,
-                replace=True
+                self.opponent_types, size=num_teammates, replace=True
             )
 
             # Track opponent usage
@@ -167,7 +162,9 @@ class HeterogeneousEvaluator:
             total_payoff += payoff
 
             if verbose and game_idx < 5:  # Show first 5 games
-                print(f"  Game {game_idx}: team={['candidate'] + list(teammate_types)}, payoff={payoff:.2f}")
+                print(
+                    f"  Game {game_idx}: team={['candidate'] + list(teammate_types)}, payoff={payoff:.2f}"
+                )
 
         mean_payoff = total_payoff / num_games
 
@@ -188,11 +185,7 @@ class HeterogeneousEvaluator:
             Payoff for agent 0 (candidate)
         """
         # Create Rust game
-        game = core.BucketBrigade(
-            self.rust_scenario,
-            self.num_agents,
-            seed=seed
-        )
+        game = core.BucketBrigade(self.rust_scenario, self.num_agents, seed=seed)
 
         # Python RNG for heuristic decisions
         rng = np.random.RandomState(seed)
@@ -231,9 +224,7 @@ class HeterogeneousEvaluator:
         return candidate_total_reward
 
     def evaluate_batch(
-        self,
-        genomes: list[np.ndarray],
-        num_games: int = 100
+        self, genomes: list[np.ndarray], num_games: int = 100
     ) -> list[float]:
         """Evaluate multiple candidates (for parallel evolution).
 
@@ -276,7 +267,7 @@ def create_heterogeneous_evaluator(
     scenario_name: str,
     num_agents: int = 4,
     opponent_types: Optional[list[str]] = None,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ) -> HeterogeneousEvaluator:
     """Factory function for creating heterogeneous evaluator.
 
@@ -293,5 +284,5 @@ def create_heterogeneous_evaluator(
         scenario_name=scenario_name,
         num_agents=num_agents,
         opponent_types=opponent_types,
-        seed=seed
+        seed=seed,
     )

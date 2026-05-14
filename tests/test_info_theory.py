@@ -185,7 +185,10 @@ class TestBootstrap:
         rng = np.random.default_rng(50)
         x = rng.integers(0, 4, size=2_000)
         est, lo, hi = bootstrap_ci(
-            entropy_discrete, (x,), n_boot=200, confidence=0.95,
+            entropy_discrete,
+            (x,),
+            n_boot=200,
+            confidence=0.95,
             rng=np.random.default_rng(51),
         )
         # Point estimate is the full-sample estimator.
@@ -198,7 +201,9 @@ class TestBootstrap:
         x = rng.integers(0, 4, size=2_000)
         y = x.copy()  # I(X; X) = log2 4 = 2 bits.
         est, lo, hi = bootstrap_ci(
-            mutual_information, (x, y), n_boot=200,
+            mutual_information,
+            (x, y),
+            n_boot=200,
             rng=np.random.default_rng(53),
         )
         assert lo <= 2.0 <= hi or abs(est - 2.0) < TOL_LARGE
@@ -301,9 +306,7 @@ class TestConditionerDiagnostics:
         degenerate_default, _ = is_degenerate_conditioner(z)
         assert degenerate_default is False
         # ...but should flag if we tighten max_modal_fraction below 0.6.
-        degenerate_strict, _ = is_degenerate_conditioner(
-            z, max_modal_fraction=0.55
-        )
+        degenerate_strict, _ = is_degenerate_conditioner(z, max_modal_fraction=0.55)
         assert degenerate_strict is True
 
     def test_diagnostics_match_helper(self):

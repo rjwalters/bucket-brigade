@@ -38,8 +38,12 @@ class TestFlattenObservation:
         assert np.allclose(flat_obs[:10], obs.houses)  # houses
         assert np.allclose(flat_obs[10:14], obs.signals)  # signals
         assert np.allclose(flat_obs[14:18], obs.locations)  # locations
-        assert np.allclose(flat_obs[18:26], [0, 1, 2, 0, 5, 2, 7, 1])  # last_actions flattened
-        assert np.allclose(flat_obs[26:], np.zeros(10))  # scenario_info (zeros when None)
+        assert np.allclose(
+            flat_obs[18:26], [0, 1, 2, 0, 5, 2, 7, 1]
+        )  # last_actions flattened
+        assert np.allclose(
+            flat_obs[26:], np.zeros(10)
+        )  # scenario_info (zeros when None)
 
     def test_flatten_observation_with_scenario_info(self):
         """Test flattening with provided scenario info."""
@@ -164,7 +168,9 @@ class TestCreateScenarioInfo:
 
         # Check values
         assert scenario_info[0] == pytest.approx(0.1)  # prob_fire_spreads_to_neighbor
-        assert scenario_info[1] == pytest.approx(0.2)  # prob_solo_agent_extinguishes_fire
+        assert scenario_info[1] == pytest.approx(
+            0.2
+        )  # prob_solo_agent_extinguishes_fire
         assert scenario_info[2] == pytest.approx(0.3)  # prob_house_catches_fire
         assert scenario_info[3] == pytest.approx(10.0)  # team_reward_house_survives
         assert scenario_info[4] == pytest.approx(-5.0)  # team_penalty_house_burns
@@ -283,7 +289,9 @@ class TestObservationUtilsIntegration:
             observations.append(obs)
 
         # Flatten all observations
-        flat_observations = [flatten_observation(obs, scenario_info) for obs in observations]
+        flat_observations = [
+            flatten_observation(obs, scenario_info) for obs in observations
+        ]
 
         # All should have same dimension
         for flat_obs in flat_observations:

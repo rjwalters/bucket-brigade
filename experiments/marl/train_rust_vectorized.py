@@ -26,6 +26,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import argparse
@@ -36,7 +37,6 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade_core import VectorEnv, SCENARIOS
@@ -50,7 +50,7 @@ def collect_rollout(
     device,
 ):
     """Collect a rollout from vectorized environment."""
-    num_envs = vecenv.num_envs
+    _num_envs = vecenv.num_envs
 
     # Storage
     obs_batch = []
@@ -112,12 +112,12 @@ def collect_rollout(
     logprob_batch = torch.stack(logprob_batch)  # [num_steps, num_envs]
 
     return {
-        'obs': obs_batch,
-        'actions': action_batch,
-        'rewards': reward_batch,
-        'dones': done_batch,
-        'values': value_batch,
-        'logprobs': logprob_batch,
+        "obs": obs_batch,
+        "actions": action_batch,
+        "rewards": reward_batch,
+        "dones": done_batch,
+        "values": value_batch,
+        "logprobs": logprob_batch,
     }
 
 
@@ -149,9 +149,9 @@ def train_ppo(
     num_updates = total_timesteps // (num_steps * num_envs)
     minibatch_size = (num_steps * num_envs) // num_minibatches
 
-    print(f"\n{'='*60}")
-    print(f"🚀 Starting Rust-Vectorized PPO Training")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("🚀 Starting Rust-Vectorized PPO Training")
+    print(f"{'=' * 60}")
     print(f"📊 Total timesteps: {total_timesteps:,}")
     print(f"🌍 Num environments: {num_envs}")
     print(f"📦 Steps per rollout: {num_steps}")
@@ -160,11 +160,11 @@ def train_ppo(
     print(f"💾 Checkpoint interval: {checkpoint_interval:,} steps")
     print(f"📈 Eval interval: {eval_interval:,} steps")
     print(f"🖥️  Device: {device}")
-    print(f"⚡ Using Rust VectorEnv for maximum speed!")
-    print(f"{'='*60}\n")
+    print("⚡ Using Rust VectorEnv for maximum speed!")
+    print(f"{'=' * 60}\n")
 
     global_step = 0
-    episode_rewards = []
+    _episode_rewards = []
     start_time = time.time()
     last_eval_time = start_time
 
@@ -184,25 +184,27 @@ def train_ppo(
             next_values = next_values.squeeze(-1).cpu()
 
         advantages = compute_gae(
-            rollout['rewards'],
-            rollout['values'],
-            rollout['dones'],
+            rollout["rewards"],
+            rollout["values"],
+            rollout["dones"],
             next_values,
             gamma,
             gae_lambda,
         )
-        returns = advantages + rollout['values']
+        returns = advantages + rollout["values"]
 
         # Flatten batch dimensions
-        b_obs = rollout['obs'].reshape(-1, *rollout['obs'].shape[2:])
-        b_actions = rollout['actions'].reshape(-1, *rollout['actions'].shape[2:])
-        b_logprobs = rollout['logprobs'].reshape(-1)
+        b_obs = rollout["obs"].reshape(-1, *rollout["obs"].shape[2:])
+        b_actions = rollout["actions"].reshape(-1, *rollout["actions"].shape[2:])
+        b_logprobs = rollout["logprobs"].reshape(-1)
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
-        b_values = rollout['values'].reshape(-1)
+        _b_values = rollout["values"].reshape(-1)
 
         # Normalize advantages
-        b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-8)
+        b_advantages = (b_advantages - b_advantages.mean()) / (
+            b_advantages.std() + 1e-8
+        )
 
         # PPO update
         update_start = time.time()
@@ -239,7 +241,10 @@ def train_ppo(
                 # PPO loss
                 ratio = torch.exp(new_logprobs - mb_logprobs)
                 surr1 = ratio * mb_advantages
-                surr2 = torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon) * mb_advantages
+                surr2 = (
+                    torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon)
+                    * mb_advantages
+                )
                 policy_loss = -torch.min(surr1, surr2).mean()
 
                 # Value loss
@@ -268,7 +273,9 @@ def train_ppo(
             writer.add_scalar("train/entropy", entropy.item(), global_step)
             writer.add_scalar("train/rollout_time", rollout_time, global_step)
             writer.add_scalar("train/update_time", update_time, global_step)
-            writer.add_scalar("train/mean_reward", rollout['rewards'].mean().item(), global_step)
+            writer.add_scalar(
+                "train/mean_reward", rollout["rewards"].mean().item(), global_step
+            )
 
         # Evaluation logging
         if (update + 1) % (eval_interval // (num_steps * num_envs)) == 0:
@@ -277,45 +284,78 @@ def train_ppo(
 
             steps_per_sec = eval_interval / elapsed
             progress = global_step / total_timesteps * 100
-            mean_reward = rollout['rewards'].mean().item()
+            mean_reward = rollout["rewards"].mean().item()
 
-            print(f"Step {global_step:,}/{total_timesteps:,} ({progress:.1f}%) | "
-                  f"Reward: {mean_reward:.3f} | "
-                  f"Rollout: {rollout_time:.2f}s | "
-                  f"Update: {update_time:.2f}s | "
-                  f"Speed: {steps_per_sec:.0f} steps/s")
+            print(
+                f"Step {global_step:,}/{total_timesteps:,} ({progress:.1f}%) | "
+                f"Reward: {mean_reward:.3f} | "
+                f"Rollout: {rollout_time:.2f}s | "
+                f"Update: {update_time:.2f}s | "
+                f"Speed: {steps_per_sec:.0f} steps/s"
+            )
 
         # Checkpointing
         if checkpoint_dir and (global_step % checkpoint_interval == 0):
             checkpoint_path = checkpoint_dir / f"checkpoint_step_{global_step}.pt"
-            torch.save({
-                'step': global_step,
-                'model_state_dict': policy.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-            }, checkpoint_path)
+            torch.save(
+                {
+                    "step": global_step,
+                    "model_state_dict": policy.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                },
+                checkpoint_path,
+            )
             print(f"💾 Saved checkpoint: {checkpoint_path}")
 
     total_time = time.time() - start_time
-    print(f"\n{'='*60}")
-    print(f"✅ Training Complete!")
-    print(f"⏱️  Total time: {total_time/60:.1f} minutes ({total_time/3600:.2f} hours)")
-    print(f"⚡ Avg speed: {total_timesteps/total_time:.0f} steps/s")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print("✅ Training Complete!")
+    print(
+        f"⏱️  Total time: {total_time / 60:.1f} minutes ({total_time / 3600:.2f} hours)"
+    )
+    print(f"⚡ Avg speed: {total_timesteps / total_time:.0f} steps/s")
+    print(f"{'=' * 60}\n")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train PPO with Rust VectorEnv")
-    parser.add_argument("--total-timesteps", type=int, default=10000000, help="Total training timesteps")
-    parser.add_argument("--scenario", type=str, default="trivial_cooperation", help="Scenario name")
-    parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
-    parser.add_argument("--num-agents", type=int, default=4, help="Number of agents per environment")
+    parser.add_argument(
+        "--total-timesteps", type=int, default=10000000, help="Total training timesteps"
+    )
+    parser.add_argument(
+        "--scenario", type=str, default="trivial_cooperation", help="Scenario name"
+    )
+    parser.add_argument(
+        "--num-envs", type=int, default=256, help="Number of parallel environments"
+    )
+    parser.add_argument(
+        "--num-agents", type=int, default=4, help="Number of agents per environment"
+    )
     parser.add_argument("--num-steps", type=int, default=256, help="Steps per rollout")
-    parser.add_argument("--num-epochs", type=int, default=4, help="PPO epochs per update")
-    parser.add_argument("--num-minibatches", type=int, default=4, help="Number of minibatches")
-    parser.add_argument("--learning-rate", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument("--hidden-size", type=int, default=4096, help="Hidden layer size (large for GPU util)")
-    parser.add_argument("--checkpoint-interval", type=int, default=100000, help="Steps between checkpoints")
-    parser.add_argument("--eval-interval", type=int, default=10000, help="Steps between eval prints")
+    parser.add_argument(
+        "--num-epochs", type=int, default=4, help="PPO epochs per update"
+    )
+    parser.add_argument(
+        "--num-minibatches", type=int, default=4, help="Number of minibatches"
+    )
+    parser.add_argument(
+        "--learning-rate", type=float, default=3e-4, help="Learning rate"
+    )
+    parser.add_argument(
+        "--hidden-size",
+        type=int,
+        default=4096,
+        help="Hidden layer size (large for GPU util)",
+    )
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=100000,
+        help="Steps between checkpoints",
+    )
+    parser.add_argument(
+        "--eval-interval", type=int, default=10000, help="Steps between eval prints"
+    )
     parser.add_argument("--run-name", type=str, default=None, help="Run name")
     parser.add_argument("--cpu", action="store_true", help="Force CPU")
     parser.add_argument("--seed", type=int, default=None, help="Random seed")
@@ -335,12 +375,12 @@ def main():
 
     # Save config
     config = vars(args).copy()
-    config['timestamp'] = timestamp
-    config['rust_vectorized'] = True
-    with open(runs_dir / "config.json", 'w') as f:
+    config["timestamp"] = timestamp
+    config["rust_vectorized"] = True
+    with open(runs_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
-    print(f"\n🎮 Creating Rust VectorEnv")
+    print("\n🎮 Creating Rust VectorEnv")
     print(f"   Scenario: {args.scenario}")
     print(f"   Num environments: {args.num_envs}")
     print(f"   Num agents: {args.num_agents}")
@@ -362,7 +402,7 @@ def main():
             print("🖥️  Using CPU (no GPU available)")
 
     # Policy network (large for GPU utilization)
-    print(f"\n🧠 Creating policy network")
+    print("\n🧠 Creating policy network")
     print(f"   Hidden size: {args.hidden_size} (large for GPU utilization)")
 
     # Get observation shape from a test reset
@@ -393,7 +433,7 @@ def main():
     # TensorBoard
     writer = SummaryWriter(runs_dir)
     print(f"📊 TensorBoard: {runs_dir}")
-    print(f"   View with: tensorboard --logdir experiments/marl/runs/")
+    print("   View with: tensorboard --logdir experiments/marl/runs/")
 
     # Train
     train_ppo(
