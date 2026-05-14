@@ -239,7 +239,7 @@ The policy must learn to:
 - **Rust backend is now used by default** (100x faster!)
 - Reduce `--batch-size`
 - Reduce `--num-opponents`
-- Ensure Rust core is installed: `cd bucket-brigade-core && maturin develop --release`
+- Ensure Rust core is installed: `cd bucket-brigade-core && ./build.sh`
 
 ### Policy Not Learning
 - Increase `--num-steps` (try 500K-1M)

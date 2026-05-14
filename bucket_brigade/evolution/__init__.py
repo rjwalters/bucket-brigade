@@ -4,7 +4,7 @@ This module provides genetic algorithms for evolving agent parameters
 through tournament-based fitness evaluation.
 
 Requires Rust-backed fitness evaluation for acceptable performance.
-Build the Rust module with: maturin develop
+Build the Rust module with: cd bucket-brigade-core && ./build.sh
 """
 
 try:
@@ -14,11 +14,9 @@ except (ImportError, ModuleNotFoundError) as e:
         "Rust fitness evaluator required but not found. "
         "The Python fallback is too slow for practical use (100x slower). "
         "Please build the Rust module:\n\n"
-        "  export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1\n"
-        "  maturin develop\n\n"
-        "Or if using uv:\n"
-        "  export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1\n"
-        "  uv run maturin develop\n"
+        "  cd bucket-brigade-core && ./build.sh\n\n"
+        "See bucket-brigade-core/README.md for troubleshooting (e.g. the "
+        "CFFI-shadow trap if you see 'cannot import name PyBucketBrigade')."
     ) from e
 
 from .genetic_algorithm import EvolutionConfig, EvolutionResult, GeneticAlgorithm

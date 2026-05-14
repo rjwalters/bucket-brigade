@@ -47,20 +47,17 @@ echo ""
 # Step 4: Build Rust module
 echo "[4/5] Building bucket-brigade-core Rust module..."
 
-# Install build dependencies (from parent dir to use correct venv)
-uv pip install cffi maturin
-
-# Build and install the Rust module
+# Build and install the Rust module via the canonical build script.
+# build.sh installs setuptools-rust, unsets RUSTC_WRAPPER, sets
+# PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1, and uses the setuptools-rust
+# backend declared in pyproject.toml. See issue #134.
 cd bucket-brigade-core
 
 # Clean any previous CFFI build artifacts
 rm -rf bucket_brigade_core/bucket_brigade_core/
 
-export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 export VIRTUAL_ENV="$(pwd)/../.venv"
-
-# Build with PyO3 (not CFFI)
-~/.local/bin/maturin develop --release --features python
+./build.sh
 
 echo "  ✓ Rust module built and installed"
 cd ..

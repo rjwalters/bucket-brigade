@@ -24,25 +24,69 @@ This Rust implementation serves as the authoritative game logic, with Python and
 ./build.sh
 ```
 
-This script:
-- Checks your Python version
-- Builds the Rust library with `cargo`
-- Copies the `.so` file to the correct location
-- Verifies the installation
+This script uses the **setuptools-rust** build backend declared in
+`pyproject.toml`. It installs `setuptools-rust`, removes any stale
+CFFI-shadow artifacts, and runs `pip install -e . --no-build-isolation`.
+It sets the env vars described below defensively, so it works on a fresh
+machine with no extra configuration.
+
+### Required environment variables
+
+The build relies on two environment settings. `build.sh` exports both for
+you; if you are running a build command manually, set them yourself:
+
+- `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` — required so PyO3 0.22.x builds
+  against newer Python versions (e.g. 3.13).
+- `RUSTC_WRAPPER=` (i.e. unset) — many other docs in this repo export
+  `RUSTC_WRAPPER=sccache` for caching. **If `sccache` is not installed on
+  your machine, the build will fail or produce a broken artifact.** Either
+  install sccache (`cargo install sccache`) or unset `RUSTC_WRAPPER` before
+  building.
 
 ### Manual Build
 
 If you prefer manual installation:
 
 ```bash
-# Using pip (may not trigger Rust build correctly)
-pip install -e .
-
-# Using cargo directly (more reliable)
-export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-cargo build --release --features python
-# Then manually copy target/release/libbucket_brigade_core.so to bucket_brigade_core/
+# Recommended: uses the setuptools-rust backend declared in pyproject.toml.
+# This matches what build.sh does.
+uv pip install setuptools-rust
+RUSTC_WRAPPER= PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
+    uv run python -m pip install -e . --no-build-isolation
 ```
+
+Note: the `--features python` flag is configured in `pyproject.toml`
+(`[tool.setuptools-rust] features = ["python"]`) so you do not need to
+pass it explicitly when using the setuptools-rust path.
+
+### Troubleshooting
+
+**`ImportError: cannot import name 'PyBucketBrigade' from 'bucket_brigade_core.bucket_brigade_core'`**
+
+You have hit the CFFI-shadow trap. An older `maturin develop` build (or
+one that ran without `--features python`) produced a nested
+`bucket_brigade_core/bucket_brigade_core/` directory containing CFFI shim
+files that shadow the real PyO3 module. Clean and rebuild:
+
+```bash
+cd bucket-brigade-core
+rm -rf bucket_brigade_core/bucket_brigade_core
+./build.sh
+```
+
+After a successful build, the artifact layout should be:
+
+- `bucket_brigade_core/bucket_brigade_core.cpython-<TAG>-<PLATFORM>.so` (the real PyO3 module)
+- `bucket_brigade_core/__init__.py`
+- **No** `bucket_brigade_core/bucket_brigade_core/` directory
+- **No** `ffi.py`, **no** `libbucket_brigade_core.dylib`/`.so` next to `__init__.py`
+
+**Build hangs or fails complaining about `sccache`**
+
+Your shell has `RUSTC_WRAPPER=sccache` exported but sccache is not
+installed. Either `cargo install sccache` or `unset RUSTC_WRAPPER` before
+running `build.sh`. `build.sh` unsets it for its own invocation but cannot
+clean up your interactive shell environment.
 
 ## Usage
 
@@ -94,7 +138,11 @@ This crate is the **source of truth** for Bucket Brigade game mechanics:
 # Build Rust library
 cargo build
 
-# Build Python extension
+# Build Python extension (the importable Python module).
+# See "Installation" above for the canonical recipe.
+./build.sh
+
+# Build the underlying staticlib/cdylib via cargo only (no Python install).
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo build --features python
 
 # Run tests

@@ -187,9 +187,9 @@ uv venv
 source .venv/bin/activate
 uv sync --extra rl
 
-# Build Rust core
+# Build Rust core (uses setuptools-rust backend; see bucket-brigade-core/README.md)
 cd bucket-brigade-core
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+./build.sh
 cd ..
 ```
 
