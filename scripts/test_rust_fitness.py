@@ -6,7 +6,7 @@ Test Rust-backed fitness evaluator for evolution module.
 import time
 import numpy as np
 from bucket_brigade.evolution import FitnessEvaluator, Individual
-from bucket_brigade.envs.scenarios import default_scenario
+from bucket_brigade.envs import default_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 
 print("=" * 80)
@@ -16,9 +16,9 @@ print("=" * 80)
 # Create scenario
 scenario = default_scenario(num_agents=1)
 print(f"\nScenario: Default (num_agents=1)")
-print(f"  beta:  {scenario.beta}")
-print(f"  kappa: {scenario.kappa}")
-print(f"  c (work cost): {scenario.c}")
+print(f"  beta:  {scenario.prob_fire_spreads_to_neighbor}")
+print(f"  kappa: {scenario.prob_solo_agent_extinguishes_fire}")
+print(f"  c (work cost): {scenario.cost_to_work_one_night}")
 
 # Create Rust evaluator
 print("\n" + "-" * 80)

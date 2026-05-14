@@ -16,7 +16,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs.scenarios import list_scenarios
+from bucket_brigade.envs import list_scenarios
 
 
 def run_command(cmd: list, description: str) -> bool:

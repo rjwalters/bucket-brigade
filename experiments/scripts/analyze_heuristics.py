@@ -17,7 +17,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from bucket_brigade.envs import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.agents import create_archetype_agent
 from bucket_brigade.agents.archetypes import (
     FIREFIGHTER_PARAMS,
@@ -64,9 +64,9 @@ def analyze_heuristics(
     scenario = get_scenario_by_name(scenario_name, num_agents=4)
 
     print("Scenario Parameters:")
-    print(f"  beta (spread):       {scenario.beta:.2f}")
-    print(f"  kappa (extinguish):  {scenario.kappa:.2f}")
-    print(f"  c (work cost):       {scenario.c:.2f}")
+    print(f"  beta (spread):       {scenario.prob_fire_spreads_to_neighbor:.2f}")
+    print(f"  kappa (extinguish):  {scenario.prob_solo_agent_extinguishes_fire:.2f}")
+    print(f"  c (work cost):       {scenario.cost_to_work_one_night:.2f}")
     print(f"  num_agents:          {scenario.num_agents}")
     print()
 
@@ -179,12 +179,11 @@ def analyze_heuristics(
     results = {
         "scenario": scenario_name,
         "parameters": {
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "A": scenario.A,
-            "L": scenario.L,
-            "rho_ignite": scenario.rho_ignite,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "A": scenario.team_reward_house_survives,
+            "L": scenario.team_penalty_house_burns,
             "num_agents": scenario.num_agents,
         },
         "agents": [

@@ -10,14 +10,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
 from bucket_brigade.envs import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.agents import create_archetype_agent
 
 print("1. Importing modules... ✓")
 
 # Load scenario
 scenario = get_scenario_by_name("greedy_neighbor", num_agents=4)
-print(f"2. Loaded scenario: {scenario.beta=}, {scenario.kappa=}, {scenario.c=} ✓")
+print(f"2. Loaded scenario: {scenario.prob_fire_spreads_to_neighbor=}, {scenario.prob_solo_agent_extinguishes_fire=}, {scenario.cost_to_work_one_night=} ✓")
 
 # Create environment
 env = BucketBrigadeEnv(scenario)

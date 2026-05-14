@@ -29,7 +29,7 @@ from bucket_brigade.evolution import (
     Individual,
     Population,
 )
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.agents.heuristic_agent import HeuristicAgent
 from bucket_brigade.agents.archetypes import ARCHETYPES
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv

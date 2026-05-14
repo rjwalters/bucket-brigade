@@ -12,7 +12,7 @@ Usage:
 import argparse
 import numpy as np
 from multiprocessing import cpu_count
-from bucket_brigade.envs.scenarios import get_scenario_by_name, list_scenarios
+from bucket_brigade.envs import get_scenario_by_name, list_scenarios
 from bucket_brigade.equilibrium import DoubleOracle
 from bucket_brigade.agents.archetypes import (
     FIREFIGHTER_PARAMS,
@@ -34,16 +34,15 @@ def print_scenario_info(scenario):
     """Print detailed scenario information."""
     print("Scenario Parameters:")
     print(f"  Fire Dynamics:")
-    print(f"    beta (spread probability):     {scenario.beta:.2f}")
-    print(f"    kappa (extinguish efficiency): {scenario.kappa:.2f}")
+    print(f"    beta (spread probability):     {scenario.prob_fire_spreads_to_neighbor:.2f}")
+    print(f"    kappa (extinguish efficiency): {scenario.prob_solo_agent_extinguishes_fire:.2f}")
     print(f"  Reward Structure:")
-    print(f"    A (reward per saved house):    {scenario.A:.2f}")
-    print(f"    L (penalty per ruined house):  {scenario.L:.2f}")
-    print(f"    c (cost per worker per night): {scenario.c:.2f}")
+    print(f"    A (reward per saved house):    {scenario.team_reward_house_survives:.2f}")
+    print(f"    L (penalty per ruined house):  {scenario.team_penalty_house_burns:.2f}")
+    print(f"    c (cost per worker per night): {scenario.cost_to_work_one_night:.2f}")
     print(f"  Initial Conditions:")
-    print(f"    rho_ignite (initial burn rate): {scenario.rho_ignite:.2f}")
-    print(f"    p_spark (spontaneous ignition): {scenario.p_spark:.2f}")
-    print(f"    N_min (minimum nights):         {scenario.N_min}")
+    print(f"    p_spark (spontaneous ignition): {scenario.prob_house_catches_fire:.2f}")
+    print(f"    N_min (minimum nights):         {scenario.min_nights}")
     print(f"    num_agents:                     {scenario.num_agents}")
 
 

@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import json
 import numpy as np
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
 # Phase 2D mechanism scenarios
@@ -85,18 +85,17 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "p_spark": scenario.p_spark,
-            "rho_ignite": scenario.rho_ignite,
-            "A": scenario.A,
-            "L": scenario.L,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "p_spark": scenario.prob_house_catches_fire,
+            "A": scenario.team_reward_house_survives,
+            "L": scenario.team_penalty_house_burns,
             "type": "mechanism",
         }
 
         print(
-            f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}"
+            f"β={scenario.prob_fire_spreads_to_neighbor:.2f}, c={scenario.cost_to_work_one_night:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
         )
 
     print()
@@ -123,18 +122,17 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "p_spark": scenario.p_spark,
-            "rho_ignite": scenario.rho_ignite,
-            "A": scenario.A,
-            "L": scenario.L,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "p_spark": scenario.prob_house_catches_fire,
+            "A": scenario.team_reward_house_survives,
+            "L": scenario.team_penalty_house_burns,
             "type": "reference",
         }
 
         print(
-            f"β={scenario.beta:.2f}, c={scenario.c:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}"
+            f"β={scenario.prob_fire_spreads_to_neighbor:.2f}, c={scenario.cost_to_work_one_night:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
         )
 
     print()

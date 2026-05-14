@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bucket_brigade.agents.archetypes import ARCHETYPES
-from bucket_brigade.envs.scenarios import SCENARIO_REGISTRY
+from bucket_brigade.envs import SCENARIO_REGISTRY
 
 
 def export_archetypes(output_path: Path):
@@ -45,14 +45,13 @@ def export_scenarios(output_path: Path):
         scenario = factory(num_agents=4)
 
         scenarios[name] = {
-            "beta": float(scenario.beta),
-            "kappa": float(scenario.kappa),
-            "A": float(scenario.A),
-            "L": float(scenario.L),
-            "c": float(scenario.c),
-            "rho_ignite": float(scenario.rho_ignite),
-            "N_min": int(scenario.N_min),
-            "p_spark": float(scenario.p_spark),
+            "beta": float(scenario.prob_fire_spreads_to_neighbor),
+            "kappa": float(scenario.prob_solo_agent_extinguishes_fire),
+            "A": float(scenario.team_reward_house_survives),
+            "L": float(scenario.team_penalty_house_burns),
+            "c": float(scenario.cost_to_work_one_night),
+            "N_min": int(scenario.min_nights),
+            "p_spark": float(scenario.prob_house_catches_fire),
             "N_spark": int(scenario.N_spark),
             "description": _get_scenario_description(name)
         }

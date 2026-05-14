@@ -5,7 +5,7 @@ Test Rust-backed payoff evaluator - should be FAST!
 
 import time
 import numpy as np
-from bucket_brigade.envs.scenarios import greedy_neighbor_scenario
+from bucket_brigade.envs import greedy_neighbor_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator
 
@@ -16,9 +16,9 @@ print("=" * 80)
 # Greedy neighbor scenario
 scenario = greedy_neighbor_scenario(num_agents=4)
 print(f"\nScenario: Greedy Neighbor (high work cost)")
-print(f"  beta:  {scenario.beta}")
-print(f"  kappa: {scenario.kappa}")
-print(f"  c (work cost): {scenario.c}  ← High cost creates free-riding incentive")
+print(f"  beta:  {scenario.prob_fire_spreads_to_neighbor}")
+print(f"  kappa: {scenario.prob_solo_agent_extinguishes_fire}")
+print(f"  c (work cost): {scenario.cost_to_work_one_night}  ← High cost creates free-riding incentive")
 
 # Create Rust evaluator
 print("\n" + "-" * 80)

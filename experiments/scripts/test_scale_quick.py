@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import json
 import numpy as np
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
 # Population sizes to test

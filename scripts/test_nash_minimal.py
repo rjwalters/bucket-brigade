@@ -6,7 +6,7 @@ Tests basic functionality with absolute minimum parameters.
 """
 
 import numpy as np
-from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
+from bucket_brigade.envs import trivial_cooperation_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 from bucket_brigade.equilibrium.payoff_evaluator import PayoffEvaluator
 
@@ -18,9 +18,9 @@ print("=" * 80)
 scenario = trivial_cooperation_scenario(num_agents=4)
 
 print("\nScenario: Trivial Cooperation")
-print(f"  beta (spread):    {scenario.beta}")
-print(f"  kappa (extinguish): {scenario.kappa}")
-print(f"  c (work cost):    {scenario.c}")
+print(f"  beta (spread):    {scenario.prob_fire_spreads_to_neighbor}")
+print(f"  kappa (extinguish): {scenario.prob_solo_agent_extinguishes_fire}")
+print(f"  c (work cost):    {scenario.cost_to_work_one_night}")
 print(f"  num_agents:       {scenario.num_agents}")
 
 # Create evaluator with VERY few simulations

@@ -13,7 +13,7 @@ from scipy import stats
 
 from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.agents import HeuristicAgent
-from bucket_brigade.envs.scenarios import (
+from bucket_brigade.envs import (
     early_containment_scenario,
     greedy_neighbor_scenario,
     rest_trap_scenario,
