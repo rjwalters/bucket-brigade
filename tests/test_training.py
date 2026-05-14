@@ -11,7 +11,7 @@ torch = pytest.importorskip(
     "torch", reason="torch not installed (install with: uv sync --extra rl)"
 )
 
-from bucket_brigade.training import PolicyNetwork
+from bucket_brigade.training import PolicyNetwork  # noqa: E402
 
 
 class TestPolicyNetwork:

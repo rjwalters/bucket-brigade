@@ -31,6 +31,7 @@ Typical use::
         rollout = trainer.collect_rollout(num_steps=2048)
         stats = trainer.update(rollout)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -306,7 +307,7 @@ class JointPPOTrainer:
         for i in range(n):
             for j in range(i + 1, n):
                 cross = standardized[i].t() @ standardized[j] / batch_size
-                total = total + (cross ** 2).sum()
+                total = total + (cross**2).sum()
                 num_pairs += 1
         return total / (num_pairs * d * d)
 
@@ -417,7 +418,9 @@ class JointPPOTrainer:
                 red_pen = encoder_outputs[0].new_tensor(0.0)
             stats["redundancy_loss"] += red_pen.item() / self.ppo_epochs
 
-            total_loss = torch.stack(per_agent_losses).sum() + self.redundancy_coef * red_pen
+            total_loss = (
+                torch.stack(per_agent_losses).sum() + self.redundancy_coef * red_pen
+            )
             stats["total_loss"] += total_loss.item() / self.ppo_epochs
 
             for opt in self.optimizers:

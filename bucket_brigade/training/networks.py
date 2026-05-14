@@ -4,12 +4,10 @@ This module provides neural network architectures for multi-discrete action
 spaces, commonly used in reinforcement learning scenarios.
 """
 
-import math
 from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class PolicyNetwork(nn.Module):
@@ -352,7 +350,7 @@ class TransformerPolicyNetwork(nn.Module):
             nhead=nhead,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            activation='gelu',
+            activation="gelu",
             batch_first=True,
             norm_first=True,  # Pre-norm for better training stability
         )
@@ -363,15 +361,17 @@ class TransformerPolicyNetwork(nn.Module):
         )
 
         # Action heads (2-layer MLPs)
-        self.action_heads = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(d_model, d_model // 2),
-                nn.GELU(),
-                nn.Dropout(dropout),
-                nn.Linear(d_model // 2, dim),
-            )
-            for dim in action_dims
-        ])
+        self.action_heads = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, d_model // 2),
+                    nn.GELU(),
+                    nn.Dropout(dropout),
+                    nn.Linear(d_model // 2, dim),
+                )
+                for dim in action_dims
+            ]
+        )
 
         # Value head (2-layer MLP)
         self.value_head = nn.Sequential(
@@ -420,7 +420,9 @@ class TransformerPolicyNetwork(nn.Module):
         # If we have global features, embed and prepend as [CLS] token
         if self.global_dim > 0:
             global_obs = x[:, self.num_houses * self.house_features :]
-            global_embed = self.global_embed(global_obs).unsqueeze(1)  # (batch, 1, d_model)
+            global_embed = self.global_embed(global_obs).unsqueeze(
+                1
+            )  # (batch, 1, d_model)
 
             # Concatenate: [global, house_0, house_1, ...]
             tokens = torch.cat([global_embed, house_embeds], dim=1)

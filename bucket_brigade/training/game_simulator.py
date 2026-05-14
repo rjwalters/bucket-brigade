@@ -22,7 +22,10 @@ import torch
 import numpy as np
 
 from bucket_brigade_core import BucketBrigade, Scenario
-from bucket_brigade.training.observation_utils import flatten_observation, create_scenario_info
+from bucket_brigade.training.observation_utils import (
+    flatten_observation,
+    create_scenario_info,
+)
 
 
 class Matchmaker:
@@ -31,7 +34,9 @@ class Matchmaker:
     def __init__(self, population_size: int, num_agents_per_game: int = 4):
         self.population_size = population_size
         self.num_agents_per_game = num_agents_per_game
-        self.match_counts = [0] * population_size  # Track how many times each agent has played
+        self.match_counts = [
+            0
+        ] * population_size  # Track how many times each agent has played
 
     def sample_agents(self, strategy: str = "round_robin") -> List[int]:
         """
@@ -45,15 +50,19 @@ class Matchmaker:
         """
         if strategy == "round_robin":
             # Sample agents with lowest play counts to ensure even distribution
-            sorted_agents = sorted(range(self.population_size), key=lambda i: self.match_counts[i])
-            agents = sorted_agents[:self.num_agents_per_game]
+            sorted_agents = sorted(
+                range(self.population_size), key=lambda i: self.match_counts[i]
+            )
+            agents = sorted_agents[: self.num_agents_per_game]
             for agent_id in agents:
                 self.match_counts[agent_id] += 1
             return agents
 
         elif strategy == "random":
             # Completely random sampling
-            agents = random.sample(range(self.population_size), k=self.num_agents_per_game)
+            agents = random.sample(
+                range(self.population_size), k=self.num_agents_per_game
+            )
             for agent_id in agents:
                 self.match_counts[agent_id] += 1
             return agents
@@ -108,7 +117,9 @@ class GameSimulator:
         # Create Rust environments
         print(f"Creating {num_games} Rust environments...")
         self.envs = [
-            BucketBrigade(scenario, num_agents_per_game, seed=seed + i if seed else None)
+            BucketBrigade(
+                scenario, num_agents_per_game, seed=seed + i if seed else None
+            )
             for i in range(num_games)
         ]
 
@@ -128,7 +139,9 @@ class GameSimulator:
         # Statistics
         self.total_steps = 0
         self.total_episodes = 0
-        self.episode_rewards: Dict[int, List[float]] = {i: [] for i in range(population_size)}
+        self.episode_rewards: Dict[int, List[float]] = {
+            i: [] for i in range(population_size)
+        }
 
     def register_policy(self, agent_id: int, policy: torch.nn.Module):
         """Register a policy for an agent in the population."""
@@ -140,7 +153,9 @@ class GameSimulator:
         if agent_id in self.policies:
             self.policies[agent_id].load_state_dict(state_dict)
 
-    def select_action(self, agent_id: int, observation: np.ndarray) -> Tuple[int, int, float]:
+    def select_action(
+        self, agent_id: int, observation: np.ndarray
+    ) -> Tuple[int, int, float]:
         """
         Select action for an agent given observation.
 
@@ -225,12 +240,12 @@ class GameSimulator:
             # Record experience for each agent
             for i, agent_id in enumerate(agent_ids):
                 experience = {
-                    'obs': observations[i],
-                    'action': actions[i],
-                    'reward': rewards_list[i],
-                    'next_obs': next_observations[i] if not done else None,
-                    'done': done,
-                    'logprob': logprobs[i],
+                    "obs": observations[i],
+                    "action": actions[i],
+                    "reward": rewards_list[i],
+                    "next_obs": next_observations[i] if not done else None,
+                    "done": done,
+                    "logprob": logprobs[i],
                 }
                 trajectories[agent_id].append(experience)
 
@@ -242,7 +257,7 @@ class GameSimulator:
         self.total_episodes += 1
 
         for agent_id in agent_ids:
-            episode_reward = sum(exp['reward'] for exp in trajectories[agent_id])
+            episode_reward = sum(exp["reward"] for exp in trajectories[agent_id])
             self.episode_rewards[agent_id].append(episode_reward)
 
         return trajectories
@@ -282,15 +297,15 @@ class GameSimulator:
             num_episodes: Number of episodes to run
             update_interval: Check for policy updates every N episodes
         """
-        print(f"\n{'='*60}")
-        print(f"🎮 Starting Game Simulator")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("🎮 Starting Game Simulator")
+        print(f"{'=' * 60}")
         print(f"Num games: {self.num_games}")
         print(f"Population size: {self.population_size}")
         print(f"Agents per game: {self.num_agents_per_game}")
         print(f"Matchmaking: {self.matchmaking_strategy}")
         print(f"Target episodes: {num_episodes}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         start_time = time.time()
         last_report = start_time
@@ -318,27 +333,29 @@ class GameSimulator:
                 }
                 mean_reward = np.mean(list(avg_rewards.values()))
 
-                print(f"Episode {episode + 1}/{num_episodes} | "
-                      f"Speed: {eps_per_sec:.1f} eps/s | "
-                      f"Avg Reward: {mean_reward:.3f} | "
-                      f"Total Steps: {self.total_steps:,}")
+                print(
+                    f"Episode {episode + 1}/{num_episodes} | "
+                    f"Speed: {eps_per_sec:.1f} eps/s | "
+                    f"Avg Reward: {mean_reward:.3f} | "
+                    f"Total Steps: {self.total_steps:,}"
+                )
 
                 last_report = time.time()
 
         total_time = time.time() - start_time
-        print(f"\n{'='*60}")
-        print(f"✅ Simulation Complete!")
+        print(f"\n{'=' * 60}")
+        print("✅ Simulation Complete!")
         print(f"Total episodes: {self.total_episodes:,}")
         print(f"Total steps: {self.total_steps:,}")
-        print(f"Time: {total_time/60:.1f} minutes")
-        print(f"Speed: {self.total_episodes/total_time:.1f} eps/s")
-        print(f"{'='*60}\n")
+        print(f"Time: {total_time / 60:.1f} minutes")
+        print(f"Speed: {self.total_episodes / total_time:.1f} eps/s")
+        print(f"{'=' * 60}\n")
 
     def get_statistics(self) -> Dict:
         """Get simulation statistics."""
         return {
-            'total_steps': self.total_steps,
-            'total_episodes': self.total_episodes,
-            'episode_rewards': self.episode_rewards,
-            'match_counts': self.matchmaker.match_counts,
+            "total_steps": self.total_steps,
+            "total_episodes": self.total_episodes,
+            "episode_rewards": self.episode_rewards,
+            "match_counts": self.matchmaker.match_counts,
         }

@@ -191,7 +191,11 @@ class BucketBrigadeEnv:
 
             # Probability of extinguishing: independent probabilities model
             # P(at least one success) = 1 - P(all fail) = 1 - (1-p)^k
-            p_extinguish = 1.0 - (1.0 - self.scenario.prob_solo_agent_extinguishes_fire) ** workers_here
+            p_extinguish = (
+                1.0
+                - (1.0 - self.scenario.prob_solo_agent_extinguishes_fire)
+                ** workers_here
+            )
 
             if self.rng.random() < p_extinguish:
                 self.houses[house_idx] = self.SAFE
@@ -253,7 +257,9 @@ class BucketBrigadeEnv:
         for agent_idx in range(self.num_agents):
             # Work/rest component
             if actions[agent_idx, 1] == self.WORK:
-                individual_rewards[agent_idx] -= self.scenario.cost_to_work_one_night  # Cost of working
+                individual_rewards[agent_idx] -= (
+                    self.scenario.cost_to_work_one_night
+                )  # Cost of working
             else:
                 individual_rewards[agent_idx] += 0.5  # Rest reward
 

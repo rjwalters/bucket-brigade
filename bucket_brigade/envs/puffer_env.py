@@ -84,9 +84,7 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
         self.episode_rewards: List[float] = []
         self.episode_lengths: List[int] = []
 
-    def reset(
-        self, seed: Optional[int] = None
-    ) -> Tuple[np.ndarray, List[Dict]]:
+    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, List[Dict]]:
         """Reset the environment. Returns (observations, list of info dicts)."""
         if seed is not None:
             np.random.seed(seed)
@@ -112,7 +110,9 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
         # Must return info as LIST of dicts (one per agent)
         return self.observations, [{}]
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(
+        self, action: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
         """
         Take a step in the environment.
 
@@ -238,11 +238,11 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
 
         # Vectorized observation space
         obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
-        self.observation_space = spaces.Box(
+        self.observation_space = gym_spaces.Box(
             low=-np.inf, high=np.inf, shape=(num_envs, obs_size), dtype=np.float32
         )
 
-        self.action_space = spaces.MultiDiscrete([num_envs, 10, 2])
+        self.action_space = gym_spaces.MultiDiscrete([num_envs, 10, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None

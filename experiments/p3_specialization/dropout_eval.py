@@ -12,6 +12,7 @@ evaluation rollouts. Robustness to specialization shows up as a *smaller*
 team-reward drop when each agent is removed individually --- which is the
 P3 prediction the redundancy penalty should improve.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -138,8 +139,11 @@ def evaluate_cell(
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--cell-dir", type=Path, help="Single cell to evaluate.")
-    p.add_argument("--sweep-root", type=Path,
-                   help="Walk this directory and evaluate every cell with policies/.")
+    p.add_argument(
+        "--sweep-root",
+        type=Path,
+        help="Walk this directory and evaluate every cell with policies/.",
+    )
     p.add_argument("--num-episodes", type=int, default=50)
     p.add_argument("--device", default="cpu")
     args = p.parse_args()

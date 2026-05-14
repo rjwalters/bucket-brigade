@@ -14,6 +14,7 @@ rollout's most recent batch, conditioned on the quantized team reward
 (per the paper's main-text definition ``I(Ẑ_i; Ẑ_j | R)``). Unconditional
 MI is also logged so we can see the PMIC failure mode if it kicks in.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -21,7 +22,7 @@ import json
 import warnings
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import torch
@@ -87,9 +88,12 @@ def _measure_information(
     codes = [quantize_uniform(f, n_bins=n_bins) for f in feats_np]
 
     # Team reward conditioning variable, also quantized.
-    rewards = torch.stack(
-        [rollout.rewards[i] for i in range(trainer.num_agents)], dim=0
-    ).sum(dim=0).cpu().numpy()
+    rewards = (
+        torch.stack([rollout.rewards[i] for i in range(trainer.num_agents)], dim=0)
+        .sum(dim=0)
+        .cpu()
+        .numpy()
+    )
     r_codes = quantize_uniform(rewards, n_bins=n_bins)
 
     out: Dict[str, float] = {}
@@ -203,9 +207,9 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         )
 
         mean_reward = float(
-            torch.stack(
-                [rollout.rewards[i].sum() for i in range(cfg.num_agents)]
-            ).sum().item()
+            torch.stack([rollout.rewards[i].sum() for i in range(cfg.num_agents)])
+            .sum()
+            .item()
             / cfg.rollout_steps
         )
 

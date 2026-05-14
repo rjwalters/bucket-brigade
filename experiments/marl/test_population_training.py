@@ -21,7 +21,7 @@ def main():
 
     # Create trainer
     trainer = PopulationTrainer(
-        scenario_name='trivial_cooperation',
+        scenario_name="trivial_cooperation",
         population_size=8,
         num_games=64,
         num_agents_per_game=4,
@@ -29,15 +29,15 @@ def main():
         hidden_size=512,
         learning_rate=3e-4,
         # Training parameters
-        device='cuda',  # Use GPU
-        matchmaking_strategy='round_robin',
+        device="cuda",  # Use GPU
+        matchmaking_strategy="round_robin",
         seed=42,
         # Learner parameters
         batch_size=256,
         num_epochs=4,
         update_interval=100,
         # Checkpoint and logging
-        checkpoint_dir=Path('experiments/marl/checkpoints/population_test'),
+        checkpoint_dir=Path("experiments/marl/checkpoints/population_test"),
         log_interval=50,
     )
 
@@ -46,11 +46,11 @@ def main():
     trainer.train(num_episodes=1000)
 
     # Save final checkpoint
-    checkpoint_path = Path('experiments/marl/checkpoints/population_test/final.pt')
+    checkpoint_path = Path("experiments/marl/checkpoints/population_test/final.pt")
     trainer.save_checkpoint(checkpoint_path)
 
     # Save config
-    config_path = Path('experiments/marl/checkpoints/population_test/config.json')
+    config_path = Path("experiments/marl/checkpoints/population_test/config.json")
     trainer.save_config(config_path)
 
     print("\n" + "=" * 80)
@@ -60,5 +60,5 @@ def main():
     print("=" * 80)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

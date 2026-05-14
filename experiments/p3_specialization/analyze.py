@@ -13,6 +13,7 @@ The falsifiers (from ``research_notebook/2026-05-13_p3_specialization_plan.md``)
 If F1 fails or F2 holds, P3 is falsified --- which is itself a publishable
 result.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,7 +41,11 @@ def _bootstrap_mean_ci(
         idx = rng.integers(0, n, size=n)
         boots[b] = values[idx].mean()
     alpha = (1.0 - confidence) / 2.0
-    return point, float(np.quantile(boots, alpha)), float(np.quantile(boots, 1.0 - alpha))
+    return (
+        point,
+        float(np.quantile(boots, alpha)),
+        float(np.quantile(boots, 1.0 - alpha)),
+    )
 
 
 def _load_cell(cell_dir: Path) -> Dict[str, object] | None:
@@ -73,9 +78,7 @@ def _load_cell(cell_dir: Path) -> Dict[str, object] | None:
         with dropout_path.open() as f:
             dr = json.load(f)
         base = dr["none"]["mean"]
-        agent_means = [
-            dr[k]["mean"] for k in dr if k.startswith("agent_")
-        ]
+        agent_means = [dr[k]["mean"] for k in dr if k.startswith("agent_")]
         out["dropout_baseline"] = base
         # Mean drop in team reward when any single agent is removed.
         out["dropout_mean_drop"] = float(base - np.mean(agent_means))
@@ -156,7 +159,9 @@ def evaluate_falsifiers(
         if baseline is None:
             v["F2_reward_always_worse"] = "insufficient"
         else:
-            penalised = {lam: r for lam, r in rewards.items() if lam > 0.0 and r is not None}
+            penalised = {
+                lam: r for lam, r in rewards.items() if lam > 0.0 and r is not None
+            }
             if not penalised:
                 v["F2_reward_always_worse"] = "insufficient"
             else:
@@ -208,22 +213,25 @@ def _print_summary(
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--sweep-root", type=Path,
-                   default=Path("experiments/p3_specialization/runs"))
-    p.add_argument("--output", type=Path,
-                   default=Path("experiments/p3_specialization/analysis.json"))
+    p.add_argument(
+        "--sweep-root", type=Path, default=Path("experiments/p3_specialization/runs")
+    )
+    p.add_argument(
+        "--output",
+        type=Path,
+        default=Path("experiments/p3_specialization/analysis.json"),
+    )
     args = p.parse_args()
 
     agg = aggregate(args.sweep_root)
     verdicts = evaluate_falsifiers(agg)
 
-    serializable = {
-        f"{scenario}__{lam}": data for (scenario, lam), data in agg.items()
-    }
+    serializable = {f"{scenario}__{lam}": data for (scenario, lam), data in agg.items()}
     with args.output.open("w") as f:
         json.dump(
             {"aggregate": serializable, "falsifiers": verdicts},
-            f, indent=2,
+            f,
+            indent=2,
         )
 
     _print_summary(agg, verdicts)

@@ -22,6 +22,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import argparse
@@ -30,13 +31,12 @@ from datetime import datetime
 import json
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 from bucket_brigade.envs.puffer_env_rust import make_rust_env
-from bucket_brigade.training import PolicyNetwork, TransformerPolicyNetwork, compute_gae
+from bucket_brigade.training import PolicyNetwork, TransformerPolicyNetwork
 
 
 def train_ppo(
@@ -60,16 +60,16 @@ def train_ppo(
     if device is None:
         device = next(policy.parameters()).device
 
-    print(f"\n{'='*60}")
-    print(f"🚀 Starting PPO Training")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("🚀 Starting PPO Training")
+    print(f"{'=' * 60}")
     print(f"📊 Total steps: {num_steps:,}")
     print(f"📦 Batch size: {batch_size:,}")
     print(f"🔁 Epochs per batch: {num_epochs}")
     print(f"💾 Checkpoint interval: {checkpoint_interval:,} steps")
     print(f"📈 Eval interval: {eval_interval:,} steps")
     print(f"🖥️  Device: {device}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     obs, _ = env.reset()
     obs = torch.FloatTensor(obs).to(device)
@@ -134,61 +134,102 @@ def train_ppo(
                 steps_per_sec = eval_interval / elapsed
                 progress = (step + 1) / num_steps * 100
 
-                print(f"Step {step+1:,}/{num_steps:,} ({progress:.1f}%) | "
-                      f"Reward: {avg_reward:.2f} | "
-                      f"Length: {avg_length:.1f} | "
-                      f"Episodes: {len(episode_rewards)} | "
-                      f"Speed: {steps_per_sec:.0f} steps/s")
+                print(
+                    f"Step {step + 1:,}/{num_steps:,} ({progress:.1f}%) | "
+                    f"Reward: {avg_reward:.2f} | "
+                    f"Length: {avg_length:.1f} | "
+                    f"Episodes: {len(episode_rewards)} | "
+                    f"Speed: {steps_per_sec:.0f} steps/s"
+                )
 
                 if writer:
                     writer.add_scalar("train/avg_reward_100ep", avg_reward, step)
                     writer.add_scalar("train/avg_length_100ep", avg_length, step)
                     writer.add_scalar("train/steps_per_sec", steps_per_sec, step)
-                    writer.add_scalar("train/total_episodes", len(episode_rewards), step)
+                    writer.add_scalar(
+                        "train/total_episodes", len(episode_rewards), step
+                    )
 
         # Checkpointing
         if checkpoint_dir and (step + 1) % checkpoint_interval == 0:
-            checkpoint_path = checkpoint_dir / f"checkpoint_step_{step+1}.pt"
-            torch.save({
-                'step': step + 1,
-                'model_state_dict': policy.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'episode_rewards': episode_rewards,
-                'episode_lengths': episode_lengths,
-            }, checkpoint_path)
+            checkpoint_path = checkpoint_dir / f"checkpoint_step_{step + 1}.pt"
+            torch.save(
+                {
+                    "step": step + 1,
+                    "model_state_dict": policy.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "episode_rewards": episode_rewards,
+                    "episode_lengths": episode_lengths,
+                },
+                checkpoint_path,
+            )
             print(f"💾 Saved checkpoint: {checkpoint_path}")
 
     total_time = time.time() - start_time
-    print(f"\n{'='*60}")
-    print(f"✅ Training Complete!")
-    print(f"⏱️  Total time: {total_time/60:.1f} minutes ({total_time/3600:.2f} hours)")
+    print(f"\n{'=' * 60}")
+    print("✅ Training Complete!")
+    print(
+        f"⏱️  Total time: {total_time / 60:.1f} minutes ({total_time / 3600:.2f} hours)"
+    )
     print(f"📊 Total episodes: {len(episode_rewards)}")
     if episode_rewards:
         print(f"📈 Final avg reward (last 100): {np.mean(episode_rewards[-100:]):.2f}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     return episode_rewards, episode_lengths
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train PPO on Bucket Brigade (GPU)")
-    parser.add_argument("--steps", type=int, default=10000000, help="Total training steps")
-    parser.add_argument("--scenario", type=str, default="trivial_cooperation", help="Scenario name")
-    parser.add_argument("--opponents", type=int, default=3, help="Number of opponent agents")
+    parser.add_argument(
+        "--steps", type=int, default=10000000, help="Total training steps"
+    )
+    parser.add_argument(
+        "--scenario", type=str, default="trivial_cooperation", help="Scenario name"
+    )
+    parser.add_argument(
+        "--opponents", type=int, default=3, help="Number of opponent agents"
+    )
     parser.add_argument("--run-name", type=str, default=None, help="Name for this run")
     parser.add_argument("--batch-size", type=int, default=2048, help="Batch size")
     parser.add_argument("--epochs", type=int, default=4, help="Epochs per batch")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument("--checkpoint-interval", type=int, default=100000, help="Steps between checkpoints")
-    parser.add_argument("--eval-interval", type=int, default=10000, help="Steps between eval prints")
-    parser.add_argument("--cpu", action="store_true", help="Force CPU usage (default: auto-detect GPU)")
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=100000,
+        help="Steps between checkpoints",
+    )
+    parser.add_argument(
+        "--eval-interval", type=int, default=10000, help="Steps between eval prints"
+    )
+    parser.add_argument(
+        "--cpu", action="store_true", help="Force CPU usage (default: auto-detect GPU)"
+    )
 
     # Architecture options
-    parser.add_argument("--architecture", type=str, default="mlp", choices=["mlp", "transformer"],
-                        help="Network architecture: 'mlp' (default, ~4K params) or 'transformer' (~650K params)")
-    parser.add_argument("--d-model", type=int, default=192, help="Transformer embedding dimension (default: 192)")
-    parser.add_argument("--num-layers", type=int, default=2, help="Number of transformer layers (default: 2)")
-    parser.add_argument("--nhead", type=int, default=4, help="Number of attention heads (default: 4)")
+    parser.add_argument(
+        "--architecture",
+        type=str,
+        default="mlp",
+        choices=["mlp", "transformer"],
+        help="Network architecture: 'mlp' (default, ~4K params) or 'transformer' (~650K params)",
+    )
+    parser.add_argument(
+        "--d-model",
+        type=int,
+        default=192,
+        help="Transformer embedding dimension (default: 192)",
+    )
+    parser.add_argument(
+        "--num-layers",
+        type=int,
+        default=2,
+        help="Number of transformer layers (default: 2)",
+    )
+    parser.add_argument(
+        "--nhead", type=int, default=4, help="Number of attention heads (default: 4)"
+    )
 
     args = parser.parse_args()
 
@@ -205,8 +246,8 @@ def main():
 
     # Save config
     config = vars(args).copy()
-    config['timestamp'] = timestamp
-    with open(runs_dir / "config.json", 'w') as f:
+    config["timestamp"] = timestamp
+    with open(runs_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
 
     print(f"\n🎮 Creating environment: {args.scenario}")
@@ -230,7 +271,7 @@ def main():
     obs_space = env.observation_space
     action_space = env.action_space
 
-    print(f"\n🧠 Creating policy network")
+    print("\n🧠 Creating policy network")
     print(f"   Architecture: {args.architecture}")
     print(f"   Observation dim: {obs_space.shape[0]}")
     print(f"   Action dims: {action_space.nvec.tolist()}")
@@ -245,8 +286,7 @@ def main():
         ).to(device)
     else:
         policy = PolicyNetwork(
-            obs_dim=obs_space.shape[0],
-            action_dims=action_space.nvec.tolist()
+            obs_dim=obs_space.shape[0], action_dims=action_space.nvec.tolist()
         ).to(device)
 
     # Print parameter count
@@ -258,7 +298,7 @@ def main():
     # TensorBoard
     writer = SummaryWriter(runs_dir)
     print(f"📊 TensorBoard: {runs_dir}")
-    print(f"   View with: tensorboard --logdir experiments/marl/runs/")
+    print("   View with: tensorboard --logdir experiments/marl/runs/")
 
     # Train
     episode_rewards, episode_lengths = train_ppo(

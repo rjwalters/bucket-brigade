@@ -17,8 +17,6 @@ from ..agents import create_random_agent, create_archetype_agent
 logger = logging.getLogger(__name__)
 
 
-
-
 def _heuristic_action(
     theta: np.ndarray,
     obs_dict: dict[str, np.ndarray],
@@ -133,7 +131,9 @@ class RustPufferBucketBrigade(gym.Env):
 
         # Create new Rust environment for this episode
         episode_seed = self.rng.randint(0, 2**31 - 1) if seed is not None else None
-        self.env = core.BucketBrigade(self.rust_scenario, self.num_agents, seed=episode_seed)
+        self.env = core.BucketBrigade(
+            self.rust_scenario, self.num_agents, seed=episode_seed
+        )
 
         # Create new opponent agents for this episode
         self._create_opponent_agents()
@@ -324,7 +324,9 @@ def make_rust_env(
 
 
 def make_rust_vectorized_env(
-    num_envs: int = 8, scenario_name: str = "trivial_cooperation", num_opponents: int = 3
+    num_envs: int = 8,
+    scenario_name: str = "trivial_cooperation",
+    num_opponents: int = 3,
 ) -> RustPufferBucketBrigadeVectorized:
     """Create a vectorized Rust-backed environment for parallel training.
 

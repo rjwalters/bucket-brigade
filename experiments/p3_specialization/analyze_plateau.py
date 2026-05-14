@@ -26,6 +26,7 @@ Usage::
 
     uv run python experiments/p3_specialization/analyze_plateau.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -35,6 +36,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib
+
 matplotlib.use("Agg")  # headless
 import matplotlib.pyplot as plt
 import numpy as np
@@ -140,11 +142,21 @@ def plot_reward_vs_baseline(
 
         bl = BASELINES.get(scen, {})
         if "random" in bl:
-            ax.axhline(bl["random"], color="black", linestyle="--",
-                       alpha=0.6, label=f"random = {bl['random']:.0f}")
+            ax.axhline(
+                bl["random"],
+                color="black",
+                linestyle="--",
+                alpha=0.6,
+                label=f"random = {bl['random']:.0f}",
+            )
         if "heuristic" in bl and bl["heuristic"] != bl.get("random"):
-            ax.axhline(bl["heuristic"], color="dimgray", linestyle=":",
-                       alpha=0.6, label=f"heuristic = {bl['heuristic']:.0f}")
+            ax.axhline(
+                bl["heuristic"],
+                color="dimgray",
+                linestyle=":",
+                alpha=0.6,
+                label=f"heuristic = {bl['heuristic']:.0f}",
+            )
 
         ax.set_title(f"{scen} (lambda_red=0)")
         ax.set_xlabel("iteration")
@@ -179,8 +191,7 @@ def plot_entropy_per_agent(
                 continue
             iters = np.arange(arr.shape[1])
             mean, lo, hi = _mean_iqr(arr)
-            ax.plot(iters, mean, color=agent_colors[ai],
-                    label=f"agent_{ai}")
+            ax.plot(iters, mean, color=agent_colors[ai], label=f"agent_{ai}")
             ax.fill_between(iters, lo, hi, color=agent_colors[ai], alpha=0.15)
         ax.set_title(f"{scen} (lambda_red=0)")
         ax.set_xlabel("iteration")
@@ -255,6 +266,7 @@ def plot_loss_decomposition(
         if scen not in data:
             ax.set_title(f"{scen} (no data)")
             continue
+
         # Aggregate over agents (mean) then over seeds.
         def agg(prefix: str) -> np.ndarray:
             per_agent = []
@@ -307,16 +319,16 @@ def plot_loss_term_scales(
 
     Companion to plot_loss_decomposition for a quick visual on dominance.
     """
-    scenarios = [s for s in ["trivial_cooperation", "default", "chain_reaction"]
-                 if s in data]
+    scenarios = [
+        s for s in ["trivial_cooperation", "default", "chain_reaction"] if s in data
+    ]
     if not scenarios:
         return
     fig, ax = plt.subplots(figsize=(11, 5))
-    xs = np.arange(len(scenarios) * 2)  # iter0 then iter_last per scenario
+    _xs = np.arange(len(scenarios) * 2)  # iter0 then iter_last per scenario
     width = 0.25
 
-    def agg_term(metrics_list: List[List[dict]], prefix: str,
-                 iter_idx: int) -> float:
+    def agg_term(metrics_list: List[List[dict]], prefix: str, iter_idx: int) -> float:
         vals = []
         for m in metrics_list:
             if iter_idx >= len(m):
@@ -344,7 +356,9 @@ def plot_loss_term_scales(
     x = np.arange(len(labels))
     ax.bar(x - width, pol_bars, width, label="|policy_loss|", color="tab:blue")
     ax.bar(x, val_bars, width, label="value_coef * value_loss", color="tab:red")
-    ax.bar(x + width, ent_bars, width, label="entropy_coef * entropy", color="tab:green")
+    ax.bar(
+        x + width, ent_bars, width, label="entropy_coef * entropy", color="tab:green"
+    )
     ax.set_yscale("log")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9, rotation=0)
@@ -394,25 +408,25 @@ def write_summary(
         lines.append(f"## {scen}")
         lines.append(f"- n_seeds = {n_seeds}, n_iters = {n_iters}")
         lines.append(
-            f"- reward iter 0 -> iter {n_iters-1}: "
+            f"- reward iter 0 -> iter {n_iters - 1}: "
             f"{np.nanmean(rewards[:, 0]):.2f} -> "
             f"{np.nanmean(rewards[:, -1]):.2f}"
             f"  (baseline random = {bl.get('random', float('nan'))})"
         )
         lines.append(
-            f"- mean value_loss iter 0 -> iter {n_iters-1}: "
+            f"- mean value_loss iter 0 -> iter {n_iters - 1}: "
             f"{np.nanmean(val_losses[:, 0]):.2e} -> "
             f"{np.nanmean(val_losses[:, -1]):.2e}"
             f"  (scaled by value_coef={VALUE_COEF}: "
             f"{VALUE_COEF * np.nanmean(val_losses[:, 0]):.2e})"
         )
         lines.append(
-            f"- mean |policy_loss| iter 0 -> iter {n_iters-1}: "
+            f"- mean |policy_loss| iter 0 -> iter {n_iters - 1}: "
             f"{np.nanmean(np.abs(pol_losses[:, 0])):.3e} -> "
             f"{np.nanmean(np.abs(pol_losses[:, -1])):.3e}"
         )
         lines.append(
-            f"- mean entropy iter 0 -> iter {n_iters-1}: "
+            f"- mean entropy iter 0 -> iter {n_iters - 1}: "
             f"{np.nanmean(entropies[:, 0]):.3e} -> "
             f"{np.nanmean(entropies[:, -1]):.3e}"
             f"  (scaled by entropy_coef={ENTROPY_COEF}: "
@@ -457,13 +471,15 @@ def _default_sweep_root() -> Path:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument(
-        "--sweep-root", type=Path,
+        "--sweep-root",
+        type=Path,
         default=None,
         help="root containing {scenario}/lambda_*/seed_*/metrics.json "
-             "(auto-detected if not provided)",
+        "(auto-detected if not provided)",
     )
     p.add_argument(
-        "--out-dir", type=Path,
+        "--out-dir",
+        type=Path,
         default=Path("experiments/p3_specialization/diagnostics"),
     )
     args = p.parse_args()

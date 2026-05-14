@@ -14,6 +14,7 @@ That is 240 cells; rough estimate on Mac Studio (50 iters of 2048 steps each,
 hidden_size=64, 4 PPO epochs) is ~3 min/cell, so the full sweep is ~12 hours
 single-threaded. Use ``--num-iterations`` to shorten for smoke tests.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -41,8 +42,10 @@ def run_sweep(
     skip_existing: bool,
 ) -> None:
     n_cells = len(scenarios) * len(lambdas) * len(seeds)
-    print(f"P3 sweep: {n_cells} cells "
-          f"({len(scenarios)} scenarios x {len(lambdas)} lambdas x {len(seeds)} seeds)")
+    print(
+        f"P3 sweep: {n_cells} cells "
+        f"({len(scenarios)} scenarios x {len(lambdas)} lambdas x {len(seeds)} seeds)"
+    )
     print(f"Output root: {output_root}")
 
     t0 = time.time()
@@ -80,14 +83,15 @@ def run_sweep(
                 elapsed = time.time() - t0
                 eta = elapsed / done * (n_cells - done)
                 print(
-                    f"  cell done in {cell_elapsed:.1f}s | "
-                    f"sweep ETA {eta / 60:.1f} min"
+                    f"  cell done in {cell_elapsed:.1f}s | sweep ETA {eta / 60:.1f} min"
                 )
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--output-root", type=Path, default=Path("experiments/p3_specialization/runs"))
+    p.add_argument(
+        "--output-root", type=Path, default=Path("experiments/p3_specialization/runs")
+    )
     p.add_argument("--scenarios", nargs="+", default=PREREG_SCENARIOS)
     p.add_argument("--lambdas", nargs="+", type=float, default=PREREG_LAMBDAS)
     p.add_argument("--seeds", nargs="+", type=int, default=PREREG_SEEDS)
@@ -95,8 +99,11 @@ def main() -> None:
     p.add_argument("--rollout-steps", type=int, default=2048)
     p.add_argument("--num-agents", type=int, default=4)
     p.add_argument("--device", default="cpu")
-    p.add_argument("--skip-existing", action="store_true",
-                   help="Skip cells that already have metrics.json on disk.")
+    p.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip cells that already have metrics.json on disk.",
+    )
     args = p.parse_args()
 
     run_sweep(

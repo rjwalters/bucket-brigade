@@ -21,18 +21,17 @@ Architecture:
 
 import multiprocessing as mp
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional
 import time
 import json
 
 import torch
-import numpy as np
 
-from bucket_brigade_core import SCENARIOS, Scenario
+from bucket_brigade_core import SCENARIOS
 from bucket_brigade.training import PolicyNetwork
 from bucket_brigade.training.game_simulator import GameSimulator
 from bucket_brigade.training.policy_learner import learner_process
-from bucket_brigade.training.observation_utils import flatten_observation, get_observation_dim, create_scenario_info
+from bucket_brigade.training.observation_utils import get_observation_dim
 
 
 class PopulationTrainer:
@@ -112,6 +111,7 @@ class PopulationTrainer:
         # Initialize dimensions (from scenario)
         # For now, we'll infer these from a test environment
         from bucket_brigade_core import BucketBrigade
+
         test_env = BucketBrigade(self.scenario, num_agents_per_game, seed=seed)
 
         # Get number of houses from a test observation
@@ -124,7 +124,7 @@ class PopulationTrainer:
         # Action dimensions: [num_houses, 3 modes (idle, fill, pass)]
         self.action_dims = [num_houses, 3]
 
-        print(f"Inferred dimensions:")
+        print("Inferred dimensions:")
         print(f"  Observation: {self.obs_dim}")
         print(f"  Actions: {self.action_dims} (houses={num_houses}, modes=3)")
 
@@ -144,24 +144,26 @@ class PopulationTrainer:
 
     def setup_infrastructure(self):
         """Set up multiprocessing queues and processes."""
-        print(f"\n{'='*60}")
-        print(f"🔧 Setting Up Training Infrastructure")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("🔧 Setting Up Training Infrastructure")
+        print(f"{'=' * 60}")
 
         # Create experience queues (one per agent)
         print(f"Creating {self.population_size} experience queues...")
-        self.experience_queues = [mp.Queue(maxsize=1000) for _ in range(self.population_size)]
+        self.experience_queues = [
+            mp.Queue(maxsize=1000) for _ in range(self.population_size)
+        ]
 
         # Create policy update queue (shared)
         print("Creating policy update queue...")
         self.policy_update_queue = mp.Queue(maxsize=100)
 
-        print(f"✅ Queues created\n")
+        print("✅ Queues created\n")
 
     def spawn_learners(self):
         """Spawn GPU learner processes."""
         print(f"🚀 Spawning {self.population_size} GPU Learner Processes")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         for agent_id in range(self.population_size):
             # Determine device for this learner
@@ -173,18 +175,18 @@ class PopulationTrainer:
             process = mp.Process(
                 target=learner_process,
                 kwargs={
-                    'agent_id': agent_id,
-                    'obs_dim': self.obs_dim,
-                    'action_dims': self.action_dims,
-                    'hidden_size': self.hidden_size,
-                    'learning_rate': self.learning_rate,
-                    'device': learner_device,
-                    'experience_queue': self.experience_queues[agent_id],
-                    'policy_update_queue': self.policy_update_queue,
-                    'batch_size': self.batch_size,
-                    'num_epochs': self.num_epochs,
-                    'update_interval': self.update_interval,
-                }
+                    "agent_id": agent_id,
+                    "obs_dim": self.obs_dim,
+                    "action_dims": self.action_dims,
+                    "hidden_size": self.hidden_size,
+                    "learning_rate": self.learning_rate,
+                    "device": learner_device,
+                    "experience_queue": self.experience_queues[agent_id],
+                    "policy_update_queue": self.policy_update_queue,
+                    "batch_size": self.batch_size,
+                    "num_epochs": self.num_epochs,
+                    "update_interval": self.update_interval,
+                },
             )
             process.start()
             self.learner_processes.append(process)
@@ -193,8 +195,8 @@ class PopulationTrainer:
 
     def initialize_simulator(self):
         """Initialize the CPU game simulator."""
-        print(f"🎮 Initializing CPU Game Simulator")
-        print(f"{'='*60}")
+        print("🎮 Initializing CPU Game Simulator")
+        print(f"{'=' * 60}")
 
         # Create simulator
         self.simulator = GameSimulator(
@@ -221,7 +223,7 @@ class PopulationTrainer:
                 torch.manual_seed(self.seed + agent_id)
             self.simulator.register_policy(agent_id, policy)
 
-        print(f"✅ Simulator initialized\n")
+        print("✅ Simulator initialized\n")
 
     def train(self, num_episodes: int):
         """
@@ -230,15 +232,15 @@ class PopulationTrainer:
         Args:
             num_episodes: Number of episodes to simulate
         """
-        print(f"\n{'='*60}")
-        print(f"🚀 Starting Population-Based Training")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("🚀 Starting Population-Based Training")
+        print(f"{'=' * 60}")
         print(f"Scenario: {self.scenario_name}")
         print(f"Population: {self.population_size} agents")
         print(f"Parallel games: {self.num_games}")
         print(f"Target episodes: {num_episodes:,}")
         print(f"Device: {self.device}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         self.start_time = time.time()
 
@@ -256,7 +258,7 @@ class PopulationTrainer:
         self.initialize_simulator()
 
         # Run simulation
-        print(f"▶️  Starting game simulation...")
+        print("▶️  Starting game simulation...")
         self.simulator.run(
             num_episodes=num_episodes,
             update_interval=self.log_interval,
@@ -268,9 +270,9 @@ class PopulationTrainer:
 
     def cleanup(self):
         """Clean up processes and resources."""
-        print(f"\n{'='*60}")
-        print(f"🧹 Cleaning Up")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("🧹 Cleaning Up")
+        print(f"{'=' * 60}")
 
         # Terminate learner processes
         print(f"Terminating {len(self.learner_processes)} learner processes...")
@@ -289,17 +291,19 @@ class PopulationTrainer:
             stats = self.simulator.get_statistics()
             total_time = time.time() - self.start_time
 
-            print(f"{'='*60}")
-            print(f"📊 Final Statistics")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
+            print("📊 Final Statistics")
+            print(f"{'=' * 60}")
             print(f"Total episodes: {stats['total_episodes']:,}")
             print(f"Total steps: {stats['total_steps']:,}")
-            print(f"Training time: {total_time/60:.1f} minutes ({total_time/3600:.2f} hours)")
-            print(f"Episodes/sec: {stats['total_episodes']/total_time:.1f}")
-            print(f"\nMatch counts per agent:")
-            for agent_id, count in enumerate(stats['match_counts']):
+            print(
+                f"Training time: {total_time / 60:.1f} minutes ({total_time / 3600:.2f} hours)"
+            )
+            print(f"Episodes/sec: {stats['total_episodes'] / total_time:.1f}")
+            print("\nMatch counts per agent:")
+            for agent_id, count in enumerate(stats["match_counts"]):
                 print(f"  Agent {agent_id}: {count:,} games")
-            print(f"{'='*60}\n")
+            print(f"{'=' * 60}\n")
 
     def save_checkpoint(self, path: Path):
         """
@@ -313,11 +317,11 @@ class PopulationTrainer:
             return
 
         checkpoint = {
-            'scenario_name': self.scenario_name,
-            'population_size': self.population_size,
-            'total_episodes': self.total_episodes,
-            'statistics': self.simulator.get_statistics(),
-            'policies': {
+            "scenario_name": self.scenario_name,
+            "population_size": self.population_size,
+            "total_episodes": self.total_episodes,
+            "statistics": self.simulator.get_statistics(),
+            "policies": {
                 agent_id: policy.state_dict()
                 for agent_id, policy in self.simulator.policies.items()
             },
@@ -330,23 +334,23 @@ class PopulationTrainer:
     def save_config(self, path: Path):
         """Save training configuration."""
         config = {
-            'scenario_name': self.scenario_name,
-            'population_size': self.population_size,
-            'num_games': self.num_games,
-            'num_agents_per_game': self.num_agents_per_game,
-            'hidden_size': self.hidden_size,
-            'learning_rate': self.learning_rate,
-            'device': self.device,
-            'matchmaking_strategy': self.matchmaking_strategy,
-            'seed': self.seed,
-            'batch_size': self.batch_size,
-            'num_epochs': self.num_epochs,
-            'update_interval': self.update_interval,
-            'obs_dim': self.obs_dim,
-            'action_dims': self.action_dims,
+            "scenario_name": self.scenario_name,
+            "population_size": self.population_size,
+            "num_games": self.num_games,
+            "num_agents_per_game": self.num_agents_per_game,
+            "hidden_size": self.hidden_size,
+            "learning_rate": self.learning_rate,
+            "device": self.device,
+            "matchmaking_strategy": self.matchmaking_strategy,
+            "seed": self.seed,
+            "batch_size": self.batch_size,
+            "num_epochs": self.num_epochs,
+            "update_interval": self.update_interval,
+            "obs_dim": self.obs_dim,
+            "action_dims": self.action_dims,
         }
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(config, f, indent=2)
         print(f"💾 Saved config: {path}")

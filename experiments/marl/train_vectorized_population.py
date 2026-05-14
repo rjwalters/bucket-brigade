@@ -35,16 +35,15 @@ Usage:
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import argparse
 from datetime import datetime
-import json
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
@@ -52,7 +51,9 @@ from bucket_brigade_core import VectorEnv, SCENARIOS
 from bucket_brigade.training import PolicyNetwork, compute_gae
 
 
-def sample_matchups(population_size: int, num_envs: int, num_agents_per_game: int) -> np.ndarray:
+def sample_matchups(
+    population_size: int, num_envs: int, num_agents_per_game: int
+) -> np.ndarray:
     """
     Sample agent matchups for parallel games.
 
@@ -64,7 +65,9 @@ def sample_matchups(population_size: int, num_envs: int, num_agents_per_game: in
     Returns:
         assignments: [num_envs, num_agents_per_game] array of agent IDs
     """
-    assignments = np.random.randint(0, population_size, size=(num_envs, num_agents_per_game))
+    assignments = np.random.randint(
+        0, population_size, size=(num_envs, num_agents_per_game)
+    )
     return assignments
 
 
@@ -85,14 +88,17 @@ def collect_vectorized_rollout(
     num_envs, num_agents_per_game = agent_assignments.shape
 
     # Storage per policy
-    policy_data = {i: {
-        'obs': [],
-        'actions': [],
-        'rewards': [],
-        'dones': [],
-        'values': [],
-        'logprobs': [],
-    } for i in range(len(policies))}
+    policy_data = {
+        i: {
+            "obs": [],
+            "actions": [],
+            "rewards": [],
+            "dones": [],
+            "values": [],
+            "logprobs": [],
+        }
+        for i in range(len(policies))
+    }
 
     # Reset environments
     obs = np.array(vecenv.reset())  # [num_envs, num_agents, obs_dim]
@@ -102,8 +108,12 @@ def collect_vectorized_rollout(
         obs_tensor = torch.FloatTensor(obs).to(device)
 
         # Collect actions from all policies
-        houses = torch.zeros(num_envs, num_agents_per_game, dtype=torch.long, device=device)
-        modes = torch.zeros(num_envs, num_agents_per_game, dtype=torch.long, device=device)
+        houses = torch.zeros(
+            num_envs, num_agents_per_game, dtype=torch.long, device=device
+        )
+        modes = torch.zeros(
+            num_envs, num_agents_per_game, dtype=torch.long, device=device
+        )
         all_values = torch.zeros(num_envs, num_agents_per_game, device=device)
         all_logprobs = torch.zeros(num_envs, num_agents_per_game, device=device)
 
@@ -113,7 +123,9 @@ def collect_vectorized_rollout(
                     policy_id = agent_assignments[env_idx, agent_idx]
                     policy = policies[policy_id]
 
-                    agent_obs = obs_tensor[env_idx, agent_idx:agent_idx+1]  # [1, obs_dim]
+                    agent_obs = obs_tensor[
+                        env_idx, agent_idx : agent_idx + 1
+                    ]  # [1, obs_dim]
                     action_logits, value = policy(agent_obs)
 
                     # Sample action
@@ -135,10 +147,9 @@ def collect_vectorized_rollout(
                     all_logprobs[env_idx, agent_idx] = house_logprob + mode_logprob
 
         # Step environments
-        actions = np.stack([
-            houses.cpu().numpy(),
-            modes.cpu().numpy()
-        ], axis=-1)  # [num_envs, num_agents, 2]
+        actions = np.stack(
+            [houses.cpu().numpy(), modes.cpu().numpy()], axis=-1
+        )  # [num_envs, num_agents, 2]
 
         next_obs, rewards, dones, _ = vecenv.step(actions)
         next_obs = np.array(next_obs)
@@ -150,34 +161,38 @@ def collect_vectorized_rollout(
             for agent_idx in range(num_agents_per_game):
                 policy_id = agent_assignments[env_idx, agent_idx]
 
-                policy_data[policy_id]['obs'].append(obs[env_idx, agent_idx])
-                policy_data[policy_id]['actions'].append(actions[env_idx, agent_idx])
-                policy_data[policy_id]['rewards'].append(rewards[env_idx, agent_idx])
-                policy_data[policy_id]['dones'].append(dones[env_idx])
-                policy_data[policy_id]['values'].append(all_values[env_idx, agent_idx].item())
-                policy_data[policy_id]['logprobs'].append(all_logprobs[env_idx, agent_idx].item())
+                policy_data[policy_id]["obs"].append(obs[env_idx, agent_idx])
+                policy_data[policy_id]["actions"].append(actions[env_idx, agent_idx])
+                policy_data[policy_id]["rewards"].append(rewards[env_idx, agent_idx])
+                policy_data[policy_id]["dones"].append(dones[env_idx])
+                policy_data[policy_id]["values"].append(
+                    all_values[env_idx, agent_idx].item()
+                )
+                policy_data[policy_id]["logprobs"].append(
+                    all_logprobs[env_idx, agent_idx].item()
+                )
 
         obs = next_obs
 
     # Compute advantages for each policy
     for policy_id, data in policy_data.items():
-        if len(data['obs']) == 0:
+        if len(data["obs"]) == 0:
             continue
 
-        rewards = np.array(data['rewards'])
-        values = np.array(data['values'])
-        dones = np.array(data['dones'])
+        rewards = np.array(data["rewards"])
+        values = np.array(data["values"])
+        dones = np.array(data["dones"])
 
         # Compute GAE
         advantages = compute_gae(rewards, values, dones, gamma, gae_lambda)
         returns = advantages + values
 
         # Convert to tensors
-        data['obs'] = torch.FloatTensor(np.array(data['obs'])).to(device)
-        data['actions'] = torch.LongTensor(np.array(data['actions'])).to(device)
-        data['old_logprobs'] = torch.FloatTensor(np.array(data['logprobs'])).to(device)
-        data['advantages'] = torch.FloatTensor(advantages).to(device)
-        data['returns'] = torch.FloatTensor(returns).to(device)
+        data["obs"] = torch.FloatTensor(np.array(data["obs"])).to(device)
+        data["actions"] = torch.LongTensor(np.array(data["actions"])).to(device)
+        data["old_logprobs"] = torch.FloatTensor(np.array(data["logprobs"])).to(device)
+        data["advantages"] = torch.FloatTensor(advantages).to(device)
+        data["returns"] = torch.FloatTensor(returns).to(device)
 
     return policy_data
 
@@ -193,14 +208,14 @@ def train_policy_ppo(
     entropy_coef: float = 0.01,
 ):
     """Train single policy with PPO on collected experiences."""
-    if batch_data['obs'].shape[0] == 0:
+    if batch_data["obs"].shape[0] == 0:
         return {}
 
-    obs = batch_data['obs']
-    actions = batch_data['actions']
-    old_logprobs = batch_data['old_logprobs']
-    advantages = batch_data['advantages']
-    returns = batch_data['returns']
+    obs = batch_data["obs"]
+    actions = batch_data["actions"]
+    old_logprobs = batch_data["old_logprobs"]
+    advantages = batch_data["advantages"]
+    returns = batch_data["returns"]
 
     # Normalize advantages
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -268,10 +283,10 @@ def train_policy_ppo(
             num_updates += 1
 
     return {
-        'loss': total_loss / num_updates if num_updates > 0 else 0,
-        'policy_loss': total_policy_loss / num_updates if num_updates > 0 else 0,
-        'value_loss': total_value_loss / num_updates if num_updates > 0 else 0,
-        'entropy': total_entropy / num_updates if num_updates > 0 else 0,
+        "loss": total_loss / num_updates if num_updates > 0 else 0,
+        "policy_loss": total_policy_loss / num_updates if num_updates > 0 else 0,
+        "value_loss": total_value_loss / num_updates if num_updates > 0 else 0,
+        "entropy": total_entropy / num_updates if num_updates > 0 else 0,
     }
 
 
@@ -280,39 +295,50 @@ def main():
 
     # Environment
     parser.add_argument("--scenario", type=str, default="trivial_cooperation")
-    parser.add_argument("--num-envs", type=int, default=256,
-                        help="Number of parallel environments")
-    parser.add_argument("--num-agents-per-game", type=int, default=4,
-                        help="Agents per game (from scenario)")
+    parser.add_argument(
+        "--num-envs", type=int, default=256, help="Number of parallel environments"
+    )
+    parser.add_argument(
+        "--num-agents-per-game",
+        type=int,
+        default=4,
+        help="Agents per game (from scenario)",
+    )
 
     # Population
-    parser.add_argument("--population-size", type=int, default=8,
-                        help="Number of agents in population")
+    parser.add_argument(
+        "--population-size", type=int, default=8, help="Number of agents in population"
+    )
 
     # Training
-    parser.add_argument("--total-timesteps", type=int, default=1000000,
-                        help="Total training timesteps")
-    parser.add_argument("--rollout-length", type=int, default=256,
-                        help="Steps per rollout")
-    parser.add_argument("--batch-size", type=int, default=1024,
-                        help="PPO minibatch size")
-    parser.add_argument("--num-epochs", type=int, default=4,
-                        help="PPO epochs per rollout")
+    parser.add_argument(
+        "--total-timesteps", type=int, default=1000000, help="Total training timesteps"
+    )
+    parser.add_argument(
+        "--rollout-length", type=int, default=256, help="Steps per rollout"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=1024, help="PPO minibatch size"
+    )
+    parser.add_argument(
+        "--num-epochs", type=int, default=4, help="PPO epochs per rollout"
+    )
 
     # Network
-    parser.add_argument("--hidden-size", type=int, default=1024,
-                        help="Policy network hidden size")
+    parser.add_argument(
+        "--hidden-size", type=int, default=1024, help="Policy network hidden size"
+    )
     parser.add_argument("--learning-rate", type=float, default=3e-4)
 
     # System
-    parser.add_argument("--device", type=str, default="cuda",
-                        choices=["cuda", "cpu"])
+    parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"])
     parser.add_argument("--seed", type=int, default=None)
 
     # Logging
     parser.add_argument("--run-name", type=str, default=None)
-    parser.add_argument("--log-interval", type=int, default=10,
-                        help="Log every N rollouts")
+    parser.add_argument(
+        "--log-interval", type=int, default=10, help="Log every N rollouts"
+    )
 
     args = parser.parse_args()
 
@@ -379,7 +405,9 @@ def main():
     print()
 
     # Training loop
-    total_rollouts = args.total_timesteps // (args.rollout_length * args.num_envs * args.num_agents_per_game)
+    total_rollouts = args.total_timesteps // (
+        args.rollout_length * args.num_envs * args.num_agents_per_game
+    )
 
     print(f"Starting training: {total_rollouts} rollouts")
     print()
@@ -405,7 +433,7 @@ def main():
 
         # Train each policy
         for policy_id in range(args.population_size):
-            if len(policy_data[policy_id]['obs']) > 0:
+            if len(policy_data[policy_id]["obs"]) > 0:
                 train_policy_ppo(
                     policies[policy_id],
                     optimizers[policy_id],
@@ -417,25 +445,34 @@ def main():
         # Logging
         if (rollout_idx + 1) % args.log_interval == 0:
             elapsed = time.time() - start_time
-            timesteps = (rollout_idx + 1) * args.rollout_length * args.num_envs * args.num_agents_per_game
+            timesteps = (
+                (rollout_idx + 1)
+                * args.rollout_length
+                * args.num_envs
+                * args.num_agents_per_game
+            )
             steps_per_sec = timesteps / elapsed
 
             # Compute average reward across population
-            avg_reward = np.mean([
-                np.mean(policy_data[i]['rewards'])
-                for i in range(args.population_size)
-                if len(policy_data[i]['rewards']) > 0
-            ])
+            avg_reward = np.mean(
+                [
+                    np.mean(policy_data[i]["rewards"])
+                    for i in range(args.population_size)
+                    if len(policy_data[i]["rewards"]) > 0
+                ]
+            )
 
-            print(f"Rollout {rollout_idx + 1}/{total_rollouts} | "
-                  f"Timesteps: {timesteps:,} | "
-                  f"Speed: {steps_per_sec:.0f} steps/s | "
-                  f"Avg Reward: {avg_reward:.3f}")
+            print(
+                f"Rollout {rollout_idx + 1}/{total_rollouts} | "
+                f"Timesteps: {timesteps:,} | "
+                f"Speed: {steps_per_sec:.0f} steps/s | "
+                f"Avg Reward: {avg_reward:.3f}"
+            )
 
     elapsed = time.time() - start_time
     print()
     print("=" * 60)
-    print(f"✓ Training complete!")
+    print("✓ Training complete!")
     print(f"Total time: {elapsed:.1f}s")
     print(f"Average speed: {args.total_timesteps / elapsed:.0f} steps/s")
     print("=" * 60)
