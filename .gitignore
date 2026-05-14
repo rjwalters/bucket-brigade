@@ -210,6 +210,9 @@ __marimo__/
 .loom/worktrees/
 .loom/*.log
 .loom/*.sock
+# Loom helper scripts shipped with the installer (override Python `lib/` rule above)
+!.loom/scripts/lib/
+!.loom/scripts/lib/*.sh
 
 # Node.js
 node_modules/
