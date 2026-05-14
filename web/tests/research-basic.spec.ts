@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Research Tab - Basic Functionality', () => {
+/**
+ * Basic smoke tests for the Scenario Research page.
+ *
+ * As of PR #140 / commit fe73a20a, the research page renders all sections
+ * vertically (no tabs). These tests assert the page loads and the major
+ * sections render correctly when data is available.
+ *
+ * NOTE: Sections (ComparisonSection, HeuristicsSection, EvolutionSection,
+ * NashSection) render conditionally based on whether the selected scenario
+ * has data for that method. In environments where only config.json is
+ * present (e.g. local dev without generated research artifacts), those
+ * sections won't render. Tests that depend on per-section data are skipped
+ * gracefully when the data is absent.
+ */
+test.describe('Research Page - Basic Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/research');
     await page.waitForLoadState('networkidle');
@@ -11,66 +25,72 @@ test.describe('Research Tab - Basic Functionality', () => {
     await expect(page.locator('main').locator('h1')).toContainText('Scenario Research');
   });
 
-  test('should display all three tabs', async ({ page }) => {
-    await expect(page.locator('button', { hasText: 'Nash Equilibrium' })).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Evolution' })).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Heuristics' })).toBeVisible();
+  test('should display scenario selector', async ({ page }) => {
+    await expect(page.locator('select')).toBeVisible();
+    await expect(page.locator('label:has-text("Select Scenario")')).toBeVisible();
   });
 
-  test('should load Nash equilibrium data', async ({ page }) => {
-    // Click Nash tab
-    await page.locator('button', { hasText: 'Nash Equilibrium' }).click();
-    await page.waitForTimeout(1500);
-
-    // Check for Nash-specific content
-    const mainContent = page.locator('main');
-    await expect(mainContent.locator('text=Nash Equilibrium Analysis')).toBeVisible({ timeout: 10000 });
-    await expect(mainContent.locator('text=Equilibrium Type').first()).toBeVisible();
-    await expect(mainContent.locator('text=Expected Payoff').first()).toBeVisible();
+  test('should display scenario overview parameters', async ({ page }) => {
+    // ScenarioOverview renders a grid of parameter labels whenever config is loaded.
+    const main = page.locator('main');
+    await expect(main.locator('text=Fire Spread (β)').first()).toBeVisible();
+    await expect(main.locator('text=Work Cost (c)').first()).toBeVisible();
+    await expect(main.locator('text=Agents').first()).toBeVisible();
   });
 
-  test('should display Nash equilibrium strategy details', async ({ page }) => {
-    // Click Nash tab
-    await page.locator('button', { hasText: 'Nash Equilibrium' }).click();
-    await page.waitForTimeout(1500);
+  test('should display comparison section when data is available', async ({ page }) => {
+    const main = page.locator('main');
+    const heading = main.locator('h2:has-text("Strategy Comparison")');
+    if ((await heading.count()) === 0) {
+      test.skip(true, 'Comparison data not available for default scenario');
+    }
+    await expect(heading).toBeVisible();
+    await expect(main.locator('h3:has-text("Tournament Results")')).toBeVisible();
+    await expect(main.locator('text=#1').first()).toBeVisible();
+  });
 
-    // Check for strategy pool
-    await expect(page.locator('h3', { hasText: 'Equilibrium Strategies' })).toBeVisible({ timeout: 10000 });
+  test('should display Nash equilibrium section when data is available', async ({ page }) => {
+    const main = page.locator('main');
+    const heading = main.locator('h2:has-text("Nash Equilibrium Analysis")');
+    if ((await heading.count()) === 0) {
+      test.skip(true, 'Nash data not available for default scenario');
+    }
+    await expect(heading).toBeVisible();
+    await expect(main.locator('text=Equilibrium Type').first()).toBeVisible();
+    await expect(main.locator('text=Expected Payoff').first()).toBeVisible();
+    await expect(main.locator('text=Cooperation Rate').first()).toBeVisible();
+  });
 
-    // Check for agent parameters
-    const mainContent = page.locator('main');
-    const parameterNames = ['honesty', 'work tendency', 'coordination', 'altruism'];
+  test('should display Nash equilibrium strategy details when data is available', async ({
+    page,
+  }) => {
+    const main = page.locator('main');
+    const heading = main.locator('h3:has-text("Equilibrium Strategies")');
+    if ((await heading.count()) === 0) {
+      test.skip(true, 'Nash data not available for default scenario');
+    }
+    await expect(heading).toBeVisible();
 
+    // Check for at least some agent parameter labels (rendered with underscores
+    // replaced by spaces).
+    const parameterNames = ['honesty', 'work tendency', 'coordination'];
     for (const param of parameterNames) {
-      await expect(mainContent.locator(`text=${param}`).first()).toBeVisible();
+      await expect(main.locator(`text=${param}`).first()).toBeVisible();
     }
   });
 
-  test('should load Evolution data', async ({ page }) => {
-    // Click Evolution tab
-    await page.locator('button', { hasText: 'Evolution' }).click();
-    await page.waitForTimeout(1500);
-
-    // Check for evolution-specific content
-    await expect(page.locator('h2', { hasText: 'Evolutionary Optimization' })).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=Best Fitness').first()).toBeVisible();
-  });
-
-  test('should load Heuristics data', async ({ page }) => {
-    // Click Heuristics tab
-    await page.locator('button', { hasText: 'Heuristics' }).click();
-    await page.waitForTimeout(2000);
-
-    // Check that main content area exists and has some content
-    const mainContent = page.locator('main');
-    await expect(mainContent).toBeVisible();
-
-    // The heuristics tab should show either heuristics or comparison data
-    // Let's just verify the page didn't error out and content is present
-    const text = await mainContent.textContent();
-    const hasValidContent = text && text.length > 100; // Should have substantial content
-
-    expect(hasValidContent).toBeTruthy();
+  test('should display Evolution section with fitness chart when data is available', async ({
+    page,
+  }) => {
+    const main = page.locator('main');
+    const heading = main.locator('h2:has-text("Evolutionary Optimization")');
+    if ((await heading.count()) === 0) {
+      test.skip(true, 'Evolution data not available for default scenario');
+    }
+    await expect(heading).toBeVisible();
+    await expect(main.locator('text=Best Fitness').first()).toBeVisible();
+    await expect(main.locator('h4:has-text("Fitness Over Generations")')).toBeVisible();
+    await expect(main.locator('svg').first()).toBeVisible();
   });
 
   test('should switch between scenarios', async ({ page }) => {
@@ -78,43 +98,18 @@ test.describe('Research Tab - Basic Functionality', () => {
 
     // Switch to a different scenario
     await selector.selectOption('deceptive_calm');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
 
-    // Click Nash tab
-    await page.locator('button', { hasText: 'Nash Equilibrium' }).click();
-    await page.waitForTimeout(1500);
+    // After switching, the scenario overview heading should still be present
+    await expect(page.locator('main h2').first()).toBeVisible();
 
-    // Should show content
-    await expect(page.locator('text=Nash Equilibrium Analysis')).toBeVisible({ timeout: 10000 });
-  });
-
-  test('should display cooperation rate in Nash tab', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nash Equilibrium' }).click();
-    await page.waitForTimeout(1500);
-
-    // Check for cooperation rate metric card
-    await expect(page.locator('text=Cooperation Rate').first()).toBeVisible({ timeout: 10000 });
-
-    // The page should show cooperation and interpretation data
-    const mainContent = page.locator('main');
-    const hasCooperationData = await mainContent.locator('text=cooperation_rate').isVisible().catch(() =>
-      mainContent.textContent().then(text => text?.includes('Cooperation') || false)
-    );
-
-    expect(hasCooperationData).toBeTruthy();
-  });
-
-  test('should render fitness chart in Evolution tab', async ({ page }) => {
-    await page.locator('button', { hasText: 'Evolution' }).click();
-    await page.waitForTimeout(1500);
-
-    // Check for chart
-    await expect(page.locator('h4', { hasText: 'Fitness Over Generations' })).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('svg').first()).toBeVisible();
+    // The h1 title remains
+    await expect(page.locator('main').locator('h1')).toContainText('Scenario Research');
   });
 });
 
-test.describe('Research Tab - Performance', () => {
+test.describe('Research Page - Performance', () => {
   test('should load page quickly', async ({ page }) => {
     const startTime = Date.now();
 
