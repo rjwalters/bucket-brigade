@@ -1,247 +1,49 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Home, Loader2, Trash2, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { useReactTable, getCoreRowModel, getSortedRowModel, getPaginationRowModel, flexRender, ColumnDef, SortingState } from '@tanstack/react-table';
+import { Home } from 'lucide-react';
 import type { GameReplay } from '../types';
 import { loadGameReplays, saveGameReplays } from '../utils/storage';
 import { runGameBatch } from '../utils/runSimulation';
-import Town from '../components/Town';
-import AgentLayer from '../components/AgentLayer';
 import ReplayControls from '../components/ReplayControls';
 import GameSidebar from '../components/GameSidebar';
 import GameAnalysis from '../components/GameAnalysis';
+import GameReplayTable from '../components/replay/GameReplayTable';
+import GameStateVisualizer from '../components/replay/GameStateVisualizer';
+import SimulationLoading from '../components/replay/SimulationLoading';
+import { useReplayPlayback } from '../hooks/useReplayPlayback';
 
 const GameReplayPage: React.FC = () => {
   const { gameId } = useParams<{ gameId?: string }>();
   const navigate = useNavigate();
   const [games, setGames] = useState<GameReplay[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameReplay | null>(null);
-  const [currentStep, setCurrentStep] = useState(0); // 0 to nights*2 - even=day, odd=night
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1000); // milliseconds
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationProgress, setSimulationProgress] = useState({ completed: 0, total: 0 });
-  const [simulationStats, setSimulationStats] = useState<any>(null);
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'timestamp', desc: true }]);
 
-  // Define table columns
-  const columns = useMemo<ColumnDef<GameReplay & { index: number }>[]>(
-    () => [
-      {
-        accessorKey: 'teamName',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Team
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="font-medium text-gray-900 dark:text-gray-100">
-            {row.original.teamName || 'Unknown Team'}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'scenarioName',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Scenario
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="text-gray-600 dark:text-gray-400">
-            {row.original.scenarioName || 'Custom Scenario'}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'timestamp',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Date
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => {
-          const timestamp = row.original.timestamp ? new Date(row.original.timestamp) : null;
-          return (
-            <div className="text-sm text-gray-500 dark:text-gray-500">
-              {timestamp ? timestamp.toLocaleString() : 'No timestamp'}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: 'nights',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Nights
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {row.original.nights.length}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'num_agents',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Agents
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {row.original.scenario.num_agents}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'beta',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            β
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-            {row.original.scenario.beta.toFixed(2)}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'kappa',
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            κ
-            {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <ArrowUpDown className="w-4 h-4" />
-            )}
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-            {row.original.scenario.kappa.toFixed(2)}
-          </div>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteGame(row.original.index, e as any);
-            }}
-            className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            title="Delete this replay"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        ),
-      },
-    ],
-    []
-  );
+  // Playback state and controls (encapsulated in hook)
+  const {
+    currentStep,
+    currentNight,
+    phase,
+    displayNight,
+    totalSteps,
+    isPlaying,
+    speed,
+    togglePlayPause,
+    reset,
+    stepForward,
+    stepBackward,
+    setSpeed,
+  } = useReplayPlayback(selectedGame);
 
-  // Prepare table data
-  const tableData = useMemo(
-    () => games.map((game, index) => ({ ...game, index })),
-    [games]
-  );
-
-  // Create table instance
-  const table = useReactTable({
-    data: tableData,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
-  });
-
-  // Run simulation if gameId is 'new'
+  // Load/run on gameId change
   useEffect(() => {
     if (gameId === 'new') {
       runNewSimulation();
     } else {
       loadExistingGames();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
 
   const runNewSimulation = async () => {
@@ -262,22 +64,20 @@ const GameReplayPage: React.FC = () => {
       const scenario = JSON.parse(scenarioStr);
 
       // Run batch simulation (100 games)
-      const result = await runGameBatch(
-        team,
-        scenario,
-        100,
-        (completed, total) => {
-          setSimulationProgress({ completed, total });
-        }
-      );
-
-      // Save statistics
-      setSimulationStats(result.statistics);
+      const result = await runGameBatch(team, scenario, 100, (completed, total) => {
+        setSimulationProgress({ completed, total });
+      });
 
       // Pick a representative game (one close to median performance)
       const sortedGames = [...result.games].sort((a, b) => {
-        const scoreA = a.nights.reduce((sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0), 0);
-        const scoreB = b.nights.reduce((sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0), 0);
+        const scoreA = a.nights.reduce(
+          (sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0),
+          0
+        );
+        const scoreB = b.nights.reduce(
+          (sum, night) => sum + night.rewards.reduce((s, r) => s + r, 0),
+          0
+        );
         return scoreA - scoreB;
       });
       const medianGame = sortedGames[Math.floor(sortedGames.length / 2)];
@@ -290,8 +90,8 @@ const GameReplayPage: React.FC = () => {
           stdErrAgentScores: result.statistics.stdErrAgentScores,
           avgFinalScore: result.statistics.avgFinalScore,
           stdErrFinalScore: result.statistics.stdErrFinalScore,
-          numGames: result.statistics.numGames
-        }
+          numGames: result.statistics.numGames,
+        },
       };
 
       // Save the representative game to localStorage
@@ -324,90 +124,39 @@ const GameReplayPage: React.FC = () => {
     }
   };
 
-  // Derive current night and phase from step (even=day, odd=night)
-  const currentNight = Math.floor(currentStep / 2);
-  const phase: 'day' | 'night' = currentStep % 2 === 0 ? 'day' : 'night';
-
-  // Get the appropriate night data based on phase
-  // Day phase: show state from previous night (or initial for day 0)
-  // Night phase: show state from current night
-  const displayNight = phase === 'day' ? Math.max(0, currentNight - 1) : currentNight;
+  // Derived display state
   const currentNightData = selectedGame?.nights[currentNight];
   const displayNightData = selectedGame?.nights[displayNight];
 
-  // For step 0 (Day 0), create initial state with all houses safe
+  // For step 0 (Day 0), show initial state with all houses safe.
   const initialHouses = selectedGame ? Array(10).fill(0) : [];
-  const displayHouses = (currentStep === 0 && phase === 'day')
-    ? initialHouses
-    : displayNightData?.houses || [];
-
-  const totalSteps = selectedGame ? selectedGame.nights.length * 2 : 0;
-
-  // Auto-play functionality
-  useEffect(() => {
-    if (!isPlaying || !selectedGame) return;
-
-    const interval = setInterval(() => {
-      setCurrentStep(prev => {
-        const maxStep = selectedGame.nights.length * 2 - 1;
-        if (prev >= maxStep) {
-          setIsPlaying(false);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, speed);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, selectedGame, speed]);
-
-  const handlePlayPause = useCallback(() => {
-    setIsPlaying(!isPlaying);
-  }, [isPlaying]);
-
-  const handleReset = useCallback(() => {
-    setCurrentStep(0);
-    setIsPlaying(false);
-  }, []);
-
-  const handlePrevStep = useCallback(() => {
-    setCurrentStep(prev => Math.max(0, prev - 1));
-  }, []);
-
-  const handleNextStep = useCallback(() => {
-    if (!selectedGame) return;
-    const maxStep = selectedGame.nights.length * 2 - 1;
-    setCurrentStep(prev => Math.min(maxStep, prev + 1));
-  }, [selectedGame]);
-
-  const handleSpeedChange = useCallback((newSpeed: number) => {
-    setSpeed(newSpeed);
-  }, []);
+  const displayHouses =
+    currentStep === 0 && phase === 'day' ? initialHouses : displayNightData?.houses || [];
 
   const handleGameSelect = useCallback((game: GameReplay) => {
     setSelectedGame(game);
-    setCurrentStep(0);
-    setIsPlaying(false);
   }, []);
 
-  const handleDeleteGame = useCallback((index: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent selecting the game when deleting
-    const updatedGames = games.filter((_, i) => i !== index);
-    saveGameReplays(updatedGames);
-    setGames(updatedGames);
+  const handleDeleteGame = useCallback(
+    (index: number, event: React.MouseEvent) => {
+      event.stopPropagation();
+      const updatedGames = games.filter((_, i) => i !== index);
+      saveGameReplays(updatedGames);
+      setGames(updatedGames);
 
-    // If we deleted the selected game, select another or none
-    if (selectedGame === games[index]) {
-      if (updatedGames.length > 0) {
-        setSelectedGame(updatedGames[0]);
-      } else {
-        setSelectedGame(null);
+      if (selectedGame === games[index]) {
+        setSelectedGame(updatedGames.length > 0 ? updatedGames[0] : null);
       }
-    }
-  }, [games, selectedGame]);
+    },
+    [games, selectedGame]
+  );
 
   const handleDeleteAll = useCallback(() => {
-    if (window.confirm('Are you sure you want to delete all game replays? This cannot be undone.')) {
+    if (
+      window.confirm(
+        'Are you sure you want to delete all game replays? This cannot be undone.'
+      )
+    ) {
       saveGameReplays([]);
       setGames([]);
       setSelectedGame(null);
@@ -427,31 +176,11 @@ const GameReplayPage: React.FC = () => {
 
   // Show loading screen during simulation
   if (isSimulating) {
-    const progress = simulationProgress.total > 0
-      ? (simulationProgress.completed / simulationProgress.total) * 100
-      : 0;
-
     return (
-      <div className="text-center py-12">
-        <div className="max-w-md mx-auto">
-          <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Running Simulation
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Simulating 100 games to gather statistics...
-          </p>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2">
-            <div
-              className="bg-blue-600 h-4 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {simulationProgress.completed} / {simulationProgress.total} games completed
-          </p>
-        </div>
-      </div>
+      <SimulationLoading
+        completed={simulationProgress.completed}
+        total={simulationProgress.total}
+      />
     );
   }
 
@@ -486,154 +215,45 @@ const GameReplayPage: React.FC = () => {
       </div>
 
       {/* Game Selection */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Game Replays ({games.length})</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={handleExportAll}
-              disabled={games.length === 0}
-              className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Export all games as JSON"
-            >
-              <Download className="w-4 h-4" />
-              Export All
-            </button>
-            <button
-              onClick={handleDeleteAll}
-              disabled={games.length === 0}
-              className="btn-secondary flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Delete all game replays"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete All
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  onClick={() => handleGameSelect(row.original)}
-                  className={`cursor-pointer transition-colors ${
-                    selectedGame === row.original
-                      ? 'bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="px-6 py-4 whitespace-nowrap text-sm"
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Pagination Controls */}
-          {games.length > 10 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-                {Math.min(
-                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                  games.length
-                )}{' '}
-                of {games.length} games
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                </span>
-                <button
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <GameReplayTable
+        games={games}
+        selectedGame={selectedGame}
+        onSelect={handleGameSelect}
+        onDelete={handleDeleteGame}
+        onDeleteAll={handleDeleteAll}
+        onExportAll={handleExportAll}
+      />
 
       {/* Game Replay */}
       {selectedGame && currentNightData && (
         <>
           {/* Replay Controls */}
           <ReplayControls
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          currentNight={currentNight}
-          totalNights={selectedGame.nights.length}
-          isPlaying={isPlaying}
-          speed={speed}
-          phase={phase}
-          onPlayPause={handlePlayPause}
-          onReset={handleReset}
-          onPrev={handlePrevStep}
-          onNext={handleNextStep}
-          onSpeedChange={handleSpeedChange}
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            currentNight={currentNight}
+            totalNights={selectedGame.nights.length}
+            isPlaying={isPlaying}
+            speed={speed}
+            phase={phase}
+            onPlayPause={togglePlayPause}
+            onReset={reset}
+            onPrev={stepBackward}
+            onNext={stepForward}
+            onSpeedChange={setSpeed}
             nights={selectedGame.nights}
-            />
+          />
 
           {/* Game Visualization and Info */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Game Visualization */}
             <div className="lg:col-span-2">
-              <div className="card">
-                <div className="relative mx-auto" style={{ width: '640px', height: '640px' }}>
-                  {/* Day/Night Indicator - Top Right */}
-                  <div className="absolute top-2 right-2 text-3xl z-10">
-                    {phase === 'day' ? '☀️' : '🌙'}
-                  </div>
-
-                  {/* Town (houses) - show appropriate state based on phase */}
-                  <Town
-                    houses={displayHouses}
-                    numAgents={selectedGame.scenario.num_agents}
-                    archetypes={selectedGame.archetypes}
-                  />
-
-                  {/* Agent Layer */}
-                  <AgentLayer
-                    locations={currentNightData.locations}
-                    signals={currentNightData.signals}
-                    actions={currentNightData.actions}
-                    phase={phase}
-                  />
-                </div>
-              </div>
+              <GameStateVisualizer
+                selectedGame={selectedGame}
+                currentNightData={currentNightData}
+                displayHouses={displayHouses}
+                phase={phase}
+              />
             </div>
 
             {/* Game Sidebar */}
