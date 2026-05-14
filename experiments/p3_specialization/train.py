@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import warnings
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -28,6 +29,7 @@ import torch
 from bucket_brigade.analysis.info_theory import (
     conditional_mutual_information,
     entropy_discrete,
+    is_degenerate_conditioner,
     mutual_information,
     quantize_uniform,
 )
@@ -90,8 +92,43 @@ def _measure_information(
     ).sum(dim=0).cpu().numpy()
     r_codes = quantize_uniform(rewards, n_bins=n_bins)
 
-    n = trainer.num_agents
     out: Dict[str, float] = {}
+
+    # Defensive measurement-quality check (see issue #146).
+    #
+    # When the conditioner ``r_codes`` is (near-)constant on the sample, the
+    # plug-in CMI ``I(Ẑ_i; Ẑ_j | R)`` collapses to the unconditional MI
+    # ``I(Ẑ_i; Ẑ_j)`` and the "conditional" claim is vacuous. The classic
+    # offender in this experiment is the ``trivial_cooperation`` scenario,
+    # where the team reward is essentially constant; near-deterministic-reward
+    # scenarios fail less obviously but in the same way.
+    #
+    # NOTE: This check DETECTS the failure mode; it does not RESOLVE it. The
+    # research-level question of which conditioner to use (state-coarsening,
+    # per-agent reward, marginal-action codes, etc.) is deferred to the
+    # Architect/Hermit framing described in the issue. We deliberately do not
+    # pick a replacement here.
+    is_degenerate, diag = is_degenerate_conditioner(r_codes)
+    out["cmi/conditioner_n_distinct"] = float(diag["n_distinct"])
+    out["cmi/conditioner_modal_fraction"] = diag["modal_fraction"]
+    out["cmi/conditioner_entropy_bits"] = diag["entropy_bits"]
+    out["cmi/conditioner_degenerate"] = float(is_degenerate)
+    if is_degenerate:
+        warnings.warn(
+            (
+                "P3 CMI conditioner appears degenerate "
+                f"(n_distinct={diag['n_distinct']}, "
+                f"modal_fraction={diag['modal_fraction']:.3f}, "
+                f"entropy_bits={diag['entropy_bits']:.3f}). "
+                "I(Ẑ_i; Ẑ_j | R) ≈ I(Ẑ_i; Ẑ_j) is mathematically guaranteed; "
+                "see issue #146 for context. Reported CMI values for this "
+                "iteration should not be interpreted as 'conditional'."
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    n = trainer.num_agents
     mi_vals = []
     cmi_vals = []
     for i in range(n):
