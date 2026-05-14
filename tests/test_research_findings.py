@@ -39,6 +39,7 @@ from bucket_brigade.envs import (
     mixed_motivation_scenario,
     Scenario,
 )
+
 # Boundary/mechanism scenarios (glacial_spread, explosive_spread, wildfire,
 # free_work, cheap_work, expensive_work, prohibitive_work) were removed in
 # commit 33cc6585; tests that depended on them are skipped below.
@@ -256,25 +257,24 @@ class TestBoundaryRobustness:
             "commit 33cc6585 (scenario pruning). Re-introducing boundary "
             "scenarios is out of scope for this fix."
         )
-        universal = get_universal_genome()
-
-        # Test extreme fire spread rates
-        extreme_betas = [
-            (0.02, "glacial_spread", glacial_spread_scenario),
-            (0.75, "wildfire", wildfire_scenario),
-        ]
-
-        for beta, name, scenario_fn in extreme_betas:
-            scenario = scenario_fn(num_agents=4)
-            payoff = evaluate_genome_on_scenario(
-                universal, scenario, num_simulations=50, seed=42
-            )
-
-            # Should still achieve reasonable performance
-            assert payoff > 30, (
-                f"Universal genome failed on extreme β={beta} ({name}): "
-                f"payoff = {payoff:.1f} < 30"
-            )
+        # NOTE: body below is unreachable (pytest.skip raises) but retained
+        # for reference. The boundary scenario functions referenced here were
+        # removed; restore them or delete this test if the scenarios stay
+        # gone permanently.
+        # universal = get_universal_genome()
+        # extreme_betas = [
+        #     (0.02, "glacial_spread", glacial_spread_scenario),
+        #     (0.75, "wildfire", wildfire_scenario),
+        # ]
+        # for beta, name, scenario_fn in extreme_betas:
+        #     scenario = scenario_fn(num_agents=4)
+        #     payoff = evaluate_genome_on_scenario(
+        #         universal, scenario, num_simulations=50, seed=42
+        #     )
+        #     assert payoff > 30, (
+        #         f"Universal genome failed on extreme β={beta} ({name}): "
+        #         f"payoff = {payoff:.1f} < 30"
+        #     )
 
     @pytest.mark.slow
     def test_pspark_goldilocks_zone(self):
