@@ -85,6 +85,21 @@ class PolicyNetwork(nn.Module):
 
         return action_logits, value
 
+    def encoder_output(self, x: torch.Tensor) -> torch.Tensor:
+        """Return the shared trunk's output (Ẑ_i in the Slepian-Wolf paper).
+
+        Used by the joint multi-agent trainer to compute cross-agent
+        representational redundancy penalties. The gradient flows back into
+        the shared trunk through this tap.
+
+        Args:
+            x: Observation tensor of shape (batch_size, obs_dim)
+
+        Returns:
+            Feature tensor of shape (batch_size, hidden_size).
+        """
+        return self.shared(x)
+
     def get_action(
         self, x: torch.Tensor, deterministic: bool = False
     ) -> Tuple[List[torch.Tensor], Optional[torch.Tensor], torch.Tensor]:
