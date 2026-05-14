@@ -80,6 +80,24 @@ Three reasons F1 might be falsified in this sweep without the underlying predict
 
 3. **Training horizon may be too short.** 50 iterations × 2048 steps × 4 PPO epochs. The reward signal saturates within the first 5 iterations (the agents land at the random-policy baseline immediately and don't improve from there — see [open issue](#what-comes-next)). The redundancy penalty's effect on the encoder may need many more updates to crystallize once the policy is stable.
 
+## Phase 1 plateau diagnostics (added 2026-05-14)
+
+A read-only follow-up (issue [#145](https://github.com/rjwalters/bucket-brigade/issues/145)) plotted the per-iteration metrics already on disk under `experiments/p3_specialization/runs/`. Diagnostic plots and a summary live in `experiments/p3_specialization/diagnostics/`:
+
+- `reward_vs_baseline.png` — per-iteration team reward vs random/heuristic baseline, all three scenarios at λ=0.
+- `entropy_per_agent.png` — action-distribution entropy collapses from ~0.66 nats to ~0.12–0.17 nats over 50 iterations.
+- `value_loss_log.png` — value loss starts at ~10^5 and decreases slowly.
+- `loss_decomposition.png` — after coefficient scaling, `value_coef * value_loss` is ~10^7 × larger than `|policy_loss|` and ~10^7 × larger than `entropy_coef * entropy`.
+- `loss_term_scales.png` — bar chart of the same dominance at iter 0 vs iter 49.
+- `summary.md` — numerical summary; e.g. on `default`, iter-0 value_term/policy_term ≈ 5×10^6, and reward iter 0→49 goes 293.46 → 294.58 (below random = 308).
+
+These plots confirm the two leading hypotheses in issue #145: (a) the value-loss term dominates the gradient by ~7 orders of magnitude, and (b) the per-agent action-distribution entropy collapses early. A targeted one-variable fix (Phase 2; not yet implemented) is the natural next step — likely return normalisation, a value-loss coefficient sweep, or a higher / scheduled entropy bonus — but should be run on `rwalters-sandbox-1`, not locally.
+
+Regenerate the diagnostics with::
+
+    uv run python experiments/p3_specialization/analyze_plateau.py \
+        --sweep-root experiments/p3_specialization/runs
+
 ## What comes next
 
 Per the team's current operating posture (`file issues, don't do work`), the followups belong as upstream issues, not as a P3-v2 experiment from this notebook:
