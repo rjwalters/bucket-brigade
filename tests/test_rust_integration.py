@@ -178,7 +178,10 @@ class TestRustCoreIntegration:
 
             # Check key parameters match (use approximate comparison for floats)
             assert (
-                abs(rust_scenario.prob_fire_spreads_to_neighbor - python_scenario.prob_fire_spreads_to_neighbor)
+                abs(
+                    rust_scenario.prob_fire_spreads_to_neighbor
+                    - python_scenario.prob_fire_spreads_to_neighbor
+                )
                 < 1e-6
             )
             assert (
@@ -189,9 +192,17 @@ class TestRustCoreIntegration:
                 < 1e-6
             )
             assert (
-                abs(rust_scenario.team_reward_house_survives - python_scenario.team_reward_house_survives) < 1e-6
+                abs(
+                    rust_scenario.team_reward_house_survives
+                    - python_scenario.team_reward_house_survives
+                )
+                < 1e-6
             )
             assert (
-                abs(rust_scenario.team_penalty_house_burns - python_scenario.team_penalty_house_burns) < 1e-6
+                abs(
+                    rust_scenario.team_penalty_house_burns
+                    - python_scenario.team_penalty_house_burns
+                )
+                < 1e-6
             )
             # Note: num_agents is now a team composition parameter, not part of Scenario

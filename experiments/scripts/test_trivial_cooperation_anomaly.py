@@ -82,7 +82,9 @@ def main():
             "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("Testing p_spark (ongoing fires) sweep (κ=0.90)...")
@@ -118,7 +120,9 @@ def main():
             "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("Testing reference scenarios...")
@@ -150,7 +154,9 @@ def main():
             "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("=" * 80)

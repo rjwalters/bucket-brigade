@@ -105,8 +105,12 @@ def evaluate_cross_scenario(
 
     if verbose:
         print("Test Scenario Parameters:")
-        print(f"  beta (spread):       {test_scenario_obj.prob_fire_spreads_to_neighbor:.2f}")
-        print(f"  kappa (extinguish):  {test_scenario_obj.prob_solo_agent_extinguishes_fire:.2f}")
+        print(
+            f"  beta (spread):       {test_scenario_obj.prob_fire_spreads_to_neighbor:.2f}"
+        )
+        print(
+            f"  kappa (extinguish):  {test_scenario_obj.prob_solo_agent_extinguishes_fire:.2f}"
+        )
         print(f"  c (work cost):       {test_scenario_obj.cost_to_work_one_night:.2f}")
         print()
 

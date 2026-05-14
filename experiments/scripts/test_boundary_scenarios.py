@@ -81,7 +81,9 @@ def main():
             "kappa": scenario.prob_solo_agent_extinguishes_fire,
         }
 
-        print(f"β={scenario.prob_fire_spreads_to_neighbor:.2f}, c={scenario.cost_to_work_one_night:.2f} → {payoff:.2f}")
+        print(
+            f"β={scenario.prob_fire_spreads_to_neighbor:.2f}, c={scenario.cost_to_work_one_night:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("=" * 80)

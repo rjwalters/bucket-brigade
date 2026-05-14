@@ -17,7 +17,9 @@ print("1. Importing modules... ✓")
 
 # Load scenario
 scenario = get_scenario_by_name("greedy_neighbor", num_agents=4)
-print(f"2. Loaded scenario: {scenario.prob_fire_spreads_to_neighbor=}, {scenario.prob_solo_agent_extinguishes_fire=}, {scenario.cost_to_work_one_night=} ✓")
+print(
+    f"2. Loaded scenario: {scenario.prob_fire_spreads_to_neighbor=}, {scenario.prob_solo_agent_extinguishes_fire=}, {scenario.cost_to_work_one_night=} ✓"
+)
 
 # Create environment
 env = BucketBrigadeEnv(scenario)

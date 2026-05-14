@@ -17,7 +17,9 @@ print("Starting full game test...")
 
 # Load scenario
 scenario = get_scenario_by_name("greedy_neighbor", num_agents=4)
-print(f"Scenario: beta={scenario.prob_fire_spreads_to_neighbor}, kappa={scenario.prob_solo_agent_extinguishes_fire}, c={scenario.cost_to_work_one_night}")
+print(
+    f"Scenario: beta={scenario.prob_fire_spreads_to_neighbor}, kappa={scenario.prob_solo_agent_extinguishes_fire}, c={scenario.cost_to_work_one_night}"
+)
 
 # Create environment
 env = BucketBrigadeEnv(scenario)
