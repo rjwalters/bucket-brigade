@@ -81,13 +81,15 @@ class TestBucketBrigadeEnv:
         # Test default scenario
         scenario = default_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert 0 < scenario.beta < 1
-        assert scenario.kappa > 0
+        assert 0 < scenario.prob_fire_spreads_to_neighbor < 1
+        assert scenario.prob_solo_agent_extinguishes_fire > 0
 
         # Test random scenario
         scenario = random_scenario(num_agents=4, seed=42)
         assert scenario.num_agents == 4
-        assert 0.15 <= scenario.beta <= 0.35  # Within expected range
+        assert (
+            0.15 <= scenario.prob_fire_spreads_to_neighbor <= 0.35
+        )  # Within expected range
 
     def test_house_state_transitions(self):
         """Test house state transitions."""
@@ -195,13 +197,16 @@ class TestScenarioValidation:
         scenarios = [random_scenario(num_agents=4, seed=i) for i in range(10)]
 
         for scenario in scenarios:
-            assert 0.15 <= scenario.beta <= 0.35
-            assert 0.4 <= scenario.kappa <= 0.6
-            assert scenario.A == 100  # Fixed values
-            assert scenario.L == 100
-            assert scenario.c == 0.5
-            assert 0.1 <= scenario.rho_ignite <= 0.3
-            assert 10 <= scenario.N_min <= 20
+            assert 0.15 <= scenario.prob_fire_spreads_to_neighbor <= 0.35
+            assert 0.4 <= scenario.prob_solo_agent_extinguishes_fire <= 0.6
+            assert scenario.team_reward_house_survives == 100  # Fixed values
+            assert scenario.team_penalty_house_burns == 100
+            assert scenario.cost_to_work_one_night == 0.5
+            # prob_house_catches_fire is sampled from {0.0} or [0.01, 0.05]
+            assert scenario.prob_house_catches_fire == 0.0 or (
+                0.01 <= scenario.prob_house_catches_fire <= 0.05
+            )
+            assert 10 <= scenario.min_nights <= 20
             assert scenario.num_agents == 4
 
     def test_scenario_feature_vector(self):
@@ -209,7 +214,7 @@ class TestScenarioValidation:
         scenario = default_scenario(num_agents=4)
         features = scenario.to_feature_vector()
 
-        assert len(features) == 10  # Should have 10 parameters
+        assert len(features) == 12  # Should have 12 parameters
         assert all(
             isinstance(f, (int, float, np.integer, np.floating)) for f in features
         )
@@ -220,141 +225,145 @@ class TestScenarioFunctions:
 
     def test_easy_scenario(self):
         """Test easy scenario generation."""
-        from bucket_brigade.envs.scenarios import easy_scenario
+        from bucket_brigade.envs import easy_scenario
 
         scenario = easy_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.1  # Low spread
-        assert scenario.kappa == 0.8  # High extinguish efficiency
-        assert scenario.N_min == 10
+        assert scenario.prob_fire_spreads_to_neighbor == 0.1  # Low spread
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.8
+        )  # High extinguish efficiency
+        assert scenario.min_nights == 10
 
     def test_hard_scenario(self):
         """Test hard scenario generation."""
-        from bucket_brigade.envs.scenarios import hard_scenario
+        from bucket_brigade.envs import hard_scenario
 
         scenario = hard_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.4  # High spread
-        assert scenario.kappa == 0.3  # Low extinguish efficiency
-        assert scenario.N_min == 15
+        assert scenario.prob_fire_spreads_to_neighbor == 0.4  # High spread
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.3
+        )  # Low extinguish efficiency
+        assert scenario.min_nights == 15
 
     def test_trivial_cooperation_scenario(self):
         """Test trivial cooperation scenario."""
-        from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
+        from bucket_brigade.envs import trivial_cooperation_scenario
 
         scenario = trivial_cooperation_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.15
-        assert scenario.kappa == 0.9
-        assert scenario.p_spark == 0.0  # No spontaneous fires
+        assert scenario.prob_fire_spreads_to_neighbor == 0.15
+        assert scenario.prob_solo_agent_extinguishes_fire == 0.9
+        assert scenario.prob_house_catches_fire == 0.0  # No spontaneous fires
 
     def test_early_containment_scenario(self):
         """Test early containment scenario."""
-        from bucket_brigade.envs.scenarios import early_containment_scenario
+        from bucket_brigade.envs import early_containment_scenario
 
         scenario = early_containment_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.35  # High spread
-        assert scenario.rho_ignite == 0.3  # Many initial fires
+        assert scenario.prob_fire_spreads_to_neighbor == 0.35  # High spread
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.6
+        )  # Moderate extinguish efficiency
 
     def test_greedy_neighbor_scenario(self):
         """Test greedy neighbor scenario."""
-        from bucket_brigade.envs.scenarios import greedy_neighbor_scenario
+        from bucket_brigade.envs import greedy_neighbor_scenario
 
         scenario = greedy_neighbor_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.c == 1.0  # High work cost
+        assert scenario.cost_to_work_one_night == 1.0  # High work cost
 
     def test_sparse_heroics_scenario(self):
         """Test sparse heroics scenario."""
-        from bucket_brigade.envs.scenarios import sparse_heroics_scenario
+        from bucket_brigade.envs import sparse_heroics_scenario
 
         scenario = sparse_heroics_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.1  # Very low spread
-        assert scenario.N_min == 20  # Long games
+        assert scenario.prob_fire_spreads_to_neighbor == 0.1  # Very low spread
+        assert scenario.min_nights == 20  # Long games
 
     def test_rest_trap_scenario(self):
         """Test rest trap scenario."""
-        from bucket_brigade.envs.scenarios import rest_trap_scenario
+        from bucket_brigade.envs import rest_trap_scenario
 
         scenario = rest_trap_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.05  # Very low spread
-        assert scenario.kappa == 0.95  # Very high extinguish rate
+        assert scenario.prob_fire_spreads_to_neighbor == 0.05  # Very low spread
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.95
+        )  # Very high extinguish rate
 
     def test_chain_reaction_scenario(self):
         """Test chain reaction scenario."""
-        from bucket_brigade.envs.scenarios import chain_reaction_scenario
+        from bucket_brigade.envs import chain_reaction_scenario
 
         scenario = chain_reaction_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.45  # High spread
-        assert scenario.rho_ignite == 0.3  # Many initial fires
+        assert scenario.prob_fire_spreads_to_neighbor == 0.45  # High spread
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.6
+        )  # Moderate extinguish efficiency
 
     def test_deceptive_calm_scenario(self):
         """Test deceptive calm scenario."""
-        from bucket_brigade.envs.scenarios import deceptive_calm_scenario
+        from bucket_brigade.envs import deceptive_calm_scenario
 
         scenario = deceptive_calm_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.N_min == 20  # Long games
-        assert scenario.p_spark == 0.05  # Occasional sparks
+        assert scenario.min_nights == 20  # Long games
+        assert scenario.prob_house_catches_fire == 0.05  # Occasional sparks
 
     def test_overcrowding_scenario(self):
         """Test overcrowding scenario."""
-        from bucket_brigade.envs.scenarios import overcrowding_scenario
+        from bucket_brigade.envs import overcrowding_scenario
 
         scenario = overcrowding_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.kappa == 0.3  # Low extinguish efficiency
-        assert scenario.A == 50.0  # Lower reward
+        assert (
+            scenario.prob_solo_agent_extinguishes_fire == 0.3
+        )  # Low extinguish efficiency
+        assert scenario.team_reward_house_survives == 50.0  # Lower reward
 
     def test_mixed_motivation_scenario(self):
         """Test mixed motivation scenario."""
-        from bucket_brigade.envs.scenarios import mixed_motivation_scenario
+        from bucket_brigade.envs import mixed_motivation_scenario
 
         scenario = mixed_motivation_scenario(num_agents=4)
         assert scenario.num_agents == 4
-        assert scenario.beta == 0.3  # Moderate spread
-        assert scenario.N_min == 15
+        assert scenario.prob_fire_spreads_to_neighbor == 0.3  # Moderate spread
+        assert scenario.min_nights == 15
 
     def test_sample_easy_coop_scenario(self):
-        """Test easy cooperation sampling."""
-        from bucket_brigade.envs.scenarios import sample_easy_coop_scenario
+        """Test easy cooperation sampling (function removed; skipped)."""
+        import pytest
 
-        scenario = sample_easy_coop_scenario(num_agents=4, seed=42)
-        assert scenario.num_agents == 4
-        assert 0.1 <= scenario.beta <= 0.2
-        assert 0.7 <= scenario.kappa <= 0.9
-        assert scenario.p_spark == 0.0  # No sparks in easy coop
+        pytest.skip(
+            "sample_easy_coop_scenario removed in commit 27c76e74 (scenarios.py -> scenarios_generated.py refactor)"
+        )
 
     def test_sample_crisis_scenario(self):
-        """Test crisis scenario sampling."""
-        from bucket_brigade.envs.scenarios import sample_crisis_scenario
+        """Test crisis scenario sampling (function removed; skipped)."""
+        import pytest
 
-        scenario = sample_crisis_scenario(num_agents=4, seed=42)
-        assert scenario.num_agents == 4
-        assert 0.3 <= scenario.beta <= 0.5
-        assert 0.4 <= scenario.kappa <= 0.6
-        assert 0.2 <= scenario.rho_ignite <= 0.4
+        pytest.skip(
+            "sample_crisis_scenario removed in commit 27c76e74 (scenarios.py -> scenarios_generated.py refactor)"
+        )
 
     def test_sample_sparse_work_scenario(self):
-        """Test sparse work scenario sampling."""
-        from bucket_brigade.envs.scenarios import sample_sparse_work_scenario
+        """Test sparse work scenario sampling (function removed; skipped)."""
+        import pytest
 
-        scenario = sample_sparse_work_scenario(num_agents=4, seed=42)
-        assert scenario.num_agents == 4
-        assert 0.1 <= scenario.beta <= 0.2
-        assert 0.6 <= scenario.c <= 0.9
-        assert 15 <= scenario.N_min <= 25
+        pytest.skip(
+            "sample_sparse_work_scenario removed in commit 27c76e74 (scenarios.py -> scenarios_generated.py refactor)"
+        )
 
     def test_sample_deception_scenario(self):
-        """Test deception scenario sampling."""
-        from bucket_brigade.envs.scenarios import sample_deception_scenario
+        """Test deception scenario sampling (function removed; skipped)."""
+        import pytest
 
-        scenario = sample_deception_scenario(num_agents=4, seed=42)
-        assert scenario.num_agents == 4
-        assert scenario.beta == 0.25
-        assert scenario.N_min == 15
-        assert 0.03 <= scenario.p_spark <= 0.05
+        pytest.skip(
+            "sample_deception_scenario removed in commit 27c76e74 (scenarios.py -> scenarios_generated.py refactor)"
+        )
