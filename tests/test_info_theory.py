@@ -15,7 +15,9 @@ from bucket_brigade.analysis.info_theory import (
     bootstrap_ci,
     conditional_entropy,
     conditional_mutual_information,
+    conditioner_diagnostics,
     entropy_discrete,
+    is_degenerate_conditioner,
     joint_entropy,
     mutual_information,
     quantize_uniform,
@@ -225,3 +227,90 @@ class TestQuantize:
         assert codes.shape == (5_000,)
         # Should see roughly all 16 combinations.
         assert len(np.unique(codes)) >= 10
+
+
+class TestConditionerDiagnostics:
+    """Tests for the issue #146 measurement-quality guard.
+
+    These pin down :func:`conditioner_diagnostics` and
+    :func:`is_degenerate_conditioner`. They confirm the helper DETECTS the
+    failure mode where ``Z`` is constant (so ``I(X; Y | Z) = I(X; Y)``); they
+    do NOT exercise the corresponding fix in the P3 experiment design (that
+    is a research call deferred to Architect/Hermit; see #146).
+    """
+
+    def test_constant_conditioner_is_degenerate(self):
+        z = np.zeros(1000, dtype=np.int64)
+        degenerate, diag = is_degenerate_conditioner(z)
+        assert degenerate is True
+        assert diag["n_distinct"] == 1
+        assert diag["modal_fraction"] == 1.0
+        assert diag["entropy_bits"] == 0.0
+
+    def test_uniform_conditioner_is_not_degenerate(self):
+        rng = np.random.default_rng(100)
+        z = rng.integers(0, 4, size=10_000)
+        degenerate, diag = is_degenerate_conditioner(z)
+        assert degenerate is False
+        assert diag["n_distinct"] == 4
+        assert diag["modal_fraction"] < 0.30  # near 0.25 for true uniform
+        # Entropy should be close to log2(4) = 2 bits.
+        assert diag["entropy_bits"] == pytest.approx(2.0, abs=0.05)
+
+    def test_near_constant_conditioner_is_degenerate(self):
+        # 99.5% of mass in one bin → flagged at the default max_modal_fraction=0.99.
+        rng = np.random.default_rng(101)
+        z = np.zeros(2000, dtype=np.int64)
+        # Sprinkle 10 ones (0.5% mass).
+        rare_idx = rng.choice(2000, size=10, replace=False)
+        z[rare_idx] = 1
+        degenerate, diag = is_degenerate_conditioner(z)
+        assert degenerate is True
+        assert diag["n_distinct"] == 2  # technically not "constant"...
+        assert diag["modal_fraction"] > 0.99  # ...but mass is concentrated
+
+    def test_cmi_collapses_to_mi_when_conditioner_degenerate(self):
+        # Sanity check linking the diagnostic to the math it guards.
+        # When Z is constant, I(X; Y | Z) ≡ I(X; Y) exactly (modulo MM bias).
+        rng = np.random.default_rng(102)
+        x = rng.integers(0, 4, size=5_000)
+        y = x.copy()  # I(X; Y) = log2(4) = 2 bits.
+        z = np.zeros(5_000, dtype=np.int64)
+
+        degenerate, _ = is_degenerate_conditioner(z)
+        assert degenerate is True
+
+        mi = mutual_information(x, y)
+        cmi = conditional_mutual_information(x, y, z)
+        # The two should agree to within the bias-correction noise floor.
+        assert cmi == pytest.approx(mi, abs=TOL_LARGE)
+
+    def test_empty_input_treated_as_degenerate(self):
+        # Defensive: empty samples are flagged so callers don't divide-by-zero.
+        z = np.array([], dtype=np.int64)
+        degenerate, diag = is_degenerate_conditioner(z)
+        assert degenerate is True
+        assert diag["n_samples"] == 0
+        assert diag["n_distinct"] == 0
+        assert diag["modal_fraction"] == 1.0
+
+    def test_custom_thresholds(self):
+        # 60/40 split should NOT be flagged at default thresholds...
+        rng = np.random.default_rng(103)
+        z = (rng.random(1000) < 0.6).astype(np.int64)
+        degenerate_default, _ = is_degenerate_conditioner(z)
+        assert degenerate_default is False
+        # ...but should flag if we tighten max_modal_fraction below 0.6.
+        degenerate_strict, _ = is_degenerate_conditioner(
+            z, max_modal_fraction=0.55
+        )
+        assert degenerate_strict is True
+
+    def test_diagnostics_match_helper(self):
+        # The convenience wrapper should report the same numbers as the
+        # underlying diagnostic function.
+        rng = np.random.default_rng(104)
+        z = rng.integers(0, 5, size=2000)
+        diag_direct = conditioner_diagnostics(z)
+        _, diag_from_check = is_degenerate_conditioner(z)
+        assert diag_direct == diag_from_check

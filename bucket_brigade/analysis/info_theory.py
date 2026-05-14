@@ -36,6 +36,8 @@ __all__ = [
     "conditional_mutual_information",
     "bootstrap_ci",
     "quantize_uniform",
+    "conditioner_diagnostics",
+    "is_degenerate_conditioner",
 ]
 
 
@@ -267,3 +269,102 @@ def quantize_uniform(
         codes += per_col.astype(np.int64) * multiplier
         multiplier *= n_bins
     return codes
+
+
+def conditioner_diagnostics(z: np.ndarray) -> dict:
+    """Summarise the empirical distribution of a CMI conditioning variable.
+
+    Many conditional-MI failure modes (see issue #146) reduce to "the
+    conditioner is effectively constant on the sample." When the support of
+    ``Z`` collapses to a single value, ``I(X; Y | Z)`` is mathematically equal
+    to ``I(X; Y)`` and the conditional quantity adds no information beyond the
+    unconditional one. This helper returns a handful of numbers a caller can
+    use to gate a warning at measurement time.
+
+    Args:
+        z: ``(N,)`` array of discrete (or hashable) conditioning codes — the
+            same shape/format ``conditional_mutual_information`` consumes.
+
+    Returns:
+        ``{
+            "n_samples": N,
+            "n_distinct": number of distinct values observed,
+            "modal_fraction": fraction of mass concentrated in the most common
+                bin (1.0 means constant),
+            "entropy_bits": plug-in entropy in bits (no bias correction here —
+                this is a *diagnostic*, not an estimator),
+        }``
+
+        For the empty input ``N == 0`` we return zeros for everything and
+        ``modal_fraction = 1.0`` so the "degenerate" check still fires.
+    """
+    z = np.asarray(z)
+    n = int(z.size)
+    if n == 0:
+        return {
+            "n_samples": 0,
+            "n_distinct": 0,
+            "modal_fraction": 1.0,
+            "entropy_bits": 0.0,
+        }
+
+    counts = Counter(z.ravel().tolist())
+    n_distinct = len(counts)
+    modal_count = max(counts.values())
+    modal_fraction = modal_count / n
+
+    if n_distinct <= 1:
+        entropy_bits = 0.0
+    else:
+        probs = np.array(list(counts.values()), dtype=np.float64) / n
+        # Drop zeros defensively (Counter values are always > 0, but be safe).
+        probs = probs[probs > 0]
+        entropy_bits = float(-np.sum(probs * np.log2(probs)))
+
+    return {
+        "n_samples": n,
+        "n_distinct": n_distinct,
+        "modal_fraction": float(modal_fraction),
+        "entropy_bits": entropy_bits,
+    }
+
+
+def is_degenerate_conditioner(
+    z: np.ndarray,
+    *,
+    min_distinct: int = 2,
+    max_modal_fraction: float = 0.99,
+) -> tuple[bool, dict]:
+    """Detect when a CMI conditioner is mathematically guaranteed to be vacuous.
+
+    A conditioner ``Z`` is "degenerate" for the purposes of ``I(X; Y | Z)`` if
+    it is effectively constant on the sample. In that case the plug-in
+    estimator collapses to ``I(X; Y)`` and the conditional quantity carries no
+    additional information beyond the unconditional one. See issue #146 for
+    the motivating failure mode (team-reward conditioning on
+    ``trivial_cooperation``, where the team reward is essentially constant).
+
+    This is a *measurement-time* check. It detects the problem; it does not
+    fix it. The fix (choosing a different conditioner) is a research call and
+    lives in the experiment design, not here.
+
+    Args:
+        z: Conditioning codes (1-D array of hashable values).
+        min_distinct: Minimum number of distinct values required to *not* be
+            flagged degenerate. Defaults to 2 (a literal single-value
+            conditioner is unambiguously degenerate).
+        max_modal_fraction: If a single value carries more than this fraction
+            of the sample mass, the conditioner is flagged degenerate even if
+            other values appear. Defaults to 0.99 (gives near-constant
+            conditioners — e.g., a near-deterministic reward — a fail).
+
+    Returns:
+        ``(is_degenerate, diagnostics)``: a boolean and the dict returned by
+        :func:`conditioner_diagnostics`.
+    """
+    diag = conditioner_diagnostics(z)
+    degenerate = (
+        diag["n_distinct"] < min_distinct
+        or diag["modal_fraction"] > max_modal_fraction
+    )
+    return degenerate, diag
