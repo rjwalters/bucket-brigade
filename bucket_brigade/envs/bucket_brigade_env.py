@@ -88,6 +88,11 @@ class BucketBrigadeEnv:
         self.done = False
         self.rewards = np.zeros(self.num_agents, dtype=np.float32)
         self.trajectory = []
+        # Houses and the prev-houses cache must be cleared before
+        # _initialize_houses() rolls fresh fires --- otherwise RUINED houses
+        # from a previous episode leak into the new one.
+        self.houses = np.zeros(10, dtype=np.int8)
+        self._prev_houses_state = np.zeros(10, dtype=np.int8)
 
         # Initialize house states
         self._initialize_houses()
