@@ -317,12 +317,20 @@ cd bucket-brigade-core && ./build.sh
 
 This automated build script checks your Python version, compiles the Rust library, and installs it correctly.
 
-Alternatively, manual methods:
+Alternatively, manual method (matches what `build.sh` does — uses the
+setuptools-rust backend declared in `bucket-brigade-core/pyproject.toml`):
 ```bash
-cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
-# or
-cd bucket-brigade-core && PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 pip install -e .
+cd bucket-brigade-core
+uv pip install setuptools-rust
+RUSTC_WRAPPER= PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
+    uv run python -m pip install -e . --no-build-isolation
 ```
+
+> **Pitfall**: many of this repo's example commands set `RUSTC_WRAPPER=sccache`.
+> If sccache is not installed, the build may fail or produce a broken
+> artifact. Either install sccache (`cargo install sccache`) or unset
+> `RUSTC_WRAPPER` before building. See `bucket-brigade-core/README.md` for
+> troubleshooting (e.g. recovering from the CFFI-shadow trap).
 
 🚀 Quickstart
 ```bash

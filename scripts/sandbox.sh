@@ -65,19 +65,17 @@ setup_environment() {
         source "$HOME/.cargo/env"
     fi
 
-    # Build Rust module with PyO3
+    # Build Rust module with PyO3 via the canonical build script
+    # (uses setuptools-rust backend per pyproject.toml; see issue #134).
     echo "🔧 Building Rust module (bucket-brigade-core)..."
     cd bucket-brigade-core
 
     # Clean any stale build artifacts to avoid cffi/PyO3 conflicts
     rm -rf target bucket_brigade_core/__pycache__ bucket_brigade_core/bucket_brigade_core
 
-    # Ensure maturin is installed
-    uv pip install maturin
-
-    # Source Rust environment and build with PyO3 feature
+    # Source Rust environment and run the canonical build script
     source "$HOME/.cargo/env"
-    PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+    ./build.sh
 
     cd ..
 

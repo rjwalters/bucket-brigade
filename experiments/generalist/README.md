@@ -53,9 +53,9 @@ tmux new -s generalist
 cd bucket-brigade
 git pull
 
-# Ensure Rust module is built
+# Ensure Rust module is built (uses setuptools-rust backend)
 source .venv/bin/activate
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop
+(cd bucket-brigade-core && ./build.sh)
 
 # Run evolution with logging
 uv run python experiments/scripts/run_generalist_evolution.py \

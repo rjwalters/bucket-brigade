@@ -306,11 +306,10 @@ nvidia-smi
 
 ### Build Failures
 ```bash
-# Clean rebuild
+# Clean rebuild (build.sh handles env vars and CFFI-shadow cleanup)
 cd bucket-brigade-core
 cargo clean
-VIRTUAL_ENV=../. venv PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-    maturin develop --release --features python
+./build.sh
 ```
 
 ### Import Errors

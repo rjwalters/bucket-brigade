@@ -131,12 +131,13 @@ cd bucket-brigade-core
 # Clean any stale build artifacts to avoid cffi/PyO3 conflicts
 rm -rf target bucket_brigade_core/__pycache__ bucket_brigade_core/bucket_brigade_core
 
-# Ensure maturin is installed
-uv pip install maturin
+# Ensure setuptools-rust is installed (matches pyproject.toml backend)
+uv pip install setuptools-rust
 
-# Source Rust environment and build with PyO3 feature
+# Source Rust environment and build via setuptools-rust backend
 source "$HOME/.cargo/env"
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+RUSTC_WRAPPER= PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
+    uv run python -m pip install -e . --no-build-isolation
 
 cd ..
 ```

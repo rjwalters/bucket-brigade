@@ -56,12 +56,10 @@ source .venv/bin/activate
 echo "📚 Installing dependencies (this may take a few minutes)..."
 uv sync --extra rl
 
-# Build Rust core with PyO3 bindings
+# Build Rust core with PyO3 bindings (uses setuptools-rust per pyproject.toml)
 echo "🦀 Building Rust core..."
 cd bucket-brigade-core
-VIRTUAL_ENV="$(pwd)/../.venv" \
-  PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-  uv tool run maturin develop --release --features python
+./build.sh
 cd ..
 
 # Verify installation

@@ -72,10 +72,9 @@ ssh "$REMOTE_HOST" bash <<EOF
 
     source .venv/bin/activate
 
-    # Build Rust module
+    # Build Rust module (uses setuptools-rust backend per pyproject.toml)
     echo "Building Rust module..."
-    export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-    maturin develop --quiet
+    (cd bucket-brigade-core && ./build.sh)
 
     # Verify Rust module
     python -c "import bucket_brigade_core; print('✅ Rust module loaded')"

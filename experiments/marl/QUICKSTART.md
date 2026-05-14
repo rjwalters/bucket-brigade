@@ -125,10 +125,10 @@ ssh rwalters-sandbox-2 'cd bucket-brigade && tail -f experiments/marl/latest_tra
 # Check environment
 uv run python -c "from bucket_brigade.envs.puffer_env_rust import make_rust_env; print('OK')"
 
-# Rebuild if needed
+# Rebuild if needed (build.sh handles env vars and CFFI-shadow cleanup)
 cd bucket-brigade-core
 cargo clean
-VIRTUAL_ENV=../.venv PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+./build.sh
 ```
 
 **No GPU detected:**

@@ -57,9 +57,9 @@ uv venv
 source .venv/bin/activate  # Linux
 uv sync --extra rl
 
-# 5. Build Rust core
+# 5. Build Rust core (uses setuptools-rust backend per pyproject.toml)
 cd bucket-brigade-core
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+./build.sh
 cd ..
 
 # 6. Run full batch (in tmux for persistence)
@@ -210,21 +210,24 @@ tar xzf nash_v2_results.tar.gz
 **Problem**: Rust core won't build
 
 ```bash
-# Solution: Ensure Python feature is enabled
+# Solution: Use the canonical build script (sets env vars defensively)
 cd bucket-brigade-core
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+./build.sh
 cd ..
 ```
 
 **Problem**: Import errors
 
 ```bash
-# Solution: Rebuild and reinstall
+# Solution: Full rebuild and reinstall
 cd bucket-brigade-core
-rm -rf target/
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release --features python
+rm -rf target/ bucket_brigade_core/bucket_brigade_core
+./build.sh
 cd ..
 ```
+
+> See `bucket-brigade-core/README.md` for the CFFI-shadow troubleshooting
+> note ("cannot import name 'PyBucketBrigade'").
 
 ### Missing Evolved Agents
 

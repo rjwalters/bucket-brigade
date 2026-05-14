@@ -100,10 +100,11 @@ Located in `bucket-brigade-core/`:
 - WebAssembly support for browser deployment
 - Maintains identical game logic to Python version
 
-**Building**:
+**Building** (uses the setuptools-rust backend declared in pyproject.toml;
+sets `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` and unsets `RUSTC_WRAPPER`):
 ```bash
 cd bucket-brigade-core
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+./build.sh
 ```
 
 ### Python Wrappers

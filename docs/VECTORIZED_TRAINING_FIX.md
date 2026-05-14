@@ -53,12 +53,18 @@ ImportError: cannot import name 'VectorEnv' from 'bucket_brigade_core'
 
 ### Step 1: Enable Python Feature Flag
 
-Rebuild with the `python` feature flag:
+Rebuild via the canonical `build.sh` script. The script uses the
+setuptools-rust backend in `pyproject.toml`, which has
+`features = ["python"]` configured, so the PyO3 binding is always enabled:
 ```bash
 cd bucket-brigade-core
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-  maturin develop --release --features=python
+./build.sh
 ```
+
+> Historical note: this issue originally surfaced because a raw
+> `maturin develop --release` (no `--features python`) silently produced
+> CFFI shim files instead of the PyO3 module. The canonical build path is
+> now `./build.sh`, which avoids that pitfall. See issue #134.
 
 ### Step 2: Update __init__.py
 
@@ -195,14 +201,16 @@ num_houses = (obs_dim - 3 * 4) // 3  # (40 - 12) // 3 = 9
 
 ### 1. Always Use Feature Flags for Rust Builds
 
-When developing with PyO3:
+When developing with PyO3, prefer the canonical build script which uses
+the setuptools-rust backend (it has `features = ["python"]` configured in
+`pyproject.toml`):
 ```bash
-# Wrong (misses conditional features)
-maturin develop --release
+# Right: setuptools-rust backend, features baked into pyproject.toml
+cd bucket-brigade-core
+./build.sh
 
-# Right (includes all Python bindings)
-PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
-  maturin develop --release --features=python
+# Wrong (silently produces CFFI shim instead of PyO3 module — see #134)
+maturin develop --release
 ```
 
 ### 2. Verify Exports After Rust Changes
