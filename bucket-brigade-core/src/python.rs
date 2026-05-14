@@ -301,7 +301,6 @@ impl PyGameResult {
 pub struct PyVectorEnv {
     envs: Vec<BucketBrigade>,
     num_envs: usize,
-    num_agents: usize,
 }
 
 #[pymethods]
@@ -317,7 +316,7 @@ impl PyVectorEnv {
             })
             .collect();
 
-        Self { envs, num_envs, num_agents }
+        Self { envs, num_envs }
     }
 
     /// Reset all environments and return batched observations for agent 0
