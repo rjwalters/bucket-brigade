@@ -1,4 +1,32 @@
 {
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "${CLAUDE_PROJECT_DIR}/.loom/hooks/guard-destructive.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "${CLAUDE_PROJECT_DIR}/.loom/hooks/skill-router.sh",
+            "type": "command"
+          },
+          {
+            "command": "${CLAUDE_PROJECT_DIR}/.loom/hooks/methodology-inject.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(gh:*)",
