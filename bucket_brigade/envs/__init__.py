@@ -44,6 +44,7 @@ from .scenarios_generated import (
     list_scenarios,
     SCENARIO_REGISTRY,
 )
+from .scenarios_random import random_scenario
 
 __all__ = [
     "BucketBrigadeEnv",
@@ -55,6 +56,7 @@ __all__ = [
     "default_scenario",
     "easy_scenario",
     "hard_scenario",
+    "random_scenario",
     # Named test scenarios
     "trivial_cooperation_scenario",
     "early_containment_scenario",

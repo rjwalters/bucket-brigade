@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.agents import HeuristicAgent
-from bucket_brigade.envs.scenarios import (
+from bucket_brigade.envs import (
     Scenario,
     random_scenario,
     trivial_cooperation_scenario,
