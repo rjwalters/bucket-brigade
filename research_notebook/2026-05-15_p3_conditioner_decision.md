@@ -1,16 +1,44 @@
 ---
 title: P3 CMI Conditioner — Architect Decision
 date: 2026-05-15
-status: decided
-relates_to: ["issue #172", "issue #154", "PR #168"]
+status: decided (amended 2026-05-15 post-PR #180 smoke test)
+relates_to: ["issue #172", "issue #154", "PR #168", "PR #180"]
 companion: 2026-05-14_p3_specialization_results.md
 ---
 
 # P3 CMI Conditioner — Architect Decision
 
+## Amendment (2026-05-15, post-PR #180 smoke test)
+
+A 30-iter × 2048-step smoke test on `default` at λ=0 (seed 0), run after PR #180 merged the dual-conditioner code, surfaced a finding the original decision did not anticipate:
+
+**Agent 1's policy converges to fully deterministic** (modal_fraction climbs 0.988 → 1.000 over 30 iters), while agents 2 and 3 remain non-degenerate (modal_fraction in 0.5–0.85). The pair (0,1) — which conditions on agent 1's action — becomes mathematically degenerate from ~iter 18 onward. The other 5 of 6 pairs remain valid.
+
+This is not warm-up noise, a threshold tuning issue, or a code bug. It is a **structural property of Option 3**: when any agent's policy collapses (which is a routine outcome of PPO at low λ with no specialization pressure), the pairs where that agent is the conditioner become invalid, but the rest continue to measure correctly.
+
+**Refinement to the decision:** keep Option 3 as a sensitivity check, but **mask degenerate per-pair CMIs from the aggregate**. Specifically:
+
+- `cmi_action/mean_pair` should be computed as the mean over **non-degenerate per-pair CMIs only** (`is_degenerate_conditioner` of the conditioning agent returns False).
+- Emit a companion `cmi_action/n_valid_pairs` (int in [0, 6]) so the aggregate's denominator is explicit. Tables / plots reading `cmi_action/mean_pair` MUST also report `n_valid_pairs` alongside.
+- If `n_valid_pairs == 0` (full collapse — every conditioning agent degenerate), set `cmi_action/mean_pair = NaN` (Python `float('nan')`, written as `null` in JSON via `json.dump`'s default). Downstream aggregation in `analyze.py` must skip NaN cells rather than averaging them in.
+- The aggregate `cmi_action/conditioner_degenerate` flag stays defined as "any conditioning agent degenerate" — it is a *diagnostic* signal, not a gate. The numerical `cmi_action/mean_pair` is now self-correcting via masking and is the variable downstream code should trust.
+- Per-pair raw `cmi_action/agent_{i}_{j}` values are still emitted unconditionally (so anyone wanting to drill into a degenerate pair can). It is only the aggregate that masks.
+
+**Why this refinement, not the alternatives:**
+
+- *Drop Option 3 entirely:* throws away usable information from non-collapsed pairs on scenarios where some agents do specialize (e.g., `chain_reaction`). Two months from now, when policy collapse is less prevalent at higher λ, Option 3 has diagnostic value we'd have to re-add.
+- *Loosen aggregate flag to "all degenerate":* cosmetic — the aggregate `mean_pair` would still silently average 1 garbage value with 5 valid ones. Replicates the silent-artefact mode the degeneracy guard was added to prevent.
+- *Increase entropy bonus / extend training to break agent 1's collapse:* changes the experiment we are running, not a measurement design.
+
+The research-paper writeup remains free to omit Option 3 entirely if the per-pair masking is judged too noisy to communicate. The measurement is being kept primarily to inform research; paper inclusion is a separate downstream call.
+
+**Builder follow-up scope amendment:** see the revised Implementation scope section below.
+
+---
+
 ## TL;DR
 
-**Decision:** Keep Option 1 (state-summary conditioner: `num_burning + 11 * day_bin`) as the **primary** conditioner. Add Option 3 (other-agent lagged action) as a **secondary sensitivity check**, reported alongside in the same measurement pass. Drop Option 2 (trajectory bucket) — its near-deterministic-reward failure mode is the same pathology that motivated #154 in the first place.
+**Decision:** Keep Option 1 (state-summary conditioner: `num_burning + 11 * day_bin`) as the **primary** conditioner. Add Option 3 (other-agent lagged action) as a **secondary sensitivity check**, reported alongside in the same measurement pass, **with per-pair degeneracy masking on the aggregate** (see Amendment above). Drop Option 2 (trajectory bucket) — its near-deterministic-reward failure mode is the same pathology that motivated #154 in the first place.
 
 This satisfies Acceptance Criterion #1 of #172 ("Architect documents rationale"). Implementation is a small Builder follow-up — see "Implementation scope" below.
 
@@ -72,8 +100,19 @@ Small. ~30-45 minutes of work:
 2. No changes needed to `joint_trainer.py` — the training-side penalty is a separate methodological gap (per #146 curator note) and out of scope for #172.
 
 3. Acceptance check before merge:
-   - `is_degenerate_conditioner` does not fire on either conditioner on `default`, `chain_reaction`, `trivial_cooperation` at λ=0 on a short sandbox run (10 iters × 512 steps is enough — we are checking the conditioner's marginal distribution, not the CMI trend).
+   - `is_degenerate_conditioner` does not fire on **Option 1** on `default`, `chain_reaction`, `trivial_cooperation` at λ=0 on a short sandbox run (10 iters × 512 steps is enough).
+   - **Option 3's aggregate flag is allowed to fire** — this is expected behavior under PPO policy collapse at λ=0 (see Amendment above). The aggregate `cmi_action/mean_pair` must correctly mask degenerate per-pair CMIs and emit `cmi_action/n_valid_pairs`.
    - Both `cmi/mean_pair` and `cmi_action/mean_pair` are emitted in the per-iteration JSON log and consumed by `analyze.py` aggregation. (If `analyze.py` hardcodes the metric key, that aggregation update is part of this PR's scope.)
+
+### Builder follow-up specifically for the masking refinement (amendment scope)
+
+Separate from the original PR #180 work, the masking refinement requires:
+
+- In `_measure_information` (`experiments/p3_specialization/train.py`): after computing per-pair `cmi_action/agent_{i}_{j}`, filter the values used for the mean by whether `_is_degenerate_conditioner(z_action_codes_for_j)` is False. Emit `cmi_action/n_valid_pairs: int` alongside `cmi_action/mean_pair`. If `n_valid_pairs == 0`, set `cmi_action/mean_pair = float('nan')` (writes as JSON `null` via `json.dump` default; downstream analyzers must skip null).
+- Per-pair raw `cmi_action/agent_{i}_{j}` values continue to be emitted **unconditionally** — masking applies only to the aggregate.
+- In `analyze.py`: when aggregating `cmi_action_mean` across cells, skip null/NaN values. Also expose `cmi_action_n_valid_pairs` in the aggregated output if it is feasible without major surgery (otherwise note the limitation).
+- Add a focused unit test in `tests/test_p3_conditioners.py`: construct a synthetic per-pair CMI dict where one conditioning agent is degenerate (modal_fraction 1.0) and verify the aggregate excludes that pair and that `n_valid_pairs == 5`. Also test the all-degenerate edge case → NaN aggregate, `n_valid_pairs == 0`.
+- Append a short note to `_measure_information`'s docstring explaining the masking semantics and pointing at this notebook's Amendment section.
 
 4. **Not** in scope for this PR:
    - Re-running the full sweep with the new conditioner (that's a sandbox-1 job, separate from this code change).
