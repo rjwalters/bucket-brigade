@@ -7,6 +7,15 @@ export const HouseStateSchema = z.union([z.literal(0), z.literal(1), z.literal(2
 // Must match bucket_brigade/envs/scenarios_generated.py Scenario dataclass
 // (source of truth: definitions/scenarios.json, mirrored in
 // bucket-brigade-core/src/scenarios.rs Scenario struct).
+//
+// Per issue #198 the four ownership reward fields are per-agent vectors of
+// length ``num_agents``. For backward compatibility we accept either a
+// scalar (auto-promoted at load time) or an array. Replay files written by
+// the Python env always emit arrays (since Python promotes on construction),
+// but legacy scenario JSON and externally-authored scenarios may still use
+// scalars.
+const PerAgentReward = z.union([z.number(), z.array(z.number())]);
+
 export const ScenarioSchema = z.object({
   // Fire dynamics
   prob_fire_spreads_to_neighbor: z.number().min(0).max(1), // Probability fire spreads to adjacent house
@@ -17,11 +26,11 @@ export const ScenarioSchema = z.object({
   team_reward_house_survives: z.number().nonnegative(), // Team reward for each house that survives
   team_penalty_house_burns: z.number().nonnegative(), // Team penalty for each house that burns
 
-  // Individual rewards (ownership-based)
-  reward_own_house_survives: z.number(), // Individual reward when own house survives
-  reward_other_house_survives: z.number(), // Individual reward when other house survives
-  penalty_own_house_burns: z.number(), // Individual penalty when own house burns
-  penalty_other_house_burns: z.number(), // Individual penalty when other house burns
+  // Individual rewards (ownership-based, per-agent vectors; scalar accepted)
+  reward_own_house_survives: PerAgentReward, // Per-agent reward when own house survives
+  reward_other_house_survives: PerAgentReward, // Per-agent reward when other house survives
+  penalty_own_house_burns: PerAgentReward, // Per-agent penalty when own house burns
+  penalty_other_house_burns: PerAgentReward, // Per-agent penalty when other house burns
 
   // Costs and structure
   cost_to_work_one_night: z.number().nonnegative(), // Cost per worker per night

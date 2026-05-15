@@ -522,7 +522,7 @@ fn test_large_population_game_completion() {
 #[test]
 fn test_all_scenarios_runnable() {
     // Test that we can create an engine for every scenario
-    for (name, scenario) in SCENARIOS.entries() {
+    for (name, scenario) in SCENARIOS.iter() {
         let engine = BucketBrigade::new(scenario.clone(), 4, Some(42));
 
         assert_eq!(engine.num_agents, 4);
@@ -534,7 +534,7 @@ fn test_all_scenarios_runnable() {
 #[test]
 fn test_all_scenarios_steppable() {
     // Test that we can step every scenario without panicking
-    for (name, scenario) in SCENARIOS.entries() {
+    for (name, scenario) in SCENARIOS.iter() {
         let mut engine = BucketBrigade::new(scenario.clone(), 4, Some(42));
 
         let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
@@ -702,7 +702,8 @@ mod proptests {
             kappa in 0.0f32..1.0f32,
             p_spark in 0.0f32..0.1f32
         ) {
-            // Create custom scenario with random probabilities
+            // Create custom scenario with random probabilities.
+            // Per-agent ownership reward vectors are length 10 (max agents).
             let scenario = Scenario {
                 prob_fire_spreads_to_neighbor: beta,
                 prob_solo_agent_extinguishes_fire: kappa,
@@ -711,10 +712,10 @@ mod proptests {
                 team_penalty_house_burns: 100.0,
                 cost_to_work_one_night: 0.5,
                 min_nights: 12,
-                reward_own_house_survives: 100.0,
-                reward_other_house_survives: 50.0,
-                penalty_own_house_burns: 0.0,
-                penalty_other_house_burns: 0.0,
+                reward_own_house_survives: vec![100.0; 10],
+                reward_other_house_survives: vec![50.0; 10],
+                penalty_own_house_burns: vec![0.0; 10],
+                penalty_other_house_burns: vec![0.0; 10],
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));

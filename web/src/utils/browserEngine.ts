@@ -18,11 +18,17 @@ export interface Scenario {
   team_reward_house_survives: number; // Team reward for each house that survives
   team_penalty_house_burns: number; // Team penalty for each house that burns
 
-  // Individual rewards (ownership-based)
-  reward_own_house_survives: number; // Individual reward when own house survives
-  reward_other_house_survives: number; // Individual reward when other house survives
-  penalty_own_house_burns: number; // Individual penalty when own house burns
-  penalty_other_house_burns: number; // Individual penalty when other house burns
+  // Individual rewards (ownership-based, per-agent vectors; scalar accepted)
+  //
+  // Per issue #198 these four fields are per-agent vectors of length
+  // ``num_agents``. For backward compatibility (and parity with the Python
+  // ``Scenario.__post_init__`` promotion), this engine accepts either a
+  // scalar or an array; ``promoteOwnershipField`` below normalizes to an
+  // array of length ``num_agents`` at observation/scoring time.
+  reward_own_house_survives: number | number[]; // Per-agent reward when own house survives
+  reward_other_house_survives: number | number[]; // Per-agent reward when other house survives
+  penalty_own_house_burns: number | number[]; // Per-agent penalty when own house burns
+  penalty_other_house_burns: number | number[]; // Per-agent penalty when other house burns
 
   // Costs and structure
   cost_to_work_one_night: number; // Cost per worker per night
@@ -30,6 +36,20 @@ export interface Scenario {
 
   // Game setup
   num_agents: number; // Number of agents
+}
+
+/**
+ * Promote a scalar-or-array ownership reward field to a length-N array.
+ *
+ * Mirrors ``Scenario.__post_init__`` (Python) and
+ * ``deserialize_scalar_or_vec`` (Rust) so that scalar JSON values continue
+ * to work transparently after issue #198.
+ */
+export function promoteOwnershipField(value: number | number[], num_agents: number): number[] {
+  if (typeof value === 'number') {
+    return new Array(num_agents).fill(value);
+  }
+  return value;
 }
 
 export interface GameNight {
@@ -291,6 +311,16 @@ export class BrowserBucketBrigade {
   }
 
   get_observation(agent_id: number): AgentObservation {
+    // The four ownership reward fields may be scalars or per-agent arrays
+    // (issue #198). For the legacy 12-element scenario_info layout, use the
+    // mean — for the uniform/scalar case this preserves the original scalar
+    // value, keeping backward compatibility for any consumer.
+    const meanOf = (value: number | number[]): number => {
+      if (typeof value === 'number') return value;
+      if (value.length === 0) return 0;
+      return value.reduce((s, x) => s + x, 0) / value.length;
+    };
+
     return {
       signals: [...this.agent_signals],
       locations: [...this.agent_positions],
@@ -302,10 +332,10 @@ export class BrowserBucketBrigade {
         this.scenario.prob_house_catches_fire,
         this.scenario.team_reward_house_survives,
         this.scenario.team_penalty_house_burns,
-        this.scenario.reward_own_house_survives,
-        this.scenario.reward_other_house_survives,
-        this.scenario.penalty_own_house_burns,
-        this.scenario.penalty_other_house_burns,
+        meanOf(this.scenario.reward_own_house_survives),
+        meanOf(this.scenario.reward_other_house_survives),
+        meanOf(this.scenario.penalty_own_house_burns),
+        meanOf(this.scenario.penalty_other_house_burns),
         this.scenario.cost_to_work_one_night,
         this.scenario.min_nights,
         this.scenario.num_agents

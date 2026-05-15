@@ -81,6 +81,12 @@ pub struct WasmScenario {
 
 #[wasm_bindgen]
 impl WasmScenario {
+    /// Build a Scenario from JS-land. Per issue #198 the ownership reward
+    /// fields are per-agent vectors; for the wasm constructor we still
+    /// accept a scalar (auto-promoted to a length-10 vector to match the
+    /// 10-house ring / max-agent count). Callers that need explicit
+    /// per-agent vectors should build a JSON scenario and round-trip it
+    /// through ``serde_json`` instead.
     #[wasm_bindgen(constructor)]
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -96,6 +102,7 @@ impl WasmScenario {
         penalty_own_house_burns: Option<f32>,
         penalty_other_house_burns: Option<f32>,
     ) -> WasmScenario {
+        const DEFAULT_LEN: usize = 10;
         Self {
             inner: Scenario {
                 prob_fire_spreads_to_neighbor,
@@ -105,10 +112,22 @@ impl WasmScenario {
                 team_penalty_house_burns,
                 cost_to_work_one_night,
                 min_nights,
-                reward_own_house_survives: reward_own_house_survives.unwrap_or(100.0),
-                reward_other_house_survives: reward_other_house_survives.unwrap_or(50.0),
-                penalty_own_house_burns: penalty_own_house_burns.unwrap_or(0.0),
-                penalty_other_house_burns: penalty_other_house_burns.unwrap_or(0.0),
+                reward_own_house_survives: vec![
+                    reward_own_house_survives.unwrap_or(100.0);
+                    DEFAULT_LEN
+                ],
+                reward_other_house_survives: vec![
+                    reward_other_house_survives.unwrap_or(50.0);
+                    DEFAULT_LEN
+                ],
+                penalty_own_house_burns: vec![
+                    penalty_own_house_burns.unwrap_or(0.0);
+                    DEFAULT_LEN
+                ],
+                penalty_other_house_burns: vec![
+                    penalty_other_house_burns.unwrap_or(0.0);
+                    DEFAULT_LEN
+                ],
             },
         }
     }

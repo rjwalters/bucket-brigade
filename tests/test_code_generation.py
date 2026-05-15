@@ -108,16 +108,33 @@ class TestJSONDefinitions:
             assert len(spec["description"]) > 0, f"{name} description is empty"
 
     def test_all_scenarios_have_required_params(self):
-        """All scenarios have required parameters."""
+        """All scenarios have required parameters.
+
+        Per issue #198 the four ownership reward fields may be either a
+        scalar (legacy) or a list of numerics (per-agent vector).
+        """
+        per_agent_fields = {
+            "reward_own_house_survives",
+            "reward_other_house_survives",
+            "penalty_own_house_burns",
+            "penalty_other_house_burns",
+        }
         with open(SCENARIOS_JSON) as f:
             data = json.load(f)
 
         for name, spec in data["scenarios"].items():
             for param in REQUIRED_SCENARIO_PARAMS:
                 assert param in spec, f"Scenario {name} missing {param}"
-                assert isinstance(spec[param], (int, float)), (
-                    f"{name}.{param} must be numeric"
-                )
+                value = spec[param]
+                if param in per_agent_fields and isinstance(value, list):
+                    assert all(isinstance(x, (int, float)) for x in value), (
+                        f"{name}.{param} list elements must be numeric"
+                    )
+                else:
+                    assert isinstance(value, (int, float)), (
+                        f"{name}.{param} must be numeric (or list of numeric for "
+                        f"per-agent ownership fields)"
+                    )
 
     def test_all_scenarios_have_descriptions(self):
         """All scenarios have descriptions."""
@@ -183,9 +200,23 @@ class TestPythonGeneration:
             )
 
     def test_python_scenarios_match_json(self):
-        """Generated Python scenarios match JSON definitions."""
+        """Generated Python scenarios match JSON definitions.
+
+        Per issue #198 the four ownership reward fields are per-agent vectors
+        in Python (auto-promoted in ``Scenario.__post_init__``). JSON may
+        still hold a scalar for backward compatibility; we treat scalars as
+        equivalent to ``[scalar] * num_agents``.
+        """
         with open(SCENARIOS_JSON) as f:
             json_data = json.load(f)
+
+        # Ownership reward fields generalized to per-agent vectors (#198).
+        per_agent_fields = {
+            "reward_own_house_survives",
+            "reward_other_house_survives",
+            "penalty_own_house_burns",
+            "penalty_other_house_burns",
+        }
 
         # Test scenario registry
         for name, spec in json_data["scenarios"].items():
@@ -195,7 +226,8 @@ class TestPythonGeneration:
 
             # Get factory function
             factory = PY_SCENARIOS[name]
-            scenario = factory(num_agents=10)
+            num_agents = 10
+            scenario = factory(num_agents=num_agents)
 
             # Verify it's a Scenario instance
             assert isinstance(scenario, Scenario), (
@@ -207,9 +239,24 @@ class TestPythonGeneration:
                 actual_value = getattr(scenario, param)
                 expected_value = spec[param]
 
-                assert actual_value == expected_value, (
-                    f"Scenario {name}.{param}: expected {expected_value}, got {actual_value}"
-                )
+                if param in per_agent_fields:
+                    # JSON value may be scalar (promoted) or list (passthrough).
+                    if isinstance(expected_value, list):
+                        assert actual_value == expected_value, (
+                            f"Scenario {name}.{param}: expected {expected_value}, "
+                            f"got {actual_value}"
+                        )
+                    else:
+                        assert actual_value == [expected_value] * num_agents, (
+                            f"Scenario {name}.{param}: scalar {expected_value} "
+                            f"should promote to length-{num_agents} list, "
+                            f"got {actual_value}"
+                        )
+                else:
+                    assert actual_value == expected_value, (
+                        f"Scenario {name}.{param}: expected {expected_value}, "
+                        f"got {actual_value}"
+                    )
 
     def test_python_scenario_factories(self):
         """Python scenario factories work correctly."""

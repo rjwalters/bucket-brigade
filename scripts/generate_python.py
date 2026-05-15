@@ -81,6 +81,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
     """
 
     from dataclasses import dataclass
+    from typing import List, Union
     import numpy as np
 
 
@@ -89,6 +90,13 @@ def generate_scenarios(json_path: Path, output_path: Path):
         """Represents the stochastic configuration of a game.
 
         All parameter names match the Rust implementation for consistency.
+
+        The four ownership reward fields (``reward_own_house_survives``,
+        ``reward_other_house_survives``, ``penalty_own_house_burns``,
+        ``penalty_other_house_burns``) are per-agent vectors of length
+        ``num_agents`` (issue #198). Scalar inputs are auto-promoted to
+        a length-``num_agents`` list of that value by ``__post_init__``
+        for backward compatibility with existing scenario definitions.
         """
 
         # Fire dynamics
@@ -100,11 +108,12 @@ def generate_scenarios(json_path: Path, output_path: Path):
         team_reward_house_survives: float  # Team reward for each house that survives
         team_penalty_house_burns: float  # Team penalty for each house that burns
 
-        # Individual rewards (ownership-based)
-        reward_own_house_survives: float  # Individual reward when own house survives
-        reward_other_house_survives: float  # Individual reward when other house survives
-        penalty_own_house_burns: float  # Individual penalty when own house burns
-        penalty_other_house_burns: float  # Individual penalty when other house burns
+        # Individual rewards (ownership-based, per-agent vectors of length num_agents)
+        # Scalar inputs are auto-promoted in __post_init__ for backward compat.
+        reward_own_house_survives: Union[float, List[float]]  # Per-agent reward when own house survives
+        reward_other_house_survives: Union[float, List[float]]  # Per-agent reward when other house survives
+        penalty_own_house_burns: Union[float, List[float]]  # Per-agent penalty when own house burns
+        penalty_other_house_burns: Union[float, List[float]]  # Per-agent penalty when other house burns
 
         # Costs and structure
         cost_to_work_one_night: float  # Cost incurred when agent chooses to work
@@ -113,10 +122,44 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # Game setup
         num_agents: int  # Number of agents participating
 
+        def __post_init__(self) -> None:
+            """Auto-promote scalar ownership reward fields to per-agent vectors.
+
+            This is the canonical place where scalar -> list promotion happens
+            for issue #198. Existing scenarios with scalar JSON values are
+            still valid: a scalar ``v`` becomes ``[v] * num_agents``. Lists
+            are validated to have exactly ``num_agents`` entries.
+            """
+            for fname in (
+                "reward_own_house_survives",
+                "reward_other_house_survives",
+                "penalty_own_house_burns",
+                "penalty_other_house_burns",
+            ):
+                value = getattr(self, fname)
+                if isinstance(value, (int, float)):
+                    setattr(self, fname, [float(value)] * self.num_agents)
+                else:
+                    # Already a sequence; coerce to list[float] and validate length.
+                    promoted = [float(x) for x in value]
+                    if len(promoted) != self.num_agents:
+                        raise ValueError(
+                            f"Scenario.{fname} has length {len(promoted)} "
+                            f"but num_agents={self.num_agents}. Per-agent "
+                            f"ownership reward vectors must match num_agents."
+                        )
+                    setattr(self, fname, promoted)
+
         def to_feature_vector(self) -> np.ndarray:
             """
             Convert scenario parameters to a feature vector for agent conditioning.
-            Returns a numpy array with scenario features.
+
+            Returns a numpy array with scenario features. The four per-agent
+            ownership reward fields are reduced to their mean across agents
+            so the feature vector retains its 12-element layout (#198). For
+            scenarios with uniform per-agent weights (the legacy scalar-promoted
+            case) the mean equals the original scalar value, preserving
+            backward compatibility.
             """
             return np.array(
                 [
@@ -125,10 +168,10 @@ def generate_scenarios(json_path: Path, output_path: Path):
                     self.prob_house_catches_fire,
                     self.team_reward_house_survives,
                     self.team_penalty_house_burns,
-                    self.reward_own_house_survives,
-                    self.reward_other_house_survives,
-                    self.penalty_own_house_burns,
-                    self.penalty_other_house_burns,
+                    float(np.mean(self.reward_own_house_survives)),
+                    float(np.mean(self.reward_other_house_survives)),
+                    float(np.mean(self.penalty_own_house_burns)),
+                    float(np.mean(self.penalty_other_house_burns)),
                     self.cost_to_work_one_night,
                     self.min_nights,
                     self.num_agents,
@@ -140,6 +183,15 @@ def generate_scenarios(json_path: Path, output_path: Path):
     ''')
 
     # Generate factory functions
+    # Ownership reward fields are emitted as the literal value from JSON --
+    # scalar or list. The Scenario dataclass __post_init__ auto-promotes
+    # scalars to length-num_agents vectors (issue #198).
+    def _emit_value(v):
+        # Emit Python literal for either a scalar or a list of scalars.
+        if isinstance(v, list):
+            return "[" + ", ".join(repr(float(x)) for x in v) + "]"
+        return repr(v)
+
     for name, spec in scenarios.items():
         function_name = f"{name}_scenario"
         code += f'def {function_name}(num_agents: int) -> Scenario:\n'
@@ -150,10 +202,10 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f'        prob_house_catches_fire={spec["prob_house_catches_fire"]},\n'
         code += f'        team_reward_house_survives={spec["team_reward_house_survives"]},\n'
         code += f'        team_penalty_house_burns={spec["team_penalty_house_burns"]},\n'
-        code += f'        reward_own_house_survives={spec["reward_own_house_survives"]},\n'
-        code += f'        reward_other_house_survives={spec["reward_other_house_survives"]},\n'
-        code += f'        penalty_own_house_burns={spec["penalty_own_house_burns"]},\n'
-        code += f'        penalty_other_house_burns={spec["penalty_other_house_burns"]},\n'
+        code += f'        reward_own_house_survives={_emit_value(spec["reward_own_house_survives"])},\n'
+        code += f'        reward_other_house_survives={_emit_value(spec["reward_other_house_survives"])},\n'
+        code += f'        penalty_own_house_burns={_emit_value(spec["penalty_own_house_burns"])},\n'
+        code += f'        penalty_other_house_burns={_emit_value(spec["penalty_other_house_burns"])},\n'
         code += f'        cost_to_work_one_night={spec["cost_to_work_one_night"]},\n'
         code += f'        min_nights={spec["min_nights"]},\n'
         code += f'        num_agents=num_agents,\n'

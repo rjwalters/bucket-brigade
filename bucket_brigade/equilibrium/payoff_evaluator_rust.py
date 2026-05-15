@@ -14,7 +14,11 @@ def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
     """Convert Python Scenario to Rust PyScenario.
 
     Python and Rust Scenario classes now use identical parameter names,
-    so this is a straightforward pass-through.
+    so this is a straightforward pass-through. The four ownership reward
+    fields are per-agent vectors (issue #198) in Python (auto-promoted by
+    ``Scenario.__post_init__``); the Rust ``PyScenario`` constructor accepts
+    both scalar and list inputs, so passing the lists through here is
+    correct.
     """
     # Note: num_agents is NOT a Scenario parameter - it's specified when creating BucketBrigade env
     return core.Scenario(
@@ -25,7 +29,7 @@ def _convert_scenario_to_rust(scenario: Any) -> core.Scenario:
         team_penalty_house_burns=scenario.team_penalty_house_burns,
         cost_to_work_one_night=scenario.cost_to_work_one_night,
         min_nights=scenario.min_nights,
-        # Individual ownership rewards from Python Scenario
+        # Per-agent ownership reward vectors (#198) -- pass-through.
         reward_own_house_survives=scenario.reward_own_house_survives,
         reward_other_house_survives=scenario.reward_other_house_survives,
         penalty_own_house_burns=scenario.penalty_own_house_burns,
