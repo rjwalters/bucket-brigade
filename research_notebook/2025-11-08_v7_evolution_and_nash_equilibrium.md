@@ -227,4 +227,3 @@ uv run python experiments/scripts/compute_nash_v2.py <scenario> \
 5. **Honesty is strategic**: Some scenarios reward deception
 
 **Next**: Analyze evolution trajectories to understand how these strategies emerged over 200 generations.
-

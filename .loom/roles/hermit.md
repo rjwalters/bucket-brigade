@@ -542,4 +542,3 @@ true
 - `AGENT:Hermit:idle-monitoring`
 
 Keep task description brief (3-6 words), use present-tense verbs and hyphens between words.
-

@@ -324,4 +324,3 @@ Examples:
 See `.claude/commands/loom/champion-common.md` for full probe protocol details.
 
 ---
-

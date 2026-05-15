@@ -5,9 +5,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
+        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/|^\.loom/scripts/gh-cached$
       - id: ruff-format
-        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/
+        exclude: ^(\.venv|scripts|node_modules|web/node_modules)/|^\.loom/scripts/gh-cached$
 
   # MyPy type checking - disabled in pre-commit, run separately in CI
   # - repo: https://github.com/pre-commit/mirrors-mypy
@@ -22,7 +22,9 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$
       - id: end-of-file-fixer
+        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
@@ -35,7 +37,7 @@ repos:
       - id: bandit
         args: [-c, pyproject.toml]
         additional_dependencies: ['bandit[toml]']
-        exclude: ^(\.venv|tests|scripts|node_modules|web/node_modules)/
+        exclude: ^(\.venv|tests|scripts|node_modules|web/node_modules)/|^\.loom/scripts/gh-cached$
 
   # JavaScript/TypeScript formatting (if biome isn't handling it)
   # Disabled - let biome handle all JS/TS files
