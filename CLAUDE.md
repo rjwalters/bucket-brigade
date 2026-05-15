@@ -25,18 +25,26 @@ This repository uses **Loom** for AI-powered development orchestration.
 - Parallel experiments (multiple scenarios at once)
 
 **🚀 Use Remote Servers Instead**:
-- **robbs-mac-studio**: primary CPU compute target (Mac Studio M-series). Use for evolution, Nash analysis, P3 sweeps, any "❌ NEVER Run Locally" workload. The Bucket Brigade environment is CPU-bound; parallelism (sharding seeds across processes) is the win, not GPU.
 
-> Previous hosts `rwalters-sandbox-1` and `rwalters-sandbox-2` are no longer available as of 2026-05-15. Do not target them.
+Available compute hosts are listed in `.env` (gitignored — see `.env.example` for the structure). Hosts come and go (cloud rentals, lab clusters, personal machines), so the inventory is local to each clone. Common slots:
+
+- `COMPUTE_HOST_PRIMARY` — personal CPU host (e.g., a Mac Studio). Default for evolution, Nash analysis, P3 sweeps. The Bucket Brigade env is CPU-bound; parallelism is the win, not GPU.
+- `COMPUTE_HOST_CLUSTER` — lab cluster slot (e.g., `alc-*`). GPU-class but the env doesn't benefit much from GPU.
+- `COMPUTE_HOST_LAMBDA` / `COMPUTE_HOST_GCP` — rented cloud instances.
+
+Agents should `source .env`, pick the first non-empty option in priority order, and verify the host resolves before launching work: `ssh -o BatchMode=yes -o ConnectTimeout=5 $HOST echo ok`.
 
 **How to Use Remote Servers**:
 
 ```bash
-# SSH in
-ssh robbs-mac-studio
+source .env
+HOST="$COMPUTE_HOST_PRIMARY"  # or whichever fits the workload
 
-# Repo lives at ~/GitHub/bucket-brigade (NOT ~/bucket-brigade)
-cd ~/GitHub/bucket-brigade
+# SSH in
+ssh "$HOST"
+
+# Repo path on the remote varies — check ~/GitHub/bucket-brigade first, fall back to ~/bucket-brigade.
+cd ~/GitHub/bucket-brigade  # or ~/bucket-brigade
 git pull
 
 # Run heavy computation in tmux for persistence
@@ -47,7 +55,7 @@ uv run python experiments/scripts/compute_nash_v2.py ...
 # Reattach later: tmux attach -s experiment
 ```
 
-**One-time setup gotchas (if you are provisioning a fresh remote):**
+**One-time setup gotchas (if you are provisioning a fresh remote on macOS):**
 
 - Non-interactive SSH PATH is bare. In scripted SSH commands, prepend:
   `export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"`.
