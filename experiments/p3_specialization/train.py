@@ -10,10 +10,20 @@ later analysis pass needs:
 - ``config.json`` --- the exact arguments used (for reproducibility).
 
 Plug-in conditional MI between encoder outputs is computed on each
-rollout's most recent batch, conditioned on a coarse state summary
-``(num_houses_burning, day_index)`` (Option 1 from issue #154). Unconditional
-MI is also logged so we can see how much "specialization beyond shared
-state" the encoders actually carry.
+rollout's most recent batch, with two conditioners reported side-by-side:
+
+- **Primary (Option 1, state summary):** coarse ``(num_houses_burning,
+  day_index)``. Exogenous environment state; clean removal of "redundancy
+  from looking at the same world."
+- **Sensitivity check (Option 3, other-agent lagged action):** per pair
+  ``(i, j)``, agent ``j``'s packed action at ``t-1``. Conditions on a
+  signal that is downstream of agent ``j``'s encoder (via its policy
+  head), so it can suppress CMI for the wrong reason — useful as a
+  cross-check, not as a primary measurement.
+
+See ``research_notebook/2026-05-15_p3_conditioner_decision.md`` for the
+architect rationale and the four-way agreement table used to interpret
+the two CMI series together. Unconditional MI is also logged.
 """
 
 from __future__ import annotations
@@ -111,11 +121,7 @@ def _state_summary_codes(
     output matches the 1-D hashable-code shape consumed by
     :func:`conditional_mutual_information`.
 
-    NOTE: Conditioner selected by Builder (issue #154 Option 1: state summary).
-    The choice between state-summary vs. trajectory-bucket vs. other-agent-action
-    is a research call; curator flagged this for Architect review (see #154
-    builder-note for the Option 2/3 tradeoffs). If measurement values look
-    wrong, revisit Options 2/3 in #154.
+    Architect-validated; see ``research_notebook/2026-05-15_p3_conditioner_decision.md``.
     """
     obs_np = rollout.observations.cpu().numpy()
     # Per-house state ∈ {SAFE=0, BURNING=1, RUINED=2}; count BURNING per step.
@@ -144,6 +150,58 @@ def _state_summary_codes(
     return num_burning + 11 * day_codes.astype(np.int64)
 
 
+# Packed-action alphabet used by ``_other_agent_action_codes`` and the
+# ``action_entropy`` metric below. With ``action_dims = [10, 2]`` the pack
+# ``a[:, 0] * 2 + a[:, 1]`` covers ``0..19`` inclusive (20 distinct values).
+# We reserve code 20 as a sentinel for the "no prior action" case at ``t=0``
+# (and just after an episode boundary), so the conditioner's alphabet is
+# ``[0, 21)``. Using a dedicated sentinel keeps the conditioner well-defined
+# at the cost of one extra bin; ``is_degenerate_conditioner`` will still fire
+# correctly if real actions collapse to a single value.
+_ACTION_PACK_BASE = 2  # second action dimension cardinality
+_ACTION_NO_PRIOR_SENTINEL = 20
+_ACTION_CODE_ALPHABET = 21  # 0..19 real + 20 sentinel
+
+
+def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray:
+    """Per-step codes for agent ``j``'s packed action at ``t - lag``.
+
+    Implements **Option 3** from issue #154 — a sensitivity-check conditioner
+    that asks: "are agents ``i`` and ``j`` redundant beyond what their
+    *observed coordination* (agent ``j``'s recent action) forces?"
+    See ``research_notebook/2026-05-15_p3_conditioner_decision.md`` for the
+    architect rationale on why Option 3 is reported as a **secondary**
+    check alongside Option 1, not as a primary measurement.
+
+    Per-pair convention: when measuring ``CMI(Ẑ_i; Ẑ_j | Z_ij)`` with the
+    Option 3 conditioner, ``Z_ij`` is the *other* agent's lagged action —
+    here, agent ``j``'s action at ``t - lag``. This matches the convention
+    used in the four-way diagnostic table in the architect notebook.
+
+    Codes use the existing pack ``a[:, 0] * _ACTION_PACK_BASE + a[:, 1]``
+    (range ``0..19`` for ``action_dims = [10, 2]``). For ``t < lag`` (no
+    prior action exists yet) we emit the sentinel ``_ACTION_NO_PRIOR_SENTINEL``
+    so the conditioner is defined on every step.
+
+    Note: we do **not** reset the sentinel at episode boundaries here. The
+    architect spec calls for a single-step lag and defensive ``t=0`` handling;
+    leaking the last action of episode ``k-1`` into the first step of episode
+    ``k`` is a small effect at lag=1 and the env auto-resets observations
+    (which the encoder consumes) at the same step. If a future scenario uses
+    very short episodes where this matters, revisit.
+    """
+    if lag < 1:
+        raise ValueError(f"lag must be >= 1, got {lag}")
+    a = rollout.actions[agent_j].cpu().numpy()
+    # Pack the multi-discrete action: a[:, 0] in [0, 10), a[:, 1] in [0, 2).
+    packed = (a[:, 0] * _ACTION_PACK_BASE + a[:, 1]).astype(np.int64)
+    T = packed.shape[0]
+    codes = np.full(T, _ACTION_NO_PRIOR_SENTINEL, dtype=np.int64)
+    if T > lag:
+        codes[lag:] = packed[:-lag]
+    return codes
+
+
 def _measure_information(
     trainer: JointPPOTrainer,
     rollout,
@@ -152,17 +210,20 @@ def _measure_information(
 ) -> Dict[str, float]:
     """Plug-in MI/CMI on the rollout's encoder outputs.
 
-    Conditioned on a coarse ``(num_houses_burning, day_index)`` state summary
-    (issue #154 Option 1). Also logs unconditional MI per pair.
+    Reports two conditional MI series per pair, side-by-side:
+
+    - ``cmi/*`` — Option 1, conditioned on the coarse
+      ``(num_houses_burning, day_index)`` state summary.
+    - ``cmi_action/*`` — Option 3, conditioned on the *other* agent's
+      packed action at ``t-1`` (per-pair conditioner).
+
+    Also logs unconditional MI per pair.
 
     Encoder outputs are projected from ``hidden_size`` to a small dimension
     via the shared ``projection`` matrix before quantization, because a
     direct quantize-and-pack of a 64-D vector overflows the integer code.
 
-    NOTE: Conditioner selected by Builder (issue #154 Option 1: state summary).
-    The choice between state-summary vs. trajectory-bucket vs. other-agent-action
-    is a research call; curator flagged this for Architect review. If
-    measurement values look wrong, revisit Options 2/3 in #154.
+    Architect-validated; see ``research_notebook/2026-05-15_p3_conditioner_decision.md``.
     """
     with torch.no_grad():
         feats = trainer.encoder_outputs_batch(rollout.observations)
@@ -171,21 +232,21 @@ def _measure_information(
     # Quantize each (T, mi_proj_dims) projection into a single integer code.
     codes = [quantize_uniform(f, n_bins=n_bins) for f in feats_np]
 
-    # State-summary conditioning variable (issue #154 Option 1). See
-    # ``_state_summary_codes`` for the Architect-deferred decision rationale.
+    # Primary conditioner (Option 1, state summary). See
+    # ``_state_summary_codes`` and the architect notebook for rationale.
     z_codes = _state_summary_codes(rollout)
 
     out: Dict[str, float] = {}
 
-    # Defensive measurement-quality check (see issue #146).
-    #
-    # The team-reward conditioner used previously was near-constant on several
-    # scenarios (``trivial_cooperation`` literally; ``default`` and
-    # ``chain_reaction`` near-deterministically), which made the plug-in CMI
-    # collapse to the unconditional MI. Issue #154 Option 1 replaces it with a
-    # coarse ``(num_houses_burning, day_index)`` summary; this check stays in
-    # place to detect future regressions (e.g., if a scenario ends on step 0
-    # every time, both components collapse).
+    # Defensive measurement-quality check on the Option 1 conditioner (see
+    # issue #146 for the failure mode this guards against). The team-reward
+    # conditioner used previously was near-constant on several scenarios
+    # (``trivial_cooperation`` literally; ``default`` and ``chain_reaction``
+    # near-deterministically), which made the plug-in CMI collapse to the
+    # unconditional MI. The current Option 1 state-summary conditioner has not
+    # tripped this guard on the May 14 sweep; the check stays in place to
+    # detect future regressions (e.g., if a scenario ends on step 0 every
+    # time, both components collapse).
     is_degenerate, diag = is_degenerate_conditioner(z_codes)
     out["cmi/conditioner_n_distinct"] = float(diag["n_distinct"])
     out["cmi/conditioner_modal_fraction"] = diag["modal_fraction"]
@@ -194,12 +255,12 @@ def _measure_information(
     if is_degenerate:
         warnings.warn(
             (
-                "P3 CMI conditioner appears degenerate "
+                "P3 CMI Option 1 (state-summary) conditioner appears degenerate "
                 f"(n_distinct={diag['n_distinct']}, "
                 f"modal_fraction={diag['modal_fraction']:.3f}, "
                 f"entropy_bits={diag['entropy_bits']:.3f}). "
                 "I(Ẑ_i; Ẑ_j | Z) ≈ I(Ẑ_i; Ẑ_j) is mathematically guaranteed; "
-                "see issue #154 for context. Reported CMI values for this "
+                "see issue #146 for context. Reported `cmi/*` values for this "
                 "iteration should not be interpreted as 'conditional'."
             ),
             RuntimeWarning,
@@ -207,18 +268,83 @@ def _measure_information(
         )
 
     n = trainer.num_agents
+
+    # Sensitivity-check conditioners (Option 3): for each pair ``(i, j)`` with
+    # ``i < j``, the conditioner is agent ``j``'s packed action at ``t - 1``.
+    # Precompute once per agent ``j`` so the per-pair loop stays cheap, and
+    # so the degenerate diagnostics are emitted per conditioning agent. See
+    # the architect notebook for why this is reported alongside (not in place
+    # of) the Option 1 measurement.
+    action_codes_per_agent: Dict[int, np.ndarray] = {
+        j: _other_agent_action_codes(rollout, agent_j=j, lag=1) for j in range(n)
+    }
+    # Aggregate degenerate-diagnostic stats across the conditioning agents
+    # we actually use (j = 1..n-1, since pairs are i < j).
+    action_cond_diag_agents = list(range(1, n))
+    action_cond_degenerate_any = False
+    action_cond_modal_fractions: List[float] = []
+    action_cond_entropy_bits: List[float] = []
+    action_cond_n_distinct: List[int] = []
+    for j in action_cond_diag_agents:
+        is_deg_j, diag_j = is_degenerate_conditioner(action_codes_per_agent[j])
+        out[f"cmi_action/conditioner_agent_{j}_n_distinct"] = float(diag_j["n_distinct"])
+        out[f"cmi_action/conditioner_agent_{j}_modal_fraction"] = diag_j[
+            "modal_fraction"
+        ]
+        out[f"cmi_action/conditioner_agent_{j}_entropy_bits"] = diag_j["entropy_bits"]
+        out[f"cmi_action/conditioner_agent_{j}_degenerate"] = float(is_deg_j)
+        action_cond_degenerate_any = action_cond_degenerate_any or is_deg_j
+        action_cond_modal_fractions.append(diag_j["modal_fraction"])
+        action_cond_entropy_bits.append(diag_j["entropy_bits"])
+        action_cond_n_distinct.append(int(diag_j["n_distinct"]))
+        if is_deg_j:
+            warnings.warn(
+                (
+                    "P3 CMI Option 3 (other-agent-action) conditioner appears "
+                    f"degenerate for agent {j} "
+                    f"(n_distinct={diag_j['n_distinct']}, "
+                    f"modal_fraction={diag_j['modal_fraction']:.3f}, "
+                    f"entropy_bits={diag_j['entropy_bits']:.3f}). "
+                    "I(Ẑ_i; Ẑ_j | A_j[t-1]) ≈ I(Ẑ_i; Ẑ_j) is mathematically "
+                    "guaranteed for pairs conditioned on this agent. "
+                    f"Reported `cmi_action/agent_*_{j}` values for this "
+                    "iteration should not be interpreted as 'conditional'."
+                ),
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    # Aggregate diagnostics across conditioning agents (mean over j).
+    if action_cond_diag_agents:
+        out["cmi_action/conditioner_n_distinct"] = float(
+            np.mean(action_cond_n_distinct)
+        )
+        out["cmi_action/conditioner_modal_fraction"] = float(
+            np.mean(action_cond_modal_fractions)
+        )
+        out["cmi_action/conditioner_entropy_bits"] = float(
+            np.mean(action_cond_entropy_bits)
+        )
+        out["cmi_action/conditioner_degenerate"] = float(action_cond_degenerate_any)
+
     mi_vals = []
     cmi_vals = []
+    cmi_action_vals = []
     for i in range(n):
         for j in range(i + 1, n):
             mi = mutual_information(codes[i], codes[j])
             cmi = conditional_mutual_information(codes[i], codes[j], z_codes)
+            cmi_action = conditional_mutual_information(
+                codes[i], codes[j], action_codes_per_agent[j]
+            )
             out[f"mi/agent_{i}_{j}"] = mi
             out[f"cmi/agent_{i}_{j}"] = cmi
+            out[f"cmi_action/agent_{i}_{j}"] = cmi_action
             mi_vals.append(mi)
             cmi_vals.append(cmi)
+            cmi_action_vals.append(cmi_action)
     out["mi/mean_pair"] = float(np.mean(mi_vals))
     out["cmi/mean_pair"] = float(np.mean(cmi_vals))
+    out["cmi_action/mean_pair"] = float(np.mean(cmi_action_vals))
 
     # Marginal action entropy per agent (proxy for role entropy H(A_i^*)).
     for i in range(n):
@@ -302,6 +428,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 f"  iter {it:4d} | team_reward {mean_reward:8.3f} | "
                 f"mi_mean {info_stats['mi/mean_pair']:.3f} | "
                 f"cmi_mean {info_stats['cmi/mean_pair']:.3f} | "
+                f"cmi_action_mean {info_stats['cmi_action/mean_pair']:.3f} | "
                 f"red_loss {stats['redundancy_loss']:.4f}"
             )
 

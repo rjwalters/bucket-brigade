@@ -71,6 +71,11 @@ def _load_cell(cell_dir: Path) -> Dict[str, object] | None:
         "cmi_mean": final["cmi/mean_pair"],
         "action_entropy_mean": final["action_entropy/mean"],
     }
+    # Option 3 sensitivity-check CMI (architect decision 2026-05-15, #172).
+    # Older runs predate this metric; treat as optional so the analysis stays
+    # tolerant of mixed-vintage sweep trees.
+    if "cmi_action/mean_pair" in final:
+        out["cmi_action_mean"] = final["cmi_action/mean_pair"]
 
     # Optional dropout robustness if it has been evaluated.
     dropout_path = cell_dir / "dropout_results.json"
@@ -103,6 +108,7 @@ def aggregate(sweep_root: Path) -> Dict[Tuple[str, float], Dict[str, dict]]:
         "team_reward",
         "mi_mean",
         "cmi_mean",
+        "cmi_action_mean",
         "action_entropy_mean",
         "dropout_baseline",
         "dropout_mean_drop",
@@ -196,6 +202,7 @@ def _print_summary(
         n = data.get("n_seeds", 0)
         tr = data.get("team_reward", {})
         cmi = data.get("cmi_mean", {})
+        cmi_action = data.get("cmi_action_mean", {})
         drop = data.get("dropout_mean_drop", {})
         print(
             f"  lambda={lam:<7g} n={n:2d} | "
@@ -203,6 +210,8 @@ def _print_summary(
             f"[{tr.get('ci_lo', float('nan')):.2f}, {tr.get('ci_hi', float('nan')):.2f}] | "
             f"cmi={cmi.get('mean', float('nan')):.3f} "
             f"[{cmi.get('ci_lo', float('nan')):.2f}, {cmi.get('ci_hi', float('nan')):.2f}] | "
+            f"cmi_action={cmi_action.get('mean', float('nan')):.3f} "
+            f"[{cmi_action.get('ci_lo', float('nan')):.2f}, {cmi_action.get('ci_hi', float('nan')):.2f}] | "
             f"dropout_drop={drop.get('mean', float('nan')):.3f}"
         )
 
