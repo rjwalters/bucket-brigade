@@ -559,9 +559,7 @@ class TestScenarioRewardFields:
         env = BucketBrigadeEnv(scenario=scenario)
         env.reset(seed=0)
         # Deterministic ownership: agent 0 owns house 0.
-        env.house_owners = np.array(
-            [0, 1, 2, 3, 0, 1, 2, 3, 0, 1], dtype=np.int8
-        )
+        env.house_owners = np.array([0, 1, 2, 3, 0, 1, 2, 3, 0, 1], dtype=np.int8)
         # Stage a SAFE-transition for agent 0's owned house 0 only.
         env._prev_houses_state = np.array(
             [env.BURNING, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8
@@ -590,13 +588,9 @@ class TestScenarioRewardFields:
         env = BucketBrigadeEnv(scenario=scenario)
         env.reset(seed=0)
         # Agent 0 owns house 0 only (others split among 1-3).
-        env.house_owners = np.array(
-            [0, 1, 2, 3, 1, 2, 3, 1, 2, 3], dtype=np.int8
-        )
+        env.house_owners = np.array([0, 1, 2, 3, 1, 2, 3, 1, 2, 3], dtype=np.int8)
         # House 0 is RUINED, owned by agent 0; everything else SAFE.
-        env.houses = np.array(
-            [env.RUINED, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8
-        )
+        env.houses = np.array([env.RUINED, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
         env._prev_houses_state = env.houses.copy()
         actions = np.zeros((env.num_agents, 2), dtype=np.int8)  # all REST
         rewards = env._compute_rewards(actions)
@@ -624,9 +618,7 @@ class TestScenarioRewardFields:
             env = BucketBrigadeEnv(scenario=scenario)
             env.reset(seed=0)
             # Agent 0 owns *no* houses; houses 0-9 owned by agents 1-3.
-            env.house_owners = np.array(
-                [1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=np.int8
-            )
+            env.house_owners = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=np.int8)
             # All houses SAFE, all transitioned from BURNING this turn (so each
             # is a save event for its owner).
             env.houses = np.zeros(10, dtype=np.int8)
@@ -660,9 +652,7 @@ class TestScenarioRewardFields:
             env = BucketBrigadeEnv(scenario=scenario)
             env.reset(seed=0)
             # Agent 0 owns *no* houses.
-            env.house_owners = np.array(
-                [1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=np.int8
-            )
+            env.house_owners = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3, 1], dtype=np.int8)
             # All houses RUINED, owned by others. Agent 0 has zero owned
             # ruined houses, so the hardcoded -2.0*owned_ruined is 0 for agent 0
             # and any difference must come from penalty_other_house_burns.
