@@ -275,15 +275,17 @@ def generate_scenarios(json_path: Path, output_path: Path):
       };
 
       return {
-        beta: randomize(template.parameters.beta ?? 0.25),
-        kappa: randomize(template.parameters.kappa ?? 0.5),
-        A: template.parameters.A ?? 100,
-        L: template.parameters.L ?? 100,
-        c: randomize(template.parameters.c ?? 0.5),
-        rho_ignite: randomize(template.parameters.rho_ignite ?? 0.2),
-        N_min: template.parameters.N_min ?? 12,
-        p_spark: randomize(template.parameters.p_spark ?? 0.02),
-        N_spark: template.parameters.N_spark ?? 12,
+        prob_fire_spreads_to_neighbor: randomize(template.parameters.prob_fire_spreads_to_neighbor ?? 0.25),
+        prob_solo_agent_extinguishes_fire: randomize(template.parameters.prob_solo_agent_extinguishes_fire ?? 0.5),
+        prob_house_catches_fire: randomize(template.parameters.prob_house_catches_fire ?? 0.02),
+        team_reward_house_survives: template.parameters.team_reward_house_survives ?? 100,
+        team_penalty_house_burns: template.parameters.team_penalty_house_burns ?? 100,
+        reward_own_house_survives: template.parameters.reward_own_house_survives ?? 0,
+        reward_other_house_survives: template.parameters.reward_other_house_survives ?? 0,
+        penalty_own_house_burns: template.parameters.penalty_own_house_burns ?? 0,
+        penalty_other_house_burns: template.parameters.penalty_other_house_burns ?? 0,
+        cost_to_work_one_night: randomize(template.parameters.cost_to_work_one_night ?? 0.5),
+        min_nights: template.parameters.min_nights ?? 12,
         num_agents: numAgents,
       };
     }

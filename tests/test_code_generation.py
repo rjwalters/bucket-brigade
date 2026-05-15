@@ -40,15 +40,17 @@ EXPECTED_PARAM_COUNT = 10
 
 # Expected scenario parameters
 REQUIRED_SCENARIO_PARAMS = [
-    "beta",
-    "kappa",
-    "A",
-    "L",
-    "c",
-    "rho_ignite",
-    "N_min",
-    "p_spark",
-    "N_spark",
+    "prob_fire_spreads_to_neighbor",
+    "prob_solo_agent_extinguishes_fire",
+    "prob_house_catches_fire",
+    "team_reward_house_survives",
+    "team_penalty_house_burns",
+    "reward_own_house_survives",
+    "reward_other_house_survives",
+    "penalty_own_house_burns",
+    "penalty_other_house_burns",
+    "cost_to_work_one_night",
+    "min_nights",
 ]
 
 
