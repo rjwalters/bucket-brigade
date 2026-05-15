@@ -74,8 +74,16 @@ def _load_cell(cell_dir: Path) -> Dict[str, object] | None:
     # Option 3 sensitivity-check CMI (architect decision 2026-05-15, #172).
     # Older runs predate this metric; treat as optional so the analysis stays
     # tolerant of mixed-vintage sweep trees.
+    #
+    # Per the post-PR-#180 amendment to the architect notebook, the aggregate
+    # ``cmi_action/mean_pair`` is masked over non-degenerate per-pair CMIs and
+    # can be NaN (written as JSON ``null``) when every conditioning agent is
+    # degenerate. Carry through ``cmi_action_n_valid_pairs`` so the
+    # aggregator can report the explicit denominator alongside the mean.
     if "cmi_action/mean_pair" in final:
         out["cmi_action_mean"] = final["cmi_action/mean_pair"]
+    if "cmi_action/n_valid_pairs" in final:
+        out["cmi_action_n_valid_pairs"] = final["cmi_action/n_valid_pairs"]
 
     # Optional dropout robustness if it has been evaluated.
     dropout_path = cell_dir / "dropout_results.json"
@@ -116,11 +124,43 @@ def aggregate(sweep_root: Path) -> Dict[Tuple[str, float], Dict[str, dict]]:
     for key, group in by_key.items():
         agg: Dict[str, dict] = {"n_seeds": len(group)}
         for metric in metrics_to_aggregate:
-            vals = [c[metric] for c in group if metric in c]
+            # Skip null/NaN cells. ``cmi_action_mean`` is masked to NaN (JSON
+            # ``null``) when every conditioning agent is degenerate (notebook
+            # Amendment, post-PR #180); other metrics shouldn't contain
+            # ``None``/``NaN`` in practice, but filter defensively. We honour
+            # NaN-skip semantics so a single fully-collapsed cell doesn't
+            # poison the cross-seed mean.
+            vals = []
+            for c in group:
+                if metric not in c:
+                    continue
+                v = c[metric]
+                if v is None:
+                    continue
+                fv = float(v)
+                if np.isnan(fv):
+                    continue
+                vals.append(fv)
             if not vals:
                 continue
             point, lo, hi = _bootstrap_mean_ci(np.asarray(vals, dtype=float))
             agg[metric] = {"mean": point, "ci_lo": lo, "ci_hi": hi, "n": len(vals)}
+        # Surface the n_valid_pairs denominator for the Option 3 aggregate so
+        # consumers can interpret the masked mean correctly. We report the
+        # min across seeds (worst case — "this many pairs were valid in at
+        # least one seed of this cell"). Skipped if no seed in the cell
+        # logged the field (mixed-vintage trees).
+        n_valid = [
+            int(c["cmi_action_n_valid_pairs"])
+            for c in group
+            if "cmi_action_n_valid_pairs" in c
+        ]
+        if n_valid:
+            agg["cmi_action_n_valid_pairs"] = {
+                "min": min(n_valid),
+                "max": max(n_valid),
+                "n": len(n_valid),
+            }
         out[key] = agg
     return out
 
