@@ -60,6 +60,9 @@ class CellConfig:
     # (see ``experiments/p3_specialization/diagnostics/summary.md``).
     value_coef: float = 0.5
     entropy_coef: float = 0.01
+    # Issue #159: optional return normalization. Default False preserves
+    # existing behavior; flip on for the ablation cells.
+    normalize_returns: bool = False
     # Encoder outputs are quantized for plug-in MI. We first project from
     # ``hidden_size`` down to ``mi_proj_dims`` via a fixed random matrix
     # (seeded from ``seed``); then ``quantize_uniform`` packs each row into
@@ -190,6 +193,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         value_coef=cfg.value_coef,
         entropy_coef=cfg.entropy_coef,
         redundancy_coef=cfg.lambda_red,
+        normalize_returns=cfg.normalize_returns,
         device=cfg.device,
         seed=cfg.seed,
     )
@@ -276,6 +280,15 @@ def main() -> None:
             "Raised in Phase 2 sweeps to prevent entropy collapse (issue #153)."
         ),
     )
+    p.add_argument(
+        "--normalize-returns",
+        action="store_true",
+        help=(
+            "Issue #159: normalize PPO returns by running std before the "
+            "value-loss MSE. Default off preserves existing behavior; flip on "
+            "for the 4-cell ablation."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -288,6 +301,7 @@ def main() -> None:
         num_agents=args.num_agents,
         value_coef=args.value_coef,
         entropy_coef=args.entropy_coef,
+        normalize_returns=args.normalize_returns,
         device=args.device,
     )
     print(

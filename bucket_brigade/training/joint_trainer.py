@@ -44,6 +44,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from bucket_brigade.training.networks import PolicyNetwork, compute_gae
+from bucket_brigade.training.normalizers import RunningMeanStd
 
 
 __all__ = ["JointPPOTrainer", "RolloutBuffer", "flatten_dict_obs"]
@@ -114,6 +115,11 @@ class JointPPOTrainer:
             split into multiple chunks in a future revision if needed).
         device: ``"cpu"`` or ``"cuda"``.
         seed: Optional torch + env seed for reproducibility.
+        normalize_returns: If True, maintain a running mean/std of returns
+            (Welford / Chan) shared across all agents and divide returns by
+            ``sqrt(var + 1e-8)`` before the value-loss MSE. Default ``False``
+            preserves prior behavior. See issue #159 for the motivating
+            value-loss-magnitude diagnostics.
     """
 
     def __init__(
@@ -135,6 +141,7 @@ class JointPPOTrainer:
         minibatch_size: int = 256,
         device: str = "cpu",
         seed: Optional[int] = None,
+        normalize_returns: bool = False,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
@@ -152,6 +159,14 @@ class JointPPOTrainer:
         self.redundancy_coef = redundancy_coef
         self.ppo_epochs = ppo_epochs
         self.minibatch_size = minibatch_size
+
+        # Issue #159: optional running mean/std of returns to shrink the
+        # value-loss MSE target to O(1) (Phase 1 diagnostics showed
+        # value_term/policy_term ~ 10^6-10^7).
+        self.normalize_returns = normalize_returns
+        self._return_rms: Optional[RunningMeanStd] = (
+            RunningMeanStd(shape=()) if normalize_returns else None
+        )
 
         self.device = torch.device(device)
 
@@ -352,6 +367,25 @@ class JointPPOTrainer:
             )
             advantages[i] = (adv - adv.mean()) / (adv.std() + 1e-8)
             returns[i] = ret
+
+        # Issue #159: optional return normalization. Update the shared running
+        # mean/std from the concatenation of all agents' returns (commensurate
+        # since rewards live on the same scale), then scale each agent's
+        # returns by 1/sqrt(var + eps). This shrinks the MSE target to O(1)
+        # so that vf_coef=0.5 isn't dwarfing the policy gradient. Advantages
+        # are already standardized above and are NOT rescaled here (they enter
+        # the policy loss, not the value loss).
+        if self._return_rms is not None:
+            all_returns = (
+                torch.cat([returns[i] for i in range(self.num_agents)])
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            self._return_rms.update(all_returns)
+            scale = float(np.sqrt(self._return_rms.var + 1e-8))
+            for i in range(self.num_agents):
+                returns[i] = returns[i] / scale
 
         stats: Dict[str, float] = {
             f"policy_loss/agent_{i}": 0.0 for i in range(self.num_agents)
