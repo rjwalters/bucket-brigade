@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -159,7 +160,9 @@ def run_one_rollout(
     if load_policies:
         for i in range(cfg["num_agents"]):
             sd = torch.load(
-                cell_dir / f"policies/agent_{i}.pt", map_location=cfg.get("device", "cpu")
+                cell_dir / f"policies/agent_{i}.pt",
+                map_location=cfg.get("device", "cpu"),
+                weights_only=True,
             )
             trainer.policies[i].load_state_dict(sd)
 
@@ -172,7 +175,7 @@ def run_one_rollout(
     )
     sample = rollout.rewards[0]
     assert isinstance(sample, torch.Tensor) and sample.ndim == 1, (
-        f"rollout.rewards[0] is {type(sample)} with shape {getattr(sample,'shape',None)}; "
+        f"rollout.rewards[0] is {type(sample)} with shape {getattr(sample, 'shape', None)}; "
         "expected torch.Tensor[T]"
     )
 
@@ -197,7 +200,9 @@ def report(
     n = R.shape[0]
     work_cost = float(scenario.cost_to_work_one_night)
     rest_reward = 0.5  # hard-coded in BucketBrigadeEnv._compute_rewards
-    print(f"\n{'=' * 72}\n{label}\nR.shape = {R.shape}, A.shape = {A.shape}\n{'=' * 72}")
+    print(
+        f"\n{'=' * 72}\n{label}\nR.shape = {R.shape}, A.shape = {A.shape}\n{'=' * 72}"
+    )
 
     summary = {}
     for i in range(n):
@@ -272,8 +277,12 @@ def main() -> None:
     parser.add_argument(
         "--cell",
         type=Path,
-        default=Path("/tmp/h1_cell"),
-        help="Trained-cell directory containing config.json + policies/.",
+        default=Path(tempfile.gettempdir()) / "h1_cell",
+        help=(
+            "Trained-cell directory containing config.json + policies/. "
+            "Defaults to <system-tempdir>/h1_cell (the conventional rsync "
+            "target documented in the script docstring)."
+        ),
     )
     parser.add_argument(
         "--no-baseline",
@@ -310,7 +319,7 @@ def main() -> None:
     if not args.no_baseline:
         Rb, Ab, _, _ = run_one_rollout(args.cell, load_policies=False)
         baseline_summary = report(
-            f"RANDOM-INIT BASELINE (same config, no loaded policies)",
+            "RANDOM-INIT BASELINE (same config, no loaded policies)",
             Rb,
             Ab,
             scenario,
