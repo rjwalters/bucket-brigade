@@ -10,9 +10,10 @@ later analysis pass needs:
 - ``config.json`` --- the exact arguments used (for reproducibility).
 
 Plug-in conditional MI between encoder outputs is computed on each
-rollout's most recent batch, conditioned on the quantized team reward
-(per the paper's main-text definition ``I(Ẑ_i; Ẑ_j | R)``). Unconditional
-MI is also logged so we can see the PMIC failure mode if it kicks in.
+rollout's most recent batch, conditioned on a coarse state summary
+``(num_houses_burning, day_index)`` (Option 1 from issue #154). Unconditional
+MI is also logged so we can see how much "specialization beyond shared
+state" the encoders actually carry.
 """
 
 from __future__ import annotations
@@ -70,6 +71,76 @@ class CellConfig:
     action_dims: List[int] = field(default_factory=lambda: [10, 2])
 
 
+# Default number of day bins for the state-summary conditioner. Episodes in
+# ``BucketBrigadeEnv`` are short (single-digit nights on most scenarios), so a
+# small bin count is appropriate: too many bins fragments the conditioner across
+# rare day-indices and silently shrinks the per-cell sample.
+_STATE_SUMMARY_DAY_BINS = 4
+
+# Per-house observation layout: the first 10 columns of ``rollout.observations``
+# encode the 10-house state vector (SAFE=0, BURNING=1, RUINED=2). See
+# ``BucketBrigadeEnv._get_observation`` and ``flatten_dict_obs`` for the layout.
+_HOUSES_OBS_SLICE = slice(0, 10)
+_BURNING_CODE = 1
+
+
+def _state_summary_codes(
+    rollout, day_bins: int = _STATE_SUMMARY_DAY_BINS
+) -> np.ndarray:
+    """Coarse ``(num_houses_burning, day_index)`` state-summary conditioner.
+
+    Implements **Option 1** from issue #154 — replaces the previously-degenerate
+    team-reward conditioner with a coarse summary of the shared environment
+    state. Both components are reducible from rollout tensors without plumbing
+    changes to the env or trainer:
+
+    - ``num_houses_burning`` per timestep: count of ``BURNING`` entries in the
+      per-house state vector at ``rollout.observations[:, 0:10]``. Range
+      ``[0, 10]`` → 11-valued alphabet.
+    - ``day_index`` per timestep: 0-based step counter within the current
+      episode, reconstructed by resetting a running counter on each
+      ``rollout.dones[t] == 1`` flag (the env auto-resets after a done, so the
+      *next* observation begins a new episode). Quantized to ``day_bins`` equal
+      bins over the empirical range of day indices in this rollout.
+
+    Codes are packed into a single integer per timestep as
+    ``burning_count + 11 * day_bin`` (range ``[0, 11 * day_bins)``) so the
+    output matches the 1-D hashable-code shape consumed by
+    :func:`conditional_mutual_information`.
+
+    NOTE: Conditioner selected by Builder (issue #154 Option 1: state summary).
+    The choice between state-summary vs. trajectory-bucket vs. other-agent-action
+    is a research call; curator flagged this for Architect review (see #154
+    builder-note for the Option 2/3 tradeoffs). If measurement values look
+    wrong, revisit Options 2/3 in #154.
+    """
+    obs_np = rollout.observations.cpu().numpy()
+    # Per-house state ∈ {SAFE=0, BURNING=1, RUINED=2}; count BURNING per step.
+    num_burning = (obs_np[:, _HOUSES_OBS_SLICE] == _BURNING_CODE).sum(axis=1)
+    num_burning = num_burning.astype(np.int64)  # range [0, 10]
+
+    # Reconstruct per-step day_index from the shared dones flag. ``dones[t] == 1``
+    # signals "episode ended at step t"; the env auto-resets so step t+1 belongs
+    # to a fresh episode. We restart the counter at the step *after* each done.
+    dones_np = rollout.dones.cpu().numpy().astype(bool)
+    T = len(dones_np)
+    day_index = np.zeros(T, dtype=np.int64)
+    counter = 0
+    for t in range(T):
+        day_index[t] = counter
+        # If this step terminates the episode, the next step is day 0.
+        counter = 0 if dones_np[t] else counter + 1
+
+    # Quantize day_index uniformly. ``quantize_uniform`` handles the constant
+    # case (all-same input → all zeros) defensively.
+    day_codes = quantize_uniform(day_index.astype(np.float64), n_bins=day_bins)
+
+    # Pack into a single integer code per timestep. The +11 base matches the
+    # full alphabet of ``num_burning`` (0..10 inclusive); using the actual max
+    # would risk index collisions on rare empty rollouts.
+    return num_burning + 11 * day_codes.astype(np.int64)
+
+
 def _measure_information(
     trainer: JointPPOTrainer,
     rollout,
@@ -78,12 +149,17 @@ def _measure_information(
 ) -> Dict[str, float]:
     """Plug-in MI/CMI on the rollout's encoder outputs.
 
-    Conditioned on the *team reward* (sum over agents), quantized to
-    ``n_bins`` levels. Also logs unconditional MI per pair.
+    Conditioned on a coarse ``(num_houses_burning, day_index)`` state summary
+    (issue #154 Option 1). Also logs unconditional MI per pair.
 
     Encoder outputs are projected from ``hidden_size`` to a small dimension
     via the shared ``projection`` matrix before quantization, because a
     direct quantize-and-pack of a 64-D vector overflows the integer code.
+
+    NOTE: Conditioner selected by Builder (issue #154 Option 1: state summary).
+    The choice between state-summary vs. trajectory-bucket vs. other-agent-action
+    is a research call; curator flagged this for Architect review. If
+    measurement values look wrong, revisit Options 2/3 in #154.
     """
     with torch.no_grad():
         feats = trainer.encoder_outputs_batch(rollout.observations)
@@ -92,32 +168,22 @@ def _measure_information(
     # Quantize each (T, mi_proj_dims) projection into a single integer code.
     codes = [quantize_uniform(f, n_bins=n_bins) for f in feats_np]
 
-    # Team reward conditioning variable, also quantized.
-    rewards = (
-        torch.stack([rollout.rewards[i] for i in range(trainer.num_agents)], dim=0)
-        .sum(dim=0)
-        .cpu()
-        .numpy()
-    )
-    r_codes = quantize_uniform(rewards, n_bins=n_bins)
+    # State-summary conditioning variable (issue #154 Option 1). See
+    # ``_state_summary_codes`` for the Architect-deferred decision rationale.
+    z_codes = _state_summary_codes(rollout)
 
     out: Dict[str, float] = {}
 
     # Defensive measurement-quality check (see issue #146).
     #
-    # When the conditioner ``r_codes`` is (near-)constant on the sample, the
-    # plug-in CMI ``I(Ẑ_i; Ẑ_j | R)`` collapses to the unconditional MI
-    # ``I(Ẑ_i; Ẑ_j)`` and the "conditional" claim is vacuous. The classic
-    # offender in this experiment is the ``trivial_cooperation`` scenario,
-    # where the team reward is essentially constant; near-deterministic-reward
-    # scenarios fail less obviously but in the same way.
-    #
-    # NOTE: This check DETECTS the failure mode; it does not RESOLVE it. The
-    # research-level question of which conditioner to use (state-coarsening,
-    # per-agent reward, marginal-action codes, etc.) is deferred to the
-    # Architect/Hermit framing described in the issue. We deliberately do not
-    # pick a replacement here.
-    is_degenerate, diag = is_degenerate_conditioner(r_codes)
+    # The team-reward conditioner used previously was near-constant on several
+    # scenarios (``trivial_cooperation`` literally; ``default`` and
+    # ``chain_reaction`` near-deterministically), which made the plug-in CMI
+    # collapse to the unconditional MI. Issue #154 Option 1 replaces it with a
+    # coarse ``(num_houses_burning, day_index)`` summary; this check stays in
+    # place to detect future regressions (e.g., if a scenario ends on step 0
+    # every time, both components collapse).
+    is_degenerate, diag = is_degenerate_conditioner(z_codes)
     out["cmi/conditioner_n_distinct"] = float(diag["n_distinct"])
     out["cmi/conditioner_modal_fraction"] = diag["modal_fraction"]
     out["cmi/conditioner_entropy_bits"] = diag["entropy_bits"]
@@ -129,8 +195,8 @@ def _measure_information(
                 f"(n_distinct={diag['n_distinct']}, "
                 f"modal_fraction={diag['modal_fraction']:.3f}, "
                 f"entropy_bits={diag['entropy_bits']:.3f}). "
-                "I(Ẑ_i; Ẑ_j | R) ≈ I(Ẑ_i; Ẑ_j) is mathematically guaranteed; "
-                "see issue #146 for context. Reported CMI values for this "
+                "I(Ẑ_i; Ẑ_j | Z) ≈ I(Ẑ_i; Ẑ_j) is mathematically guaranteed; "
+                "see issue #154 for context. Reported CMI values for this "
                 "iteration should not be interpreted as 'conditional'."
             ),
             RuntimeWarning,
@@ -143,7 +209,7 @@ def _measure_information(
     for i in range(n):
         for j in range(i + 1, n):
             mi = mutual_information(codes[i], codes[j])
-            cmi = conditional_mutual_information(codes[i], codes[j], r_codes)
+            cmi = conditional_mutual_information(codes[i], codes[j], z_codes)
             out[f"mi/agent_{i}_{j}"] = mi
             out[f"cmi/agent_{i}_{j}"] = cmi
             mi_vals.append(mi)
