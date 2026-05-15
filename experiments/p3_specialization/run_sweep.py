@@ -40,6 +40,8 @@ def run_sweep(
     num_agents: int,
     device: str,
     skip_existing: bool,
+    value_coef: float = CellConfig.__dataclass_fields__["value_coef"].default,
+    entropy_coef: float = CellConfig.__dataclass_fields__["entropy_coef"].default,
 ) -> None:
     n_cells = len(scenarios) * len(lambdas) * len(seeds)
     print(
@@ -47,6 +49,7 @@ def run_sweep(
         f"({len(scenarios)} scenarios x {len(lambdas)} lambdas x {len(seeds)} seeds)"
     )
     print(f"Output root: {output_root}")
+    print(f"PPO coefs: value_coef={value_coef}, entropy_coef={entropy_coef}")
 
     t0 = time.time()
     done = 0
@@ -71,6 +74,8 @@ def run_sweep(
                     num_iterations=num_iterations,
                     rollout_steps=rollout_steps,
                     num_agents=num_agents,
+                    value_coef=value_coef,
+                    entropy_coef=entropy_coef,
                     device=device,
                 )
 
@@ -104,6 +109,26 @@ def main() -> None:
         action="store_true",
         help="Skip cells that already have metrics.json on disk.",
     )
+    p.add_argument(
+        "--value-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["value_coef"].default,
+        help=(
+            "PPO value-loss weight applied to every cell in the sweep "
+            "(default matches CellConfig). Lowered in Phase 2 sweeps to test "
+            "the value-loss-dominance hypothesis (issue #153)."
+        ),
+    )
+    p.add_argument(
+        "--entropy-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["entropy_coef"].default,
+        help=(
+            "PPO entropy bonus weight applied to every cell in the sweep "
+            "(default matches CellConfig). Raised in Phase 2 sweeps to "
+            "prevent entropy collapse (issue #153)."
+        ),
+    )
     args = p.parse_args()
 
     run_sweep(
@@ -116,6 +141,8 @@ def main() -> None:
         num_agents=args.num_agents,
         device=args.device,
         skip_existing=args.skip_existing,
+        value_coef=args.value_coef,
+        entropy_coef=args.entropy_coef,
     )
 
 

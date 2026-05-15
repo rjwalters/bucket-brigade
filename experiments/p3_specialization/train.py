@@ -54,6 +54,11 @@ class CellConfig:
     lr: float = 3e-4
     ppo_epochs: int = 4
     minibatch_size: int = 256
+    # PPO loss weights. Defaults match ``JointPPOTrainer.__init__`` so existing
+    # callers see no behavior change. Phase 2 sweeps (issue #153) vary these to
+    # test the value-loss-dominance hypothesis from the Phase 1 diagnostics
+    # (see ``experiments/p3_specialization/diagnostics/summary.md``).
+    value_coef: float = 0.5
     entropy_coef: float = 0.01
     # Encoder outputs are quantized for plug-in MI. We first project from
     # ``hidden_size`` down to ``mi_proj_dims`` via a fixed random matrix
@@ -182,6 +187,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         lr=cfg.lr,
         ppo_epochs=cfg.ppo_epochs,
         minibatch_size=cfg.minibatch_size,
+        value_coef=cfg.value_coef,
         entropy_coef=cfg.entropy_coef,
         redundancy_coef=cfg.lambda_red,
         device=cfg.device,
@@ -251,6 +257,25 @@ def main() -> None:
     p.add_argument("--num-iterations", type=int, default=50)
     p.add_argument("--rollout-steps", type=int, default=2048)
     p.add_argument("--num-agents", type=int, default=4)
+    p.add_argument(
+        "--value-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["value_coef"].default,
+        help=(
+            "PPO value-loss weight (default matches JointPPOTrainer.__init__). "
+            "Lowered in Phase 2 sweeps to test value-loss-dominance hypothesis "
+            "(issue #153)."
+        ),
+    )
+    p.add_argument(
+        "--entropy-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["entropy_coef"].default,
+        help=(
+            "PPO entropy bonus weight (default matches JointPPOTrainer.__init__). "
+            "Raised in Phase 2 sweeps to prevent entropy collapse (issue #153)."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -261,6 +286,8 @@ def main() -> None:
         num_iterations=args.num_iterations,
         rollout_steps=args.rollout_steps,
         num_agents=args.num_agents,
+        value_coef=args.value_coef,
+        entropy_coef=args.entropy_coef,
         device=args.device,
     )
     print(
