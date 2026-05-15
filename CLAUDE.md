@@ -25,25 +25,38 @@ This repository uses **Loom** for AI-powered development orchestration.
 - Parallel experiments (multiple scenarios at once)
 
 **🚀 Use Remote Servers Instead**:
-- **rwalters-sandbox-1**: CPU-intensive tasks (evolution, Nash analysis)
-- **rwalters-sandbox-2**: GPU training (MARL, neural network training)
+- **robbs-mac-studio**: primary CPU compute target (Mac Studio M-series). Use for evolution, Nash analysis, P3 sweeps, any "❌ NEVER Run Locally" workload. The Bucket Brigade environment is CPU-bound; parallelism (sharding seeds across processes) is the win, not GPU.
+
+> Previous hosts `rwalters-sandbox-1` and `rwalters-sandbox-2` are no longer available as of 2026-05-15. Do not target them.
 
 **How to Use Remote Servers**:
-```bash
-# SSH into remote server
-ssh rwalters-sandbox-1  # or rwalters-sandbox-2
 
-# Run in tmux for persistence
-tmux new -s experiment
-cd bucket-brigade
+```bash
+# SSH in
+ssh robbs-mac-studio
+
+# Repo lives at ~/GitHub/bucket-brigade (NOT ~/bucket-brigade)
+cd ~/GitHub/bucket-brigade
 git pull
 
-# Run heavy computation
+# Run heavy computation in tmux for persistence
+tmux new -s experiment
 uv run python experiments/scripts/compute_nash_v2.py ...
 
 # Detach: Ctrl+B, D
 # Reattach later: tmux attach -s experiment
 ```
+
+**One-time setup gotchas (if you are provisioning a fresh remote):**
+
+- Non-interactive SSH PATH is bare. In scripted SSH commands, prepend:
+  `export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"`.
+- `uv` creates venvs without `pip` by default. To use the canonical
+  `bucket-brigade-core/build.sh` Rust extension build (which calls
+  `python -m pip install -e . --no-build-isolation`), first seed pip into
+  the venv: `uv pip install pip`.
+- Rust build env vars (see `bucket-brigade-core/build.sh`):
+  `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1`, `RUSTC_WRAPPER=` (unset any sccache wrapper).
 
 **See `experiments/REMOTE_EXECUTION.md` for detailed remote workflow guide.**
 
