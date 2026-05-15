@@ -202,6 +202,52 @@ def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray
     return codes
 
 
+def _masked_mean_cmi_action(
+    cmi_values: List[float],
+    conditioning_agents: List[int],
+    per_agent_degenerate: Dict[int, bool],
+) -> tuple[float, int]:
+    """Mean of per-pair Option-3 CMIs, masking pairs with a degenerate conditioner.
+
+    Aggregate-only masking for the Option 3 (other-agent lagged action)
+    sensitivity check. Per the post-PR-#180 amendment to
+    ``research_notebook/2026-05-15_p3_conditioner_decision.md``, when any
+    conditioning agent's action distribution collapses to (near-)deterministic
+    — which is a structural outcome of PPO at λ=0 with no specialization
+    pressure — that agent's contribution to the aggregate is mathematically
+    vacuous (``I(X; Y | Z) ≈ I(X; Y)``). We exclude only the affected pairs
+    from the aggregate; per-pair raw CMIs continue to be emitted unmasked for
+    drilldown.
+
+    Args:
+        cmi_values: Per-pair Option-3 CMI values, in the order produced by
+            the ``i < j`` pair loop.
+        conditioning_agents: For each entry in ``cmi_values``, the index of
+            the conditioning agent (the larger of ``i, j`` per the pair
+            convention). Same length as ``cmi_values``.
+        per_agent_degenerate: Map ``{agent_j: bool}`` marking which
+            conditioning agents have a degenerate marginal action
+            distribution at this iteration.
+
+    Returns:
+        ``(mean_pair, n_valid_pairs)`` where ``mean_pair`` is the mean over
+        non-degenerate pairs, or ``float('nan')`` if every pair is degenerate
+        (``n_valid_pairs == 0``).
+    """
+    assert len(cmi_values) == len(conditioning_agents), (
+        "cmi_values and conditioning_agents must align"
+    )
+    kept = [
+        v
+        for v, j in zip(cmi_values, conditioning_agents)
+        if not per_agent_degenerate.get(j, False)
+    ]
+    n_valid = len(kept)
+    if n_valid == 0:
+        return float("nan"), 0
+    return float(np.mean(kept)), n_valid
+
+
 def _measure_information(
     trainer: JointPPOTrainer,
     rollout,
@@ -222,6 +268,20 @@ def _measure_information(
     Encoder outputs are projected from ``hidden_size`` to a small dimension
     via the shared ``projection`` matrix before quantization, because a
     direct quantize-and-pack of a 64-D vector overflows the integer code.
+
+    Aggregate masking (Option 3 only): per the post-PR-#180 amendment to the
+    architect notebook, ``cmi_action/mean_pair`` is the mean over **non-
+    degenerate** per-pair CMIs only (where "degenerate" is judged on the
+    *conditioning* agent ``j``'s marginal action distribution via
+    :func:`is_degenerate_conditioner`). ``cmi_action/n_valid_pairs`` is
+    emitted as the explicit denominator; if every conditioning agent is
+    degenerate the aggregate is ``NaN`` (JSON ``null``). Per-pair raw
+    ``cmi_action/agent_{i}_{j}`` values are emitted unconditionally so
+    drilldown into a degenerate pair is still possible. The aggregate
+    ``cmi_action/conditioner_degenerate`` flag retains its "any-degenerate"
+    semantics — diagnostic, not a gate. See
+    ``research_notebook/2026-05-15_p3_conditioner_decision.md`` Amendment
+    section.
 
     Architect-validated; see ``research_notebook/2026-05-15_p3_conditioner_decision.md``.
     """
@@ -282,18 +342,22 @@ def _measure_information(
     # we actually use (j = 1..n-1, since pairs are i < j).
     action_cond_diag_agents = list(range(1, n))
     action_cond_degenerate_any = False
+    action_cond_degenerate_per_agent: Dict[int, bool] = {}
     action_cond_modal_fractions: List[float] = []
     action_cond_entropy_bits: List[float] = []
     action_cond_n_distinct: List[int] = []
     for j in action_cond_diag_agents:
         is_deg_j, diag_j = is_degenerate_conditioner(action_codes_per_agent[j])
-        out[f"cmi_action/conditioner_agent_{j}_n_distinct"] = float(diag_j["n_distinct"])
+        out[f"cmi_action/conditioner_agent_{j}_n_distinct"] = float(
+            diag_j["n_distinct"]
+        )
         out[f"cmi_action/conditioner_agent_{j}_modal_fraction"] = diag_j[
             "modal_fraction"
         ]
         out[f"cmi_action/conditioner_agent_{j}_entropy_bits"] = diag_j["entropy_bits"]
         out[f"cmi_action/conditioner_agent_{j}_degenerate"] = float(is_deg_j)
         action_cond_degenerate_any = action_cond_degenerate_any or is_deg_j
+        action_cond_degenerate_per_agent[j] = bool(is_deg_j)
         action_cond_modal_fractions.append(diag_j["modal_fraction"])
         action_cond_entropy_bits.append(diag_j["entropy_bits"])
         action_cond_n_distinct.append(int(diag_j["n_distinct"]))
@@ -328,7 +392,8 @@ def _measure_information(
 
     mi_vals = []
     cmi_vals = []
-    cmi_action_vals = []
+    cmi_action_vals: List[float] = []
+    cmi_action_conditioning_agents: List[int] = []
     for i in range(n):
         for j in range(i + 1, n):
             mi = mutual_information(codes[i], codes[j])
@@ -338,13 +403,22 @@ def _measure_information(
             )
             out[f"mi/agent_{i}_{j}"] = mi
             out[f"cmi/agent_{i}_{j}"] = cmi
+            # Per-pair raw CMI is emitted unconditionally; masking applies only
+            # to the aggregate below. See docstring + notebook Amendment.
             out[f"cmi_action/agent_{i}_{j}"] = cmi_action
             mi_vals.append(mi)
             cmi_vals.append(cmi)
             cmi_action_vals.append(cmi_action)
+            cmi_action_conditioning_agents.append(j)
     out["mi/mean_pair"] = float(np.mean(mi_vals))
     out["cmi/mean_pair"] = float(np.mean(cmi_vals))
-    out["cmi_action/mean_pair"] = float(np.mean(cmi_action_vals))
+    cmi_action_mean, n_valid_pairs = _masked_mean_cmi_action(
+        cmi_action_vals,
+        cmi_action_conditioning_agents,
+        action_cond_degenerate_per_agent,
+    )
+    out["cmi_action/mean_pair"] = cmi_action_mean
+    out["cmi_action/n_valid_pairs"] = n_valid_pairs
 
     # Marginal action entropy per agent (proxy for role entropy H(A_i^*)).
     for i in range(n):
@@ -428,7 +502,8 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 f"  iter {it:4d} | team_reward {mean_reward:8.3f} | "
                 f"mi_mean {info_stats['mi/mean_pair']:.3f} | "
                 f"cmi_mean {info_stats['cmi/mean_pair']:.3f} | "
-                f"cmi_action_mean {info_stats['cmi_action/mean_pair']:.3f} | "
+                f"cmi_action_mean {info_stats['cmi_action/mean_pair']:.3f} "
+                f"(n_valid={info_stats['cmi_action/n_valid_pairs']}) | "
                 f"red_loss {stats['redundancy_loss']:.4f}"
             )
 
