@@ -42,7 +42,9 @@ def run_sweep(
     skip_existing: bool,
     value_coef: float = CellConfig.__dataclass_fields__["value_coef"].default,
     entropy_coef: float = CellConfig.__dataclass_fields__["entropy_coef"].default,
-    normalize_returns: bool = CellConfig.__dataclass_fields__["normalize_returns"].default,
+    normalize_returns: bool = CellConfig.__dataclass_fields__[
+        "normalize_returns"
+    ].default,
 ) -> None:
     n_cells = len(scenarios) * len(lambdas) * len(seeds)
     print(
