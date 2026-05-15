@@ -111,16 +111,16 @@ class Scenario:
 
 
 def default_scenario(num_agents: int) -> Scenario:
-    """Standard balanced scenario for general testing"""
+    """Standard balanced scenario for general testing (ownership rebalanced #197: 1.0/2.0 -> 20.0/40.0 to give PPO a per-agent gradient signal)"""
     return Scenario(
         prob_fire_spreads_to_neighbor=0.25,
         prob_solo_agent_extinguishes_fire=0.5,
         prob_house_catches_fire=0.02,
         team_reward_house_survives=100.0,
         team_penalty_house_burns=100.0,
-        reward_own_house_survives=1.0,
+        reward_own_house_survives=20.0,
         reward_other_house_survives=0.0,
-        penalty_own_house_burns=2.0,
+        penalty_own_house_burns=40.0,
         penalty_other_house_burns=0.0,
         cost_to_work_one_night=0.5,
         min_nights=12,

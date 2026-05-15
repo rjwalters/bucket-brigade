@@ -95,6 +95,12 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
     let mut m = HashMap::new();
 
     // Standard difficulty scenarios
+    //
+    // NOTE: ownership rewards rebalanced #197 (1.0/2.0 -> 20.0/40.0) to give PPO a
+    // per-agent gradient signal. Preserves 1:2 ratio. Team rewards unchanged
+    // (preserves Slepian-Wolf protocol's reward scale). #198 generalized the
+    // ownership fields to per-agent vectors; the rebalanced scalars are wrapped
+    // via the per_agent() helper.
     m.insert(
         "default",
         Scenario {
@@ -105,9 +111,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
-            reward_own_house_survives: per_agent(1.0),
+            reward_own_house_survives: per_agent(20.0),
             reward_other_house_survives: per_agent(0.0),
-            penalty_own_house_burns: per_agent(2.0),
+            penalty_own_house_burns: per_agent(40.0),
             penalty_other_house_burns: per_agent(0.0),
         },
     );
@@ -425,7 +431,8 @@ mod tests {
         let scenario = SCENARIOS.get("default").unwrap();
         let json = serde_json::to_string(scenario).unwrap();
         // Serialized form is an array (the canonical post-#198 representation).
-        assert!(json.contains("\"reward_own_house_survives\":[1.0"));
+        // Value is 20.0 post-#197 ownership rebalance on the default scenario.
+        assert!(json.contains("\"reward_own_house_survives\":[20.0"));
         let deserialized: Scenario = serde_json::from_str(&json).unwrap();
         assert_eq!(
             deserialized.reward_own_house_survives,
