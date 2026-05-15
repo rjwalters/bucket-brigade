@@ -110,7 +110,7 @@ print(f"Hero heterogeneous fitness: {fitness} vs v7: 43.67")
 3. Hierarchical clustering
 4. Visualize dendrogram
 
-**Expected**: 
+**Expected**:
 - Cooperative cluster: chain_reaction, easy, deceptive_calm
 - Selfish cluster: default, hard, rest_trap
 - Mixed: others
@@ -214,10 +214,10 @@ Based on Phase 2.5 findings, we'll pursue:
 
 ## Success Metrics
 
-✅ **Understand** why v7 differs from Phase 1.5 universal equilibrium  
-✅ **Explain** Nash vs Evolution discrepancy  
-✅ **Predict** which scenarios favor cooperation vs selfishness  
-✅ **Design** Phase 2.6 experiments with clear motivation  
+✅ **Understand** why v7 differs from Phase 1.5 universal equilibrium
+✅ **Explain** Nash vs Evolution discrepancy
+✅ **Predict** which scenarios favor cooperation vs selfishness
+✅ **Design** Phase 2.6 experiments with clear motivation
 
 **Alignment with Principles**:
 - ✅ Stay Interpretable: All analyses use small, transparent models
@@ -237,4 +237,3 @@ uv run python scripts/compare_nash_vs_v7.py
 ```
 
 Then proceed through priorities 2-6 based on emerging insights.
-
