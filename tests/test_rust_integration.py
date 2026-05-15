@@ -99,7 +99,8 @@ class TestRustCoreIntegration:
         import time
 
         scenario = SCENARIOS["trivial_cooperation"]
-        env = BucketBrigade(scenario, seed=42)
+        num_agents = 4
+        env = BucketBrigade(scenario, num_agents, seed=42)
 
         # Benchmark: run many steps
         num_steps = 1000
@@ -113,7 +114,7 @@ class TestRustCoreIntegration:
 
             # Reset if game finishes
             if done:
-                env = BucketBrigade(scenario, seed=42 + step)
+                env = BucketBrigade(scenario, num_agents, seed=42 + step)
 
         end_time = time.time()
         total_time = end_time - start_time
@@ -135,13 +136,14 @@ class TestRustCoreIntegration:
             pytest.skip("Rust core not available")
 
         scenario = SCENARIOS["trivial_cooperation"]
+        num_agents = 4
 
         # Run same scenario twice with same seed
         results1 = []
         results2 = []
 
         for run in [1, 2]:
-            env = BucketBrigade(scenario, seed=12345)
+            env = BucketBrigade(scenario, num_agents, seed=12345)
             run_results = []
 
             for _ in range(10):
