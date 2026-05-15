@@ -4,7 +4,7 @@ Quick test to verify Rust heuristic implementation works.
 
 import numpy as np
 from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator
-from bucket_brigade.envs.scenarios import Scenario
+from bucket_brigade.envs import Scenario
 
 
 def test_rust_vs_python_heuristic():

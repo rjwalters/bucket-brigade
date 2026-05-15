@@ -24,7 +24,7 @@ from bucket_brigade.evolution import (
     Individual,
     Population,
 )
-from bucket_brigade.envs.scenarios import default_scenario, greedy_neighbor_scenario
+from bucket_brigade.envs import default_scenario, greedy_neighbor_scenario
 
 
 def progress_callback(generation: int, population: Population) -> None:

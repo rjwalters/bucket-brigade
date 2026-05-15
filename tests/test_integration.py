@@ -15,7 +15,7 @@ import numpy as np
 from pathlib import Path
 import json
 
-from bucket_brigade.envs.scenarios import (
+from bucket_brigade.envs import (
     easy_scenario,
     trivial_cooperation_scenario,
 )

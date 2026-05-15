@@ -574,7 +574,7 @@ class TestParallelEvaluation:
 
     def test_parallel_with_scenario(self):
         """Test parallel evaluation with custom scenario."""
-        from bucket_brigade.envs.scenarios import default_scenario
+        from bucket_brigade.envs import default_scenario
         from bucket_brigade.evolution.fitness_rust import (
             RustFitnessEvaluator as FitnessEvaluator,
         )

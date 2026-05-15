@@ -76,7 +76,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture
 def trivial_scenario():
     """Create a trivial cooperation scenario for testing."""
-    from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
+    from bucket_brigade.envs import trivial_cooperation_scenario
 
     return trivial_cooperation_scenario(num_agents=4)
 
@@ -84,7 +84,7 @@ def trivial_scenario():
 @pytest.fixture
 def easy_scenario():
     """Create an easy scenario for testing."""
-    from bucket_brigade.envs.scenarios import easy_scenario
+    from bucket_brigade.envs import easy_scenario
 
     return easy_scenario(num_agents=4)
 

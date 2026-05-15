@@ -8,7 +8,7 @@ import numpy as np
 
 print("Starting ultra-minimal Nash equilibrium test...")
 
-from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
+from bucket_brigade.envs import trivial_cooperation_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 from bucket_brigade.equilibrium.payoff_evaluator import PayoffEvaluator
 
@@ -16,7 +16,7 @@ print("Imports successful!")
 
 # Trivial scenario
 scenario = trivial_cooperation_scenario(num_agents=4)
-print(f"Scenario: beta={scenario.beta}, kappa={scenario.kappa}")
+print(f"Scenario: beta={scenario.prob_fire_spreads_to_neighbor}, kappa={scenario.prob_solo_agent_extinguishes_fire}")
 
 # Just 2 simulations, sequential
 evaluator = PayoffEvaluator(

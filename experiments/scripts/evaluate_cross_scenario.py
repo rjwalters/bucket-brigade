@@ -25,7 +25,7 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import (
     load_evolved_agent,
     load_evolved_agent_metadata,
@@ -105,9 +105,13 @@ def evaluate_cross_scenario(
 
     if verbose:
         print("Test Scenario Parameters:")
-        print(f"  beta (spread):       {test_scenario_obj.beta:.2f}")
-        print(f"  kappa (extinguish):  {test_scenario_obj.kappa:.2f}")
-        print(f"  c (work cost):       {test_scenario_obj.c:.2f}")
+        print(
+            f"  beta (spread):       {test_scenario_obj.prob_fire_spreads_to_neighbor:.2f}"
+        )
+        print(
+            f"  kappa (extinguish):  {test_scenario_obj.prob_solo_agent_extinguishes_fire:.2f}"
+        )
+        print(f"  c (work cost):       {test_scenario_obj.cost_to_work_one_night:.2f}")
         print()
 
     # Create Rust evaluator for test scenario
@@ -147,11 +151,11 @@ def evaluate_cross_scenario(
         "elapsed_time": elapsed_time,
         "agent_metadata": agent_metadata,
         "test_scenario_params": {
-            "beta": test_scenario_obj.beta,
-            "kappa": test_scenario_obj.kappa,
-            "c": test_scenario_obj.c,
-            "A": test_scenario_obj.A,
-            "L": test_scenario_obj.L,
+            "beta": test_scenario_obj.prob_fire_spreads_to_neighbor,
+            "kappa": test_scenario_obj.prob_solo_agent_extinguishes_fire,
+            "c": test_scenario_obj.cost_to_work_one_night,
+            "A": test_scenario_obj.team_reward_house_survives,
+            "L": test_scenario_obj.team_penalty_house_burns,
             "num_agents": test_scenario_obj.num_agents,
         },
     }

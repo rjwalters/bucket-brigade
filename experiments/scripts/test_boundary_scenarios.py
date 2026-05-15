@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import json
 import numpy as np
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
 # Extreme scenarios to test
@@ -76,12 +76,14 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "c": scenario.c,
-            "kappa": scenario.kappa,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "c": scenario.cost_to_work_one_night,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
         }
 
-        print(f"β={scenario.beta:.2f}, c={scenario.c:.2f} → {payoff:.2f}")
+        print(
+            f"β={scenario.prob_fire_spreads_to_neighbor:.2f}, c={scenario.cost_to_work_one_night:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("=" * 80)

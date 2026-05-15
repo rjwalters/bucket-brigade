@@ -17,7 +17,7 @@ from typing import Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.evolution import EvolutionConfig, GeneticAlgorithm
 
 
@@ -40,9 +40,9 @@ def run_evolution(
     scenario = get_scenario_by_name(scenario_name, num_agents=4)
 
     print("Scenario Parameters:")
-    print(f"  beta (spread):       {scenario.beta:.2f}")
-    print(f"  kappa (extinguish):  {scenario.kappa:.2f}")
-    print(f"  c (work cost):       {scenario.c:.2f}")
+    print(f"  beta (spread):       {scenario.prob_fire_spreads_to_neighbor:.2f}")
+    print(f"  kappa (extinguish):  {scenario.prob_solo_agent_extinguishes_fire:.2f}")
+    print(f"  c (work cost):       {scenario.cost_to_work_one_night:.2f}")
     print(f"  num_agents:          {scenario.num_agents}")
     print()
 

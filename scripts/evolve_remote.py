@@ -45,7 +45,7 @@ except (ImportError, ModuleNotFoundError) as e:
 
     RUST_AVAILABLE = False
 
-from bucket_brigade.envs.scenarios import default_scenario
+from bucket_brigade.envs import default_scenario
 
 
 class RemoteEvolutionRunner:

@@ -158,7 +158,7 @@ class TestRustCoreIntegration:
         except ImportError:
             pytest.skip("Rust core not available")
 
-        from bucket_brigade.envs.scenarios import (
+        from bucket_brigade.envs import (
             trivial_cooperation_scenario,
             early_containment_scenario,
             greedy_neighbor_scenario,
@@ -178,20 +178,31 @@ class TestRustCoreIntegration:
 
             # Check key parameters match (use approximate comparison for floats)
             assert (
-                abs(rust_scenario.prob_fire_spreads_to_neighbor - python_scenario.beta)
+                abs(
+                    rust_scenario.prob_fire_spreads_to_neighbor
+                    - python_scenario.prob_fire_spreads_to_neighbor
+                )
                 < 1e-6
             )
             assert (
                 abs(
                     rust_scenario.prob_solo_agent_extinguishes_fire
-                    - python_scenario.kappa
+                    - python_scenario.prob_solo_agent_extinguishes_fire
                 )
                 < 1e-6
             )
             assert (
-                abs(rust_scenario.team_reward_house_survives - python_scenario.A) < 1e-6
+                abs(
+                    rust_scenario.team_reward_house_survives
+                    - python_scenario.team_reward_house_survives
+                )
+                < 1e-6
             )
             assert (
-                abs(rust_scenario.team_penalty_house_burns - python_scenario.L) < 1e-6
+                abs(
+                    rust_scenario.team_penalty_house_burns
+                    - python_scenario.team_penalty_house_burns
+                )
+                < 1e-6
             )
             # Note: num_agents is now a team composition parameter, not part of Scenario

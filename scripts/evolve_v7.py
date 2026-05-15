@@ -34,7 +34,7 @@ from bucket_brigade.evolution.heterogeneous_evaluator import (
     HeterogeneousEvaluator,
     create_heterogeneous_evaluator,
 )
-from bucket_brigade.envs.scenarios import list_scenarios
+from bucket_brigade.envs import list_scenarios
 
 
 def progress_callback(generation: int, population: Population, output_dir: Path) -> None:

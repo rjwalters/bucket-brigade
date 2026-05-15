@@ -6,7 +6,7 @@ Tests basic functionality with minimal simulations to verify correctness.
 
 import pytest
 import numpy as np
-from bucket_brigade.envs.scenarios import trivial_cooperation_scenario
+from bucket_brigade.envs import trivial_cooperation_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 from bucket_brigade.equilibrium.payoff_evaluator import PayoffEvaluator
 from bucket_brigade.equilibrium.best_response import compute_best_response

@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import json
-from bucket_brigade.envs.scenarios import get_scenario_by_name
+from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import load_evolved_agent, PayoffEvaluator
 
 # κ sweep scenarios (varying extinguish rate, p_spark=0)
@@ -76,13 +76,15 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "p_spark": scenario.p_spark,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.kappa:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("Testing p_spark (ongoing fires) sweep (κ=0.90)...")
@@ -112,13 +114,15 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "p_spark": scenario.p_spark,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.kappa:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("Testing reference scenarios...")
@@ -144,13 +148,15 @@ def main():
 
         results[scenario_name] = {
             "payoff": float(payoff),
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "p_spark": scenario.p_spark,
+            "beta": scenario.prob_fire_spreads_to_neighbor,
+            "kappa": scenario.prob_solo_agent_extinguishes_fire,
+            "c": scenario.cost_to_work_one_night,
+            "p_spark": scenario.prob_house_catches_fire,
         }
 
-        print(f"κ={scenario.kappa:.2f}, p_spark={scenario.p_spark:.2f} → {payoff:.2f}")
+        print(
+            f"κ={scenario.prob_solo_agent_extinguishes_fire:.2f}, p_spark={scenario.prob_house_catches_fire:.2f} → {payoff:.2f}"
+        )
 
     print()
     print("=" * 80)
