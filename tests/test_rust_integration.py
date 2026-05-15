@@ -21,61 +21,72 @@ class TestRustCoreIntegration:
             assert BucketBrigade is not None
             assert SCENARIOS is not None
 
-    @pytest.mark.skipif(
-        not hasattr(pytest, "rust_core_available"), reason="Rust core not available"
-    )
     def test_rust_vs_python_consistency(self):
-        """Test that Rust and Python implementations produce consistent results."""
+        """Test that Rust and Python implementations produce consistent results.
+
+        Uses the ``trivial_cooperation`` scenario which has
+        ``prob_house_catches_fire=0.0`` and (because the initial state is
+        all-SAFE) no fires for the spread / extinguish phases to act on.
+        That makes the per-step rewards fully deterministic — no RNG
+        decision actually influences the houses or rewards — so the two
+        engines can be compared exactly without depending on the (different)
+        underlying PRNG implementations (``np.random.RandomState`` in Python
+        vs ``Pcg64`` in Rust).
+        """
+        pytest.importorskip("bucket_brigade_core")
         from bucket_brigade_core import BucketBrigade, SCENARIOS
         from bucket_brigade.envs import BucketBrigadeEnv
+        from bucket_brigade.envs.scenarios_generated import (
+            trivial_cooperation_scenario,
+        )
 
-        # Use same scenario
-        scenario_name = "trivial_cooperation"
-        rust_scenario = SCENARIOS[scenario_name]
+        # Use the same scenario in both engines. Rust takes its scenario
+        # from ``SCENARIOS``; Python takes the corresponding generated
+        # Scenario dataclass.
+        num_agents = 4
+        rust_scenario = SCENARIOS["trivial_cooperation"]
+        python_scenario = trivial_cooperation_scenario(num_agents=num_agents)
 
-        # Create environments
-        rust_env = BucketBrigade(rust_scenario, 4, seed=42)
-        python_env = BucketBrigadeEnv(num_agents=4, seed=42)
+        # Create environments. Rust env seeds at construction; Python env
+        # seeds via ``reset(seed=...)`` per gymnasium convention.
+        rust_env = BucketBrigade(rust_scenario, num_agents, seed=42)
+        python_env = BucketBrigadeEnv(scenario=python_scenario)
+        python_env.reset(seed=42)
 
-        # Run same sequence of actions
+        # Run the same sequence of actions through both engines.
+        # Each action is ``[house_index, mode_flag]`` with mode 0=REST, 1=WORK.
         actions = [
             [[0, 1], [1, 0], [2, 1], [3, 0]],  # Mixed work/rest
             [[1, 1], [2, 1], [3, 1], [0, 0]],  # Most working
             [[0, 0], [1, 0], [2, 0], [3, 0]],  # All resting
         ]
 
-        rust_results = []
-        python_results = []
-
-        for action_set in actions:
-            # Rust step
+        for i, action_set in enumerate(actions):
+            # Rust ``step`` returns ``(rewards, done, info)``.
             rust_rewards, rust_done, _ = rust_env.step(action_set)
-            rust_results.append((rust_rewards, rust_done))
 
-            # Python step
-            python_obs, python_rewards, python_dones, _ = python_env.step(
+            # Python ``step`` returns ``(obs, rewards, dones, info)``;
+            # ``dones`` is a per-agent array but all entries match
+            # ``self.done`` so taking [0] is sufficient.
+            _, python_rewards, python_dones, _ = python_env.step(
                 np.array(action_set)
             )
-            python_results.append(
-                (python_rewards, python_dones[0])
-            )  # Single done value
+            python_done = bool(python_dones[0])
 
-        # Results should be reasonably similar (allowing for floating point differences)
-        for i, ((rust_r, rust_d), (python_r, python_d)) in enumerate(
-            zip(rust_results, python_results)
-        ):
-            # Rewards should be close (within tolerance)
+            # Rewards should match within float tolerance.
             np.testing.assert_allclose(
-                rust_r,
-                python_r,
+                rust_rewards,
+                python_rewards,
                 rtol=1e-5,
                 atol=1e-5,
                 err_msg=f"Rewards differ at step {i}",
             )
 
-            # Termination should match
-            assert rust_d == python_d, (
-                f"Termination differs at step {i}: Rust={rust_d}, Python={python_d}"
+            # Termination should match. Both engines respect ``min_nights=12``
+            # so a 3-step run never terminates.
+            assert rust_done == python_done, (
+                f"Termination differs at step {i}: "
+                f"Rust={rust_done}, Python={python_done}"
             )
 
     def test_rust_core_performance(self):
