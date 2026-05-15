@@ -5,17 +5,17 @@ import { getArchetype, PARAMETER_DESCRIPTIONS } from '../data/archetypes.generat
 import type { ArchetypeParams } from '../data/archetypes.generated';
 
 interface ScenarioParams {
-  beta: number;
-  kappa: number;
+  prob_fire_spreads_to_neighbor: number;
+  prob_solo_agent_extinguishes_fire: number;
+  prob_house_catches_fire: number;
   team_reward_house_survives: number;
   team_penalty_house_burns: number;
   reward_own_house_survives: number;
   reward_other_house_survives: number;
   penalty_own_house_burns: number;
   penalty_other_house_burns: number;
-  c: number;
-  N_min: number;
-  p_spark: number;
+  cost_to_work_one_night: number;
+  min_nights: number;
   num_agents: number;
 }
 
@@ -37,17 +37,17 @@ interface ParamInfo {
 }
 
 const SCENARIO_PARAM_INFO: Record<keyof ScenarioParams, ParamInfo> = {
-  beta: {
+  prob_fire_spreads_to_neighbor: {
     label: 'Fire Spread Rate (β)',
     description: 'Probability that fire spreads from a burning house to each adjacent burning house per night. Higher values mean fires spread faster and more aggressively.',
     format: (v) => `${(v * 100).toFixed(0)}%`,
   },
-  kappa: {
+  prob_solo_agent_extinguishes_fire: {
     label: 'Extinguish Efficiency (κ)',
     description: 'Probability that a working agent successfully extinguishes a fire. Higher values mean individual efforts are more effective.',
     format: (v) => `${(v * 100).toFixed(0)}%`,
   },
-  p_spark: {
+  prob_house_catches_fire: {
     label: 'Fire Ignition Probability',
     description: 'Probability that each safe house catches fire each night (both at game start and during play). Higher values create more fires and chaos.',
     format: (v) => `${(v * 100).toFixed(1)}%`,
@@ -88,13 +88,13 @@ const SCENARIO_PARAM_INFO: Record<keyof ScenarioParams, ParamInfo> = {
     format: (v) => v.toString(),
     unit: 'points',
   },
-  c: {
+  cost_to_work_one_night: {
     label: 'Work Cost',
     description: 'Energy cost paid each night an agent chooses to work. Higher values make work more expensive relative to rest.',
     format: (v) => v.toString(),
     unit: 'points',
   },
-  N_min: {
+  min_nights: {
     label: 'Minimum Nights',
     description: 'Minimum number of nights before the game can end. After reaching this threshold, the game ends when all houses are either safe (no fires) or completely burned down. Prevents games from ending too quickly and ensures meaningful gameplay.',
     format: (v) => v.toString(),
@@ -205,7 +205,7 @@ export const GameParameters: React.FC<GameParametersProps> = ({
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 px-1">Fire Dynamics</div>
                 <div className="space-y-1">
-                  {(['beta', 'kappa', 'p_spark'] as Array<keyof ScenarioParams>).map((paramKey) => {
+                  {(['prob_fire_spreads_to_neighbor', 'prob_solo_agent_extinguishes_fire', 'prob_house_catches_fire'] as Array<keyof ScenarioParams>).map((paramKey) => {
                     const paramInfo = SCENARIO_PARAM_INFO[paramKey];
                     const value = scenarioParams[paramKey];
                     const isSelected = selectedDetail?.type === 'scenario' && selectedDetail.param === paramKey;
@@ -263,7 +263,7 @@ export const GameParameters: React.FC<GameParametersProps> = ({
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 px-1">Individual Incentives (Per-Agent)</div>
                 <div className="space-y-1">
-                  {(['reward_own_house_survives', 'reward_other_house_survives', 'penalty_own_house_burns', 'penalty_other_house_burns', 'c'] as Array<keyof ScenarioParams>).map((paramKey) => {
+                  {(['reward_own_house_survives', 'reward_other_house_survives', 'penalty_own_house_burns', 'penalty_other_house_burns', 'cost_to_work_one_night'] as Array<keyof ScenarioParams>).map((paramKey) => {
                     const paramInfo = SCENARIO_PARAM_INFO[paramKey];
                     const value = scenarioParams[paramKey];
                     const isSelected = selectedDetail?.type === 'scenario' && selectedDetail.param === paramKey;
@@ -292,7 +292,7 @@ export const GameParameters: React.FC<GameParametersProps> = ({
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 px-1">Game Structure</div>
                 <div className="space-y-1">
-                  {(['N_min'] as Array<keyof ScenarioParams>).map((paramKey) => {
+                  {(['min_nights'] as Array<keyof ScenarioParams>).map((paramKey) => {
                     const paramInfo = SCENARIO_PARAM_INFO[paramKey];
                     const value = scenarioParams[paramKey];
                     const isSelected = selectedDetail?.type === 'scenario' && selectedDetail.param === paramKey;

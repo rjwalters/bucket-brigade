@@ -89,8 +89,8 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
     insights.push(`Agent ${maxContributor.agentId} worked ${maxContributor.workNights} nights while Agent ${minContributor.agentId} only worked ${minContributor.workNights}.`);
   }
 
-  if (game.scenario.p_spark > 0) {
-    insights.push(`Persistent sparks (${(game.scenario.p_spark * 100).toFixed(0)}% chance) kept the team under pressure.`);
+  if (game.scenario.prob_house_catches_fire > 0) {
+    insights.push(`Persistent sparks (${(game.scenario.prob_house_catches_fire * 100).toFixed(0)}% chance) kept the team under pressure.`);
   }
 
   return (
@@ -241,26 +241,26 @@ const GameAnalysis: React.FC<GameAnalysisProps> = ({ game }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-content-secondary">Fire Spread</div>
-            <div className="font-semibold text-content-primary">{(game.scenario.beta * 100).toFixed(0)}%</div>
+            <div className="font-semibold text-content-primary">{(game.scenario.prob_fire_spreads_to_neighbor * 100).toFixed(0)}%</div>
           </div>
           <div>
             <div className="text-content-secondary">Extinguish Efficiency</div>
-            <div className="font-semibold text-content-primary">{(game.scenario.kappa * 100).toFixed(0)}%</div>
+            <div className="font-semibold text-content-primary">{(game.scenario.prob_solo_agent_extinguishes_fire * 100).toFixed(0)}%</div>
           </div>
           <div>
             <div className="text-content-secondary">Initial Fires</div>
           </div>
           <div>
             <div className="text-content-secondary">Work Cost</div>
-            <div className="font-semibold text-content-primary">{game.scenario.c.toFixed(1)} per night</div>
+            <div className="font-semibold text-content-primary">{game.scenario.cost_to_work_one_night.toFixed(1)} per night</div>
           </div>
           <div>
             <div className="text-content-secondary">Saved House Value</div>
-            <div className="font-semibold text-content-primary">{game.scenario.A.toFixed(0)}</div>
+            <div className="font-semibold text-content-primary">{game.scenario.team_reward_house_survives.toFixed(0)}</div>
           </div>
           <div>
             <div className="text-content-secondary">Ruined House Penalty</div>
-            <div className="font-semibold text-content-primary">-{game.scenario.L.toFixed(0)}</div>
+            <div className="font-semibold text-content-primary">-{game.scenario.team_penalty_house_burns.toFixed(0)}</div>
           </div>
         </div>
       </div>

@@ -9,15 +9,27 @@
 export type HouseState = 0 | 1 | 2; // SAFE, BURNING, RUINED
 
 export interface Scenario {
-  beta: number;      // Fire spread probability
-  kappa: number;     // Extinguish efficiency
-  A: number;         // Reward per saved house
-  L: number;         // Penalty per ruined house
-  c: number;         // Work cost per night
-  N_min: number;     // Minimum nights
-  p_spark: number;   // Spark probability
-  N_spark: number;   // Spark duration
-  num_agents: number;
+  // Fire dynamics
+  prob_fire_spreads_to_neighbor: number; // Probability fire spreads to adjacent house
+  prob_solo_agent_extinguishes_fire: number; // Probability one agent extinguishes fire
+  prob_house_catches_fire: number; // Probability house catches fire each night
+
+  // Team scoring (collective outcome)
+  team_reward_house_survives: number; // Team reward for each house that survives
+  team_penalty_house_burns: number; // Team penalty for each house that burns
+
+  // Individual rewards (ownership-based)
+  reward_own_house_survives: number; // Individual reward when own house survives
+  reward_other_house_survives: number; // Individual reward when other house survives
+  penalty_own_house_burns: number; // Individual penalty when own house burns
+  penalty_other_house_burns: number; // Individual penalty when other house burns
+
+  // Costs and structure
+  cost_to_work_one_night: number; // Cost per worker per night
+  min_nights: number; // Minimum nights before termination
+
+  // Game setup
+  num_agents: number; // Number of agents
 }
 
 export interface GameNight {
@@ -108,7 +120,7 @@ export class BrowserBucketBrigade {
 
     // Initialize fires - probabilistic per-house
     for (let house_idx = 0; house_idx < 10; house_idx++) {
-      if (this.rng.random() < this.scenario.p_spark) {
+      if (this.rng.random() < this.scenario.prob_house_catches_fire) {
         this.houses[house_idx] = 1;
       }
     }
@@ -145,9 +157,7 @@ export class BrowserBucketBrigade {
 
     // 6. Spontaneous ignition phase
     // New fires can ignite on any night (visible next turn)
-    if (this.night < this.scenario.N_spark) {
-      this.spark_fires();
-    }
+    this.spark_fires();
 
     // 7. Compute rewards
     this.rewards = this.compute_rewards(actions, prev_houses);
@@ -176,7 +186,7 @@ export class BrowserBucketBrigade {
       const workers_here = actions.filter(action => action[0] === house_idx && action[1] === 1).length;
 
       // Probability of extinguishing
-      const p_extinguish = 1 - Math.exp(-this.scenario.kappa * workers_here);
+      const p_extinguish = 1 - Math.exp(-this.scenario.prob_solo_agent_extinguishes_fire * workers_here);
 
       if (this.rng.random() < p_extinguish) {
         this.houses[house_idx] = 0;
@@ -197,7 +207,7 @@ export class BrowserBucketBrigade {
       ];
 
       for (const neighbor of neighbors) {
-        if (this.houses[neighbor] === 0 && this.rng.random() < this.scenario.beta) {
+        if (this.houses[neighbor] === 0 && this.rng.random() < this.scenario.prob_fire_spreads_to_neighbor) {
           new_houses[neighbor] = 1;
         }
       }
@@ -216,7 +226,7 @@ export class BrowserBucketBrigade {
 
   private spark_fires(): void {
     for (let house_idx = 0; house_idx < 10; house_idx++) {
-      if (this.houses[house_idx] === 0 && this.rng.random() < this.scenario.p_spark) {
+      if (this.houses[house_idx] === 0 && this.rng.random() < this.scenario.prob_house_catches_fire) {
         this.houses[house_idx] = 1;
       }
     }
@@ -228,7 +238,7 @@ export class BrowserBucketBrigade {
     const ruined_houses = this.houses.filter(h => h === 2).length;
 
     // Team reward
-    const team_reward = this.scenario.A * (saved_houses / 10) - this.scenario.L * (ruined_houses / 10);
+    const team_reward = this.scenario.team_reward_house_survives * (saved_houses / 10) - this.scenario.team_penalty_house_burns * (ruined_houses / 10);
 
     const rewards = new Array(this.scenario.num_agents);
 
@@ -237,7 +247,7 @@ export class BrowserBucketBrigade {
 
       // Work/rest cost
       if (actions[agent_idx][1] === 1) {
-        reward -= this.scenario.c; // Work cost
+        reward -= this.scenario.cost_to_work_one_night; // Work cost
       } else {
         reward += 0.5; // Rest reward
       }
@@ -261,7 +271,7 @@ export class BrowserBucketBrigade {
   }
 
   private check_termination(): boolean {
-    if (this.night < this.scenario.N_min) return false;
+    if (this.night < this.scenario.min_nights) return false;
 
     const all_safe = this.houses.every(h => h === 0);
     const all_ruined = this.houses.every(h => h === 2);
@@ -287,14 +297,17 @@ export class BrowserBucketBrigade {
       houses: [...this.houses],
       last_actions: this.last_actions.map(action => [...action]),
       scenario_info: [
-        this.scenario.beta,
-        this.scenario.kappa,
-        this.scenario.A,
-        this.scenario.L,
-        this.scenario.c,
-        this.scenario.N_min,
-        this.scenario.p_spark,
-        this.scenario.N_spark,
+        this.scenario.prob_fire_spreads_to_neighbor,
+        this.scenario.prob_solo_agent_extinguishes_fire,
+        this.scenario.prob_house_catches_fire,
+        this.scenario.team_reward_house_survives,
+        this.scenario.team_penalty_house_burns,
+        this.scenario.reward_own_house_survives,
+        this.scenario.reward_other_house_survives,
+        this.scenario.penalty_own_house_burns,
+        this.scenario.penalty_other_house_burns,
+        this.scenario.cost_to_work_one_night,
+        this.scenario.min_nights,
         this.scenario.num_agents
       ],
       agent_id,
@@ -402,50 +415,62 @@ export class TournamentRunner {
 // Predefined scenarios
 export const SCENARIOS = {
   trivial_cooperation: {
-    beta: 0.15,
-    kappa: 0.9,
-    A: 100,
-    L: 100,
-    c: 0.5,
-    N_min: 12,
-    p_spark: 0.0,
-    N_spark: 12,
+    prob_fire_spreads_to_neighbor: 0.15,
+    prob_solo_agent_extinguishes_fire: 0.9,
+    prob_house_catches_fire: 0.0,
+    team_reward_house_survives: 100,
+    team_penalty_house_burns: 100,
+    reward_own_house_survives: 100,
+    reward_other_house_survives: 50,
+    penalty_own_house_burns: 0,
+    penalty_other_house_burns: 0,
+    cost_to_work_one_night: 0.5,
+    min_nights: 12,
     num_agents: 4
   },
 
   early_containment: {
-    beta: 0.35,
-    kappa: 0.6,
-    A: 100,
-    L: 100,
-    c: 0.5,
-    N_min: 12,
-    p_spark: 0.02,
-    N_spark: 12,
+    prob_fire_spreads_to_neighbor: 0.35,
+    prob_solo_agent_extinguishes_fire: 0.6,
+    prob_house_catches_fire: 0.02,
+    team_reward_house_survives: 100,
+    team_penalty_house_burns: 100,
+    reward_own_house_survives: 100,
+    reward_other_house_survives: 50,
+    penalty_own_house_burns: 0,
+    penalty_other_house_burns: 0,
+    cost_to_work_one_night: 0.5,
+    min_nights: 12,
     num_agents: 4
   },
 
   greedy_neighbor: {
-    beta: 0.15,
-    kappa: 0.4,
-    A: 100,
-    L: 100,
-    c: 1.0,
-    N_min: 12,
-    p_spark: 0.02,
-    N_spark: 12,
+    prob_fire_spreads_to_neighbor: 0.15,
+    prob_solo_agent_extinguishes_fire: 0.4,
+    prob_house_catches_fire: 0.02,
+    team_reward_house_survives: 100,
+    team_penalty_house_burns: 100,
+    reward_own_house_survives: 100,
+    reward_other_house_survives: 50,
+    penalty_own_house_burns: 0,
+    penalty_other_house_burns: 0,
+    cost_to_work_one_night: 1.0,
+    min_nights: 12,
     num_agents: 4
   },
 
   random: {
-    beta: 0.25,
-    kappa: 0.5,
-    A: 100,
-    L: 100,
-    c: 0.5,
-    N_min: 12,
-    p_spark: 0.02,
-    N_spark: 12,
+    prob_fire_spreads_to_neighbor: 0.25,
+    prob_solo_agent_extinguishes_fire: 0.5,
+    prob_house_catches_fire: 0.02,
+    team_reward_house_survives: 100,
+    team_penalty_house_burns: 100,
+    reward_own_house_survives: 100,
+    reward_other_house_survives: 50,
+    penalty_own_house_burns: 0,
+    penalty_other_house_burns: 0,
+    cost_to_work_one_night: 0.5,
+    min_nights: 12,
     num_agents: 4
   }
 } as const;

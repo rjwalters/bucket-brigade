@@ -5,6 +5,7 @@
 import { BrowserBucketBrigade } from './browserEngine';
 import { createAgentFromArchetype } from './archetypeAgents';
 import type { GameReplay } from '../types';
+import type { Scenario } from './browserEngine';
 
 interface TeamConfig {
   id: string;
@@ -17,37 +18,7 @@ interface ScenarioConfig {
   id: string;
   name: string;
   description: string;
-  params: {
-    beta: number;
-    kappa: number;
-    team_reward_house_survives: number;
-    team_penalty_house_burns: number;
-    reward_own_house_survives: number;
-    reward_other_house_survives: number;
-    penalty_own_house_burns: number;
-    penalty_other_house_burns: number;
-    c: number;
-    N_min: number;
-    p_spark: number;
-    num_agents: number;
-  };
-}
-
-/**
- * Convert scenario params to browser engine format
- */
-function convertScenarioParams(params: ScenarioConfig['params']) {
-  return {
-    beta: params.beta,
-    kappa: params.kappa,
-    A: params.team_reward_house_survives,
-    L: params.team_penalty_house_burns,
-    c: params.c,
-    N_min: params.N_min,
-    p_spark: params.p_spark,
-    N_spark: params.N_min, // Use N_min as spark duration
-    num_agents: params.num_agents
-  };
+  params: Scenario;
 }
 
 /**
@@ -58,8 +29,8 @@ export async function runGameSimulation(
   scenario: ScenarioConfig,
   seed?: number
 ): Promise<GameReplay> {
-  // Convert scenario parameters
-  const engineScenario = convertScenarioParams(scenario.params);
+  // Scenario params already match the engine schema (12 fields, canonical names)
+  const engineScenario: Scenario = scenario.params;
 
   // Create game engine
   const engine = new BrowserBucketBrigade(engineScenario, seed);
