@@ -120,10 +120,10 @@ def run_scenario_test(
     scenario = scenario_func(num_agents=6)  # Fixed at 6 agents for consistency
 
     print("📊 Scenario Parameters:")
-    print(f"   β (spread): {scenario.beta:.3f}")
-    print(f"   κ (extinguish): {scenario.kappa:.3f}")
-    print(f"   Work cost (c): {scenario.c:.2f}")
-    print(f"   Initial fires: {scenario.rho_ignite:.2f}")
+    print(f"   β (spread): {scenario.prob_fire_spreads_to_neighbor:.3f}")
+    print(f"   κ (extinguish): {scenario.prob_solo_agent_extinguishes_fire:.3f}")
+    print(f"   Work cost (c): {scenario.cost_to_work_one_night:.2f}")
+    print(f"   p_spark (per-night ignite): {scenario.prob_house_catches_fire:.3f}")
     print()
 
     # Create mixed agent pool
@@ -212,10 +212,10 @@ def run_scenario_test(
     results_data = {
         "scenario": scenario_name,
         "parameters": {
-            "beta": scenario.beta,
-            "kappa": scenario.kappa,
-            "c": scenario.c,
-            "rho_ignite": scenario.rho_ignite,
+            "prob_fire_spreads_to_neighbor": scenario.prob_fire_spreads_to_neighbor,
+            "prob_solo_agent_extinguishes_fire": scenario.prob_solo_agent_extinguishes_fire,
+            "cost_to_work_one_night": scenario.cost_to_work_one_night,
+            "prob_house_catches_fire": scenario.prob_house_catches_fire,
         },
         "agents": [{"id": i, "name": agent.name} for i, agent in enumerate(agents)],
         "games": batch_results,
