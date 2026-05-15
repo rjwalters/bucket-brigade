@@ -269,6 +269,12 @@ class BucketBrigadeEnv:
             # four previously-unused Scenario ownership reward fields
             # (`reward_own_house_survives`, `reward_other_house_survives`,
             # `penalty_own_house_burns`, `penalty_other_house_burns`).
+            #
+            # As of issue #198 these four fields are per-agent vectors of
+            # length ``num_agents``; we index by ``agent_idx`` here. The
+            # ``Scenario.__post_init__`` auto-promotes scalar JSON inputs
+            # to ``[scalar] * num_agents`` so existing scenarios behave
+            # identically.
             for house_idx in range(10):
                 is_own = self.house_owners[house_idx] == agent_idx
 
@@ -278,9 +284,9 @@ class BucketBrigadeEnv:
                     and self.houses[house_idx] == self.SAFE
                 ):
                     individual_rewards[agent_idx] += (
-                        self.scenario.reward_own_house_survives
+                        self.scenario.reward_own_house_survives[agent_idx]
                         if is_own
-                        else self.scenario.reward_other_house_survives
+                        else self.scenario.reward_other_house_survives[agent_idx]
                     )
 
                 # Currently-ruined penalty (applied every step the house is
@@ -288,9 +294,9 @@ class BucketBrigadeEnv:
                 # number; subtract it.
                 if self.houses[house_idx] == self.RUINED:
                     individual_rewards[agent_idx] -= (
-                        self.scenario.penalty_own_house_burns
+                        self.scenario.penalty_own_house_burns[agent_idx]
                         if is_own
-                        else self.scenario.penalty_other_house_burns
+                        else self.scenario.penalty_other_house_burns[agent_idx]
                     )
 
             # Team reward component (full public goods incentive)

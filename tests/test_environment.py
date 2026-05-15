@@ -443,7 +443,12 @@ class TestScenarioRewardFields:
             )
 
     def test_scenario_reward_fields_are_readable(self):
-        """Each reward field accepts and round-trips a distinct non-default value."""
+        """Each reward field accepts and round-trips a distinct non-default value.
+
+        Scalar inputs to the four per-agent ownership fields are auto-promoted
+        to length-``num_agents`` lists by ``Scenario.__post_init__`` (issue
+        #198); team_* fields remain scalar.
+        """
         scenario = _make_minimal_scenario(
             team_reward_house_survives=11.0,
             team_penalty_house_burns=12.0,
@@ -454,10 +459,12 @@ class TestScenarioRewardFields:
         )
         assert scenario.team_reward_house_survives == 11.0
         assert scenario.team_penalty_house_burns == 12.0
-        assert scenario.reward_own_house_survives == 13.0
-        assert scenario.reward_other_house_survives == 14.0
-        assert scenario.penalty_own_house_burns == 15.0
-        assert scenario.penalty_other_house_burns == 16.0
+        # Ownership reward fields are per-agent vectors of length num_agents
+        # after #198. _make_minimal_scenario uses num_agents=4 by default.
+        assert scenario.reward_own_house_survives == [13.0] * 4
+        assert scenario.reward_other_house_survives == [14.0] * 4
+        assert scenario.penalty_own_house_burns == [15.0] * 4
+        assert scenario.penalty_other_house_burns == [16.0] * 4
 
     # --- AC2: feature-vector layout -----------------------------------------
 
@@ -467,7 +474,13 @@ class TestScenarioRewardFields:
         assert features.shape == (12,)
 
     def test_reward_fields_at_expected_feature_indices(self):
-        """Each reward field surfaces at the index documented in issue #157."""
+        """Each reward field surfaces at the index documented in issue #157.
+
+        The four per-agent ownership reward fields (#198) are reduced to
+        their mean in ``to_feature_vector`` to preserve the 12-element layout
+        for downstream consumers. For scalar inputs (auto-promoted to a
+        uniform vector) the mean equals the original scalar.
+        """
         scenario = _make_minimal_scenario(
             team_reward_house_survives=11.0,
             team_penalty_house_burns=12.0,
@@ -477,8 +490,16 @@ class TestScenarioRewardFields:
             penalty_other_house_burns=16.0,
         )
         features = scenario.to_feature_vector()
+        # Fields that remain scalar after #198: team_*.
+        scalar_fields = {"team_reward_house_survives", "team_penalty_house_burns"}
         for name, idx in REWARD_FIELD_INDICES.items():
-            assert features[idx] == pytest.approx(getattr(scenario, name)), (
+            field_value = getattr(scenario, name)
+            if name in scalar_fields:
+                expected = field_value
+            else:
+                # Per-agent vector; feature vector stores the mean.
+                expected = float(np.mean(field_value))
+            assert features[idx] == pytest.approx(expected), (
                 f"Feature index {idx} should expose {name}. "
                 "If indices have shifted, update REWARD_FIELD_INDICES and any "
                 "consumer (e.g. observation.rs, payoff_evaluator_rust.py)."
@@ -542,17 +563,15 @@ class TestScenarioRewardFields:
             f"delta when all houses are ruined. Got {diff!r}."
         )
 
-    # --- AC4: xfail-documented bugs for the four unused reward fields -------
+    # --- AC4: behavior tests for the four ownership reward fields ----------
+    #
+    # These were originally xfail-documented bugs (issue #157). They flipped
+    # to passing once #170 wired the fields through `_compute_rewards`; the
+    # xfail markers were removed when #198 generalized the fields to
+    # per-agent vectors. The tests below verify the canonical scalar-promote
+    # behavior (a scalar input behaves identically to a uniform per-agent
+    # vector).
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Issue #157: reward_own_house_survives is shadowed by a hardcoded "
-            "+1.0 in BucketBrigadeEnv._compute_rewards (bucket_brigade_env.py:273) "
-            "and in Rust rewards.rs:36. Scenario value is ignored. Test will "
-            "XPASS once the wire-up lands."
-        ),
-    )
     def test_reward_own_house_survives_is_honored(self):
         """Per-agent saved-own-house bonus should equal ``reward_own_house_survives``."""
         scenario = _make_minimal_scenario(reward_own_house_survives=10.0)
@@ -573,15 +592,6 @@ class TestScenarioRewardFields:
         # gets 1.5 because of the hardcoded +1.0.
         assert rewards[0] == pytest.approx(10.5)
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Issue #157: penalty_own_house_burns is shadowed by a hardcoded "
-            "-2.0 in BucketBrigadeEnv._compute_rewards (bucket_brigade_env.py:277) "
-            "and in Rust rewards.rs:41. Scenario value is ignored. Test will "
-            "XPASS once the wire-up lands."
-        ),
-    )
     def test_penalty_own_house_burns_is_honored(self):
         """Per-agent owned-ruined penalty should equal ``-penalty_own_house_burns``."""
         scenario = _make_minimal_scenario(penalty_own_house_burns=10.0)
@@ -599,15 +609,6 @@ class TestScenarioRewardFields:
         # Currently agent 0 gets 0.5 - 2.0 = -1.5 because of the hardcoded -2.0.
         assert rewards[0] == pytest.approx(-9.5)
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Issue #157: reward_other_house_survives is never referenced in "
-            "BucketBrigadeEnv._compute_rewards or Rust rewards.rs. Changing it "
-            "has no effect on rewards. Test will XPASS once the field is wired "
-            "up."
-        ),
-    )
     def test_reward_other_house_survives_affects_rewards(self):
         """Two scenarios differing only in ``reward_other_house_survives`` must yield
         different per-agent rewards when other-owned houses survive."""
@@ -633,15 +634,6 @@ class TestScenarioRewardFields:
             f"produced reward={low} for agent 0."
         )
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Issue #157: penalty_other_house_burns is never referenced in "
-            "BucketBrigadeEnv._compute_rewards or Rust rewards.rs. Changing it "
-            "has no effect on rewards. Test will XPASS once the field is wired "
-            "up."
-        ),
-    )
     def test_penalty_other_house_burns_affects_rewards(self):
         """Two scenarios differing only in ``penalty_other_house_burns`` must yield
         different per-agent rewards when other-owned houses are ruined."""
@@ -667,3 +659,90 @@ class TestScenarioRewardFields:
             "penalty_other_house_burns currently has no effect; both scenarios "
             f"produced reward={low} for agent 0."
         )
+
+
+class TestPerAgentOwnershipRewards:
+    """Per-agent ownership reward semantics introduced in issue #198.
+
+    The four ownership reward fields are now ``List[float]`` of length
+    ``num_agents`` instead of scalars. ``Scenario.__post_init__`` auto-promotes
+    scalar inputs to ``[scalar] * num_agents`` so existing scenarios behave
+    identically. These tests verify the per-agent path: an explicit asymmetric
+    vector causes only the targeted agent to receive the reward.
+    """
+
+    def test_explicit_per_agent_vector_targets_one_agent(self):
+        """Per-agent ``reward_own_house_survives`` only fires for matching agent."""
+        # Vector [10.0, 0.0, 0.0, 0.0]: only agent 0 gets the own-save bonus.
+        scenario = _make_minimal_scenario(
+            reward_own_house_survives=[10.0, 0.0, 0.0, 0.0],
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        # Assign agents 0..3 ownership in round-robin order so that EACH agent
+        # owns exactly one of houses 0..3, and houses 4..9 cycle owners.
+        env.house_owners = np.array([0, 1, 2, 3, 0, 1, 2, 3, 0, 1], dtype=np.int8)
+        # Stage a save event for EVERY agent's first owned house (houses 0..3).
+        env._prev_houses_state = np.array(
+            [env.BURNING] * 4 + [0] * 6, dtype=np.int8
+        )
+        env.houses = np.zeros(10, dtype=np.int8)  # all SAFE
+        actions = np.zeros((env.num_agents, 2), dtype=np.int8)  # all REST
+        rewards = env._compute_rewards(actions)
+
+        # Each agent has +0.5 rest bonus. Only agent 0 also gets +10.0 from
+        # its per-agent reward_own_house_survives entry.
+        # Other agents (1, 2, 3) have 0.0 in the vector, so just +0.5.
+        assert rewards[0] == pytest.approx(10.5), (
+            "Agent 0 should receive its per-agent own-save reward (10.0) plus "
+            f"the rest bonus (0.5), got {rewards[0]}."
+        )
+        for agent_id in (1, 2, 3):
+            assert rewards[agent_id] == pytest.approx(0.5), (
+                f"Agent {agent_id} should receive only the rest bonus (0.5) "
+                f"since its per-agent entry is 0.0, got {rewards[agent_id]}."
+            )
+
+    def test_scalar_input_is_promoted_uniformly(self):
+        """A scalar field input must behave identically to a uniform vector.
+
+        This is the canonical backward-compatibility test: a scenario with a
+        scalar input value `v` must produce the same per-agent rewards as a
+        scenario with `[v] * num_agents` (in both Python and Rust).
+        """
+        scalar_scenario = _make_minimal_scenario(reward_own_house_survives=7.0)
+        vector_scenario = _make_minimal_scenario(
+            reward_own_house_survives=[7.0, 7.0, 7.0, 7.0],
+        )
+
+        # The two scenarios should have identical promoted vectors.
+        assert (
+            scalar_scenario.reward_own_house_survives
+            == vector_scenario.reward_own_house_survives
+            == [7.0, 7.0, 7.0, 7.0]
+        )
+
+        # And produce identical rewards under the same conditions.
+        def rewards_with(scenario: Scenario) -> np.ndarray:
+            env = BucketBrigadeEnv(scenario=scenario)
+            env.reset(seed=0)
+            env.house_owners = np.array([0, 1, 2, 3, 0, 1, 2, 3, 0, 1], dtype=np.int8)
+            env._prev_houses_state = np.array(
+                [env.BURNING] * 4 + [0] * 6, dtype=np.int8
+            )
+            env.houses = np.zeros(10, dtype=np.int8)
+            actions = np.zeros((env.num_agents, 2), dtype=np.int8)
+            return env._compute_rewards(actions)
+
+        scalar_rewards = rewards_with(scalar_scenario)
+        vector_rewards = rewards_with(vector_scenario)
+        np.testing.assert_allclose(scalar_rewards, vector_rewards)
+
+    def test_wrong_length_vector_rejected(self):
+        """Constructing a Scenario with a mismatched-length vector errors out."""
+        # _make_minimal_scenario uses num_agents=4; passing a length-5 list
+        # should raise ValueError from __post_init__.
+        with pytest.raises(ValueError, match="num_agents"):
+            _make_minimal_scenario(
+                reward_own_house_survives=[1.0, 2.0, 3.0, 4.0, 5.0],
+            )

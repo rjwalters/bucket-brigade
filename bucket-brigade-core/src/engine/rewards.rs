@@ -33,18 +33,24 @@ impl BucketBrigade {
             // 2 & 3. Per-house ownership rewards.
             // For each of the 10 houses, decide whether the agent owns it and
             // apply the appropriate per-house reward field. This wires up the
-            // four previously-unused `Scenario` ownership reward fields
+            // four `Scenario` ownership reward fields
             // (`reward_own_house_survives`, `reward_other_house_survives`,
             // `penalty_own_house_burns`, `penalty_other_house_burns`).
+            //
+            // As of issue #198 these fields are per-agent vectors indexed by
+            // ``agent_idx``. Scalar JSON inputs are auto-promoted to per-agent
+            // vectors by `deserialize_scalar_or_vec` in `scenarios.rs`, so
+            // existing scenarios behave identically to the pre-#198 scalar
+            // semantics.
             for house_idx in 0..10 {
                 let is_own = (self.house_owners[house_idx] as usize) == agent_idx;
 
                 // Save event: BURNING -> SAFE this step.
                 if prev_houses[house_idx] != 0 && self.houses[house_idx] == 0 {
                     rewards[agent_idx] += if is_own {
-                        self.scenario.reward_own_house_survives
+                        self.scenario.reward_own_house_survives[agent_idx]
                     } else {
-                        self.scenario.reward_other_house_survives
+                        self.scenario.reward_other_house_survives[agent_idx]
                     };
                 }
 
@@ -54,9 +60,9 @@ impl BucketBrigade {
                 // stores the magnitude as a positive number; subtract it.
                 if self.houses[house_idx] == 2 {
                     rewards[agent_idx] -= if is_own {
-                        self.scenario.penalty_own_house_burns
+                        self.scenario.penalty_own_house_burns[agent_idx]
                     } else {
-                        self.scenario.penalty_other_house_burns
+                        self.scenario.penalty_other_house_burns[agent_idx]
                     };
                 }
             }

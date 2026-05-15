@@ -15,6 +15,19 @@ impl BucketBrigade {
     }
 
     pub fn get_observation(&self, agent_id: usize) -> AgentObservation {
+        // The four ownership reward fields are now per-agent vectors (#198);
+        // expose their mean here to preserve the 12-element scenario_info
+        // layout. For scenarios with uniform per-agent weights (the legacy
+        // scalar-promoted case) the mean equals the original scalar, so
+        // existing consumers see identical values.
+        fn mean(v: &[f32]) -> f32 {
+            if v.is_empty() {
+                0.0
+            } else {
+                v.iter().sum::<f32>() / v.len() as f32
+            }
+        }
+
         AgentObservation {
             signals: self.agent_signals.clone(),
             locations: self.agent_positions.clone(),
@@ -29,10 +42,10 @@ impl BucketBrigade {
                 self.scenario.prob_house_catches_fire,
                 self.scenario.min_nights as f32,
                 self.num_agents as f32,
-                self.scenario.reward_own_house_survives,
-                self.scenario.reward_other_house_survives,
-                self.scenario.penalty_own_house_burns,
-                self.scenario.penalty_other_house_burns,
+                mean(&self.scenario.reward_own_house_survives),
+                mean(&self.scenario.reward_other_house_survives),
+                mean(&self.scenario.penalty_own_house_burns),
+                mean(&self.scenario.penalty_other_house_burns),
             ],
             agent_id,
             night: self.night,

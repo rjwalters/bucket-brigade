@@ -68,8 +68,28 @@ pub struct PyScenario {
 
 #[pymethods]
 impl PyScenario {
+    /// Build a Scenario from Python.
+    ///
+    /// The four ownership reward fields are per-agent vectors of length
+    /// ``num_agents`` (issue #198). For backward compatibility we accept
+    /// either a Python ``float`` (auto-promoted to ``vec![v; 10]``) or a
+    /// ``list[float]`` (passed through). The default vector length when a
+    /// scalar is provided matches the Rust `MAX_AGENTS` const (10).
     #[new]
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (
+        prob_fire_spreads_to_neighbor,
+        prob_solo_agent_extinguishes_fire,
+        prob_house_catches_fire,
+        team_reward_house_survives,
+        team_penalty_house_burns,
+        cost_to_work_one_night,
+        min_nights,
+        reward_own_house_survives,
+        reward_other_house_survives,
+        penalty_own_house_burns,
+        penalty_other_house_burns,
+    ))]
     fn new(
         prob_fire_spreads_to_neighbor: f32,
         prob_solo_agent_extinguishes_fire: f32,
@@ -78,12 +98,23 @@ impl PyScenario {
         team_penalty_house_burns: f32,
         cost_to_work_one_night: f32,
         min_nights: u32,
-        reward_own_house_survives: f32,
-        reward_other_house_survives: f32,
-        penalty_own_house_burns: f32,
-        penalty_other_house_burns: f32,
-    ) -> Self {
-        Self {
+        reward_own_house_survives: PyObject,
+        reward_other_house_survives: PyObject,
+        penalty_own_house_burns: PyObject,
+        penalty_other_house_burns: PyObject,
+        py: Python,
+    ) -> PyResult<Self> {
+        // Scalar -> vec![v; 10] auto-promotion (mirrors the Python
+        // ``Scenario.__post_init__`` and the Rust serde deserializer).
+        const DEFAULT_LEN: usize = 10;
+        fn to_vec(py: Python, obj: PyObject) -> PyResult<Vec<f32>> {
+            if let Ok(scalar) = obj.extract::<f32>(py) {
+                return Ok(vec![scalar; DEFAULT_LEN]);
+            }
+            obj.extract::<Vec<f32>>(py)
+        }
+
+        Ok(Self {
             inner: Scenario {
                 prob_fire_spreads_to_neighbor,
                 prob_solo_agent_extinguishes_fire,
@@ -92,12 +123,12 @@ impl PyScenario {
                 team_penalty_house_burns,
                 cost_to_work_one_night,
                 min_nights,
-                reward_own_house_survives,
-                reward_other_house_survives,
-                penalty_own_house_burns,
-                penalty_other_house_burns,
+                reward_own_house_survives: to_vec(py, reward_own_house_survives)?,
+                reward_other_house_survives: to_vec(py, reward_other_house_survives)?,
+                penalty_own_house_burns: to_vec(py, penalty_own_house_burns)?,
+                penalty_other_house_burns: to_vec(py, penalty_other_house_burns)?,
             },
-        }
+        })
     }
 
     #[getter]
@@ -136,23 +167,23 @@ impl PyScenario {
     }
 
     #[getter]
-    fn reward_own_house_survives(&self) -> f32 {
-        self.inner.reward_own_house_survives
+    fn reward_own_house_survives(&self) -> Vec<f32> {
+        self.inner.reward_own_house_survives.clone()
     }
 
     #[getter]
-    fn reward_other_house_survives(&self) -> f32 {
-        self.inner.reward_other_house_survives
+    fn reward_other_house_survives(&self) -> Vec<f32> {
+        self.inner.reward_other_house_survives.clone()
     }
 
     #[getter]
-    fn penalty_own_house_burns(&self) -> f32 {
-        self.inner.penalty_own_house_burns
+    fn penalty_own_house_burns(&self) -> Vec<f32> {
+        self.inner.penalty_own_house_burns.clone()
     }
 
     #[getter]
-    fn penalty_other_house_burns(&self) -> f32 {
-        self.inner.penalty_other_house_burns
+    fn penalty_other_house_burns(&self) -> Vec<f32> {
+        self.inner.penalty_other_house_burns.clone()
     }
 }
 
@@ -580,7 +611,7 @@ fn bucket_brigade_core(m: &Bound<PyModule>) -> PyResult<()> {
 
     // Add scenarios
     let scenarios = PyDict::new_bound(m.py());
-    for (name, scenario) in crate::SCENARIOS.entries() {
+    for (name, scenario) in crate::SCENARIOS.iter() {
         scenarios.set_item(
             name,
             Py::new(
