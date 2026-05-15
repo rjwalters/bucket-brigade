@@ -42,6 +42,9 @@ def run_sweep(
     skip_existing: bool,
     value_coef: float = CellConfig.__dataclass_fields__["value_coef"].default,
     entropy_coef: float = CellConfig.__dataclass_fields__["entropy_coef"].default,
+    normalize_returns: bool = CellConfig.__dataclass_fields__[
+        "normalize_returns"
+    ].default,
 ) -> None:
     n_cells = len(scenarios) * len(lambdas) * len(seeds)
     print(
@@ -49,7 +52,10 @@ def run_sweep(
         f"({len(scenarios)} scenarios x {len(lambdas)} lambdas x {len(seeds)} seeds)"
     )
     print(f"Output root: {output_root}")
-    print(f"PPO coefs: value_coef={value_coef}, entropy_coef={entropy_coef}")
+    print(
+        f"PPO coefs: value_coef={value_coef}, entropy_coef={entropy_coef}, "
+        f"normalize_returns={normalize_returns}"
+    )
 
     t0 = time.time()
     done = 0
@@ -76,6 +82,7 @@ def run_sweep(
                     num_agents=num_agents,
                     value_coef=value_coef,
                     entropy_coef=entropy_coef,
+                    normalize_returns=normalize_returns,
                     device=device,
                 )
 
@@ -129,6 +136,15 @@ def main() -> None:
             "prevent entropy collapse (issue #153)."
         ),
     )
+    p.add_argument(
+        "--normalize-returns",
+        action="store_true",
+        help=(
+            "Issue #159: normalize PPO returns by running std before the "
+            "value-loss MSE on every cell in the sweep. Default off preserves "
+            "existing behavior; flip on for the 4-cell ablation."
+        ),
+    )
     args = p.parse_args()
 
     run_sweep(
@@ -143,6 +159,7 @@ def main() -> None:
         skip_existing=args.skip_existing,
         value_coef=args.value_coef,
         entropy_coef=args.entropy_coef,
+        normalize_returns=args.normalize_returns,
     )
 
 
