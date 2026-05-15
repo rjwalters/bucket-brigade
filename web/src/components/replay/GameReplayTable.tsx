@@ -108,20 +108,20 @@ const GameReplayTable: React.FC<GameReplayTableProps> = ({
         ),
       },
       {
-        accessorKey: 'beta',
+        accessorKey: 'prob_fire_spreads_to_neighbor',
         header: ({ column }) => <SortHeader column={column} label="β" />,
         cell: ({ row }) => (
           <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-            {row.original.scenario.beta.toFixed(2)}
+            {row.original.scenario.prob_fire_spreads_to_neighbor.toFixed(2)}
           </div>
         ),
       },
       {
-        accessorKey: 'kappa',
+        accessorKey: 'prob_solo_agent_extinguishes_fire',
         header: ({ column }) => <SortHeader column={column} label="κ" />,
         cell: ({ row }) => (
           <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-            {row.original.scenario.kappa.toFixed(2)}
+            {row.original.scenario.prob_solo_agent_extinguishes_fire.toFixed(2)}
           </div>
         ),
       },

@@ -5,15 +5,17 @@ import GameStateVisualizer from './GameStateVisualizer'
 
 // Minimal-but-valid fixture matching the schemas in utils/schemas.ts.
 const scenario: GameReplay['scenario'] = {
-  beta: 0.3,
-  kappa: 1.2,
-  A: 5,
-  L: 3,
-  c: 0.1,
-  rho_ignite: 0.4,
-  N_min: 10,
-  p_spark: 0.05,
-  N_spark: 2,
+  prob_fire_spreads_to_neighbor: 0.3,
+  prob_solo_agent_extinguishes_fire: 1.2,
+  prob_house_catches_fire: 0.05,
+  team_reward_house_survives: 5,
+  team_penalty_house_burns: 3,
+  reward_own_house_survives: 100,
+  reward_other_house_survives: 50,
+  penalty_own_house_burns: 0,
+  penalty_other_house_burns: 0,
+  cost_to_work_one_night: 0.1,
+  min_nights: 10,
   num_agents: 2,
 }
 

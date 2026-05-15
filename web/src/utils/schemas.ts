@@ -4,18 +4,31 @@ import { z } from 'zod';
 export const HouseStateSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 
 // Scenario schema
-// Must match bucket_brigade/envs/scenarios.py Scenario dataclass
+// Must match bucket_brigade/envs/scenarios_generated.py Scenario dataclass
+// (source of truth: definitions/scenarios.json, mirrored in
+// bucket-brigade-core/src/scenarios.rs Scenario struct).
 export const ScenarioSchema = z.object({
-  beta: z.number().min(0).max(1), // Fire spread probability
-  kappa: z.number().min(0).max(2), // Extinguish efficiency
-  A: z.number().positive(), // Reward per saved house
-  L: z.number().positive(), // Penalty per ruined house
-  c: z.number().nonnegative(), // Cost per worker per night
-  rho_ignite: z.number().min(0).max(1), // Initial fraction of houses burning
-  N_min: z.number().int().positive(), // Minimum nights before termination
-  p_spark: z.number().min(0).max(1), // Probability of spontaneous ignition
-  N_spark: z.number().int().nonnegative(), // Number of nights with sparks active
-  num_agents: z.number().int().min(2).max(10), // Number of agents
+  // Fire dynamics
+  prob_fire_spreads_to_neighbor: z.number().min(0).max(1), // Probability fire spreads to adjacent house
+  prob_solo_agent_extinguishes_fire: z.number().min(0).max(2), // Probability one agent extinguishes fire
+  prob_house_catches_fire: z.number().min(0).max(1), // Probability house catches fire each night
+
+  // Team scoring (collective outcome)
+  team_reward_house_survives: z.number().nonnegative(), // Team reward for each house that survives
+  team_penalty_house_burns: z.number().nonnegative(), // Team penalty for each house that burns
+
+  // Individual rewards (ownership-based)
+  reward_own_house_survives: z.number(), // Individual reward when own house survives
+  reward_other_house_survives: z.number(), // Individual reward when other house survives
+  penalty_own_house_burns: z.number(), // Individual penalty when own house burns
+  penalty_other_house_burns: z.number(), // Individual penalty when other house burns
+
+  // Costs and structure
+  cost_to_work_one_night: z.number().nonnegative(), // Cost per worker per night
+  min_nights: z.number().int().positive(), // Minimum nights before termination
+
+  // Game setup
+  num_agents: z.number().int().min(1).max(10), // Number of agents
 });
 
 // Game night schema

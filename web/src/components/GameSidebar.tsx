@@ -29,7 +29,7 @@ const GameSidebar: React.FC<GameSidebarProps> = ({
   if (finalNight) {
     const savedHouses = finalNight.houses.filter(h => h === 0).length;
     const ruinedHouses = finalNight.houses.filter(h => h === 2).length;
-    const teamReward = (scenario.A * (savedHouses / 10)) - (scenario.L * (ruinedHouses / 10));
+    const teamReward = (scenario.team_reward_house_survives * (savedHouses / 10)) - (scenario.team_penalty_house_burns * (ruinedHouses / 10));
 
     // Calculate total individual rewards
     const totalRewards = allNights.reduce((acc, night) => {
@@ -48,33 +48,33 @@ const GameSidebar: React.FC<GameSidebarProps> = ({
             <div className="parameter-grid">
               <div className="parameter-item">
                 <span className="parameter-label">Fire Spread (β):</span>
-                <span className="parameter-value font-mono">{scenario.beta.toFixed(3)}</span>
+                <span className="parameter-value font-mono">{scenario.prob_fire_spreads_to_neighbor.toFixed(3)}</span>
               </div>
               <div className="parameter-item">
                 <span className="parameter-label">Extinguish (κ):</span>
-                <span className="parameter-value font-mono">{scenario.kappa.toFixed(3)}</span>
+                <span className="parameter-value font-mono">{scenario.prob_solo_agent_extinguishes_fire.toFixed(3)}</span>
               </div>
               <div className="parameter-item">
-                <span className="parameter-label">Reward/A (saved):</span>
-                <span className="parameter-value font-mono">{scenario.A}</span>
+                <span className="parameter-label">Team Reward (saved):</span>
+                <span className="parameter-value font-mono">{scenario.team_reward_house_survives}</span>
               </div>
               <div className="parameter-item">
-                <span className="parameter-label">Penalty/L (ruined):</span>
-                <span className="parameter-value font-mono">{scenario.L}</span>
+                <span className="parameter-label">Team Penalty (ruined):</span>
+                <span className="parameter-value font-mono">{scenario.team_penalty_house_burns}</span>
               </div>
               <div className="parameter-item">
-                <span className="parameter-label">Work Cost (c):</span>
-                <span className="parameter-value font-mono">{scenario.c.toFixed(2)}</span>
+                <span className="parameter-label">Work Cost:</span>
+                <span className="parameter-value font-mono">{scenario.cost_to_work_one_night.toFixed(2)}</span>
               </div>
               <div className="parameter-item">
               </div>
               <div className="parameter-item">
                 <span className="parameter-label">Min Nights:</span>
-                <span className="parameter-value font-mono">{scenario.N_min}</span>
+                <span className="parameter-value font-mono">{scenario.min_nights}</span>
               </div>
               <div className="parameter-item">
                 <span className="parameter-label">Spark Prob:</span>
-                <span className="parameter-value font-mono">{scenario.p_spark.toFixed(3)}</span>
+                <span className="parameter-value font-mono">{scenario.prob_house_catches_fire.toFixed(3)}</span>
               </div>
               <div className="parameter-item">
                 <span className="parameter-label">Agents:</span>
