@@ -84,7 +84,9 @@ _HOUSES_OBS_SLICE = slice(0, 10)
 _BURNING_CODE = 1
 
 
-def _state_summary_codes(rollout, day_bins: int = _STATE_SUMMARY_DAY_BINS) -> np.ndarray:
+def _state_summary_codes(
+    rollout, day_bins: int = _STATE_SUMMARY_DAY_BINS
+) -> np.ndarray:
     """Coarse ``(num_houses_burning, day_index)`` state-summary conditioner.
 
     Implements **Option 1** from issue #154 — replaces the previously-degenerate
