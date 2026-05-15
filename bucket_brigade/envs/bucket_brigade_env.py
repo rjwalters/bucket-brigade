@@ -263,18 +263,35 @@ class BucketBrigadeEnv:
             else:
                 individual_rewards[agent_idx] += 0.5  # Rest reward
 
-            # Ownership changes: bonus for owned houses that become safe
-            owned_houses = np.where(self.house_owners == agent_idx)[0]
-            for house_idx in owned_houses:
+            # Per-house ownership rewards.
+            # For each of the 10 houses, decide whether the agent owns it and
+            # apply the appropriate per-house reward field. This wires up the
+            # four previously-unused Scenario ownership reward fields
+            # (`reward_own_house_survives`, `reward_other_house_survives`,
+            # `penalty_own_house_burns`, `penalty_other_house_burns`).
+            for house_idx in range(10):
+                is_own = self.house_owners[house_idx] == agent_idx
+
+                # Save event: any non-SAFE state -> SAFE this step.
                 if (
                     prev_houses[house_idx] != self.SAFE
                     and self.houses[house_idx] == self.SAFE
                 ):
-                    individual_rewards[agent_idx] += 1.0  # Bonus for saving owned house
+                    individual_rewards[agent_idx] += (
+                        self.scenario.reward_own_house_survives
+                        if is_own
+                        else self.scenario.reward_other_house_survives
+                    )
 
-            # Penalty for owned houses that are ruined
-            owned_ruined = np.sum(self.houses[owned_houses] == self.RUINED)
-            individual_rewards[agent_idx] -= 2.0 * owned_ruined
+                # Currently-ruined penalty (applied every step the house is
+                # RUINED). The penalty field stores the magnitude as a positive
+                # number; subtract it.
+                if self.houses[house_idx] == self.RUINED:
+                    individual_rewards[agent_idx] -= (
+                        self.scenario.penalty_own_house_burns
+                        if is_own
+                        else self.scenario.penalty_other_house_burns
+                    )
 
             # Team reward component (full public goods incentive)
             individual_rewards[agent_idx] += team_reward

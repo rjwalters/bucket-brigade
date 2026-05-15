@@ -15,6 +15,11 @@ pub struct BucketBrigade {
     pub(super) rng: DeterministicRng,
     pub scenario: Scenario,
     pub num_agents: usize,
+    /// Owner agent for each of the 10 houses (round-robin assignment).
+    /// House `i` is owned by agent `i % num_agents`. Mirrors the Python
+    /// `BucketBrigadeEnv.house_owners` array so that the per-house ownership
+    /// reward fields (`reward_own_house_survives` etc.) can be applied per-agent.
+    pub(super) house_owners: Vec<u8>,
     pub(super) trajectory: Vec<GameNight>,
 }
 
@@ -31,6 +36,7 @@ impl BucketBrigade {
             rng: DeterministicRng::new(seed),
             scenario,
             num_agents,
+            house_owners: (0..10).map(|i| (i % num_agents) as u8).collect(),
             trajectory: Vec::new(),
         };
         engine.reset();
@@ -45,6 +51,8 @@ impl BucketBrigade {
         self.night = 0;
         self.done = false;
         self.rewards = vec![0.0; self.num_agents];
+        // Re-initialize house ownership in case num_agents changed via external mutation.
+        self.house_owners = (0..10).map(|i| (i % self.num_agents) as u8).collect();
         self.trajectory = Vec::new();
 
         // Initialize fires - probabilistic per-house

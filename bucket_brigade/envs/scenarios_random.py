@@ -56,9 +56,13 @@ def random_scenario(num_agents: int, seed: Optional[int] = None) -> Scenario:
         prob_house_catches_fire=prob_house_catches_fire,
         team_reward_house_survives=100.0,
         team_penalty_house_burns=100.0,
-        reward_own_house_survives=100.0,
-        reward_other_house_survives=50.0,
-        penalty_own_house_burns=0.0,
+        # Per-house ownership rewards preserve the pre-#170 effective magnitudes
+        # of +1.0 on saving an owned house and -2.0 per ruined owned house. See
+        # issue #170: previously these fields were unused (shadowed by hardcoded
+        # constants in the reward loop). They are now wired into rewards.
+        reward_own_house_survives=1.0,
+        reward_other_house_survives=0.0,
+        penalty_own_house_burns=2.0,
         penalty_other_house_burns=0.0,
         cost_to_work_one_night=0.5,
         min_nights=int(np.random.randint(10, 20)),

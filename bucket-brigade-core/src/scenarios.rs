@@ -11,7 +11,7 @@ pub struct Scenario {
     pub team_reward_house_survives: f32, // Team reward for each house that survives
     pub team_penalty_house_burns: f32,   // Team penalty for each house that burns
 
-    // Individual rewards (ownership-based, for future use in issue #52)
+    // Individual rewards (ownership-based)
     pub reward_own_house_survives: f32, // Individual reward when own house survives
     pub reward_other_house_survives: f32, // Individual reward when other house survives
     pub penalty_own_house_burns: f32,   // Individual penalty when own house burns
@@ -32,9 +32,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -46,9 +46,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 10,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -60,9 +60,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 15,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -75,9 +75,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -89,9 +89,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.5,
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -103,9 +103,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 1.0, // High work cost creates social dilemma
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -117,9 +117,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.8,
         min_nights: 20, // Longer games
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -131,9 +131,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.2,
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -145,9 +145,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.7,
         min_nights: 15,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -159,9 +159,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.4,
         min_nights: 20, // Long games
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -173,9 +173,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.6,
         min_nights: 12,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 
@@ -187,9 +187,9 @@ pub const SCENARIOS: phf::Map<&'static str, Scenario> = phf::phf_map! {
         team_penalty_house_burns: 100.0,
         cost_to_work_one_night: 0.6,
         min_nights: 15,
-        reward_own_house_survives: 100.0,
-        reward_other_house_survives: 50.0,
-        penalty_own_house_burns: 0.0,
+        reward_own_house_survives: 1.0,
+        reward_other_house_survives: 0.0,
+        penalty_own_house_burns: 2.0,
         penalty_other_house_burns: 0.0,
     },
 };
