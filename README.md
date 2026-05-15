@@ -402,15 +402,23 @@ uv run pytest tests/test_environment.py
 
 ### Web Testing
 ```bash
-# Run Playwright tests
-pnpm run test
+# Run unit tests (Vitest + React Testing Library)
+pnpm run test           # one-off run
+pnpm run test:watch     # watch mode
+pnpm run test:coverage  # with coverage report
 
-# Run in headed mode (visible browser)
-pnpm run test:headed
+# Run Playwright e2e tests (renamed from `pnpm test`)
+pnpm run test:e2e
 
-# Run with UI mode
-pnpm run test:ui
+# Run e2e in headed mode (visible browser)
+pnpm run test:e2e:headed
+
+# Run e2e with UI mode
+pnpm run test:e2e:ui
 ```
+
+**Breaking change (issue #158):** `pnpm test` now runs Vitest unit tests instead
+of Playwright. Use `pnpm test:e2e` for the Playwright suite.
 
 ### Code Quality
 ```bash
@@ -448,7 +456,7 @@ pre-commit run --all-files
 # Install all dependencies
 pnpm run install:all
 
-# Run all tests
+# Run all tests (web unit tests via Vitest; use `test:e2e` for Playwright)
 pnpm run test
 
 # Format all code

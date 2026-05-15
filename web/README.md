@@ -42,6 +42,26 @@ pnpm run build
 pnpm run preview
 ```
 
+### Unit Tests
+
+Unit tests use **Vitest** with **React Testing Library** and **jsdom**.
+Tests live colocated with their component as `*.test.{ts,tsx}` files under
+`src/`.
+
+```bash
+# One-off run (what CI runs)
+pnpm run test
+
+# Watch mode while iterating
+pnpm run test:watch
+
+# Coverage report
+pnpm run test:coverage
+```
+
+The Playwright end-to-end suite was renamed to `pnpm run test:e2e` when
+Vitest took over the default `test` script — see issue #158.
+
 ### Project Structure
 
 ```

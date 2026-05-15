@@ -94,9 +94,15 @@ uv run pytest --cov=bucket_brigade  # With coverage
 
 ### Web Tests
 ```bash
-pnpm run test                    # Run Playwright tests
-pnpm run test:headed            # Run in visible browser
-pnpm run test:ui                # Run with test UI
+# Vitest + React Testing Library unit tests (new default — issue #158)
+pnpm run test                    # Run unit tests once
+pnpm run test:watch              # Watch mode
+pnpm run test:coverage           # With coverage report
+
+# Playwright e2e tests (renamed from `pnpm test`)
+pnpm run test:e2e                # Run Playwright e2e tests
+pnpm run test:e2e:headed         # Run in visible browser
+pnpm run test:e2e:ui             # Run with test UI
 ```
 
 ### Integration Tests
