@@ -83,11 +83,13 @@ jobs:
       run: cd web && pnpm run lint:biome
     - name: Run type checking
       run: cd web && pnpm run typecheck || echo "TypeScript errors found - continuing for CI"
-    # Skip web tests for now - they need UI fixes
+    - name: Run unit tests
+      run: cd web && pnpm run test
+    # Skip Playwright e2e tests for now - they need UI fixes
     # - name: Install Playwright
     #   run: cd web && pnpm exec playwright install --with-deps
-    # - name: Run tests
-    #   run: cd web && timeout 60 pnpm run test || echo "Web tests timed out - continuing..."
+    # - name: Run e2e tests
+    #   run: cd web && timeout 60 pnpm run test:e2e || echo "Web tests timed out - continuing..."
 
   lint-python:
     runs-on: ubuntu-latest
