@@ -30,15 +30,35 @@ impl BucketBrigade {
                 rewards[agent_idx] += 0.5; // Rest reward
             }
 
-            // 2. Ownership changes: bonus for owned houses that become safe
-            let owned_house = agent_idx % 10;
-            if prev_houses[owned_house] != 0 && self.houses[owned_house] == 0 {
-                rewards[agent_idx] += 1.0; // Bonus for saving owned house
-            }
+            // 2 & 3. Per-house ownership rewards.
+            // For each of the 10 houses, decide whether the agent owns it and
+            // apply the appropriate per-house reward field. This wires up the
+            // four previously-unused `Scenario` ownership reward fields
+            // (`reward_own_house_survives`, `reward_other_house_survives`,
+            // `penalty_own_house_burns`, `penalty_other_house_burns`).
+            for house_idx in 0..10 {
+                let is_own = (self.house_owners[house_idx] as usize) == agent_idx;
 
-            // 3. Penalty for owned houses that are currently ruined
-            if self.houses[owned_house] == 2 {
-                rewards[agent_idx] -= 2.0;
+                // Save event: BURNING -> SAFE this step.
+                if prev_houses[house_idx] != 0 && self.houses[house_idx] == 0 {
+                    rewards[agent_idx] += if is_own {
+                        self.scenario.reward_own_house_survives
+                    } else {
+                        self.scenario.reward_other_house_survives
+                    };
+                }
+
+                // Currently-ruined penalty (applied every step the house is
+                // RUINED, matching the Python behavior in
+                // `bucket_brigade_env.py::_compute_rewards`). The penalty field
+                // stores the magnitude as a positive number; subtract it.
+                if self.houses[house_idx] == 2 {
+                    rewards[agent_idx] -= if is_own {
+                        self.scenario.penalty_own_house_burns
+                    } else {
+                        self.scenario.penalty_other_house_burns
+                    };
+                }
             }
 
             // 4. Team reward component (full public goods incentive)
