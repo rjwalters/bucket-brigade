@@ -16,6 +16,7 @@ from bucket_brigade.training.joint_trainer import (
     JointPPOTrainer,
     flatten_dict_obs,
 )
+from bucket_brigade.training.networks import CentralizedCritic
 
 
 NUM_AGENTS = 4
@@ -28,7 +29,9 @@ def _env_fn():
 
 
 def _make_trainer(
-    redundancy_coef: float = 0.0, hidden_size: int = 16
+    redundancy_coef: float = 0.0,
+    hidden_size: int = 16,
+    centralized_critic: bool = False,
 ) -> JointPPOTrainer:
     env = _env_fn()
     obs = env.reset(seed=0)
@@ -43,6 +46,7 @@ def _make_trainer(
         minibatch_size=32,
         ppo_epochs=2,
         redundancy_coef=redundancy_coef,
+        centralized_critic=centralized_critic,
         seed=0,
     )
 
@@ -296,3 +300,173 @@ class TestGradientFlow:
             assert first_linear.weight.grad.abs().sum().item() > 0.0, (
                 f"agent {i}: zero gradient from redundancy penalty"
             )
+
+
+class TestCentralizedCritic:
+    """Issue #208: MAPPO centralized critic.
+
+    The centralized-critic path replaces the per-agent value heads with a
+    single shared :class:`CentralizedCritic` consuming the global portion
+    of the observation (identity-one-hot tail stripped). Per-agent
+    advantages still come from per-agent rewards; only the value baseline
+    is shared.
+    """
+
+    def test_centralized_critic_forward_shape(self):
+        """``CentralizedCritic(obs_dim)`` accepts ``(B, obs_dim)`` and
+        returns ``(B, 1)``."""
+        critic = CentralizedCritic(obs_dim=42, hidden_size=32)
+        x = torch.randn(8, 42)
+        v = critic(x)
+        assert v.shape == (8, 1)
+
+    def test_init_critic_attributes(self):
+        """Trainer with ``centralized_critic=True`` exposes a critic +
+        optimizer; default flag leaves them ``None``."""
+        trainer_off = _make_trainer(centralized_critic=False)
+        assert trainer_off.centralized_critic is False
+        assert trainer_off.critic is None
+        assert trainer_off.critic_optimizer is None
+
+        trainer_on = _make_trainer(centralized_critic=True)
+        assert trainer_on.centralized_critic is True
+        assert isinstance(trainer_on.critic, CentralizedCritic)
+        # Global obs dim = obs_dim - num_agents (identity-tail stripped).
+        assert trainer_on.critic.obs_dim == trainer_on.obs_dim - NUM_AGENTS
+        assert trainer_on.critic_optimizer is not None
+
+    def test_critic_incompatible_with_redundancy_coef(self):
+        """Combining the centralized critic with the redundancy penalty
+        must raise (per-agent actor coupling vs. shared critic — two
+        unrelated experiments)."""
+        with pytest.raises(ValueError, match="centralized_critic"):
+            _make_trainer(centralized_critic=True, redundancy_coef=0.1)
+
+    def test_rollout_values_are_shared_under_centralized_critic(self):
+        """When MAPPO is on, every agent's stored rollout value at each
+        timestep must be the same float (the shared critic output)."""
+        trainer = _make_trainer(centralized_critic=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        # All N value rows must equal agent 0's value row, elementwise.
+        v0 = rollout.values[0].cpu().numpy()
+        for i in range(1, NUM_AGENTS):
+            vi = rollout.values[i].cpu().numpy()
+            assert np.allclose(vi, v0), (
+                f"agent {i} value row differs from agent 0 — centralized "
+                "critic should broadcast a single shared estimate"
+            )
+
+    def test_update_runs_without_nan_under_centralized_critic(self):
+        """End-to-end smoke: rollout + update completes with finite stats
+        and the new ``critic_value_loss`` key is present."""
+        trainer = _make_trainer(centralized_critic=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        for k, v in stats.items():
+            assert np.isfinite(v), f"non-finite stat {k}={v}"
+        assert "critic_value_loss" in stats
+        # Per-agent value_loss stats are recorded as 0.0 (the per-agent
+        # value heads are bypassed under MAPPO).
+        for i in range(NUM_AGENTS):
+            assert stats[f"value_loss/agent_{i}"] == 0.0
+
+    def test_critic_receives_gradient_after_update(self):
+        """After one ``update()`` call, the centralized critic's first
+        linear layer must have non-zero gradient (i.e. the critic loss
+        actually drives the centralized network's weights)."""
+        trainer = _make_trainer(centralized_critic=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        trainer.update(rollout)
+        first_linear = trainer.critic.shared[0]
+        assert first_linear.weight.grad is not None, "critic: no grad"
+        assert first_linear.weight.grad.abs().sum().item() > 0.0, (
+            "critic: zero gradient after update"
+        )
+
+    def test_actors_still_receive_gradient_under_centralized_critic(self):
+        """After one ``update()`` call, every per-agent policy network's
+        first linear layer must have non-zero gradient (the policy loss
+        still drives the actors even without a per-agent value head)."""
+        trainer = _make_trainer(centralized_critic=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        trainer.update(rollout)
+        for i, policy in enumerate(trainer.policies):
+            first_linear = policy.shared[0]
+            assert first_linear.weight.grad is not None, f"agent {i}: no grad"
+            assert first_linear.weight.grad.abs().sum().item() > 0.0, (
+                f"agent {i}: zero gradient under centralized critic"
+            )
+
+    def test_default_flag_no_critic_constructed(self):
+        """Regression guard: with ``centralized_critic=False`` (default),
+        no centralized-critic module or optimizer is constructed, and
+        the new ``critic_value_loss`` stat is **not** present in the
+        update output. This pins the default code path to the
+        pre-#208 IPPO contract.
+        """
+        trainer = _make_trainer(centralized_critic=False)
+        assert trainer.critic is None
+        assert trainer.critic_optimizer is None
+
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        assert "critic_value_loss" not in stats, (
+            "default IPPO path leaked a centralized-critic stat key"
+        )
+        # Per-agent value losses must still be non-zero floats (the per-
+        # agent value heads are exercised on the default path).
+        any_nonzero = any(
+            stats[f"value_loss/agent_{i}"] != 0.0 for i in range(NUM_AGENTS)
+        )
+        assert any_nonzero, (
+            "default IPPO path: per-agent value_loss collapsed to 0 — "
+            "the per-agent value head is no longer being trained"
+        )
+
+    def test_default_flag_two_trainers_identical_init(self):
+        """Two trainers constructed with the same seed and
+        ``centralized_critic=False`` produce identical initial weights
+        --- the canonical IPPO determinism check (seeding only; rollout
+        determinism is RNG-state-dependent and tested elsewhere)."""
+        trainer_a = _make_trainer(centralized_critic=False)
+        trainer_b = _make_trainer(centralized_critic=False)
+        for pa, pb in zip(trainer_a.policies, trainer_b.policies):
+            for ka, va in pa.state_dict().items():
+                assert torch.equal(va, pb.state_dict()[ka]), (
+                    f"initial weights differ at {ka} — IPPO seeding broken"
+                )
+
+    def test_critic_uses_identity_stripped_global_obs(self):
+        """The centralized critic consumes the global obs (identity-tail
+        stripped). Its input dim must equal ``obs_dim - num_agents``,
+        and a manual forward on a hand-crafted batch returns the right
+        shape."""
+        trainer = _make_trainer(centralized_critic=True)
+        # Hand-craft a [mb, obs_dim - num_agents] tensor (no identity tail).
+        mb = 7
+        x = torch.randn(mb, trainer.obs_dim - NUM_AGENTS)
+        v = trainer.critic(x)
+        assert v.shape == (mb, 1)
+
+    def test_num_agents_one_reduces_to_ppo_like(self):
+        """Sanity: ``num_agents=1`` with the centralized critic should
+        construct and run without error (it reduces to vanilla PPO with
+        the value head moved to a separate module)."""
+        env = BucketBrigadeEnv(num_agents=1)
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=1).shape[0]
+        trainer = JointPPOTrainer(
+            env_fn=lambda: BucketBrigadeEnv(num_agents=1),
+            num_agents=1,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            centralized_critic=True,
+            seed=0,
+        )
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        assert np.isfinite(stats["total_loss"])
+        assert np.isfinite(stats["critic_value_loss"])

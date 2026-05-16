@@ -48,7 +48,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from bucket_brigade.training.networks import PolicyNetwork, compute_gae
+from bucket_brigade.training.networks import (
+    CentralizedCritic,
+    PolicyNetwork,
+    compute_gae,
+)
 from bucket_brigade.training.normalizers import RunningMeanStd
 
 
@@ -170,6 +174,20 @@ class JointPPOTrainer:
             ``sqrt(var + 1e-8)`` before the value-loss MSE. Default ``False``
             preserves prior behavior. See issue #159 for the motivating
             value-loss-magnitude diagnostics.
+        centralized_critic: If True, enable MAPPO (issue #208). A separate
+            :class:`CentralizedCritic` consumes the **global** portion of
+            each observation (the per-agent flat obs with the identity
+            one-hot tail stripped) and produces a single shared value
+            estimate used for advantage computation across all agents.
+            Per-agent rewards still drive per-agent advantages; only the
+            value baseline is shared. The per-agent policy networks'
+            value heads are bypassed during rollout *and* update. Default
+            ``False`` preserves the independent-PPO (IPPO) path bit-for-bit.
+
+            **Incompatible with ``redundancy_coef > 0``** — the redundancy
+            penalty couples the per-agent actor trunks; combining it with
+            a centralized critic would entangle two unrelated experiments.
+            Raises ``ValueError`` if both are set.
     """
 
     def __init__(
@@ -192,6 +210,7 @@ class JointPPOTrainer:
         device: str = "cpu",
         seed: Optional[int] = None,
         normalize_returns: bool = False,
+        centralized_critic: bool = False,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
@@ -209,6 +228,19 @@ class JointPPOTrainer:
         self.redundancy_coef = redundancy_coef
         self.ppo_epochs = ppo_epochs
         self.minibatch_size = minibatch_size
+
+        # Issue #208: MAPPO / centralized-critic flag. Stored before the env
+        # reset and policy construction so downstream wiring (advantage
+        # computation, optimizer setup) can branch on it.
+        self.centralized_critic = centralized_critic
+        if centralized_critic and redundancy_coef > 0:
+            raise ValueError(
+                "centralized_critic=True is incompatible with redundancy_coef>0: "
+                "the redundancy penalty couples the per-agent actor trunks, "
+                "while the centralized critic replaces the per-agent value "
+                "heads. Combining them entangles two unrelated experiments. "
+                "Pick one."
+            )
 
         # Issue #159: optional running mean/std of returns to shrink the
         # value-loss MSE target to O(1) (Phase 1 diagnostics showed
@@ -240,6 +272,31 @@ class JointPPOTrainer:
         # redundancy penalty's gradient can flow into each encoder.
         self.optimizers = [optim.Adam(p.parameters(), lr=lr) for p in self.policies]
 
+        # Issue #208: optional MAPPO centralized critic. The critic consumes
+        # the **global** portion of the observation (the per-agent flat obs
+        # with the identity one-hot tail stripped, length
+        # ``obs_dim - num_agents``). It has its own optimizer so its Adam
+        # state never co-mingles with the actor optimizers.
+        if self.centralized_critic:
+            self._global_obs_dim = obs_dim - num_agents
+            if self._global_obs_dim <= 0:
+                raise ValueError(
+                    f"centralized_critic=True requires obs_dim ({obs_dim}) > "
+                    f"num_agents ({num_agents}) so the identity-tail-stripped "
+                    "global obs has positive length."
+                )
+            self.critic: Optional[CentralizedCritic] = CentralizedCritic(
+                obs_dim=self._global_obs_dim,
+                hidden_size=hidden_size,
+            ).to(self.device)
+            self.critic_optimizer: Optional[optim.Optimizer] = optim.Adam(
+                self.critic.parameters(), lr=lr
+            )
+        else:
+            self._global_obs_dim = obs_dim
+            self.critic = None
+            self.critic_optimizer = None
+
         self._reset_env(seed=seed)
 
     # ------------------------------------------------------------------
@@ -263,6 +320,36 @@ class JointPPOTrainer:
         # ``_last_obs`` is now ``[N, obs_dim]`` — one row per agent.
         self._last_obs = self._flatten_per_agent(obs)
 
+    def _global_obs_from_per_agent(self, obs_per_agent: torch.Tensor) -> torch.Tensor:
+        """Strip the per-agent identity one-hot tail to recover the global obs.
+
+        Used only when ``centralized_critic=True``. The global obs is the
+        prefix shared by all agents at each timestep — i.e. each row of
+        ``[N, obs_dim]`` minus its last ``num_agents`` features. We pick
+        agent 0's row by convention (any row works: per-row prefixes are
+        identical by the #204 contract; see
+        ``tests/test_joint_trainer.py::test_flatten_dict_obs_per_agent_differs``).
+
+        Args:
+            obs_per_agent: Tensor of shape ``[..., N, obs_dim]`` or
+                ``[N, obs_dim]``.
+
+        Returns:
+            Tensor of shape ``[..., global_obs_dim]`` --- the per-agent
+            leading dim is collapsed (agent 0 selected).
+        """
+        # Take agent 0's row, then drop the identity one-hot tail.
+        if obs_per_agent.dim() == 3:  # [T, N, obs_dim] -> [T, obs_dim]
+            agent0 = obs_per_agent[:, 0, :]
+        elif obs_per_agent.dim() == 2:  # [N, obs_dim] -> [obs_dim]
+            agent0 = obs_per_agent[0]
+        else:
+            raise ValueError(
+                f"_global_obs_from_per_agent: expected 2D or 3D input, got "
+                f"shape {tuple(obs_per_agent.shape)}"
+            )
+        return agent0[..., : self._global_obs_dim]
+
     @torch.no_grad()
     def _act_all(
         self, obs_per_agent_t: torch.Tensor
@@ -275,6 +362,12 @@ class JointPPOTrainer:
                 previously the same row was passed to all N policies.
 
         Returns ``(joint_action [N, A], per-agent log_prob list, per-agent value list)``.
+
+        When ``centralized_critic=True`` (issue #208), the per-agent value
+        from ``policy.get_action_and_value`` is discarded and a single
+        shared value from :attr:`critic` (applied to the identity-tail-
+        stripped global obs) is broadcast to all N agents' value slots,
+        so the existing GAE machinery downstream stays unchanged.
         """
         joint_action = np.zeros(
             (self.num_agents, len(self.action_dims)), dtype=np.int64
@@ -287,6 +380,14 @@ class JointPPOTrainer:
             joint_action[i] = actions[0].cpu().numpy()
             log_probs.append(lp[0])
             values.append(v[0])
+
+        if self.centralized_critic:
+            # Replace per-agent values with one shared centralized estimate.
+            # The global obs is the same for every agent (identity tail
+            # stripped), so a single forward suffices.
+            global_obs = self._global_obs_from_per_agent(obs_per_agent_t).unsqueeze(0)
+            shared_value = self.critic(global_obs).squeeze(-1).squeeze(0)
+            values = [shared_value for _ in range(self.num_agents)]
         return joint_action, log_probs, values
 
     def collect_rollout(self, num_steps: int) -> RolloutBuffer:
@@ -474,6 +575,17 @@ class JointPPOTrainer:
 
         mb_size = min(self.minibatch_size, t_total)
 
+        # Issue #208: when the centralized critic is on, the value-loss is
+        # computed once against the mean across-agents return (the shared
+        # MAPPO regression target). Pre-compute it here so it can be sliced
+        # by minibatch index alongside the per-agent returns.
+        if self.centralized_critic:
+            mean_returns = (
+                torch.stack([returns[i] for i in range(self.num_agents)], dim=0)
+                .mean(dim=0)
+            )
+            stats["critic_value_loss"] = 0.0
+
         for _epoch in range(self.ppo_epochs):
             idx = torch.randperm(t_total, device=self.device)[:mb_size]
             # Issue #204: ``rollout.observations`` is now ``[T, N, obs_dim]``.
@@ -498,7 +610,6 @@ class JointPPOTrainer:
                 encoder_outputs.append(features)
 
                 action_logits = [head(features) for head in policy.action_heads]
-                values = policy.value_head(features).squeeze(-1)
 
                 new_log_probs = []
                 entropies = []
@@ -516,12 +627,21 @@ class JointPPOTrainer:
                     * adv_mb
                 )
                 policy_loss = -torch.min(surr1, surr2).mean()
-                value_loss = F.mse_loss(values, ret_mb)
-                agent_loss = (
-                    policy_loss
-                    + self.value_coef * value_loss
-                    - self.entropy_coef * entropy
-                )
+
+                if self.centralized_critic:
+                    # Per-agent value head is bypassed; the centralized
+                    # critic handles all value learning below. Record
+                    # value_loss=0 to keep the stats schema consistent.
+                    value_loss = policy_loss.new_tensor(0.0)
+                    agent_loss = policy_loss - self.entropy_coef * entropy
+                else:
+                    values = policy.value_head(features).squeeze(-1)
+                    value_loss = F.mse_loss(values, ret_mb)
+                    agent_loss = (
+                        policy_loss
+                        + self.value_coef * value_loss
+                        - self.entropy_coef * entropy
+                    )
                 per_agent_losses.append(agent_loss)
 
                 stats[f"policy_loss/agent_{i}"] += policy_loss.item() / self.ppo_epochs
@@ -534,18 +654,42 @@ class JointPPOTrainer:
                 red_pen = encoder_outputs[0].new_tensor(0.0)
             stats["redundancy_loss"] += red_pen.item() / self.ppo_epochs
 
-            total_loss = (
-                torch.stack(per_agent_losses).sum() + self.redundancy_coef * red_pen
-            )
+            if self.centralized_critic:
+                # One critic forward on the global obs minibatch (agent 0's
+                # row, identity-tail stripped). MSE against the shared
+                # mean-across-agents returns.
+                global_obs_mb = self._global_obs_from_per_agent(obs_mb_all)
+                critic_values = self.critic(global_obs_mb).squeeze(-1)
+                critic_value_loss = F.mse_loss(critic_values, mean_returns[idx])
+                stats["critic_value_loss"] += (
+                    critic_value_loss.item() / self.ppo_epochs
+                )
+                total_loss = (
+                    torch.stack(per_agent_losses).sum()
+                    + self.value_coef * critic_value_loss
+                )
+            else:
+                total_loss = (
+                    torch.stack(per_agent_losses).sum()
+                    + self.redundancy_coef * red_pen
+                )
             stats["total_loss"] += total_loss.item() / self.ppo_epochs
 
             for opt in self.optimizers:
                 opt.zero_grad()
+            if self.centralized_critic:
+                self.critic_optimizer.zero_grad()
             total_loss.backward()
             for policy in self.policies:
                 nn.utils.clip_grad_norm_(policy.parameters(), self.max_grad_norm)
+            if self.centralized_critic:
+                nn.utils.clip_grad_norm_(
+                    self.critic.parameters(), self.max_grad_norm
+                )
             for opt in self.optimizers:
                 opt.step()
+            if self.centralized_critic:
+                self.critic_optimizer.step()
 
         return stats
 

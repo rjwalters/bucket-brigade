@@ -74,6 +74,11 @@ class CellConfig:
     # Issue #159: optional return normalization. Default False preserves
     # existing behavior; flip on for the ablation cells.
     normalize_returns: bool = False
+    # Issue #208: MAPPO / centralized-critic flag. Default False preserves
+    # the independent-PPO (IPPO) baseline; flip on for the MAPPO arm of
+    # the Phase 2 sweep. Incompatible with lambda_red > 0 (the redundancy
+    # penalty couples the per-agent actor trunks).
+    centralized_critic: bool = False
     # Encoder outputs are quantized for plug-in MI. We first project from
     # ``hidden_size`` down to ``mi_proj_dims`` via a fixed random matrix
     # (seeded from ``seed``); then ``quantize_uniform`` packs each row into
@@ -464,6 +469,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         entropy_coef=cfg.entropy_coef,
         redundancy_coef=cfg.lambda_red,
         normalize_returns=cfg.normalize_returns,
+        centralized_critic=cfg.centralized_critic,
         device=cfg.device,
         seed=cfg.seed,
     )
@@ -561,6 +567,18 @@ def main() -> None:
             "for the 4-cell ablation."
         ),
     )
+    p.add_argument(
+        "--centralized-critic",
+        action="store_true",
+        help=(
+            "Issue #208: enable MAPPO (centralized critic, decentralized "
+            "actors). One shared CentralizedCritic consumes the global "
+            "obs (identity-tail stripped) and produces a value baseline "
+            "shared across all agents; per-agent advantages still come "
+            "from per-agent rewards. Default off preserves IPPO. "
+            "Incompatible with --lambda-red > 0."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -574,6 +592,7 @@ def main() -> None:
         value_coef=args.value_coef,
         entropy_coef=args.entropy_coef,
         normalize_returns=args.normalize_returns,
+        centralized_critic=args.centralized_critic,
         device=args.device,
     )
     print(
