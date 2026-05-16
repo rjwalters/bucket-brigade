@@ -122,7 +122,10 @@ def run_one_rollout(
         return BucketBrigadeEnv(scenario=scenario)
 
     probe = env_fn()
-    obs_dim = flatten_dict_obs(probe.reset(seed=cfg["seed"])).shape[0]
+    # Issue #204: obs_dim must include the per-agent identity one-hot tail.
+    obs_dim = flatten_dict_obs(
+        probe.reset(seed=cfg["seed"]), agent_id=0, num_agents=cfg["num_agents"]
+    ).shape[0]
 
     trainer = JointPPOTrainer(
         env_fn=env_fn,

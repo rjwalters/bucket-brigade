@@ -103,8 +103,20 @@ class RustPufferBucketBrigade(gym.Env):
         # Track last observation
         self._last_obs: Optional[Dict[str, np.ndarray]] = None
 
-        # PufferLib observation/action spaces
-        obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
+        # PufferLib observation/action spaces.
+        # Issue #204 — the flattened observation now ends with a per-agent
+        # identity one-hot of length ``num_agents`` so per-agent obs vectors
+        # are distinct. This wrapper only exposes the trained agent's view
+        # (always ``agent_id=0``), but the dim must include the identity
+        # tail so downstream policy networks size their input layer correctly.
+        obs_size = (
+            10
+            + self.num_agents
+            + self.num_agents
+            + (self.num_agents * 2)
+            + 10
+            + self.num_agents  # identity one-hot (issue #204)
+        )
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
@@ -237,12 +249,27 @@ class RustPufferBucketBrigade(gym.Env):
     def _flatten_observation(
         self, obs: Dict[str, np.ndarray], agent_id: int
     ) -> np.ndarray:
-        """Convert observation dict to flat array for PufferLib."""
+        """Convert observation dict to flat array for PufferLib.
+
+        Issue #204: the flat layout now ends with a length-``num_agents``
+        identity one-hot for ``agent_id`` so per-agent observations are
+        provably distinct. The previous layout dropped ``agent_id``
+        entirely, which was the latent half of the "identical input to all
+        agents" PPO bug.
+        """
         houses = obs["houses"].astype(np.float32)
         signals = obs["signals"].astype(np.float32)
         locations = obs["locations"].astype(np.float32)
         last_actions = obs["last_actions"].flatten().astype(np.float32)
         scenario_info = obs["scenario_info"].astype(np.float32)
+
+        if not 0 <= agent_id < self.num_agents:
+            raise ValueError(
+                f"_flatten_observation: agent_id {agent_id} out of range "
+                f"[0, {self.num_agents})"
+            )
+        identity = np.zeros(self.num_agents, dtype=np.float32)
+        identity[agent_id] = 1.0
 
         # Concatenate all observation components
         flat_obs = np.concatenate(
@@ -252,6 +279,7 @@ class RustPufferBucketBrigade(gym.Env):
                 locations,  # N values
                 last_actions,  # N*2 values
                 scenario_info,  # 10 values
+                identity,  # N values (issue #204)
             ]
         )
 
@@ -276,8 +304,15 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
         super().__init__(**kwargs)
         self.num_envs = num_envs
 
-        # Vectorized observation space
-        obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
+        # Vectorized observation space (issue #204 — include identity one-hot tail).
+        obs_size = (
+            10
+            + self.num_agents
+            + self.num_agents
+            + (self.num_agents * 2)
+            + 10
+            + self.num_agents  # identity one-hot (issue #204)
+        )
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(num_envs, obs_size), dtype=np.float32
         )

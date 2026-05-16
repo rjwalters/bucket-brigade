@@ -71,14 +71,21 @@ def _run_episode(
     num_agents = len(policies)
     n_action_dims = 2
     while not env.done:
-        obs = flatten_dict_obs(obs_dict)
-        obs_t = torch.from_numpy(obs).unsqueeze(0).to(device)
+        # Issue #204: per-agent flat obs with identity one-hot tail.
+        obs_rows = np.stack(
+            [
+                flatten_dict_obs(obs_dict, agent_id=i, num_agents=num_agents)
+                for i in range(num_agents)
+            ],
+            axis=0,
+        )
+        obs_t = torch.from_numpy(obs_rows).to(device)  # [N, obs_dim]
         joint = np.zeros((num_agents, n_action_dims), dtype=np.int64)
         for i, policy in enumerate(policies):
             if i == dropout_agent:
                 joint[i] = [0, 0]  # no-op: rest at house 0
                 continue
-            actions, _, _, _ = policy.get_action_and_value(obs_t)
+            actions, _, _, _ = policy.get_action_and_value(obs_t[i : i + 1])
             joint[i] = actions[0].cpu().numpy()
         obs_dict, rewards, _, _ = env.step(joint)
         total_reward += float(rewards.sum())
@@ -108,7 +115,10 @@ def evaluate_cell(
 
     scenario = get_scenario_by_name(cfg["scenario"], num_agents=cfg["num_agents"])
     env_probe = BucketBrigadeEnv(scenario=scenario)
-    obs_dim = flatten_dict_obs(env_probe.reset(seed=0)).shape[0]
+    # Issue #204: obs_dim must include the per-agent identity one-hot tail.
+    obs_dim = flatten_dict_obs(
+        env_probe.reset(seed=0), agent_id=0, num_agents=cfg["num_agents"]
+    ).shape[0]
 
     device_t = torch.device(device)
     policies = _build_policies(
