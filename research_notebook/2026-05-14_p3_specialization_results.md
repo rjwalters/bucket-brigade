@@ -117,3 +117,18 @@ Per the team's current operating posture (`file issues, don't do work`), the fol
 - Cell artifacts: `experiments/p3_specialization/runs/{scenario}/{lambda}/seed_{N}/` containing `metrics.json`, `config.json`, `policies/agent_*.pt`, `dropout_results.json`.
 - Aggregated: `experiments/p3_specialization/analysis.json`.
 - Code: this commit + d6d15c76 (env fix) + 99fa47ce (experiment infrastructure).
+
+## Amendment (2026-05-15): corrected random baseline
+
+After #192's diagnostic (PR #196, commit `ec6e521c`) re-derived the random baseline:
+
+- Uniform-random per-step reward on `default`: **293.39 ± [288.87, 297.78]** (n=1000), NOT 308.
+- The 308 value originally cited in #145 (and quoted on line 92 above) was a high-variance n=50 sample; reproducing #145's n=50 protocol gives 289.46 [271.91, 306.09].
+
+**Implications:**
+
+- The "PPO performs slightly below random" framing was an artifact. PPO at iter-49 (mean ~290) sits inside the random-action CI. **PPO is at random, not below it.**
+- F1 (CMI monotone) verdict unchanged: still falsified — CMI flat in λ regardless of baseline correction.
+- F2 (reward strictly worse at every λ > 0) verdict: was previously "not triggered" (reward essentially constant in λ). The constancy-in-λ finding is unchanged; the interpretation of constancy moves from "PPO learned no specialization at any λ" to "PPO did not move from random at any λ." Both are consistent with the same data; the second is the honest framing given the corrected baseline.
+
+The canonical baseline script is now at `experiments/p3_specialization/diagnostics/random_baseline.py` (#192 / PR #196). The matching diagnostic write-up lives at `research_notebook/2026-05-15_h3_random_baseline.md`.
