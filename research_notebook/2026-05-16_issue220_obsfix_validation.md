@@ -65,16 +65,35 @@ in this PR):
 
 ## Status
 
-**Results pending.** Two tmux sessions launched on `COMPUTE_HOST_PRIMARY`:
+**Results pending; treatment arm blocked by latent post-#216 bug.** Two tmux
+sessions launched on `COMPUTE_HOST_PRIMARY` (Mac Studio, `robbs-mac-studio`):
 
-- `issue220-baseline` — runs `run_sweep.py` from a separate worktree pinned
-  to `19afcd76`.
-- `issue220-treatment` — runs `run_sweep.py` from a worktree pinned to
-  `a38667b5`.
+- `issue220-baseline` — runs `run_sweep.py` from worktree
+  `~/GitHub/bb_issue220_baseline` pinned to `19afcd76`. **Progressing
+  normally** as of kickoff (first cell completed within ~3 min, sweep
+  ETA ~20–40 min for 6 cells).
+- `issue220-treatment` — runs `run_sweep.py` from worktree
+  `~/GitHub/bb_issue220_treatment` pinned to `a38667b5`. **CRASHED on
+  first cell** with::
 
-This entry will be updated with the metrics table and verdict once both
-sessions complete. The PR was opened pre-results so that the analysis-code
-review can proceed in parallel with the compute.
+      File ".../experiments/p3_specialization/train.py", line 293, in _measure_information
+        codes = [quantize_uniform(f, n_bins=n_bins) for f in feats_np]
+      File ".../bucket_brigade/analysis/info_theory.py", line 262, in quantize_uniform
+        raise ValueError(f"values must be 1-D or 2-D, got shape {values.shape}")
+      ValueError: values must be 1-D or 2-D, got shape (2048, 4, 3)
+
+  The new `[T, N, obs_dim]` rollout buffer shape introduced by #216 isn't
+  flattened before being fed into `_measure_information`'s
+  `quantize_uniform` call (which expects 1-D or 2-D features). Unit tests
+  for #216 didn't cover the MI path. **This is a follow-up bug** — a
+  separate issue should be filed against `experiments/p3_specialization/
+  train.py:293` (or `info_theory.py:262`) to either accept 3-D input
+  (preferred — reshape per-agent) or to flatten in `train.py` before
+  calling.
+
+This entry will be updated with the metrics table and verdict once the
+treatment arm is unblocked and both arms re-run to completion. The PR
+was opened pre-results so the analysis-code review can proceed in parallel.
 
 ## Pre-registered verdicts
 
