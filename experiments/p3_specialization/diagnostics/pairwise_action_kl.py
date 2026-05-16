@@ -29,9 +29,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from bucket_brigade.env import BucketBrigadeEnv
-from bucket_brigade.training import JointPPOTrainer, flatten_dict_obs
-from definitions import get_scenario_by_name
+from bucket_brigade.envs import BucketBrigadeEnv
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+from bucket_brigade.training.joint_trainer import JointPPOTrainer, flatten_dict_obs
 
 
 def softmax_packed(logits_list: list[torch.Tensor]) -> torch.Tensor:
