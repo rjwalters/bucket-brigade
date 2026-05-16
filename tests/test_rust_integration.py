@@ -1,25 +1,27 @@
-"""Tests for Rust core integration."""
+"""Tests for Rust core integration.
+
+The tests in this module exercise the Rust extension and therefore require
+``bucket_brigade_core`` to be importable. They are tagged with
+``@pytest.mark.requires_rust`` so the central conftest hook surfaces a
+loud collection error (or an explicit skip when
+``BUCKET_BRIGADE_ALLOW_MISSING_RUST=1`` is set) instead of silently
+skipping when the extension hasn't been built — see issue #189.
+"""
 
 import pytest
 import numpy as np
 
 
+@pytest.mark.requires_rust
 class TestRustCoreIntegration:
     """Test integration between Python and Rust core."""
 
     def test_rust_core_availability(self):
         """Test that Rust core can be imported."""
-        try:
-            from bucket_brigade_core import BucketBrigade, SCENARIOS
+        from bucket_brigade_core import BucketBrigade, SCENARIOS
 
-            rust_available = True
-        except ImportError:
-            rust_available = False
-            pytest.skip("Rust core not available")
-
-        if rust_available:
-            assert BucketBrigade is not None
-            assert SCENARIOS is not None
+        assert BucketBrigade is not None
+        assert SCENARIOS is not None
 
     def test_rust_vs_python_consistency(self):
         """Test that Rust and Python implementations produce consistent results.
@@ -33,7 +35,6 @@ class TestRustCoreIntegration:
         underlying PRNG implementations (``np.random.RandomState`` in Python
         vs ``Pcg64`` in Rust).
         """
-        pytest.importorskip("bucket_brigade_core")
         from bucket_brigade_core import BucketBrigade, SCENARIOS
         from bucket_brigade.envs import BucketBrigadeEnv
         from bucket_brigade.envs.scenarios_generated import (
@@ -89,10 +90,7 @@ class TestRustCoreIntegration:
 
     def test_rust_core_performance(self):
         """Test that Rust core performs well."""
-        try:
-            from bucket_brigade_core import BucketBrigade, SCENARIOS
-        except ImportError:
-            pytest.skip("Rust core not available")
+        from bucket_brigade_core import BucketBrigade, SCENARIOS
 
         import time
 
@@ -128,10 +126,7 @@ class TestRustCoreIntegration:
 
     def test_rust_core_reproducibility(self):
         """Test that Rust core produces reproducible results."""
-        try:
-            from bucket_brigade_core import BucketBrigade, SCENARIOS
-        except ImportError:
-            pytest.skip("Rust core not available")
+        from bucket_brigade_core import BucketBrigade, SCENARIOS
 
         scenario = SCENARIOS["trivial_cooperation"]
         num_agents = 4

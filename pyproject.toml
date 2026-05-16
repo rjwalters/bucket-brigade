@@ -61,6 +61,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "research: marks tests validating research findings (deselect with '-m \"not research\"')",
     "torch_required: marks tests requiring torch/RL dependencies",
+    "requires_rust: marks tests that require the bucket-brigade-core Rust extension to be built (run bucket-brigade-core/build.sh; set BUCKET_BRIGADE_ALLOW_MISSING_RUST=1 to skip instead of fail)",
 ]
 addopts = "--strict-markers"
 
