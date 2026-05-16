@@ -42,7 +42,11 @@ def _build_policies(
         p = PolicyNetwork(
             obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
         ).to(device)
-        state = torch.load(cell_dir / "policies" / f"agent_{i}.pt", map_location=device)
+        state = torch.load(
+            cell_dir / "policies" / f"agent_{i}.pt",
+            map_location=device,
+            weights_only=True,
+        )
         p.load_state_dict(state)
         p.eval()
         policies.append(p)

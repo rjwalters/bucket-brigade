@@ -32,7 +32,9 @@ from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 
 
-def run_rollouts(scenario_name="default", seeds=tuple(range(20)), max_nights_per_ep=200):
+def run_rollouts(
+    scenario_name="default", seeds=tuple(range(20)), max_nights_per_ep=200
+):
     """Roll out a few episodes with uniform-random actions and decompose
     each per-step reward into (team, ownership, work_cost).
 
@@ -68,10 +70,9 @@ def run_rollouts(scenario_name="default", seeds=tuple(range(20)), max_nights_per
             # and the prev_houses captured at the start of the step.
             saved = int(np.sum(env.houses == env.SAFE))
             ruined = int(np.sum(env.houses == env.RUINED))
-            team = (
-                scenario.team_reward_house_survives * (saved / 10.0)
-                - scenario.team_penalty_house_burns * (ruined / 10.0)
-            )
+            team = scenario.team_reward_house_survives * (
+                saved / 10.0
+            ) - scenario.team_penalty_house_burns * (ruined / 10.0)
 
             own = np.zeros(4, dtype=np.float64)
             work = np.zeros(4, dtype=np.float64)
@@ -219,18 +220,26 @@ def main():
     print("Magnitudes (mean of absolute value):")
     m = summary["magnitudes"]
     print(f"  team component         {m['mean_abs_team']:8.3f}")
-    print(f"  ownership component    {m['mean_abs_ownership_per_agent']:8.3f}  (per agent)")
+    print(
+        f"  ownership component    {m['mean_abs_ownership_per_agent']:8.3f}  (per agent)"
+    )
     print(f"  work cost              {m['mean_abs_work_per_agent']:8.3f}  (per agent)")
     print()
     print("Per-step magnitude ratios:")
     r = summary["ratios"]
     to = r["team_over_ownership"]
     tw = r["team_over_work_cost"]
-    print(f"  |team| / |ownership|  median={to['median']:.2f}  "
-          f"p75={to['p75']:.2f}  p95={to['p95']:.2f}  (n={to['n']})")
-    print(f"  |team| / |work_cost|  median={tw['median']:.2f}  "
-          f"p75={tw['p75']:.2f}  p95={tw['p95']:.2f}  (n={tw['n']})")
-    print(f"  fraction of steps with zero ownership: {r['frac_steps_ownership_zero']:.3f}")
+    print(
+        f"  |team| / |ownership|  median={to['median']:.2f}  "
+        f"p75={to['p75']:.2f}  p95={to['p95']:.2f}  (n={to['n']})"
+    )
+    print(
+        f"  |team| / |work_cost|  median={tw['median']:.2f}  "
+        f"p75={tw['p75']:.2f}  p95={tw['p95']:.2f}  (n={tw['n']})"
+    )
+    print(
+        f"  fraction of steps with zero ownership: {r['frac_steps_ownership_zero']:.3f}"
+    )
     print()
     print("Pairwise agent reward correlation matrix (4x4):")
     for row in summary["pairwise_corr"]:
@@ -241,13 +250,14 @@ def main():
     print()
     print(f"Team variance:                  {summary['team_var']:.4f}")
     print(f"Mean per-agent reward variance: {summary['mean_per_agent_var']:.4f}")
-    print(f"Team-share lower bound on corr: "
-          f"{summary['team_share_lower_bound_on_corr']:.4f}")
-    print()
-    verdict_h2 = (
-        (to["median"] is not None and to["median"] >= 10.0)
-        or summary["min_off_diag_corr"] > 0.95
+    print(
+        f"Team-share lower bound on corr: "
+        f"{summary['team_share_lower_bound_on_corr']:.4f}"
     )
+    print()
+    verdict_h2 = (to["median"] is not None and to["median"] >= 10.0) or summary[
+        "min_off_diag_corr"
+    ] > 0.95
     print(f"H2 VERDICT: {'CONFIRMED' if verdict_h2 else 'NOT CONFIRMED'}")
 
     out_dir = Path(__file__).resolve().parent / "results"

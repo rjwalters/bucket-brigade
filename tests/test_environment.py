@@ -683,9 +683,7 @@ class TestPerAgentOwnershipRewards:
         # owns exactly one of houses 0..3, and houses 4..9 cycle owners.
         env.house_owners = np.array([0, 1, 2, 3, 0, 1, 2, 3, 0, 1], dtype=np.int8)
         # Stage a save event for EVERY agent's first owned house (houses 0..3).
-        env._prev_houses_state = np.array(
-            [env.BURNING] * 4 + [0] * 6, dtype=np.int8
-        )
+        env._prev_houses_state = np.array([env.BURNING] * 4 + [0] * 6, dtype=np.int8)
         env.houses = np.zeros(10, dtype=np.int8)  # all SAFE
         actions = np.zeros((env.num_agents, 2), dtype=np.int8)  # all REST
         rewards = env._compute_rewards(actions)

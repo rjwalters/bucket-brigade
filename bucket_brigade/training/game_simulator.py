@@ -60,7 +60,7 @@ class Matchmaker:
 
         elif strategy == "random":
             # Completely random sampling
-            agents = random.sample(
+            agents = random.sample(  # nosec B311 - non-cryptographic agent sampling for training
                 range(self.population_size), k=self.num_agents_per_game
             )
             for agent_id in agents:
@@ -312,7 +312,7 @@ class GameSimulator:
 
         for episode in range(num_episodes):
             # Run episode in a random environment
-            env_id = random.randint(0, self.num_games - 1)
+            env_id = random.randint(0, self.num_games - 1)  # nosec B311 - non-cryptographic env selection for training
             trajectories = self.run_episode(env_id)
 
             # Distribute experiences to GPU learners
