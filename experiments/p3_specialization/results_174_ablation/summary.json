@@ -14,7 +14,7 @@
     ],
     "crosses_bar": false,
     "crosses_random": false,
-    "delta_vs_random": -11.343066406249989,
+    "delta_vs_random": 3.256933593750034,
     "reward_trajectory_mean": [
       291.83974609375,
       296.84443359375,
@@ -144,7 +144,7 @@
     ],
     "crosses_bar": false,
     "crosses_random": false,
-    "delta_vs_random": -9.165136718749977,
+    "delta_vs_random": 5.4348632812500455,
     "reward_trajectory_mean": [
       291.83974609375,
       297.20888671875,
@@ -274,7 +274,7 @@
     ],
     "crosses_bar": false,
     "crosses_random": false,
-    "delta_vs_random": -12.340039062500011,
+    "delta_vs_random": 2.2599609375000114,
     "reward_trajectory_mean": [
       291.83974609375,
       296.844140625,
@@ -404,7 +404,7 @@
     ],
     "crosses_bar": false,
     "crosses_random": false,
-    "delta_vs_random": -11.8564453125,
+    "delta_vs_random": 2.7435546875000227,
     "reward_trajectory_mean": [
       291.83974609375,
       297.25966796875,
@@ -534,7 +534,7 @@
     ],
     "crosses_bar": false,
     "crosses_random": false,
-    "delta_vs_random": -9.90380859375,
+    "delta_vs_random": 4.696191406250023,
     "reward_trajectory_mean": [
       291.83974609375,
       296.589453125,
@@ -663,8 +663,8 @@
       301.29990234375
     ],
     "crosses_bar": false,
-    "crosses_random": false,
-    "delta_vs_random": -10.541015625,
+    "crosses_random": true,
+    "delta_vs_random": 4.058984375000023,
     "reward_trajectory_mean": [
       291.83974609375,
       296.63388671875,

@@ -23,8 +23,15 @@ specified in issue #174:
 Each condition has 5 seeds (42..46). All cells use scenario=default,
 lambda_red=0, num_iterations=50, rollout_steps=2048.
 
-Random per-step team-reward baseline on default = 308 (reported in #145).
-Acceptance bar (#174) = CI lower bound > 320.
+Random per-step team-reward baseline on default = 293.4 (re-derived in PR
+#196 / issue #192, n=1000 episodes; 95% CI [288.87, 297.78]). The original
+#145 value (308) was an n=50 outlier and sits outside the n=1000 CI.
+
+Acceptance bar = CI upper bound of the re-derived random baseline (297.78).
+"Crosses bar" therefore means "statistically distinguishable from random,"
+not "exceeds an arbitrary buffer above a noisy single-sample baseline."
+The original #174 acceptance bar of 320 (= 308 + 12) was derived from the
+incorrect baseline; see issue #202 for the audit and policy decision.
 
 Usage::
 
@@ -44,8 +51,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-RAND_BASELINE = 308.0
-ACCEPTANCE_BAR = 320.0
+RAND_BASELINE = 293.4
+ACCEPTANCE_BAR = 297.78
 SEEDS = [42, 43, 44, 45, 46]
 NUM_AGENTS = 4
 

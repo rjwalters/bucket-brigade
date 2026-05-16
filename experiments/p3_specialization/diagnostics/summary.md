@@ -13,7 +13,7 @@ All values are means across seeds.
 
 ## default
 - n_seeds = 20, n_iters = 50
-- reward iter 0 -> iter 49: 293.46 -> 294.58  (baseline random = 308.0)
+- reward iter 0 -> iter 49: 293.46 -> 294.58  (baseline random = 293.4)
 - mean value_loss iter 0 -> iter 49: 2.03e+05 -> 1.27e+05  (scaled by value_coef=0.5: 1.01e+05)
 - mean |policy_loss| iter 0 -> iter 49: 2.036e-02 -> 2.299e-02
 - mean entropy iter 0 -> iter 49: 6.658e-01 -> 1.216e-01  (scaled by entropy_coef=0.01: 1.216e-03)
