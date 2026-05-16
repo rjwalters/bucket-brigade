@@ -92,25 +92,39 @@ def run_mlp_episode(
 
     Mirrors ``JointPPOTrainer._act_all`` but for one episode at a time so we
     can record the actual ``env.night`` at done for proper normalization.
+
+    Issue #204: each agent now sees its own row with a distinct identity
+    one-hot tail, matching ``JointPPOTrainer.collect_rollout``'s per-agent
+    obs layout. Previously the same flat obs was fed to every policy.
     """
     import torch  # local import to keep `--no-mlp` light
 
     obs_dict = env.reset(seed=seed)
-    obs = flatten_dict_obs(obs_dict)
+    n = trainer.num_agents
+    obs_rows = np.stack(
+        [flatten_dict_obs(obs_dict, agent_id=i, num_agents=n) for i in range(n)],
+        axis=0,
+    )
     total_reward = 0.0
     while not env.done:
-        obs_t = torch.from_numpy(obs).unsqueeze(0)
+        obs_t = torch.from_numpy(obs_rows)  # [N, obs_dim]
         joint_action = np.zeros(
             (trainer.num_agents, len(trainer.action_dims)), dtype=np.int64
         )
         with torch.no_grad():
             for i, policy in enumerate(trainer.policies):
-                a, _, _, _ = policy.get_action_and_value(obs_t)
+                a, _, _, _ = policy.get_action_and_value(obs_t[i : i + 1])
                 joint_action[i] = a[0].cpu().numpy()
         next_obs_dict, rewards, _, _ = env.step(joint_action)
         total_reward += float(rewards.sum())
         if not env.done:
-            obs = flatten_dict_obs(next_obs_dict)
+            obs_rows = np.stack(
+                [
+                    flatten_dict_obs(next_obs_dict, agent_id=i, num_agents=n)
+                    for i in range(n)
+                ],
+                axis=0,
+            )
     return total_reward, int(env.night)
 
 
@@ -200,9 +214,12 @@ def main() -> None:
     # ----- Random-init MLP iter-0 -----
     mlp_per_step_arr = None
     if not args.no_mlp:
-        # obs_dim from one reset: flatten_dict_obs layout = 10 + 3N + 10 = 22 + 3N
+        # obs_dim from one reset. Issue #204: include the per-agent identity
+        # one-hot tail (length N), giving 10 + 3N + 10 + N = 22 + 4N.
         env = BucketBrigadeEnv(scenario=scenario)
-        obs_dim = flatten_dict_obs(env.reset(seed=0)).shape[0]
+        obs_dim = flatten_dict_obs(
+            env.reset(seed=0), agent_id=0, num_agents=NUM_AGENTS
+        ).shape[0]
         mlp_per_step: list[float] = []
         mlp_lengths: list[int] = []
         for seed in seeds:

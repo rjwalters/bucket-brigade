@@ -20,10 +20,15 @@ Typical use::
     def env_fn():
         return BucketBrigadeEnv(num_agents=4)
 
+    # obs_dim now includes a per-agent identity one-hot tail (issue #204).
+    # For N=4 agents and the default 10-house layout, this is 42 + 4 = 46.
+    # In practice, derive it from a probe:
+    #   obs = env.reset(); obs_dim = flatten_dict_obs(obs, agent_id=0,
+    #       num_agents=4).shape[0]
     trainer = JointPPOTrainer(
         env_fn=env_fn,
         num_agents=4,
-        obs_dim=42,
+        obs_dim=46,
         action_dims=[10, 2],
         redundancy_coef=0.01,
     )
@@ -50,22 +55,60 @@ from bucket_brigade.training.normalizers import RunningMeanStd
 __all__ = ["JointPPOTrainer", "RolloutBuffer", "flatten_dict_obs"]
 
 
-def flatten_dict_obs(obs: Dict[str, np.ndarray]) -> np.ndarray:
+def flatten_dict_obs(
+    obs: Dict[str, np.ndarray],
+    agent_id: Optional[int] = None,
+    num_agents: Optional[int] = None,
+) -> np.ndarray:
     """Flatten the dict observation returned by ``BucketBrigadeEnv`` into
     a 1-D float32 array suitable for ``PolicyNetwork``.
 
-    Layout: ``[houses(10), signals(N), locations(N), last_actions(2N),
-    scenario_info(10)]``.
+    Layout when ``agent_id`` is ``None`` (legacy, no per-agent identity):
+        ``[houses(10), signals(N), locations(N), last_actions(2N),
+        scenario_info(10)]``.
+
+    Layout when ``agent_id`` is given (issue #204 — per-agent
+    differentiation via one-hot identity tail):
+        ``[houses(10), signals(N), locations(N), last_actions(2N),
+        scenario_info(10), identity_one_hot(num_agents)]``.
+
+    Args:
+        obs: Dict observation from ``BucketBrigadeEnv._get_observation``.
+        agent_id: If provided, append a one-hot identity slot of length
+            ``num_agents`` so per-agent flattened observations are
+            distinct. This is the latent-bug fix described in #204 —
+            the Python flatteners previously dropped the ``agent_id``
+            field that ``AgentObservation`` already carries, which
+            caused ``collect_rollout`` to feed identical input to every
+            agent.
+        num_agents: Length of the identity one-hot. Required when
+            ``agent_id`` is provided. Typically the env's ``num_agents``.
+
+    Raises:
+        ValueError: If ``agent_id`` is given without ``num_agents``, or
+            ``agent_id`` is outside ``[0, num_agents)``.
     """
-    return np.concatenate(
-        [
-            np.asarray(obs["houses"], dtype=np.float32),
-            np.asarray(obs["signals"], dtype=np.float32),
-            np.asarray(obs["locations"], dtype=np.float32),
-            np.asarray(obs["last_actions"], dtype=np.float32).flatten(),
-            np.asarray(obs["scenario_info"], dtype=np.float32),
-        ]
-    )
+    base = [
+        np.asarray(obs["houses"], dtype=np.float32),
+        np.asarray(obs["signals"], dtype=np.float32),
+        np.asarray(obs["locations"], dtype=np.float32),
+        np.asarray(obs["last_actions"], dtype=np.float32).flatten(),
+        np.asarray(obs["scenario_info"], dtype=np.float32),
+    ]
+    if agent_id is None:
+        return np.concatenate(base)
+    if num_agents is None:
+        raise ValueError(
+            "flatten_dict_obs: num_agents must be provided when agent_id is given"
+        )
+    if not 0 <= agent_id < num_agents:
+        raise ValueError(
+            f"flatten_dict_obs: agent_id {agent_id} out of range [0, {num_agents})"
+        )
+    identity = np.zeros(num_agents, dtype=np.float32)
+    identity[agent_id] = 1.0
+    base.append(identity)
+    return np.concatenate(base)
 
 
 @dataclass
@@ -74,7 +117,11 @@ class RolloutBuffer:
 
     Shapes (with ``T`` = num_steps, ``N`` = num_agents, ``A`` = ``len(action_dims)``):
 
-    - ``observations``: ``[T, obs_dim]`` --- same global obs for every agent at each step.
+    - ``observations``: ``[T, N, obs_dim]`` --- **per-agent** flattened
+      observation. Each agent sees the same global world state but a
+      different identity one-hot in the tail slot (issue #204). Prior to
+      #204 this was ``[T, obs_dim]`` and the same row was reused for every
+      agent, which made identical-policy convergence mathematically forced.
     - ``actions[i]``:   ``[T, A]`` --- agent i's actions.
     - ``log_probs[i]``: ``[T]``   --- log probability of the action under the
       rollout-time policy (used for PPO's old-policy ratio).
@@ -101,6 +148,9 @@ class JointPPOTrainer:
             ``(obs_dict, rewards[N], dones[N], info)``.
         num_agents: Number of agents N.
         obs_dim: Flattened observation dimension (see :func:`flatten_dict_obs`).
+            Must include the per-agent identity one-hot tail (i.e. it is the
+            length of ``flatten_dict_obs(obs, agent_id=i, num_agents=N)``,
+            *not* the legacy length without identity).
         action_dims: List of per-dimension action sizes (e.g. ``[10, 2]``).
         hidden_size: Hidden size of the shared trunk in each ``PolicyNetwork``.
         lr: Adam learning rate.
@@ -196,15 +246,33 @@ class JointPPOTrainer:
     # Rollout collection
     # ------------------------------------------------------------------
 
+    def _flatten_per_agent(self, obs_dict: Dict[str, np.ndarray]) -> np.ndarray:
+        """Flatten one dict observation into a per-agent ``[N, obs_dim]`` array.
+
+        Fixes the latent bug in #204 — every agent now gets its own row with
+        a distinct identity one-hot tail, instead of all sharing one global row.
+        """
+        rows = [
+            flatten_dict_obs(obs_dict, agent_id=i, num_agents=self.num_agents)
+            for i in range(self.num_agents)
+        ]
+        return np.stack(rows, axis=0)
+
     def _reset_env(self, seed: Optional[int] = None) -> None:
         obs = self.env.reset(seed=seed)
-        self._last_obs = flatten_dict_obs(obs)
+        # ``_last_obs`` is now ``[N, obs_dim]`` — one row per agent.
+        self._last_obs = self._flatten_per_agent(obs)
 
     @torch.no_grad()
     def _act_all(
-        self, obs_t: torch.Tensor
+        self, obs_per_agent_t: torch.Tensor
     ) -> Tuple[np.ndarray, List[torch.Tensor], List[torch.Tensor]]:
-        """Sample one action per agent given the same observation.
+        """Sample one action per agent given each agent's own observation row.
+
+        Args:
+            obs_per_agent_t: Tensor of shape ``[N, obs_dim]`` — agent ``i``
+                consumes row ``i``. This is the per-agent obs from #204;
+                previously the same row was passed to all N policies.
 
         Returns ``(joint_action [N, A], per-agent log_prob list, per-agent value list)``.
         """
@@ -214,15 +282,24 @@ class JointPPOTrainer:
         log_probs: List[torch.Tensor] = []
         values: List[torch.Tensor] = []
         for i, policy in enumerate(self.policies):
-            actions, lp, _, v = policy.get_action_and_value(obs_t)
+            obs_i = obs_per_agent_t[i : i + 1]  # [1, obs_dim]
+            actions, lp, _, v = policy.get_action_and_value(obs_i)
             joint_action[i] = actions[0].cpu().numpy()
             log_probs.append(lp[0])
             values.append(v[0])
         return joint_action, log_probs, values
 
     def collect_rollout(self, num_steps: int) -> RolloutBuffer:
-        """Run ``num_steps`` synchronized transitions, auto-resetting on done."""
-        observations = np.zeros((num_steps, self.obs_dim), dtype=np.float32)
+        """Run ``num_steps`` synchronized transitions, auto-resetting on done.
+
+        Issue #204: ``observations`` is now ``[T, N, obs_dim]`` — each agent
+        gets its own row per step with a distinct identity one-hot tail.
+        The previous shape ``[T, obs_dim]`` was a latent bug that fed
+        identical input to every agent.
+        """
+        observations = np.zeros(
+            (num_steps, self.num_agents, self.obs_dim), dtype=np.float32
+        )
         actions = np.zeros(
             (self.num_agents, num_steps, len(self.action_dims)), dtype=np.int64
         )
@@ -232,7 +309,7 @@ class JointPPOTrainer:
         dones = np.zeros(num_steps, dtype=np.float32)
 
         for t in range(num_steps):
-            obs_t = torch.from_numpy(self._last_obs).unsqueeze(0).to(self.device)
+            obs_t = torch.from_numpy(self._last_obs).to(self.device)  # [N, obs_dim]
             joint_action, lps, vs = self._act_all(obs_t)
 
             next_obs_dict, rew, done_arr, _ = self.env.step(joint_action)
@@ -249,7 +326,7 @@ class JointPPOTrainer:
             if done:
                 self._reset_env()
             else:
-                self._last_obs = flatten_dict_obs(next_obs_dict)
+                self._last_obs = self._flatten_per_agent(next_obs_dict)
 
         return RolloutBuffer(
             observations=torch.from_numpy(observations).to(self.device),
@@ -399,7 +476,11 @@ class JointPPOTrainer:
 
         for _epoch in range(self.ppo_epochs):
             idx = torch.randperm(t_total, device=self.device)[:mb_size]
-            obs_mb = rollout.observations[idx]
+            # Issue #204: ``rollout.observations`` is now ``[T, N, obs_dim]``.
+            # Each agent reads its own slice ``[:, i, :]`` so the identity
+            # one-hot tail differs per policy. Pre-#204 this was ``[T, obs_dim]``
+            # and a single shared ``obs_mb`` was passed to every encoder.
+            obs_mb_all = rollout.observations[idx]  # [mb, N, obs_dim]
 
             encoder_outputs: List[torch.Tensor] = []
             per_agent_losses: List[torch.Tensor] = []
@@ -409,6 +490,7 @@ class JointPPOTrainer:
                 old_lp_mb = rollout.log_probs[i][idx]
                 adv_mb = advantages[i][idx]
                 ret_mb = returns[i][idx]
+                obs_mb = obs_mb_all[:, i, :]  # [mb, obs_dim] — agent i's view
 
                 # One forward pass through the trunk; reuse features for
                 # action heads, value head, and the redundancy penalty.

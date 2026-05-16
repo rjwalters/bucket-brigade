@@ -442,10 +442,14 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         env = BucketBrigadeEnv(scenario=scenario)
         return env
 
-    # Probe obs_dim from a single reset.
+    # Probe obs_dim from a single reset. Issue #204: include the per-agent
+    # identity one-hot tail so obs_dim matches what JointPPOTrainer actually
+    # consumes during rollouts.
     probe = env_fn()
     probe_obs = probe.reset(seed=cfg.seed)
-    obs_dim = flatten_dict_obs(probe_obs).shape[0]
+    obs_dim = flatten_dict_obs(probe_obs, agent_id=0, num_agents=cfg.num_agents).shape[
+        0
+    ]
 
     trainer = JointPPOTrainer(
         env_fn=env_fn,
