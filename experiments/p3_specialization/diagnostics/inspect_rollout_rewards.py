@@ -61,6 +61,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from bucket_brigade.diagnostics import (
+    conditional_mean_r2,
+    per_agent_reward_stats as per_agent_stats,
+)
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.training.joint_trainer import (
@@ -72,33 +76,12 @@ from bucket_brigade.training.joint_trainer import (
 # ---------------------------------------------------------------------------
 # Statistics helpers
 # ---------------------------------------------------------------------------
-
-
-def per_agent_stats(r: np.ndarray) -> dict:
-    """Distributional stats for a single agent's per-step reward series."""
-    mean = float(r.mean())
-    std = float(r.std())
-    cv = std / (abs(mean) + 1e-9)
-    p10, p50, p90 = (float(x) for x in np.percentile(r, [10, 50, 90]))
-    return {"mean": mean, "std": std, "cv": cv, "p10": p10, "p50": p50, "p90": p90}
-
-
-def conditional_mean_r2(r: np.ndarray, labels: np.ndarray) -> float:
-    """R² of the optimal class-mean regressor of ``r`` on ``labels``.
-
-    Equivalent to 1 − SS_within / SS_total — i.e. the fraction of
-    per-step reward variance explained by the action label.
-    Returns NaN if ``r`` has zero variance.
-    """
-    ss_total = float(((r - r.mean()) ** 2).sum())
-    if ss_total <= 1e-12:
-        return float("nan")
-    pred = np.zeros_like(r, dtype=np.float64)
-    for lab in np.unique(labels):
-        mask = labels == lab
-        pred[mask] = r[mask].mean()
-    ss_res = float(((r - pred) ** 2).sum())
-    return 1.0 - ss_res / ss_total
+# ``per_agent_stats`` and ``conditional_mean_r2`` were factored out into
+# ``bucket_brigade.diagnostics`` in issue #201 so the env-health regression
+# test (``tests/test_env_health_diagnostics.py``) can share the same
+# implementation without depending on ``/tmp/h1_cell``. Imported above; the
+# names are re-bound for backwards compatibility with any external callers
+# of this script's module namespace.
 
 
 def text_histogram(values: np.ndarray, n_bins: int = 15, width: int = 60) -> str:
@@ -281,13 +264,41 @@ def main() -> None:
         help=(
             "Trained-cell directory containing config.json + policies/. "
             "Defaults to <system-tempdir>/h1_cell (the conventional rsync "
-            "target documented in the script docstring)."
+            "target documented in the script docstring). Ignored when "
+            "--hermetic is set."
         ),
     )
     parser.add_argument(
         "--no-baseline",
         action="store_true",
         help="Skip the random-init comparison rollout.",
+    )
+    parser.add_argument(
+        "--hermetic",
+        action="store_true",
+        help=(
+            "Skip the trained-cell path entirely and run only a random-init "
+            "rollout against a freshly-constructed JointPPOTrainer. Used by "
+            "the env-health regression suite (issue #201) so the diagnostic "
+            "is runnable without on-disk cell dependencies."
+        ),
+    )
+    parser.add_argument(
+        "--scenario",
+        default="default",
+        help="Scenario name (only used in --hermetic mode).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Seed for --hermetic mode (default 42, matches phase-3 cells).",
+    )
+    parser.add_argument(
+        "--rollout-steps",
+        type=int,
+        default=2048,
+        help="Rollout step count for --hermetic mode (default 2048).",
     )
     parser.add_argument(
         "--out",
@@ -297,33 +308,75 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if not (args.cell / "config.json").exists():
-        raise SystemExit(
-            f"Cell not found at {args.cell}. See the script docstring for "
-            "rsync instructions, or train a fresh 50-iter cell."
-        )
+    # ------------------------------------------------------------------
+    # Hermetic mode: random-init rollout only, no on-disk dependency.
+    # Wired up for issue #201's env-health aggregator (check_env_health.sh)
+    # so the script runs end-to-end without rsyncing a trained cell.
+    # ------------------------------------------------------------------
+    if args.hermetic:
+        from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 
-    # 1) Trained-policy rollout.
-    R, A, cfg, scenario = run_one_rollout(args.cell, load_policies=True)
-    trained_summary = report(
-        f"TRAINED CELL: {args.cell}  "
-        f"(scenario={cfg['scenario']}, lambda_red={cfg['lambda_red']}, "
-        f"seed={cfg['seed']}, num_iterations={cfg['num_iterations']})",
-        R,
-        A,
-        scenario,
-    )
+        scenario = get_scenario_by_name(args.scenario, num_agents=4)
 
-    # 2) Random-init baseline rollout (same env, same config).
-    baseline_summary = None
-    if not args.no_baseline:
-        Rb, Ab, _, _ = run_one_rollout(args.cell, load_policies=False)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Build a minimal config.json so we can re-use run_one_rollout.
+            shim_cell = Path(tmpdir)
+            cfg = {
+                "scenario": args.scenario,
+                "num_agents": 4,
+                "action_dims": [10, 2],
+                "hidden_size": 64,
+                "lr": 3e-4,
+                "ppo_epochs": 4,
+                "minibatch_size": 256,
+                "value_coef": 0.5,
+                "entropy_coef": 0.01,
+                "normalize_returns": False,
+                "device": "cpu",
+                "seed": args.seed,
+                "rollout_steps": args.rollout_steps,
+                "lambda_red": 0.0,
+                "num_iterations": 0,
+            }
+            (shim_cell / "config.json").write_text(json.dumps(cfg))
+            R, A, cfg, scenario = run_one_rollout(shim_cell, load_policies=False)
+
         baseline_summary = report(
-            "RANDOM-INIT BASELINE (same config, no loaded policies)",
-            Rb,
-            Ab,
+            f"HERMETIC RANDOM-INIT (scenario={args.scenario}, seed={args.seed})",
+            R,
+            A,
             scenario,
         )
+        trained_summary = None
+    else:
+        if not (args.cell / "config.json").exists():
+            raise SystemExit(
+                f"Cell not found at {args.cell}. See the script docstring for "
+                "rsync instructions, train a fresh 50-iter cell, or pass "
+                "--hermetic for a random-init-only run."
+            )
+
+        # 1) Trained-policy rollout.
+        R, A, cfg, scenario = run_one_rollout(args.cell, load_policies=True)
+        trained_summary = report(
+            f"TRAINED CELL: {args.cell}  "
+            f"(scenario={cfg['scenario']}, lambda_red={cfg['lambda_red']}, "
+            f"seed={cfg['seed']}, num_iterations={cfg['num_iterations']})",
+            R,
+            A,
+            scenario,
+        )
+
+        # 2) Random-init baseline rollout (same env, same config).
+        baseline_summary = None
+        if not args.no_baseline:
+            Rb, Ab, _, _ = run_one_rollout(args.cell, load_policies=False)
+            baseline_summary = report(
+                "RANDOM-INIT BASELINE (same config, no loaded policies)",
+                Rb,
+                Ab,
+                scenario,
+            )
 
     # 3) Optional: dump numerics to JSON for the report.
     if args.out is not None:
@@ -331,7 +384,7 @@ def main() -> None:
         args.out.write_text(
             json.dumps(
                 {
-                    "cell": str(args.cell),
+                    "cell": "hermetic" if args.hermetic else str(args.cell),
                     "cfg": cfg,
                     "trained": trained_summary,
                     "random_baseline": baseline_summary,
