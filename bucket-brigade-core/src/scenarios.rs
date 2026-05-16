@@ -306,6 +306,30 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
         },
     );
 
+    // Issue #199 sanity-check scenario. Per-agent ownership signal is dominant
+    // (50/100 own vs 0 other) and team signal is reduced (10 vs default 100).
+    // The Python-side definition in scenarios.json fixes the vectors at length
+    // 4 (canonical num_agents). Here we promote to MAX_AGENTS (10) to match
+    // the Rust struct invariant; engine indexing uses `agent_id < num_agents`
+    // so the extra entries are inert. Keeps the 50/100/0 magnitudes consistent
+    // regardless of how the scenario is materialized.
+    m.insert(
+        "minimal_specialization",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.25,
+            prob_solo_agent_extinguishes_fire: 0.5,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 10.0,
+            team_penalty_house_burns: 10.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(50.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(100.0),
+            penalty_other_house_burns: per_agent(0.0),
+        },
+    );
+
     m
 });
 
@@ -335,6 +359,7 @@ mod tests {
         assert!(SCENARIOS.get("deceptive_calm").is_some());
         assert!(SCENARIOS.get("overcrowding").is_some());
         assert!(SCENARIOS.get("mixed_motivation").is_some());
+        assert!(SCENARIOS.get("minimal_specialization").is_some());
     }
 
     #[test]
@@ -475,7 +500,35 @@ mod tests {
     #[test]
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
-        assert_eq!(count, 12, "Expected 12 predefined scenarios (3 difficulty + 9 research)");
+        assert_eq!(
+            count, 13,
+            "Expected 13 predefined scenarios (3 difficulty + 9 research + 1 sanity-check)"
+        );
+    }
+
+    /// Issue #199: ``minimal_specialization`` is the algorithm-vs-env disambiguator.
+    /// Per-agent ownership signal must dominate the team signal: 50 own-save and
+    /// 100 own-burn vs. 10 team. ``reward_other_house_survives`` and
+    /// ``penalty_other_house_burns`` must be zero so cross-agent reward streams
+    /// fully decorrelate.
+    #[test]
+    fn test_minimal_specialization_values() {
+        let scenario = SCENARIOS.get("minimal_specialization").unwrap();
+        assert_eq!(scenario.team_reward_house_survives, 10.0);
+        assert_eq!(scenario.team_penalty_house_burns, 10.0);
+        assert!(scenario.reward_own_house_survives.iter().all(|&v| v == 50.0));
+        assert!(scenario
+            .reward_other_house_survives
+            .iter()
+            .all(|&v| v == 0.0));
+        assert!(scenario.penalty_own_house_burns.iter().all(|&v| v == 100.0));
+        assert!(scenario.penalty_other_house_burns.iter().all(|&v| v == 0.0));
+        // Other dynamics copied from `default`.
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
+        assert_eq!(scenario.prob_house_catches_fire, 0.02);
+        assert_eq!(scenario.cost_to_work_one_night, 0.5);
+        assert_eq!(scenario.min_nights, 12);
     }
 
     #[test]
@@ -590,14 +643,21 @@ mod tests {
 
     #[test]
     fn test_all_scenarios_use_standard_rewards() {
-        // Most scenarios should use standard 100/100 rewards (except overcrowding)
+        // Most scenarios should use standard 100/100 rewards. Exceptions:
+        //   - "overcrowding" intentionally uses reward=50 to model
+        //     diminishing returns when too many agents pile on.
+        //   - "minimal_specialization" (issue #199) intentionally uses
+        //     reward=penalty=10 so the per-agent ownership signal (50/100)
+        //     dominates the shared team signal — that's the entire point
+        //     of the sanity-check scenario.
         for (name, scenario) in SCENARIOS.iter() {
-            if name != &"overcrowding" {
-                assert_eq!(scenario.team_reward_house_survives, 100.0,
-                          "Scenario '{}' should use standard reward (100)", name);
-                assert_eq!(scenario.team_penalty_house_burns, 100.0,
-                          "Scenario '{}' should use standard penalty (100)", name);
+            if name == &"overcrowding" || name == &"minimal_specialization" {
+                continue;
             }
+            assert_eq!(scenario.team_reward_house_survives, 100.0,
+                      "Scenario '{}' should use standard reward (100)", name);
+            assert_eq!(scenario.team_penalty_house_burns, 100.0,
+                      "Scenario '{}' should use standard penalty (100)", name);
         }
     }
 

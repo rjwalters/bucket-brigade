@@ -1,0 +1,86 @@
+{
+  "minimal_specialization": {
+    "scenario": "minimal_specialization",
+    "num_agents": 4,
+    "episodes_per_baseline": 50,
+    "seed": 42,
+    "random": {
+      "label": "random",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": -96.0704468864469,
+        "ci95_lo": -118.34502435897437,
+        "ci95_hi": -74.95526282051283,
+        "std": 78.81588003638295
+      },
+      "per_episode_mean": -1268.54,
+      "episode_length": {
+        "mean": 13.22,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist": {
+      "label": "specialist",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": -22.07174358974359,
+        "ci95_lo": -41.64844890109891,
+        "ci95_hi": -3.2004866300366492,
+        "std": 70.17649194068679
+      },
+      "per_episode_mean": -294.3,
+      "episode_length": {
+        "mean": 13.26,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist_minus_random_per_step": 73.99870329670331,
+    "ratio_specialist_over_random_per_step": 0.22974540355612058
+  },
+  "default": {
+    "scenario": "default",
+    "num_agents": 4,
+    "episodes_per_baseline": 50,
+    "seed": 42,
+    "random": {
+      "label": "random",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": 241.8460805860806,
+        "ci95_lo": 216.46809523809523,
+        "ci95_hi": 265.9192527472527,
+        "std": 89.53143684898231
+      },
+      "per_episode_mean": 3198.46,
+      "episode_length": {
+        "mean": 13.22,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist": {
+      "label": "specialist",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": 320.93652014652014,
+        "ci95_lo": 299.3515695970696,
+        "ci95_hi": 341.7165796703296,
+        "std": 77.74873313538028
+      },
+      "per_episode_mean": 4252.74,
+      "episode_length": {
+        "mean": 13.26,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist_minus_random_per_step": 79.09043956043953,
+    "ratio_specialist_over_random_per_step": 1.3270279980092081
+  }
+}

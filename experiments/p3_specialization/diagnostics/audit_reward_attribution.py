@@ -10,29 +10,36 @@ Reports magnitude ratios (median / p75 / p95), the 4x4 pairwise reward
 correlation matrix, and the team-variance lower bound on cross-agent
 correlation. Diagnostic-only — does not modify env or training code.
 
-Run from repo root:
+Run from repo root::
+
+    # default scenario (legacy default)
     uv run python experiments/p3_specialization/diagnostics/audit_reward_attribution.py
+
+    # any other registered scenario (e.g. minimal_specialization, issue #199)
+    uv run python experiments/p3_specialization/diagnostics/audit_reward_attribution.py \\
+        --scenario minimal_specialization
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios_generated import default_scenario
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 
 
-def run_rollouts(seeds=tuple(range(20)), max_nights_per_ep=200):
+def run_rollouts(scenario_name="default", seeds=tuple(range(20)), max_nights_per_ep=200):
     """Roll out a few episodes with uniform-random actions and decompose
     each per-step reward into (team, ownership, work_cost).
 
     The decomposition mirrors `_compute_rewards` exactly so the three
     components sum to the env-returned reward (verified at runtime).
     """
-    scenario = default_scenario(num_agents=4)
+    scenario = get_scenario_by_name(scenario_name, num_agents=4)
     env = BucketBrigadeEnv(scenario=scenario, num_agents=4)
 
     team_t: list[float] = []
@@ -76,19 +83,21 @@ def run_rollouts(seeds=tuple(range(20)), max_nights_per_ep=200):
                 )
                 for h in range(10):
                     is_own = env.house_owners[h] == a
-                    # Save event (any non-SAFE -> SAFE transition this step)
+                    # Save event (any non-SAFE -> SAFE transition this step).
+                    # Post-#198, the four ownership reward fields are per-agent
+                    # vectors of length num_agents; index by agent.
                     if prev_houses[h] != env.SAFE and env.houses[h] == env.SAFE:
                         own[a] += (
-                            scenario.reward_own_house_survives
+                            scenario.reward_own_house_survives[a]
                             if is_own
-                            else scenario.reward_other_house_survives
+                            else scenario.reward_other_house_survives[a]
                         )
                     # Currently-ruined penalty (applied every step)
                     if env.houses[h] == env.RUINED:
                         own[a] -= (
-                            scenario.penalty_own_house_burns
+                            scenario.penalty_own_house_burns[a]
                             if is_own
-                            else scenario.penalty_other_house_burns
+                            else scenario.penalty_other_house_burns[a]
                         )
 
             # Sanity: components must sum to env.rewards
@@ -184,11 +193,26 @@ def summarize(team, own, work, reward):
 
 
 def main():
-    team, own, work, reward = run_rollouts()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--scenario",
+        default="default",
+        help="Scenario name from SCENARIO_REGISTRY (e.g. default, minimal_specialization).",
+    )
+    ap.add_argument(
+        "--output-suffix",
+        default=None,
+        help="Suffix appended to results filename (default: derived from scenario "
+        "name, except 'default' which writes to the canonical h2_reward_attribution.json).",
+    )
+    args = ap.parse_args()
+
+    team, own, work, reward = run_rollouts(scenario_name=args.scenario)
     summary = summarize(team, own, work, reward)
+    summary["scenario"] = args.scenario
 
     print("=" * 70)
-    print("H2 reward-attribution audit — default_scenario(num_agents=4)")
+    print(f"H2 reward-attribution audit — {args.scenario}_scenario(num_agents=4)")
     print("=" * 70)
     print(f"Steps analyzed: {summary['n_steps']}  (uniform-random rollouts)")
     print()
@@ -228,7 +252,13 @@ def main():
 
     out_dir = Path(__file__).resolve().parent / "results"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "h2_reward_attribution.json"
+    if args.output_suffix is not None:
+        suffix = args.output_suffix
+    elif args.scenario == "default":
+        suffix = ""
+    else:
+        suffix = f"_{args.scenario}"
+    out_path = out_dir / f"h2_reward_attribution{suffix}.json"
     with out_path.open("w") as f:
         json.dump(summary, f, indent=2)
     print(f"\nWrote: {out_path}")
