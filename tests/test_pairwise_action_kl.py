@@ -11,7 +11,6 @@ silently understate per-agent divergence on the new game.
 
 from __future__ import annotations
 
-import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -99,7 +98,9 @@ def test_softmax_packed_three_heads_post236() -> None:
     p_m = torch.softmax(logits_mode, dim=-1)
     p_s = torch.softmax(logits_signal, dim=-1)
     expected_3d = (
-        p_h.unsqueeze(-1).unsqueeze(-1) * p_m.unsqueeze(1).unsqueeze(-1) * p_s.unsqueeze(1).unsqueeze(1)
+        p_h.unsqueeze(-1).unsqueeze(-1)
+        * p_m.unsqueeze(1).unsqueeze(-1)
+        * p_s.unsqueeze(1).unsqueeze(1)
     )  # [B, 10, 2, 2]
     assert expected_3d.shape == (B, 10, 2, 2)
     expected = expected_3d.reshape(B, -1)
