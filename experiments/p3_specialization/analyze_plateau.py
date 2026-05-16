@@ -45,34 +45,33 @@ import numpy as np
 # Hard-coded baselines (random-policy and heuristic per-step team reward).
 # These are not in the metrics files; they were measured separately.
 #
-# The ``default`` random baseline was re-derived in issue #218 against current
-# post-#197/#198 main using ``diagnostics/random_baseline.py`` (n=1000 episodes,
-# 5 seeds at commit ``a38667b5``): 247.58 with 95% bootstrap CI [241.07, 253.89].
-# The previous value (293.4, from PR #196 at n=1000) measured the pre-#197/#198
-# reward function and is therefore stale — PR #205 (#197) rebalanced ownership
-# rewards 20x on ``default``, which lowered the random per-step mean (random
-# agents burn houses more often than they save them, so the larger ownership
-# term contributes net-negative reward at random play). The original 308 value
-# from #145 (n=50) was a separate high-variance outlier on the pre-rebalance
-# function. See ``research_notebook/2026-05-15_h3_random_baseline.md`` and the
-# 2026-05-16 amendment in ``2026-05-14_p3_specialization_results.md``.
+# **Issue #237 (2026-05-16, commit ``dffe1060``) — post-#236 re-derivation.**
+# PR #236 made the broadcast signal a first-class action dimension
+# (``MultiDiscrete([10, 2])`` → ``MultiDiscrete([10, 2, 2])``). Uniform-random
+# play now exercises a strictly larger joint-action manifold, so every cited
+# random baseline measured pre-#236 became stale. Re-derived on
+# ``COMPUTE_HOST_PRIMARY`` via ``diagnostics/random_baseline.py`` with
+# n=1000 episodes per scenario (200 episodes × 5 seeds 42..46). Logs under
+# ``experiments/p3_specialization/diagnostics/results/issue237_postmerge/``.
 #
-# The ``chain_reaction`` random baseline was re-derived in issue #219 against
-# current post-#197/#198 main using ``diagnostics/random_baseline.py``
-# (n=1000 episodes, 5 seeds at commit ``b053d38e``): 220.75 with 95% bootstrap
-# CI [215.39, 225.86]. The previous value (233.0) traced to the same
-# uncommitted #145 n=50 measurement as ``default``'s old 308; the n=1000
-# re-derivation places it ~5% lower and outside its own implied CI. See
-# ``research_notebook/2026-05-15_h3_random_baseline.md`` (2026-05-16
-# chain_reaction amendment).
+# Pre-#236 (PR #218 / PR #229) → post-#236 (this entry):
+#   default        : 247.58 → 251.23 (small +3.65 shift, still inside
+#                    H3 window [220, 290])
+#   chain_reaction : 220.75 → 227.39 (+6.64 shift, signal channel
+#                    impacts teammate envelopes)
+#   trivial_cooperation: 400.0 → 399.99 (fixed-reward scenario, n=1000
+#                    CI ≈ [399.98, 400.01]; the old uncommitted 400.0
+#                    is now a measured constant)
 #
-# The ``trivial_cooperation`` random value and the three ``heuristic`` values
-# share the same uncommitted #145 provenance and remain flagged for sibling
-# re-derivation (see issue #202 follow-up).
+# The three ``heuristic`` values still trace to the uncommitted #145 protocol
+# and remain flagged for a separate heuristic-policy re-derivation
+# (see issue #202 follow-up). Earlier audits: PR #218 (default), PR #229
+# (chain_reaction). Notebook: ``2026-05-14_p3_specialization_results.md``
+# 2026-05-16 amendments.
 BASELINES: Dict[str, Dict[str, float]] = {
-    "trivial_cooperation": {"random": 400.0, "heuristic": 400.0},
-    "default": {"random": 247.58, "heuristic": 307.0},
-    "chain_reaction": {"random": 220.75, "heuristic": 226.0},
+    "trivial_cooperation": {"random": 399.99, "heuristic": 400.0},
+    "default": {"random": 251.23, "heuristic": 307.0},
+    "chain_reaction": {"random": 227.39, "heuristic": 226.0},
 }
 
 # Coefficients used in joint_trainer (default values from CellConfig).

@@ -238,6 +238,33 @@ def _random_baseline_per_step_default(
     from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 
     scenario = get_scenario_by_name("default", num_agents=4)
+    # Anti-regression guard: PR #236 (issue #235) made signal a first-class
+    # action dimension, widening MultiDiscrete([10, 2]) → MultiDiscrete([10, 2, 2]).
+    # PR #236 missed updating this helper, so it silently kept measuring a
+    # 2-dim sampling policy (a strictly different stochastic process than the
+    # one exercised by the env post-#236), and the H3 verdict became
+    # meaningless until issue #237 caught it.
+    #
+    # The env does NOT validate input action shape (a 2-dim action returns
+    # successfully), so we cross-check against the canonical source-of-truth
+    # in random_baseline.py. We grep the source file rather than importing,
+    # because random_baseline transitively imports torch via the training
+    # package and this test must remain runnable in the no-RL CI install.
+    from pathlib import Path as _Path
+
+    _rb_src = (
+        _Path(__file__).resolve().parent.parent
+        / "experiments"
+        / "p3_specialization"
+        / "diagnostics"
+        / "random_baseline.py"
+    ).read_text()
+    assert "ACTION_DIMS = [10, 2, 2]" in _rb_src, (
+        "random_baseline.ACTION_DIMS no longer equals [10, 2, 2]. "
+        "Update this helper's sampling loop AND the action_dims grep above to "
+        "match the new layout (otherwise H3 silently measures the wrong policy, "
+        "the bug PR #236 introduced and issue #237 fixed)."
+    )
     per_step = []
     for seed in range(42, 42 + seeds):
         rng = np.random.default_rng(seed)
@@ -246,11 +273,15 @@ def _random_baseline_per_step_default(
             env.reset(seed=int(rng.integers(0, 2**31 - 1)))
             total_reward = 0.0
             while not env.done:
-                # MultiDiscrete([10, 2]) per agent — see
-                # bucket_brigade_env.py:117 for the verified shape.
+                # MultiDiscrete([10, 2, 2]) per agent post-#236 (issue #235).
+                # Third column is the broadcast signal channel, sampled
+                # independently here to fully exercise the action manifold —
+                # otherwise this helper silently measures a pre-#236 policy
+                # (the bug that motivated issue #237).
                 actions = np.stack(
                     [
                         rng.integers(0, 10, size=env.num_agents),
+                        rng.integers(0, 2, size=env.num_agents),
                         rng.integers(0, 2, size=env.num_agents),
                     ],
                     axis=-1,

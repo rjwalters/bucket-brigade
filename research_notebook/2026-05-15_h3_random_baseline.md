@@ -114,3 +114,46 @@ issue #218 (its parent audit); PR #228 (the `--scenario` CLI foundation
 this PR builds on); PR #196 (canonical re-derivation pattern); issue
 #145 (origin of the wrong 233); issue #202 (audit-policy issue that
 deferred `chain_reaction` from PR #213 to here).
+
+## Amendment (2026-05-16): post-#236 re-derivation across all 14 scenarios (issue #237)
+
+PR #236 (commit ``dffe1060``) widened the joint action space to
+``MultiDiscrete([10, 2, 2])`` — the third dim is the broadcast signal,
+now sampled independently rather than mirrored from the work/rest bit.
+This invalidates all pre-#236 cited baselines (including the 220.75 and
+247.58 figures above).
+
+Re-derived on ``COMPUTE_HOST_PRIMARY`` for all 14 named scenarios at
+commit ``dffe1060`` (n=1000 each via ``--episodes-per-seed 200 --seeds 5
+--no-mlp``). Headline shifts:
+
+- `default`: 247.58 → **251.23** (CI [244.86, 257.51]; +3.65)
+- `chain_reaction`: 220.75 → **227.39** (CI [221.96, 232.70]; +6.64)
+- `minimal_specialization`: -96.07 → **-87.72** (CI [-93.31, -82.16]; +8.35, sign preserved)
+- `positional_default`: 247.09 → **250.73** (CI [244.36, 257.01]; +3.64)
+
+Full 14-scenario table is in
+``research_notebook/2026-05-14_p3_specialization_results.md`` (2026-05-16
+post-#237 amendment).
+
+**Critical test-suite bug fix surfaced by this audit:**
+``tests/test_env_health_diagnostics.py::_random_baseline_per_step_default``
+(lines 249-257 pre-fix) was still sampling 2-dim actions after PR #236 —
+PR #236 missed this call site, so the H3 regression test was silently
+measuring a pre-#236 policy. Fixed in this PR to 3-dim sampling with an
+anti-regression grep-assert against
+``random_baseline.ACTION_DIMS == [10, 2, 2]``. Without this fix the H3
+verdict was meaningless. The H3 window ``H3_RANDOM_PER_STEP_RANGE_DEFAULT
+= [220, 290]`` already brackets 251.23 — no widening required.
+
+**MLP iter-0 confirmation:** re-ran with ``--mlp-episodes-per-seed 50``
+on `default`; random-init MLP per-step came back at 247.40 (CI
+[234.76, 259.62]), within ±5 of the new uniform-random mean as expected
+(curator predicted unchanged since #236 did not alter the MLP forward
+pass). The 290.52 figure cited in `SCENARIO_CITED_VALUES["default"]
+["mlp_iter0"]` retains its separate provenance (specific seeded #183
+phase-3 cell, not a free MLP-init average).
+
+References: issue #237; PR #236 (signal as first-class action,
+``dffe1060``); PRs #218 and #229 (immediate prior re-derivations now
+superseded).

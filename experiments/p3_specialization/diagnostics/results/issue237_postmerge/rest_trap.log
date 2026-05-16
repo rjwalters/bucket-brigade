@@ -1,0 +1,16 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/Users/rwalters/GitHub/bucket-brigade/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Scenario: rest_trap, num_agents=4, min_nights=12
+Cited values: n/a for scenario 'rest_trap' (not in SCENARIO_CITED_VALUES; raw measurements only).
+
+=== Uniform-random ===
+  per-episode  : mean=3989.93, 95% CI=[3934.39, 4045.17], n=1000
+  per-step     : mean=302.87, 95% CI=[298.63, 307.07], n=1000
+  episode length: median=13, mean=13.18, min=13, max=17
+  per-episode / median-length = 306.92
+
+=== Verdict ===
+(No cited verdict for scenario 'rest_trap'; add an entry to SCENARIO_CITED_VALUES to enable.)
