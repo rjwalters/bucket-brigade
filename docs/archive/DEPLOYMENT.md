@@ -4,7 +4,7 @@
 >
 > The Bucket Brigade platform currently operates as a **browser-only static site**. All computation happens client-side using WebAssembly. There is **no backend server required**.
 >
-> Backend API deployment options described later in this document are **future plans** that are not yet implemented. For current architecture, see [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md).
+> Backend API deployment options described later in this document are **future plans** that are not yet implemented. For current architecture, see [SIMPLIFIED_ARCHITECTURE.md](../SIMPLIFIED_ARCHITECTURE.md).
 
 This guide covers deploying the Bucket Brigade platform to various environments.
 
@@ -460,10 +460,10 @@ services:
 
 ## 🔗 Related Documentation
 
-- [SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md) - System architecture
+- [SIMPLIFIED_ARCHITECTURE.md](../SIMPLIFIED_ARCHITECTURE.md) - System architecture
 - [API.md](API.md) - Data structures and future API plans
-- [web/README.md](web/README.md) - Web interface details
-- [bucket-brigade-core/README.md](bucket-brigade-core/README.md) - Rust core documentation
+- [web/README.md](../../web/README.md) - Web interface details
+- [bucket-brigade-core/README.md](../../bucket-brigade-core/README.md) - Rust core documentation
 
 ---
 

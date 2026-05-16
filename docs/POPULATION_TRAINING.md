@@ -388,5 +388,5 @@ Approximate wall-clock time (single GPU, 16 agents):
 
 - **Test Coverage**: `tests/test_population_training_integration.py` - Integration tests validating the pipeline
 - **Implementation**: `bucket_brigade/training/population_trainer.py` - Core training logic
-- **Remote Setup**: `CLAUDE.md` - Remote development workflow
+- **Remote Setup**: `../CLAUDE.md` - Remote development workflow
 - **Hyperparameter Tuning**: `docs/HYPERPARAMETER_TUNING.md` - Optuna-based tuning guide

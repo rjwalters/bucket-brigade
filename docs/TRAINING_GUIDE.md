@@ -384,7 +384,7 @@ python -c "import bucket_brigade_core; print('✅ Rust module OK')"
 
 For issues or questions:
 1. Check the main README.md
-2. Review environment documentation in `API.md`
+2. Review environment documentation in `archive/API.md`
 3. Check troubleshooting section above
 4. Open an issue on GitHub
 

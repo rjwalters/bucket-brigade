@@ -5,7 +5,7 @@
 
 ## Context
 
-We have comprehensive ranking methodology documented in `RANKING_METHODOLOGY.md`, but current implementation only supports **homogeneous team evaluation** (Method A: Simple Average). We want to implement **heterogeneous team ranking** (Method B: Bayesian Additive Model) to properly estimate individual agent value across random team compositions and scenarios.
+We have comprehensive ranking methodology documented in `docs/RANKING_METHODOLOGY.md`, but current implementation only supports **homogeneous team evaluation** (Method A: Simple Average). We want to implement **heterogeneous team ranking** (Method B: Bayesian Additive Model) to properly estimate individual agent value across random team compositions and scenarios.
 
 ## Current State
 

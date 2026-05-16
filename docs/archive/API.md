@@ -4,11 +4,11 @@
 >
 > The Bucket Brigade platform currently operates as a **browser-only static site**. All computation happens in the browser using WebAssembly. The "Future API Endpoints" section describes planned features that **DO NOT exist yet**.
 >
-> For current architecture, see [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITECTURE.md).
+> For current architecture, see [SIMPLIFIED_ARCHITECTURE.md](../SIMPLIFIED_ARCHITECTURE.md).
 
 This document describes the data structures and interfaces used in the Bucket Brigade platform.
 
-*For game mechanics and rules, see [docs/game_mechanics.md](docs/game_mechanics.md).*
+*For game mechanics and rules, see [game_mechanics.md](../game_mechanics.md).*
 
 ## 🏗️ Architecture Overview
 
@@ -400,5 +400,5 @@ enum ErrorCode {
 
 ---
 
-For implementation details, see the [CLASS_DESIGN.md](docs/development/CLASS_DESIGN.md) document.
+For implementation details, see the [CLASS_DESIGN.md](../development/CLASS_DESIGN.md) document.
 For deployment information, see [DEPLOYMENT.md](DEPLOYMENT.md).

@@ -326,7 +326,7 @@ python -c "import bucket_brigade_core; print('OK')"
 
 ## 📚 Related Documentation
 
-- **Main Training Guide**: `../../TRAINING_GUIDE.md`
+- **Main Training Guide**: `../../docs/TRAINING_GUIDE.md`
 - **Hyperparameter Tuning**: `../../docs/HYPERPARAMETER_TUNING.md`
 - **Research Summary**: `../RESEARCH_SUMMARY.md`
 - **Remote Execution**: `../REMOTE_EXECUTION.md`

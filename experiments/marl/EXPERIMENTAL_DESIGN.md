@@ -711,7 +711,7 @@ uv run python experiments/scripts/analyze_cross_scenario_ppo.py \
 
 - **Phase 2 Agenda**: `docs/PHASE_2_RESEARCH_AGENDA.md`
 - **MARL README**: `experiments/marl/README.md`
-- **Population Training Guide**: `POPULATION_TRAINING.md`
+- **Population Training Guide**: `../../docs/POPULATION_TRAINING.md`
 - **VectorEnv Fix**: `docs/VECTORIZED_TRAINING_FIX.md`
 
 ### External

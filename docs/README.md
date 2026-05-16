@@ -8,7 +8,7 @@ This documentation directory contains detailed guides, specifications, and resea
 
 - **[Game Mechanics](game_mechanics.md)** - Complete rules and game mechanics
 - **[Agent Roster](AGENT_ROSTER.md)** - Available AI agents (Firefighter, Hero, Free Rider, etc.)
-- **[API Reference](../API.md)** - Technical API and data structures
+- **[API Reference](archive/API.md)** - Technical API and data structures (archived — aspirational, see SIMPLIFIED_ARCHITECTURE.md for current)
 
 ## Documentation Map
 
@@ -18,8 +18,8 @@ This documentation directory contains detailed guides, specifications, and resea
 - **[HYPERPARAMETER_TUNING.md](HYPERPARAMETER_TUNING.md)** - Parameter optimization guides
 
 ### 🧠 Research & Analysis
-- **[../RANKING_METHODOLOGY.md](../RANKING_METHODOLOGY.md)** - Policy ranking and evaluation
-- **[../SCENARIO_RESEARCH.md](../SCENARIO_RESEARCH.md)** - Scenario-based research framework
+- **[RANKING_METHODOLOGY.md](RANKING_METHODOLOGY.md)** - Policy ranking and evaluation
+- **[archive/SCENARIO_RESEARCH.md](archive/SCENARIO_RESEARCH.md)** - Scenario-based research framework (archived — proposed but not yet implemented)
 - **[curriculum_learning.md](curriculum_learning.md)** - Learning curriculum design
 
 ### 🔭 Research Vision & Philosophy
@@ -30,9 +30,12 @@ This documentation directory contains detailed guides, specifications, and resea
 - **[library/](library/)** - Research paper summaries and references
 
 ### 💻 Development & Implementation
-- **[../API.md](../API.md)** - API reference and data structures
+- **[TRAINING_GUIDE.md](TRAINING_GUIDE.md)** - PPO training with PufferLib
+- **[POPULATION_TRAINING.md](POPULATION_TRAINING.md)** - Population-based multi-agent training
 - **[IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)** - Development checklist
 - **[PERFORMANCE.md](PERFORMANCE.md)** - Performance analysis and benchmarks
+- **[NASH_BENCHMARKS.md](NASH_BENCHMARKS.md)** - Nash equilibrium computation benchmarks
+- **[GLOSSARY.md](GLOSSARY.md)** - Canonical terminology
 
 ### 🏗️ Architecture & Planning
 - **[development/CLASS_DESIGN.md](development/CLASS_DESIGN.md)** - Class structure and API design
@@ -41,7 +44,7 @@ This documentation directory contains detailed guides, specifications, and resea
 
 ### 📋 Project Management
 - **[../CONTRIBUTING.md](../CONTRIBUTING.md)** - Contribution guidelines
-- **[../LOOM_AGENTS.md](../LOOM_AGENTS.md)** - AI-powered development workflow
+- **[../.loom/LOOM_AGENTS.md](../.loom/LOOM_AGENTS.md)** - AI-powered development workflow
 
 ## Key Concepts
 
@@ -76,6 +79,12 @@ docs/
 ├── game_mechanics.md                   # Canonical game rules
 ├── AGENT_ROSTER.md                     # AI agent specifications
 ├── HYPERPARAMETER_TUNING.md            # Parameter optimization
+├── TRAINING_GUIDE.md                   # PPO training guide
+├── POPULATION_TRAINING.md              # Population-based multi-agent training
+├── RANKING_METHODOLOGY.md              # Policy ranking methodology
+├── NASH_BENCHMARKS.md                  # Nash equilibrium computation benchmarks
+├── GLOSSARY.md                         # Canonical terminology
+├── game_description.md                 # Design philosophy and research framing
 ├── curriculum_learning.md              # Learning curriculum design
 ├── background_closed_vs_open_world.md  # Closed vs. open world foundations
 ├── technical_marl_review.md            # Technical MARL methods review
@@ -104,4 +113,4 @@ docs/
 ---
 
 *For the main project README, see [../README.md](../README.md).*
-*For development workflow, see [../LOOM_AGENTS.md](../LOOM_AGENTS.md).*
+*For development workflow, see [../.loom/LOOM_AGENTS.md](../.loom/LOOM_AGENTS.md).*

@@ -1,6 +1,6 @@
 # Bucket Brigade: A Minimal Multi-Agent Cooperation Game
 
-*For complete game mechanics and rules, see [docs/game_mechanics.md](docs/game_mechanics.md). This document focuses on design philosophy and research applications.*
+*For complete game mechanics and rules, see [game_mechanics.md](game_mechanics.md). This document focuses on design philosophy and research applications.*
 
 ## Design Philosophy
 
@@ -692,14 +692,14 @@ uv run python scripts/run_batch.py \
 ## Next Steps
 
 **For researchers**:
-1. Read RANKING_METHODOLOGY.md (how we rank policies)
-2. Read SCENARIO_RESEARCH.md (how we design scenarios)
-3. Explore experiments/ directory (evolutionary algorithms, Nash equilibria)
+1. Read [RANKING_METHODOLOGY.md](RANKING_METHODOLOGY.md) (how we rank policies)
+2. Read [archive/SCENARIO_RESEARCH.md](archive/SCENARIO_RESEARCH.md) (proposed scenario research framework)
+3. Explore [../experiments/](../experiments/) (evolutionary algorithms, Nash equilibria)
 
 **For developers**:
-1. Check out API.md (data structures)
-2. Browse bucket_brigade/envs/ (game engine)
-3. Try bucket-brigade-core/ (Rust implementation)
+1. Check out [archive/API.md](archive/API.md) (data structures, aspirational)
+2. Browse [../bucket_brigade/envs/](../bucket_brigade/envs/) (game engine)
+3. Try [../bucket-brigade-core/](../bucket-brigade-core/) (Rust implementation)
 
 **For contributors**:
 1. Implement new scenarios (see scenarios.py)

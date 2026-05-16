@@ -5,10 +5,10 @@
 > This document describes a comprehensive research organization framework that **has not been built yet**. The directory structure, automation scripts, and workflows described below are proposals for future implementation.
 >
 > **For current research structure**, see:
-> - [experiments/README.md](experiments/README.md) - Current experiment organization
-> - [experiments/RESEARCH_SUMMARY.md](experiments/RESEARCH_SUMMARY.md) - Actual research findings
-> - [experiments/nash/README.md](experiments/nash/README.md) - Nash equilibrium research
-> - [experiments/evolution/README.md](experiments/evolution/README.md) - Evolution research
+> - [experiments/README.md](../../experiments/README.md) - Current experiment organization
+> - [experiments/RESEARCH_SUMMARY.md](../../experiments/RESEARCH_SUMMARY.md) - Actual research findings
+> - [experiments/nash/README.md](../../experiments/nash/README.md) - Nash equilibrium research
+> - [experiments/evolution/README.md](../../experiments/evolution/README.md) - Evolution research
 
 ## Vision & Motivation
 
