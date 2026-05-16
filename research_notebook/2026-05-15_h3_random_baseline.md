@@ -69,3 +69,48 @@ uv run python experiments/p3_specialization/diagnostics/random_baseline.py
 uv run python experiments/p3_specialization/diagnostics/random_baseline.py \
     --episodes-per-seed 50 --seeds 1 --no-mlp
 ```
+
+## Amendment (2026-05-16): chain_reaction sibling re-derivation (issue #219)
+
+Sibling baseline to PR #213's `default`-only audit: the `chain_reaction`
+random baseline cited as `233.0` in `analyze_plateau.py` and
+`diagnostics/summary.md` has the same uncommitted #145 n=50 provenance as
+`default`'s old `308`. Re-derived on `COMPUTE_HOST_PRIMARY` against current
+main (commit `b053d38e`, which contains the post-#197/#198 reward function)
+using `experiments/p3_specialization/diagnostics/random_baseline.py
+--scenario chain_reaction --episodes-per-seed 200 --seeds 5` (n=1000 total):
+
+- **Uniform-random per-step team reward on `chain_reaction`**: **220.75, 95% CI [215.39, 225.86]** (n=1000).
+- **Uniform-random per-episode**: 3573.19, 95% CI [3486.31, 3656.27].
+- **Episode length**: median 16, mean 16.18, range [16, 20]. `chain_reaction` has `min_nights=15` (vs 12 for `default`); fire-spread frequently extends episodes 1–5 nights past the floor.
+- **Random-init MLP iter-0 per-step**: 218.79, 95% CI [208.96, 228.54] (n=250). Mean differs from uniform-random by 1.96 (well inside the ±5 verdict window); CIs overlap heavily — the MLP and uniform-random policies are statistically indistinguishable at this n.
+- **#145-protocol reproduction (n=50, single seed)**: 235.41, 95% CI [214.23, 257.33]. The cited 233 sits inside this wide CI, mirroring PR #213's finding that `default`'s 308 was an unlucky tail-sample on a high-variance reward distribution.
+
+Side-by-side:
+
+| baseline | per-step mean | 95% CI | provenance |
+|---|---|---|---|
+| #145 cited | 233.0 | — (n=50, single seed) | uncommitted protocol |
+| **#219 re-derivation (post-#197/#198, current)** | **220.75** | **[215.39, 225.86] (n=1000)** | this run / `b053d38e` |
+| #219 #145-reproduction (n=50) | 235.41 | [214.23, 257.33] | this run (sampling-noise demo) |
+
+**Verdict:** `Uniform-random per-step CI contains cited 233.0: False` —
+the cited number sits ~5% above the n=1000 mean and outside its CI.
+Same pattern as `default`'s old 308 (also ~5% above the n=1000 mean,
+also outside the post-#197/#198 CI).
+
+**Implications:**
+
+- `BASELINES["chain_reaction"]["random"]` in `experiments/p3_specialization/analyze_plateau.py` updated from `233.0` → `220.75`.
+- `experiments/p3_specialization/diagnostics/summary.md` line 24 baseline literal updated; the surrounding `reward iter 0 -> iter 49: 224.21 -> 224.47` numbers are unchanged (they come from the existing `runs/` data, not the constant).
+- The H3 regression test (`tests/test_env_health_diagnostics.py`) remains `default`-only by design; extending it to `chain_reaction` is out of scope for this issue.
+- The `chain_reaction` heuristic baseline (`226.0`) still traces to the same uncommitted #145 protocol and remains flagged for a separate heuristic-policy diagnostic pass (out of scope for #219).
+- The narrative reading of the prior P3 sweep on `chain_reaction` (iter-49 reward `222.37 [218.29, 226.75]` per `2026-05-14_p3_specialization_results.md:38`) is unchanged in spirit: that CI overlaps the new `220.75` random CI almost exactly, so the "PPO sits at random on `chain_reaction`" framing is preserved — it just now sits *at* the corrected random baseline rather than *below* the inflated one.
+
+The diagnostic script (`experiments/p3_specialization/diagnostics/random_baseline.py`) was extended in this PR with a `SCENARIO_CITED_VALUES` table (curator's Option A from issue #219's enhancement). `chain_reaction` is now a table entry; the verdict block generalizes per-scenario without hardcoded `if scenario == "default"` branches.
+
+References: issue #219; PR #213 (sister `default` post-#197/#198 fix);
+issue #218 (its parent audit); PR #228 (the `--scenario` CLI foundation
+this PR builds on); PR #196 (canonical re-derivation pattern); issue
+#145 (origin of the wrong 233); issue #202 (audit-policy issue that
+deferred `chain_reaction` from PR #213 to here).
