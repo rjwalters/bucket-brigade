@@ -1,0 +1,16 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/Users/rwalters/GitHub/bucket-brigade/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Scenario: default, num_agents=4, min_nights=12
+Cited values: random=308.0, iter-0 MLP=290.52 (#145 (random) / #183 (iter-0 MLP); both load-bearing in analyze_plateau.py and analyze_174.py)
+
+=== Uniform-random ===
+  per-episode  : mean=3309.20, 95% CI=[3224.72, 3391.68], n=1000
+  per-step     : mean=251.23, 95% CI=[244.86, 257.51], n=1000
+  episode length: median=13, mean=13.18, min=13, max=16
+  per-episode / median-length = 254.55
+
+=== Verdict ===
+Uniform-random per-step CI contains cited 308.0: False

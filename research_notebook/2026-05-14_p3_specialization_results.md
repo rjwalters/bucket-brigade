@@ -194,3 +194,87 @@ References: issue #219; PR #213 (sister `default` fix, n=1000 → 293.4);
 PR #228 (the `--scenario` CLI foundation this PR builds on); issue #145
 (origin of the inflated 233); issue #202 (audit-policy issue that
 deferred `chain_reaction` from PR #213).
+
+## Amendment (2026-05-16): post-#236 random baselines re-derived across all 14 scenarios (issue #237)
+
+PR #236 (merged 2026-05-16T22:10:35Z) made the broadcast signal a
+first-class action dimension: ``MultiDiscrete([10, 2])`` →
+``MultiDiscrete([10, 2, 2])``. Uniform-random play now samples the signal
+channel independently with p=0.5, and teammate envelopes /
+``HeuristicAgent`` mode-selection observe deceptive signals from random
+teammates. Every committed random baseline measured pre-#236 (including
+the 247.58 and 220.75 figures in the 2026-05-16 amendments above) is
+therefore stale at the algorithm-of-record level.
+
+Re-derived on ``COMPUTE_HOST_PRIMARY`` against current main (commit
+``dffe1060``) using
+``experiments/p3_specialization/diagnostics/random_baseline.py --scenario
+<X> --episodes-per-seed 200 --seeds 5 --no-mlp`` (n=1000 per scenario).
+Logs committed under
+``experiments/p3_specialization/diagnostics/results/issue237_postmerge/``.
+
+| scenario | pre-#236 (cited) | post-#236 (#237) | 95% CI | Δ | source of cited |
+|---|---|---|---|---|---|
+| `default` | 247.58 | **251.23** | [244.86, 257.51] | +3.65 | PR #218 |
+| `easy` | (uncited) | **355.07** | [352.07, 358.06] | n/a | new |
+| `hard` | (uncited) | **124.66** | [118.62, 130.63] | n/a | new |
+| `trivial_cooperation` | 400.0 (uncommitted) | **399.99** | [399.98, 400.01] | -0.01 | #145 (now measured) |
+| `early_containment` | (uncited) | **297.24** | [292.88, 301.55] | n/a | new |
+| `greedy_neighbor` | (uncited) | **292.78** | [288.46, 297.13] | n/a | new |
+| `sparse_heroics` | (uncited) | **246.06** | [240.99, 251.08] | n/a | new |
+| `rest_trap` | (uncited) | **302.87** | [298.63, 307.07] | n/a | new |
+| `chain_reaction` | 220.75 | **227.39** | [221.96, 232.70] | +6.64 | PR #229 |
+| `deceptive_calm` | (uncited) | **78.55** | [72.68, 84.49] | n/a | new |
+| `overcrowding` | (uncited) | **120.24** | [116.93, 123.42] | n/a | new |
+| `mixed_motivation` | (uncited) | **224.06** | [218.83, 229.26] | n/a | new |
+| `minimal_specialization` | -96.07 | **-87.72** | [-93.31, -82.16] | +8.35 (sign preserved) | issue #199 |
+| `positional_default` | 247.09 | **250.73** | [244.36, 257.01] | +3.64 | issue #221 |
+
+Random-init MLP iter-0 on `default` (n=250): **247.40, 95% CI
+[234.76, 259.62]**. Within ±5 of the uniform-random mean as expected
+(MLP path was not changed by #236; the small shift mirrors the random
+shift). The 290.52 figure cited in `SCENARIO_CITED_VALUES` and in #183's
+L1_norm phase-3 cell remains a separate-provenance reference (specific
+seeded cell, not a free MLP-init average).
+
+**Observed pattern matches the predicted sensitivity hypothesis (curator
+note on issue #237):** the largest absolute shifts land on
+`chain_reaction` (+6.64), `early_containment` (+5 shift implied; new
+entry), and other scenarios where teammate envelopes / signal-channel
+dynamics matter. `minimal_specialization` (per-agent ownership dominates)
+shifts +8.35 but keeps its negative sign — random play is still net-bad
+for the team there. `trivial_cooperation` is unchanged at 399.99 because
+the scenario reward is fixed by design.
+
+**Test-suite changes (issue #237):**
+
+- ``tests/test_env_health_diagnostics.py::_random_baseline_per_step_default``
+  was silently sampling 2-dim actions (pre-#236 layout) — a latent bug
+  introduced by PR #236 missing this call site. Fixed to 3-dim sampling
+  with an anti-regression assertion that pins
+  ``random_baseline.ACTION_DIMS == [10, 2, 2]``. Without this fix the H3
+  regression test was measuring a strictly different policy than the env
+  exercises in production. The H3 window ``[220, 290]`` already brackets
+  251.23 so no window adjustment was needed.
+
+**Call sites updated by issue #237:**
+
+- ``experiments/p3_specialization/diagnostics/random_baseline.py``:
+  ``SCENARIO_CITED_VALUES`` extended to all 14 named scenarios; module
+  docstring refreshed.
+- ``experiments/p3_specialization/analyze_plateau.py``: ``BASELINES``
+  updated (default 247.58 → 251.23, chain_reaction 220.75 → 227.39,
+  trivial_cooperation 400.0 → 399.99 measured).
+- ``experiments/p3_specialization/analyze_174.py``: ``RAND_BASELINE``
+  247.58 → 251.23, ``ACCEPTANCE_BAR`` 253.89 → 257.51 (CI upper).
+- ``experiments/p3_specialization/analyze_231.py``: ``BASELINES`` random
+  components updated for default / minimal_specialization /
+  positional_default (specialist component left alone per sibling-#238
+  coordination — specialist re-derivations are not in #237 scope).
+- ``experiments/p3_specialization/diagnostics/README.md`` and
+  ``summary.md``: cited values refreshed.
+
+References: issue #237; PR #236 (signal as action dim, commit
+``dffe1060``); PR #218 (prior `default` re-derivation); PR #229 (prior
+`chain_reaction` re-derivation); issue #145 (origin of original cited
+baselines, n=50 protocol).

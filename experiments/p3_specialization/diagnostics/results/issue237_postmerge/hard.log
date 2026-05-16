@@ -1,0 +1,16 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/Users/rwalters/GitHub/bucket-brigade/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Scenario: hard, num_agents=4, min_nights=15
+Cited values: n/a for scenario 'hard' (not in SCENARIO_CITED_VALUES; raw measurements only).
+
+=== Uniform-random ===
+  per-episode  : mean=2027.64, 95% CI=[1929.77, 2125.23], n=1000
+  per-step     : mean=124.66, 95% CI=[118.62, 130.63], n=1000
+  episode length: median=16, mean=16.27, min=16, max=20
+  per-episode / median-length = 126.73
+
+=== Verdict ===
+(No cited verdict for scenario 'hard'; add an entry to SCENARIO_CITED_VALUES to enable.)

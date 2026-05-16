@@ -17,7 +17,7 @@ ownership-vector refactor, etc.).
 |------|------------|------------------|
 | `inspect_rollout_rewards.py` | **H1** (#190) | Per-agent reward CV + action-reward R² from one rollout. |
 | `audit_reward_attribution.py` | **H2** (#191) | Per-step decomposition into (team, ownership, work_cost) + pairwise reward correlation. |
-| `random_baseline.py` | **H3** (#192) | Uniform-random per-step team reward; re-derives `default` (cited 308 → post-#197/#198 247.58) and `chain_reaction` (cited 233 → re-derived; issue #219). Other scenarios via `--scenario`. |
+| `random_baseline.py` | **H3** (#192) | Uniform-random per-step team reward; all 14 named scenarios entered in `SCENARIO_CITED_VALUES` post-#237. Latest re-derivation: issue #237 (post-#236 signal-as-action), `default` 251.23, `chain_reaction` 227.39, `minimal_specialization` -87.72, `positional_default` 250.73 (n=1000 each at commit `dffe1060`). |
 | `check_env_health.sh` | aggregator | Runs H1+H2+H3 sequentially, tees logs, prints a summary table. |
 | `issue199_baselines.py` | (separate) | Specialist baseline harness for issue #199. |
 

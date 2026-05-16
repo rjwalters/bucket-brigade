@@ -176,4 +176,27 @@ The first two bugs blocked PPO training on every scenario, not just `positional_
 1. **Position-aware specialist baseline.** The current `specialist_action_joint` uses ownership only; a variant that prefers nearby houses (using `env.agent_home_positions`) would give `positional_default` a more honest upper bound. Worth filing if the next iteration of #203 (options B/C) lands.
 2. **Higher alpha sweep.** alpha=0.1 was chosen to be minimally invasive (`default` reward magnitudes unchanged). At this magnitude the per-agent gradient is barely visible to either random or ownership-specialist policies. A larger alpha (e.g. 1.0 or 5.0) or one applied on top of `minimal_specialization`'s rebalanced magnitudes would be a stronger test of "spatial asymmetry alone breaks the team-correlation regime." Worth filing as a #203-option-A.5 follow-up if independent-PPO closes more gap here than on `minimal_specialization`.
 3. **Update issue #213's stale 293.4 baseline.** The post-#205/#198 rebalance shifted `default` random per-step from ~293 to ~247. Worth a small PR to update `analyze_plateau.py:60`, `summary.md:24`, and #213's own notebook footer.
+
+## Footnote (2026-05-16): post-#236 random baselines stale this notebook (issue #237)
+
+Issue #237 re-derived random baselines across all 14 scenarios on
+post-#236 main (commit ``dffe1060``). The figures shown in the random
+baseline table above (`default` 247.58, `positional_default` 247.09) are
+**pre-#236 measurements** and have shifted slightly:
+
+- `default`: 247.58 → **251.23** (CI [244.86, 257.51]; +3.65)
+- `positional_default`: 247.09 → **250.73** (CI [244.36, 257.01]; +3.64)
+
+The body figures, gap-closure calculations, and verdict are **not edited**
+in this notebook — they describe the experiment as it was run. The
+canonical post-#236 baselines now live in
+``random_baseline.SCENARIO_CITED_VALUES`` and
+``analyze_plateau.BASELINES``; downstream analysis (e.g.
+``analyze_231.py``) uses the updated values. The qualitative finding
+(`positional_default` aggregate stats nearly identical to `default`,
++79 specialist-random gap) holds under the new figures — the
+specialist baseline was unchanged by #237.
+
+Reference: issue #237 amendment block in
+``research_notebook/2026-05-14_p3_specialization_results.md``.
 4. **MAPPO / CTDE on `positional_default`** — tracked separately in #208 and not blocking this validation.

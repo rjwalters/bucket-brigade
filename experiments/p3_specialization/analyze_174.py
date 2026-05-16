@@ -23,21 +23,23 @@ specified in issue #174:
 Each condition has 5 seeds (42..46). All cells use scenario=default,
 lambda_red=0, num_iterations=50, rollout_steps=2048.
 
-Random per-step team-reward baseline on default = 247.58 (re-derived in
-issue #218 on post-#197/#198 main at commit ``a38667b5``, n=1000 episodes,
-seeds 42..46; 95% CI [241.07, 253.89]). PR #196's previous value of 293.4
-measured the pre-#197 reward function and is therefore stale — PR #205
-(#197) rebalanced ownership rewards 20x on ``default``, which lowered the
-random per-step mean (random play burns houses more often than it saves
-them, so the larger ownership term contributes net-negative reward).
-The original #145 value (308) was an n=50 outlier on the pre-rebalance
-function.
+Random per-step team-reward baseline on default = 251.23 (re-derived in
+issue #237 on post-#236 main at commit ``dffe1060``, n=1000 episodes,
+seeds 42..46; 95% CI [244.86, 257.51]). PR #218's previous value of 247.58
+measured the pre-#236 action space (``MultiDiscrete([10, 2])``) and is
+therefore stale — PR #236 promoted the broadcast signal to a first-class
+action dimension (``MultiDiscrete([10, 2, 2])``), and uniform-random play
+now exercises a strictly larger joint-action manifold. The +3.65 shift
+on ``default`` is the small-but-real consequence of teammate envelopes
+observing independently-randomized signals from teammates.
 
-Acceptance bar = CI upper bound of the re-derived random baseline (253.89).
+Acceptance bar = CI upper bound of the re-derived random baseline (257.51).
 "Crosses bar" therefore means "statistically distinguishable from random,"
 not "exceeds an arbitrary buffer above a noisy single-sample baseline."
 The original #174 acceptance bar of 320 (= 308 + 12) was derived from the
 incorrect baseline; see issue #202 for the audit and policy decision.
+Earlier audits (each superseded by the next): #218 (308 → 247.58 post-#197/#198),
+#237 (247.58 → 251.23 post-#236).
 
 Usage::
 
@@ -57,8 +59,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-RAND_BASELINE = 247.58
-ACCEPTANCE_BAR = 253.89
+RAND_BASELINE = 251.23  # post-#236 (issue #237); 95% CI [244.86, 257.51]
+ACCEPTANCE_BAR = 257.51  # = CI upper bound of post-#236 baseline (issue #237)
 SEEDS = [42, 43, 44, 45, 46]
 NUM_AGENTS = 4
 

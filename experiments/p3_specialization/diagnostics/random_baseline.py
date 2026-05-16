@@ -12,6 +12,11 @@ artifact: re-derive the number from scratch under conditions matching the #183
 phase-3 training cells (``default`` scenario, ``num_agents=4``), and put a
 random-init MLP iter-0 baseline next to it for comparison.
 
+Latest re-derivation (issue #237, 2026-05-16, commit ``dffe1060``): post-#236
+sweep across all 14 named scenarios with the 3-dim action space
+``MultiDiscrete([10, 2, 2])`` (signal channel sampled independently). See
+``SCENARIO_CITED_VALUES`` for the per-scenario table.
+
 Three numbers are reported, each as ``mean ± 95% bootstrap CI`` over the per-
 episode samples:
 
@@ -69,33 +74,101 @@ ACTION_DIMS = [10, 2, 2]  # [house, mode, signal] (issue #235)
 # Default scenario name; override via ``--scenario`` (issue #221).
 DEFAULT_SCENARIO_NAME = "default"
 
-# Per-scenario cited-value table (issue #219).
+# Per-scenario cited-value table (issue #219; extended to all 14 scenarios by #237).
 #
-# ``random`` is the per-step team-reward number cited in the literature (almost
-# always traceable to issue #145's uncommitted n=50 measurement). ``mlp_iter0``
-# is the iter-0 per-step MLP team reward cited alongside it (e.g. the L1_norm
-# phase-3 cell from #183) — currently only defined for ``default``. ``note``
-# records the provenance so re-derivations stay auditable.
+# ``random`` is the per-step team-reward number cited in the literature. Values
+# here are the **post-#236 (signal-as-first-class-action) re-derivation** from
+# issue #237 run on ``COMPUTE_HOST_PRIMARY`` at commit ``dffe1060``: n=1000
+# episodes per scenario (200 episodes × 5 seeds 42..46), MultiDiscrete([10, 2, 2])
+# uniform sampling. Logs committed under
+# ``experiments/p3_specialization/diagnostics/results/issue237_postmerge/``.
+#
+# ``mlp_iter0`` is the iter-0 per-step MLP team reward cited alongside it
+# (e.g. the L1_norm phase-3 cell from #183) — currently only defined for
+# ``default``. ``note`` records the provenance so re-derivations stay auditable.
 #
 # When ``--scenario`` matches an entry here, the verdict block compares the
 # re-derived value against ``random`` (and, if non-None, against ``mlp_iter0``).
-# Scenarios outside this table still print their raw measurements; the verdict
-# comparison is just suppressed.
+# All 14 named scenarios from ``bucket-brigade-core/src/scenarios.rs`` are
+# present post-#237; the verdict comparison should never be suppressed for a
+# named scenario.
 SCENARIO_CITED_VALUES: dict[str, dict[str, float | str | None]] = {
     "default": {
-        "random": 308.0,
+        "random": 251.23,
         "mlp_iter0": 290.52,
-        "note": "#145 (random) / #183 (iter-0 MLP); both load-bearing in analyze_plateau.py and analyze_174.py",
+        "note": "#237 post-#236 (n=1000, dffe1060); MLP iter-0 from #183 (untrained path unchanged by #236)",
+    },
+    "easy": {
+        "random": 355.07,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "hard": {
+        "random": 124.66,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "trivial_cooperation": {
+        "random": 399.99,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060); fixed-reward scenario, CI ≈ [399.98, 400.01]",
+    },
+    "early_containment": {
+        "random": 297.24,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "greedy_neighbor": {
+        "random": 292.78,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "sparse_heroics": {
+        "random": 246.06,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060); long episodes (median 21 nights)",
+    },
+    "rest_trap": {
+        "random": 302.87,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
     },
     "chain_reaction": {
-        "random": 233.0,
+        "random": 227.39,
         "mlp_iter0": None,
-        "note": "#145 (same uncommitted n=50 protocol as default's 308); load-bearing in analyze_plateau.py",
+        "note": "#237 post-#236 (n=1000, dffe1060); previously 220.75 pre-#236 (PR #229)",
+    },
+    "deceptive_calm": {
+        "random": 78.55,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "overcrowding": {
+        "random": 120.24,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "mixed_motivation": {
+        "random": 224.06,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060)",
+    },
+    "minimal_specialization": {
+        "random": -87.72,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060); per-agent ownership dominates (#199), sign preserved",
+    },
+    "positional_default": {
+        "random": 250.73,
+        "mlp_iter0": None,
+        "note": "#237 post-#236 (n=1000, dffe1060); tracks default closely (alpha=0.1 spatial cost)",
     },
 }
 
 # Backwards-compat aliases for callers that imported these constants directly.
 # Kept for one release cycle; new code should consult ``SCENARIO_CITED_VALUES``.
+# Names retained for historical continuity even though the values now reflect
+# the post-#237 re-derivation rather than the original #145 "308" / #183 "290".
 CITED_308 = SCENARIO_CITED_VALUES["default"]["random"]
 CITED_290 = SCENARIO_CITED_VALUES["default"]["mlp_iter0"]
 

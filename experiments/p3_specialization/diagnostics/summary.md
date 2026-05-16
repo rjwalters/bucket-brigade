@@ -13,7 +13,7 @@ All values are means across seeds.
 
 ## default
 - n_seeds = 20, n_iters = 50
-- reward iter 0 -> iter 49: 293.46 -> 294.58  (baseline random = 293.4)
+- reward iter 0 -> iter 49: 293.46 -> 294.58  (baseline random = 251.23, post-#236 re-derivation in issue #237; pre-#236 value 293.4 from PR #196 was on a different reward function and action space)
 - mean value_loss iter 0 -> iter 49: 2.03e+05 -> 1.27e+05  (scaled by value_coef=0.5: 1.01e+05)
 - mean |policy_loss| iter 0 -> iter 49: 2.036e-02 -> 2.299e-02
 - mean entropy iter 0 -> iter 49: 6.658e-01 -> 1.216e-01  (scaled by entropy_coef=0.01: 1.216e-03)
@@ -21,7 +21,7 @@ All values are means across seeds.
 
 ## chain_reaction
 - n_seeds = 20, n_iters = 50
-- reward iter 0 -> iter 49: 224.21 -> 224.47  (baseline random = 220.75)
+- reward iter 0 -> iter 49: 224.21 -> 224.47  (baseline random = 227.39, post-#236 re-derivation in issue #237)
 - mean value_loss iter 0 -> iter 49: 1.56e+05 -> 1.09e+05  (scaled by value_coef=0.5: 7.80e+04)
 - mean |policy_loss| iter 0 -> iter 49: 2.587e-02 -> 2.096e-02
 - mean entropy iter 0 -> iter 49: 6.654e-01 -> 1.394e-01  (scaled by entropy_coef=0.01: 1.394e-03)

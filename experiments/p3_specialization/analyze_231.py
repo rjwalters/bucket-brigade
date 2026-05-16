@@ -55,13 +55,18 @@ NUM_AGENTS = 4
 TRAILING_N = 5
 
 # Per-scenario (random, specialist) per-step references. Sources:
-#   minimal_specialization: experiments/p3_specialization/diagnostics/results/issue199_minspec/baselines.json
-#   default & positional_default: experiments/p3_specialization/diagnostics/results/issue221_positional/baselines.json
-# All values are mean per-step team reward over 50 episodes at seed 42.
+#   random: experiments/p3_specialization/diagnostics/results/issue237_postmerge/
+#           (post-#236 re-derivation at commit dffe1060, n=1000 each;
+#           issue #237). Replaces the pre-#236 n=50 figures from
+#           issue199_minspec/baselines.json and issue221_positional/baselines.json.
+#   specialist: experiments/p3_specialization/diagnostics/results/issue199_minspec/baselines.json
+#               and issue221_positional/baselines.json (specialist provenance is
+#               separate from random; specialist baselines tracked by sibling
+#               issue #238 family, NOT updated here).
 BASELINES: Dict[str, Tuple[float, float]] = {
-    "default": (241.85, 320.94),
-    "minimal_specialization": (-96.07, -22.07),
-    "positional_default": (241.36, 320.89),
+    "default": (251.23, 320.94),
+    "minimal_specialization": (-87.72, -22.07),
+    "positional_default": (250.73, 320.89),
 }
 
 
