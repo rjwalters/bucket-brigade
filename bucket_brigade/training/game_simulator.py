@@ -197,9 +197,7 @@ class GameSimulator:
                 signal_dist = torch.distributions.Categorical(signal_probs)
                 signal = signal_dist.sample().item()
                 signal_logprob = signal_dist.log_prob(torch.tensor(signal))
-                total_logprob = (
-                    house_logprob + mode_logprob + signal_logprob
-                ).item()
+                total_logprob = (house_logprob + mode_logprob + signal_logprob).item()
             else:
                 # Legacy 2-head policy — honest signaling.
                 signal = int(mode)

@@ -232,9 +232,7 @@ class TestSignalChannelDecoupled:
             "locations": np.zeros(n, dtype=np.int8),
             "houses": houses,
             "last_actions": np.zeros((n, 3), dtype=np.int8),
-            "scenario_info": np.array(
-                [0.25, 0.5, 100, 100, 0.5, 0.2, 12, 0.02, 12, 4]
-            ),
+            "scenario_info": np.array([0.25, 0.5, 100, 100, 0.5, 0.2, 12, 0.02, 12, 4]),
         }
 
     def test_random_agent_signal_is_honest(self):

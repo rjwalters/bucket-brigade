@@ -166,7 +166,9 @@ class RustPufferBucketBrigade(gym.Env):
             "houses": np.array(rust_obs.houses),
             "signals": np.array(rust_obs.signals),
             "locations": np.array(rust_obs.locations),
-            "last_actions": np.zeros((self.num_agents, 2)),  # No actions yet (issue #235: width stays 2 per obs_to_vector compat)
+            "last_actions": np.zeros(
+                (self.num_agents, 2)
+            ),  # No actions yet (issue #235: width stays 2 per obs_to_vector compat)
             "scenario_info": np.array(
                 [
                     self.rust_scenario.prob_fire_spreads_to_neighbor,

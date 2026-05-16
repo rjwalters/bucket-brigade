@@ -580,10 +580,9 @@ class JointPPOTrainer:
         # MAPPO regression target). Pre-compute it here so it can be sliced
         # by minibatch index alongside the per-agent returns.
         if self.centralized_critic:
-            mean_returns = (
-                torch.stack([returns[i] for i in range(self.num_agents)], dim=0)
-                .mean(dim=0)
-            )
+            mean_returns = torch.stack(
+                [returns[i] for i in range(self.num_agents)], dim=0
+            ).mean(dim=0)
             stats["critic_value_loss"] = 0.0
 
         for _epoch in range(self.ppo_epochs):
@@ -661,17 +660,14 @@ class JointPPOTrainer:
                 global_obs_mb = self._global_obs_from_per_agent(obs_mb_all)
                 critic_values = self.critic(global_obs_mb).squeeze(-1)
                 critic_value_loss = F.mse_loss(critic_values, mean_returns[idx])
-                stats["critic_value_loss"] += (
-                    critic_value_loss.item() / self.ppo_epochs
-                )
+                stats["critic_value_loss"] += critic_value_loss.item() / self.ppo_epochs
                 total_loss = (
                     torch.stack(per_agent_losses).sum()
                     + self.value_coef * critic_value_loss
                 )
             else:
                 total_loss = (
-                    torch.stack(per_agent_losses).sum()
-                    + self.redundancy_coef * red_pen
+                    torch.stack(per_agent_losses).sum() + self.redundancy_coef * red_pen
                 )
             stats["total_loss"] += total_loss.item() / self.ppo_epochs
 
@@ -683,9 +679,7 @@ class JointPPOTrainer:
             for policy in self.policies:
                 nn.utils.clip_grad_norm_(policy.parameters(), self.max_grad_norm)
             if self.centralized_critic:
-                nn.utils.clip_grad_norm_(
-                    self.critic.parameters(), self.max_grad_norm
-                )
+                nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
             for opt in self.optimizers:
                 opt.step()
             if self.centralized_critic:
