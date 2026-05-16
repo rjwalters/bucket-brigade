@@ -101,43 +101,40 @@ impl WasmScenario {
         reward_other_house_survives: Option<f32>,
         penalty_own_house_burns: Option<f32>,
         penalty_other_house_burns: Option<f32>,
-    ) -> WasmScenario {
+    ) -> Result<WasmScenario, JsValue> {
         const DEFAULT_LEN: usize = 10;
-        Self {
-            inner: Scenario {
-                prob_fire_spreads_to_neighbor,
-                prob_solo_agent_extinguishes_fire,
-                prob_house_catches_fire,
-                team_reward_house_survives,
-                team_penalty_house_burns,
-                cost_to_work_one_night,
-                min_nights,
-                reward_own_house_survives: vec![
-                    reward_own_house_survives.unwrap_or(100.0);
-                    DEFAULT_LEN
-                ],
-                reward_other_house_survives: vec![
-                    reward_other_house_survives.unwrap_or(50.0);
-                    DEFAULT_LEN
-                ],
-                penalty_own_house_burns: vec![
-                    penalty_own_house_burns.unwrap_or(0.0);
-                    DEFAULT_LEN
-                ],
-                penalty_other_house_burns: vec![
-                    penalty_other_house_burns.unwrap_or(0.0);
-                    DEFAULT_LEN
-                ],
-                // Issue #203 spatial-cost fields. The WASM constructor uses
-                // pre-#203 defaults so existing JS/TS callers are unchanged.
-                // To consume the `positional_default` scenario from JS, use
-                // the JSON serialization path (`Scenario::to_json` /
-                // `from_json`) which preserves the new fields.
-                agent_home_positions: Vec::new(),
-                distance_cost_alpha: 0.0,
-                distance_metric: "ring_arc".to_string(),
-            },
-        }
+        let inner = Scenario {
+            prob_fire_spreads_to_neighbor,
+            prob_solo_agent_extinguishes_fire,
+            prob_house_catches_fire,
+            team_reward_house_survives,
+            team_penalty_house_burns,
+            cost_to_work_one_night,
+            min_nights,
+            reward_own_house_survives: vec![
+                reward_own_house_survives.unwrap_or(100.0);
+                DEFAULT_LEN
+            ],
+            reward_other_house_survives: vec![
+                reward_other_house_survives.unwrap_or(50.0);
+                DEFAULT_LEN
+            ],
+            penalty_own_house_burns: vec![penalty_own_house_burns.unwrap_or(0.0); DEFAULT_LEN],
+            penalty_other_house_burns: vec![penalty_other_house_burns.unwrap_or(0.0); DEFAULT_LEN],
+            // Issue #203 spatial-cost fields. The WASM constructor uses
+            // pre-#203 defaults so existing JS/TS callers are unchanged.
+            // To consume the `positional_default` scenario from JS, use
+            // the JSON serialization path (`Scenario::to_json` /
+            // `from_json`) which preserves the new fields.
+            agent_home_positions: Vec::new(),
+            distance_cost_alpha: 0.0,
+            distance_metric: "ring_arc".to_string(),
+        };
+        // Issue #222: route programmatic construction through the allowlist
+        // validator so future kwargs additions can't reintroduce silent
+        // ring-arc fallback.
+        inner.validate().map_err(|e| JsValue::from_str(&e))?;
+        Ok(Self { inner })
     }
 
     #[wasm_bindgen]

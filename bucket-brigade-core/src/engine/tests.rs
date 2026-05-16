@@ -1,6 +1,20 @@
 use super::*;
 use crate::SCENARIOS;
 
+/// Issue #222: ``BucketBrigade::new`` must reject a programmatically
+/// constructed ``Scenario`` whose ``distance_metric`` is outside the allowlist.
+/// Without this, the engine silently runs ring-arc geometry on an unknown
+/// metric string (the dispatch in ``engine/rewards.rs`` doesn't branch on the
+/// field).
+#[test]
+#[should_panic(expected = "distance_metric")]
+fn test_engine_rejects_unknown_distance_metric() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.distance_metric = "bogus".to_string();
+    // Must panic from BucketBrigade::new -> Scenario::validate.
+    let _ = BucketBrigade::new(scenario, 4, Some(42));
+}
+
 #[test]
 fn test_engine_creation() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
@@ -384,7 +398,10 @@ fn test_ownership_penalty() {
     // Per-step rewards now include rest, team rewards, and ownership penalties
     // Agent 0: rest (+0.5) + team reward (~80) + ownership penalty (-2.0) = ~78.5
     // Others: rest (+0.5) + team reward (~80) = ~80.5
-    assert!(result.rewards[0] < result.rewards[1], "Agent 0 should have lower reward due to ruined house");
+    assert!(
+        result.rewards[0] < result.rewards[1],
+        "Agent 0 should have lower reward due to ruined house"
+    );
     // Agent 0's reward should still be positive due to large team reward
     assert!(
         result.rewards[0] > 70.0,
@@ -506,7 +523,11 @@ fn test_large_population_game_completion() {
     }
 
     // Should complete within reasonable steps
-    assert!(steps < max_steps, "Game should complete within {} steps", max_steps);
+    assert!(
+        steps < max_steps,
+        "Game should complete within {} steps",
+        max_steps
+    );
 
     // Get final results
     let game_result = engine.get_result();

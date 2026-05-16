@@ -114,31 +114,36 @@ impl PyScenario {
             obj.extract::<Vec<f32>>(py)
         }
 
-        Ok(Self {
-            inner: Scenario {
-                prob_fire_spreads_to_neighbor,
-                prob_solo_agent_extinguishes_fire,
-                prob_house_catches_fire,
-                team_reward_house_survives,
-                team_penalty_house_burns,
-                cost_to_work_one_night,
-                min_nights,
-                reward_own_house_survives: to_vec(py, reward_own_house_survives)?,
-                reward_other_house_survives: to_vec(py, reward_other_house_survives)?,
-                penalty_own_house_burns: to_vec(py, penalty_own_house_burns)?,
-                penalty_other_house_burns: to_vec(py, penalty_other_house_burns)?,
-                // Issue #203 spatial-cost fields. The PyScenario constructor
-                // doesn't yet accept these (kwargs would break backward
-                // compat); to use them from Python pull the scenario out of
-                // ``bucket_brigade_core.SCENARIOS["positional_default"]`` (the
-                // SCENARIOS dict preserves all fields). Manually-constructed
-                // PyScenarios default to the pre-#203 behavior so existing
-                // callers are unchanged.
-                agent_home_positions: Vec::new(),
-                distance_cost_alpha: 0.0,
-                distance_metric: "ring_arc".to_string(),
-            },
-        })
+        let inner = Scenario {
+            prob_fire_spreads_to_neighbor,
+            prob_solo_agent_extinguishes_fire,
+            prob_house_catches_fire,
+            team_reward_house_survives,
+            team_penalty_house_burns,
+            cost_to_work_one_night,
+            min_nights,
+            reward_own_house_survives: to_vec(py, reward_own_house_survives)?,
+            reward_other_house_survives: to_vec(py, reward_other_house_survives)?,
+            penalty_own_house_burns: to_vec(py, penalty_own_house_burns)?,
+            penalty_other_house_burns: to_vec(py, penalty_other_house_burns)?,
+            // Issue #203 spatial-cost fields. The PyScenario constructor
+            // doesn't yet accept these (kwargs would break backward
+            // compat); to use them from Python pull the scenario out of
+            // ``bucket_brigade_core.SCENARIOS["positional_default"]`` (the
+            // SCENARIOS dict preserves all fields). Manually-constructed
+            // PyScenarios default to the pre-#203 behavior so existing
+            // callers are unchanged.
+            agent_home_positions: Vec::new(),
+            distance_cost_alpha: 0.0,
+            distance_metric: "ring_arc".to_string(),
+        };
+        // Issue #222: route programmatic construction through the allowlist
+        // validator. The literal above is safe today but the helper keeps the
+        // chokepoint singular for future kwargs additions.
+        inner
+            .validate()
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        Ok(Self { inner })
     }
 
     #[getter]
@@ -397,7 +402,11 @@ impl PyVectorEnv {
     ///
     /// Returns:
     ///     Tuple of (observations, rewards, dones, infos) where each is batched
-    fn step(&mut self, py: Python, actions: Vec<Vec<u8>>) -> PyResult<(PyObject, PyObject, PyObject, PyObject)> {
+    fn step(
+        &mut self,
+        py: Python,
+        actions: Vec<Vec<u8>>,
+    ) -> PyResult<(PyObject, PyObject, PyObject, PyObject)> {
         if actions.len() != self.num_envs {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
                 "Expected {} actions, got {}",
@@ -413,7 +422,7 @@ impl PyVectorEnv {
         for (env, action) in self.envs.iter_mut().zip(actions.iter()) {
             if action.len() != 2 {
                 return Err(pyo3::exceptions::PyValueError::new_err(
-                    "Each action must have exactly 2 elements [house_id, mode]"
+                    "Each action must have exactly 2 elements [house_id, mode]",
                 ));
             }
 
@@ -444,7 +453,8 @@ impl PyVectorEnv {
     /// Get batched observations for a specific agent across all environments
     fn get_observations_batch(&self, py: Python, agent_id: usize) -> PyResult<PyObject> {
         // Collect observations from all environments
-        let observations: Vec<Vec<f32>> = self.envs
+        let observations: Vec<Vec<f32>> = self
+            .envs
             .iter()
             .map(|env| {
                 let obs = env.get_observation(agent_id);
