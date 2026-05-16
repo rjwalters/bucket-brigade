@@ -220,17 +220,13 @@ def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray
     # a[:, 0] in [0, 10), a[:, 1] in [0, 2), a[:, 2] in [0, 2).
     if a.shape[-1] >= 3:
         packed = (
-            a[:, 0] * _ACTION_PACK_BASE
-            + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
-            + a[:, 2]
+            a[:, 0] * _ACTION_PACK_BASE + a[:, 1] * _ACTION_PACK_BASE_SIGNAL + a[:, 2]
         ).astype(np.int64)
     else:
         # Legacy 2-element actions (pre-#235): pretend the agent was honest
         # (signal == mode) so the packed code remains well-defined.
         packed = (
-            a[:, 0] * _ACTION_PACK_BASE
-            + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
-            + a[:, 1]
+            a[:, 0] * _ACTION_PACK_BASE + a[:, 1] * _ACTION_PACK_BASE_SIGNAL + a[:, 1]
         ).astype(np.int64)
     T = packed.shape[0]
     codes = np.full(T, _ACTION_NO_PRIOR_SENTINEL, dtype=np.int64)

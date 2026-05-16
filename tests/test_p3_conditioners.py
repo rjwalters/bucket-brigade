@@ -61,15 +61,11 @@ class TestOtherAgentActionCodes:
         a0 = np.array([[2, 1, 1], [3, 1, 1], [5, 1, 1], [1, 1, 1]])
         rollout = _make_rollout({0: a0, 1: a0.copy()})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=1)
-        expected = np.array(
-            [_ACTION_NO_PRIOR_SENTINEL, 11, 15, 23], dtype=np.int64
-        )
+        expected = np.array([_ACTION_NO_PRIOR_SENTINEL, 11, 15, 23], dtype=np.int64)
         np.testing.assert_array_equal(codes, expected)
 
     def test_lag_k_sentinels_first_k_steps(self):
-        a0 = np.array(
-            [[1, 0, 0], [2, 1, 1], [3, 0, 0], [4, 1, 1], [0, 0, 0]]
-        )
+        a0 = np.array([[1, 0, 0], [2, 1, 1], [3, 0, 0], [4, 1, 1], [0, 0, 0]])
         # packed (honest): 4, 11, 12, 19, 0
         rollout = _make_rollout({0: a0})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=3)

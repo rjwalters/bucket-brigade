@@ -121,7 +121,9 @@ def aggregate_arm(root: Path, arm: str) -> Dict[str, Dict]:
         team = np.array([d["trailing5_team_reward"] for d in present])
         ents = np.array([d["mean_entropy_final"] for d in present])
         spreads = np.array([d["entropy_spread"] for d in present])
-        kl_means = [d["kl_off_diag_mean"] for d in present if d["kl_off_diag_mean"] is not None]
+        kl_means = [
+            d["kl_off_diag_mean"] for d in present if d["kl_off_diag_mean"] is not None
+        ]
         per_scenario[scenario] = {
             "seeds": seeds_data,
             "n_seeds": len(present),

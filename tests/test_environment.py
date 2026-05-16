@@ -51,7 +51,9 @@ class TestBucketBrigadeEnv:
         env.reset(seed=42)
 
         # Create random actions for all agents
-        actions = np.random.randint(0, 2, size=(4, 3))  # [house, mode, signal] (issue #235)
+        actions = np.random.randint(
+            0, 2, size=(4, 3)
+        )  # [house, mode, signal] (issue #235)
 
         obs, rewards, dones, info = env.step(actions)
 
@@ -72,7 +74,9 @@ class TestBucketBrigadeEnv:
         # Run for many steps to ensure termination
         max_steps = 100
         for step in range(max_steps):
-            actions = np.random.randint(0, 2, size=(4, 3))  # [house, mode, signal] (issue #235)
+            actions = np.random.randint(
+                0, 2, size=(4, 3)
+            )  # [house, mode, signal] (issue #235)
             obs, rewards, dones, info = env.step(actions)
 
             if env.done:
@@ -155,7 +159,9 @@ class TestBucketBrigadeEnv:
 
         # Run a few steps
         for _ in range(3):
-            actions = np.random.randint(0, 2, size=(4, 3))  # [house, mode, signal] (issue #235)
+            actions = np.random.randint(
+                0, 2, size=(4, 3)
+            )  # [house, mode, signal] (issue #235)
             env.step(actions)
 
         # Save replay
@@ -801,9 +807,7 @@ class TestPositionalScenario:
         env._prev_houses_state = env.houses.copy()
         # All four agents WORK at house 5 with honest signaling.
         # ring_dist on 10-ring:  (0,5)=5, (3,5)=2, (5,5)=0, (8,5)=3
-        actions = np.array(
-            [[5, 1, 1], [5, 1, 1], [5, 1, 1], [5, 1, 1]], dtype=np.int8
-        )
+        actions = np.array([[5, 1, 1], [5, 1, 1], [5, 1, 1], [5, 1, 1]], dtype=np.int8)
         rewards = env._compute_rewards(actions)
         expected = -np.array(
             [0.5 + 0.1 * 5, 0.5 + 0.1 * 2, 0.5 + 0.1 * 0, 0.5 + 0.1 * 3],
