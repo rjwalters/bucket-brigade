@@ -60,9 +60,7 @@ def _run_random_episode(
     return total_reward, int(env.night)
 
 
-def _run_specialist_episode(
-    env: BucketBrigadeEnv, seed: int
-) -> Tuple[float, int]:
+def _run_specialist_episode(env: BucketBrigadeEnv, seed: int) -> Tuple[float, int]:
     """One specialist-policy episode. Returns (team_reward, nights_played)."""
     obs = env.reset(seed=seed)
     total_reward = 0.0
@@ -73,17 +71,23 @@ def _run_specialist_episode(
     return total_reward, int(env.night)
 
 
-def _bootstrap_ci(arr: np.ndarray, n_boot: int = 10_000, alpha: float = 0.05) -> Tuple[float, float]:
+def _bootstrap_ci(
+    arr: np.ndarray, n_boot: int = 10_000, alpha: float = 0.05
+) -> Tuple[float, float]:
     rng = np.random.default_rng(0)
     n = len(arr)
     boots = np.empty(n_boot, dtype=np.float64)
     for i in range(n_boot):
         idx = rng.integers(0, n, size=n)
         boots[i] = arr[idx].mean()
-    return float(np.percentile(boots, 100 * alpha / 2)), float(np.percentile(boots, 100 * (1 - alpha / 2)))
+    return float(np.percentile(boots, 100 * alpha / 2)), float(
+        np.percentile(boots, 100 * (1 - alpha / 2))
+    )
 
 
-def _summarize(label: str, per_step: np.ndarray, per_ep: np.ndarray, lengths: np.ndarray) -> dict:
+def _summarize(
+    label: str, per_step: np.ndarray, per_ep: np.ndarray, lengths: np.ndarray
+) -> dict:
     lo, hi = _bootstrap_ci(per_step)
     return {
         "label": label,
@@ -157,8 +161,12 @@ def _measure(scenario_name: str, num_agents: int, episodes: int, seed: int) -> d
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--episodes", type=int, default=50,
-                    help="Number of episodes per baseline. #199 spec asks for 50.")
+    ap.add_argument(
+        "--episodes",
+        type=int,
+        default=50,
+        help="Number of episodes per baseline. #199 spec asks for 50.",
+    )
     ap.add_argument("--num-agents", type=int, default=4)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument(

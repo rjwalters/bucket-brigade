@@ -40,10 +40,18 @@ class Scenario:
 
     # Individual rewards (ownership-based, per-agent vectors of length num_agents)
     # Scalar inputs are auto-promoted in __post_init__ for backward compat.
-    reward_own_house_survives: Union[float, List[float]]  # Per-agent reward when own house survives
-    reward_other_house_survives: Union[float, List[float]]  # Per-agent reward when other house survives
-    penalty_own_house_burns: Union[float, List[float]]  # Per-agent penalty when own house burns
-    penalty_other_house_burns: Union[float, List[float]]  # Per-agent penalty when other house burns
+    reward_own_house_survives: Union[
+        float, List[float]
+    ]  # Per-agent reward when own house survives
+    reward_other_house_survives: Union[
+        float, List[float]
+    ]  # Per-agent reward when other house survives
+    penalty_own_house_burns: Union[
+        float, List[float]
+    ]  # Per-agent penalty when own house burns
+    penalty_other_house_burns: Union[
+        float, List[float]
+    ]  # Per-agent penalty when other house burns
 
     # Costs and structure
     cost_to_work_one_night: float  # Cost incurred when agent chooses to work
@@ -344,7 +352,6 @@ def minimal_specialization_scenario(num_agents: int) -> Scenario:
     )
 
 
-
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -361,7 +368,6 @@ SCENARIO_REGISTRY = {
     "mixed_motivation": mixed_motivation_scenario,
     "minimal_specialization": minimal_specialization_scenario,
 }
-
 
 
 def get_scenario_by_name(name: str, num_agents: int) -> Scenario:

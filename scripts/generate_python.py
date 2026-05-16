@@ -6,9 +6,46 @@ This script reads JSON definitions and generates Python modules.
 """
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 from textwrap import dedent
+
+
+def _format_with_ruff(path: Path) -> None:
+    """Run ``ruff format`` on the generated file.
+
+    Generated files are emitted with hand-rolled string concatenation, which
+    does not match ``ruff format``'s canonical style (quote style, trailing
+    commas, line wrapping). Without this post-write formatter pass, every
+    regeneration re-introduces the same lint failures the CI ``lint-python``
+    and ``pre-commit`` jobs check for (see issue #188).
+
+    We invoke ``ruff`` via ``uv run`` so the project's pinned version is used.
+    If ``uv``/``ruff`` is not on PATH (e.g., minimal CI image without uv),
+    fall back to invoking ``ruff`` directly. If neither is available we warn
+    but do not fail: regenerating must remain possible in odd environments,
+    and the CI lint job will surface the formatting drift anyway.
+    """
+    for argv in (
+        ["uv", "run", "ruff", "format", str(path)],
+        ["ruff", "format", str(path)],
+    ):
+        try:
+            subprocess.run(argv, check=True)
+            return
+        except FileNotFoundError:
+            continue
+        except subprocess.CalledProcessError as exc:
+            print(
+                f"⚠ ruff format failed on {path}: {exc}", file=sys.stderr
+            )
+            return
+    print(
+        f"⚠ ruff not found; skipping format of {path}. "
+        "Install ruff (or uv) to keep generated output lint-clean.",
+        file=sys.stderr,
+    )
 
 
 def generate_archetypes(json_path: Path, output_path: Path):
@@ -55,6 +92,9 @@ def generate_archetypes(json_path: Path, output_path: Path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w') as f:
         f.write(code)
+
+    # Re-format with ruff so the next CI run stays green (issue #188).
+    _format_with_ruff(output_path)
 
     print(f"✓ Generated {output_path}")
 
@@ -264,6 +304,9 @@ def generate_scenarios(json_path: Path, output_path: Path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w') as f:
         f.write(code)
+
+    # Re-format with ruff so the next CI run stays green (issue #188).
+    _format_with_ruff(output_path)
 
     print(f"✓ Generated {output_path}")
 

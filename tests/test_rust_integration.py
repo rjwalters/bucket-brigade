@@ -68,9 +68,7 @@ class TestRustCoreIntegration:
             # Python ``step`` returns ``(obs, rewards, dones, info)``;
             # ``dones`` is a per-agent array but all entries match
             # ``self.done`` so taking [0] is sufficient.
-            _, python_rewards, python_dones, _ = python_env.step(
-                np.array(action_set)
-            )
+            _, python_rewards, python_dones, _ = python_env.step(np.array(action_set))
             python_done = bool(python_dones[0])
 
             # Rewards should match within float tolerance.

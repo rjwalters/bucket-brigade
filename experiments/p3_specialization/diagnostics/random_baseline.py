@@ -100,7 +100,9 @@ def run_mlp_episode(
     total_reward = 0.0
     while not env.done:
         obs_t = torch.from_numpy(obs).unsqueeze(0)
-        joint_action = np.zeros((trainer.num_agents, len(trainer.action_dims)), dtype=np.int64)
+        joint_action = np.zeros(
+            (trainer.num_agents, len(trainer.action_dims)), dtype=np.int64
+        )
         with torch.no_grad():
             for i, policy in enumerate(trainer.policies):
                 a, _, _, _ = policy.get_action_and_value(obs_t)
@@ -112,14 +114,18 @@ def run_mlp_episode(
     return total_reward, int(env.night)
 
 
-def bootstrap_ci(arr: np.ndarray, n_boot: int = 10_000, alpha: float = 0.05) -> Tuple[float, float]:
+def bootstrap_ci(
+    arr: np.ndarray, n_boot: int = 10_000, alpha: float = 0.05
+) -> Tuple[float, float]:
     rng = np.random.default_rng(0)
     boots = np.empty(n_boot, dtype=np.float64)
     n = len(arr)
     for i in range(n_boot):
         idx = rng.integers(0, n, size=n)
         boots[i] = arr[idx].mean()
-    return float(np.percentile(boots, 100 * alpha / 2)), float(np.percentile(boots, 100 * (1 - alpha / 2)))
+    return float(np.percentile(boots, 100 * alpha / 2)), float(
+        np.percentile(boots, 100 * (1 - alpha / 2))
+    )
 
 
 def summarize(label: str, arr: np.ndarray) -> str:
@@ -129,18 +135,34 @@ def summarize(label: str, arr: np.ndarray) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--episodes-per-seed", type=int, default=200,
-                    help="Episodes per seed for uniform-random. #145 used 50 (single seed); "
-                         "default 200 across 5 seeds tightens the CI.")
-    ap.add_argument("--seeds", type=int, default=5, help="Number of seeds (42, 43, ...).")
-    ap.add_argument("--mlp-episodes-per-seed", type=int, default=50,
-                    help="Episodes per seed for random-init MLP (slower).")
-    ap.add_argument("--no-mlp", action="store_true", help="Skip the random-init MLP pass.")
+    ap.add_argument(
+        "--episodes-per-seed",
+        type=int,
+        default=200,
+        help="Episodes per seed for uniform-random. #145 used 50 (single seed); "
+        "default 200 across 5 seeds tightens the CI.",
+    )
+    ap.add_argument(
+        "--seeds", type=int, default=5, help="Number of seeds (42, 43, ...)."
+    )
+    ap.add_argument(
+        "--mlp-episodes-per-seed",
+        type=int,
+        default=50,
+        help="Episodes per seed for random-init MLP (slower).",
+    )
+    ap.add_argument(
+        "--no-mlp", action="store_true", help="Skip the random-init MLP pass."
+    )
     args = ap.parse_args()
 
     scenario = get_scenario_by_name(SCENARIO_NAME, num_agents=NUM_AGENTS)
-    print(f"Scenario: {SCENARIO_NAME}, num_agents={NUM_AGENTS}, min_nights={scenario.min_nights}")
-    print(f"Cited values: random={CITED_308} (issue #145), iter-0 MLP={CITED_290} (issue #183)")
+    print(
+        f"Scenario: {SCENARIO_NAME}, num_agents={NUM_AGENTS}, min_nights={scenario.min_nights}"
+    )
+    print(
+        f"Cited values: random={CITED_308} (issue #145), iter-0 MLP={CITED_290} (issue #183)"
+    )
     print()
 
     seeds = list(range(42, 42 + args.seeds))
@@ -164,11 +186,15 @@ def main() -> None:
     print("=== Uniform-random ===")
     print(summarize("  per-episode  ", rand_per_episode_arr))
     print(summarize("  per-step     ", rand_per_step_arr))
-    print(f"  episode length: median={int(np.median(rand_lengths_arr))}, "
-          f"mean={rand_lengths_arr.mean():.2f}, "
-          f"min={rand_lengths_arr.min()}, max={rand_lengths_arr.max()}")
+    print(
+        f"  episode length: median={int(np.median(rand_lengths_arr))}, "
+        f"mean={rand_lengths_arr.mean():.2f}, "
+        f"min={rand_lengths_arr.min()}, max={rand_lengths_arr.max()}"
+    )
     # Sanity: reproduce the 4012.34 / 13 ≈ 308.6 framing.
-    print(f"  per-episode / median-length = {rand_per_episode_arr.mean() / np.median(rand_lengths_arr):.2f}")
+    print(
+        f"  per-episode / median-length = {rand_per_episode_arr.mean() / np.median(rand_lengths_arr):.2f}"
+    )
     print()
 
     # ----- Random-init MLP iter-0 -----
@@ -191,14 +217,18 @@ def main() -> None:
             )
             mlp_env = BucketBrigadeEnv(scenario=scenario)
             for ep in range(args.mlp_episodes_per_seed):
-                ep_reward, nights = run_mlp_episode(trainer, mlp_env, seed=seed * 1000 + ep)
+                ep_reward, nights = run_mlp_episode(
+                    trainer, mlp_env, seed=seed * 1000 + ep
+                )
                 mlp_per_step.append(ep_reward / nights)
                 mlp_lengths.append(nights)
         mlp_per_step_arr = np.array(mlp_per_step)
         print("=== Random-init MLP (iter-0, untrained PolicyNetwork) ===")
         print(summarize("  per-step     ", mlp_per_step_arr))
-        print(f"  episode length: median={int(np.median(mlp_lengths))}, "
-              f"mean={np.mean(mlp_lengths):.2f}")
+        print(
+            f"  episode length: median={int(np.median(mlp_lengths))}, "
+            f"mean={np.mean(mlp_lengths):.2f}"
+        )
         print()
 
     # ----- Verdict -----
