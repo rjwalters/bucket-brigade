@@ -6,9 +6,18 @@ KL ≈ 0 (the identical-input pathology); post-#216 policies should produce
 KL > 0 iff agents specialize.
 
 For each step of one rollout we recover each agent's full action-head
-softmax over the packed 20-class action space (10 houses x 2 modes) and
-average the pairwise KL ``KL(p_i || p_j)`` over all steps. The result
-is an ``N x N`` matrix (zero diagonal); we also print the off-diagonal mean.
+softmax over the packed joint action space and average the pairwise KL
+``KL(p_i || p_j)`` over all steps. The result is an ``N x N`` matrix
+(zero diagonal); we also print the off-diagonal mean.
+
+Supports both:
+- Pre-#236 2-head action space (10 houses x 2 modes = 20-class joint)
+- Post-#236 3-head action space (10 houses x 2 modes x 2 signals = 40-class joint)
+
+The packed dimension is inferred from ``len(logits_list)`` at runtime so
+this works against checkpoints from either era. For post-#236 cells, this
+correctly captures divergence in the signal head — without that update,
+KL silently understates divergence by ignoring the signal axis.
 
 Usage::
 
@@ -35,12 +44,24 @@ from bucket_brigade.training.joint_trainer import JointPPOTrainer, flatten_dict_
 
 
 def softmax_packed(logits_list: list[torch.Tensor]) -> torch.Tensor:
-    """logits_list = [logits_house [B,10], logits_mode [B,2]] -> [B, 20] joint."""
-    p_house = torch.softmax(logits_list[0], dim=-1)  # [B, 10]
-    p_mode = torch.softmax(logits_list[1], dim=-1)  # [B, 2]
-    # Joint over independent heads: outer product flattened.
-    joint = (p_house.unsqueeze(-1) * p_mode.unsqueeze(-2)).reshape(p_house.shape[0], -1)
-    return joint  # [B, 20]
+    """Outer-product the per-head softmaxes into a flat joint distribution.
+
+    Pre-#236: logits_list = [logits_house [B,10], logits_mode [B,2]] -> [B, 20]
+    Post-#236: logits_list = [logits_house [B,10], logits_mode [B,2], logits_signal [B,2]] -> [B, 40]
+
+    The packed dimension is the product of per-head dims; agents are assumed
+    to choose each head independently (consistent with the trained policy
+    factorization in ``PolicyNetwork``).
+    """
+    if not logits_list:
+        raise ValueError("softmax_packed requires at least one head's logits")
+    probs = [torch.softmax(logits, dim=-1) for logits in logits_list]
+    batch = probs[0].shape[0]
+    joint = probs[0]  # [B, D0]
+    for next_p in probs[1:]:
+        # Outer-product current joint with next head, then flatten the tail.
+        joint = (joint.unsqueeze(-1) * next_p.unsqueeze(-2)).reshape(batch, -1)
+    return joint  # [B, prod(dims)]
 
 
 def compute_pairwise_kl(cell_dir: Path, rollout_steps: int | None = None) -> dict:
