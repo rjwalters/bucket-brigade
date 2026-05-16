@@ -120,7 +120,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
     Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)
     """
 
-    from dataclasses import dataclass
+    from dataclasses import dataclass, field
     from typing import List, Union
     import numpy as np
 
@@ -137,6 +137,13 @@ def generate_scenarios(json_path: Path, output_path: Path):
         ``num_agents`` (issue #198). Scalar inputs are auto-promoted to
         a length-``num_agents`` list of that value by ``__post_init__``
         for backward compatibility with existing scenario definitions.
+
+        Issue #203 adds three optional spatial-cost fields:
+        ``agent_home_positions`` (per-agent home position on the 10-ring,
+        empty => fall back to the round-robin ``i % num_agents`` anchor),
+        ``distance_cost_alpha`` (additive coefficient, ``0.0`` preserves
+        pre-#203 behavior), and ``distance_metric`` (only ``"ring_arc"``
+        is supported today).
         """
 
         # Fire dynamics
@@ -162,6 +169,16 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # Game setup
         num_agents: int  # Number of agents participating
 
+        # Spatial cost asymmetry (issue #203, optional, additive).
+        # Empty ``agent_home_positions`` falls back to the round-robin
+        # ``house_owners`` anchor (agent i -> house i). ``distance_cost_alpha
+        # == 0.0`` (the implicit default for every pre-#203 scenario)
+        # collapses the spatial term to zero, so existing scenarios are
+        # bit-exactly unchanged.
+        agent_home_positions: List[int] = field(default_factory=list)
+        distance_cost_alpha: float = 0.0
+        distance_metric: str = "ring_arc"
+
         def __post_init__(self) -> None:
             """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -169,6 +186,8 @@ def generate_scenarios(json_path: Path, output_path: Path):
             for issue #198. Existing scenarios with scalar JSON values are
             still valid: a scalar ``v`` becomes ``[v] * num_agents``. Lists
             are validated to have exactly ``num_agents`` entries.
+
+            Also validates the #203 spatial fields when present.
             """
             for fname in (
                 "reward_own_house_survives",
@@ -189,6 +208,28 @@ def generate_scenarios(json_path: Path, output_path: Path):
                             f"ownership reward vectors must match num_agents."
                         )
                     setattr(self, fname, promoted)
+
+            # Issue #203 spatial-field validation.
+            if self.agent_home_positions:
+                positions = [int(p) for p in self.agent_home_positions]
+                if len(positions) != self.num_agents:
+                    raise ValueError(
+                        f"Scenario.agent_home_positions has length "
+                        f"{len(positions)} but num_agents={self.num_agents}. "
+                        "Per-agent home position vectors must match num_agents."
+                    )
+                for i, p in enumerate(positions):
+                    if not (0 <= p < 10):
+                        raise ValueError(
+                            f"Scenario.agent_home_positions[{i}]={p} "
+                            "is out of range [0, 10)."
+                        )
+                self.agent_home_positions = positions
+            if self.distance_metric != "ring_arc":
+                raise ValueError(
+                    f"Scenario.distance_metric={self.distance_metric!r} "
+                    "is not supported; only 'ring_arc' is implemented today."
+                )
 
         def to_feature_vector(self) -> np.ndarray:
             """
@@ -249,6 +290,16 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f'        cost_to_work_one_night={spec["cost_to_work_one_night"]},\n'
         code += f'        min_nights={spec["min_nights"]},\n'
         code += f'        num_agents=num_agents,\n'
+        # Issue #203 optional spatial-cost fields. Emit only when set in JSON
+        # (every other scenario keeps the dataclass defaults: empty list,
+        # alpha=0.0, metric="ring_arc") so behavior is byte-identical to
+        # pre-#203 codegen output for those scenarios.
+        if "agent_home_positions" in spec:
+            code += f'        agent_home_positions={list(spec["agent_home_positions"])!r},\n'
+        if "distance_cost_alpha" in spec:
+            code += f'        distance_cost_alpha={spec["distance_cost_alpha"]},\n'
+        if "distance_metric" in spec:
+            code += f'        distance_metric={spec["distance_metric"]!r},\n'
         code += f'    )\n\n\n'
 
     # Generate SCENARIO_REGISTRY

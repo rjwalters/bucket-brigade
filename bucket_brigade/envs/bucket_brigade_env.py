@@ -67,6 +67,21 @@ class BucketBrigadeEnv:
         # House ownership: assign agents to houses in round-robin fashion
         self.house_owners = np.arange(10) % self.num_agents
 
+        # Per-agent "home position" on the 10-house ring (issue #203). Used by
+        # ``_compute_rewards`` to scale the per-step work cost by the ring-arc
+        # distance from the agent's home to the house it works at. Sourced from
+        # ``scenario.agent_home_positions`` when non-empty; otherwise the
+        # round-robin ``house_owners`` anchor (agent i -> house i) is reused.
+        # When ``scenario.distance_cost_alpha == 0.0`` (the implicit default
+        # for every pre-#203 scenario) the spatial term collapses to zero, so
+        # behavior is bit-exactly identical to the pre-#203 env.
+        if getattr(self.scenario, "agent_home_positions", None):
+            self.agent_home_positions = np.array(
+                self.scenario.agent_home_positions, dtype=np.int8
+            )
+        else:
+            self.agent_home_positions = np.arange(self.num_agents, dtype=np.int8)
+
         # Initialize random state for reproducibility
         self.rng = np.random.RandomState()
 
@@ -254,12 +269,30 @@ class BucketBrigadeEnv:
         # Individual rewards
         individual_rewards = np.zeros(self.num_agents, dtype=np.float32)
 
+        # Issue #203: spatial cost coefficient. When zero (the implicit
+        # default for every pre-#203 scenario) the work cost reduces to the
+        # unscaled ``cost_to_work_one_night`` so behavior is bit-exactly
+        # unchanged.
+        alpha = float(getattr(self.scenario, "distance_cost_alpha", 0.0))
+
         for agent_idx in range(self.num_agents):
-            # Work/rest component
+            # Work/rest component.
+            #
+            # Issue #203 (option A): when ``alpha != 0`` the work cost is
+            # additively scaled by the ring-arc distance between the agent's
+            # home position and the house it works at:
+            #     cost = base_cost + alpha * ring_dist(home, target).
             if actions[agent_idx, 1] == self.WORK:
-                individual_rewards[agent_idx] -= (
-                    self.scenario.cost_to_work_one_night
-                )  # Cost of working
+                base_cost = self.scenario.cost_to_work_one_night
+                if alpha == 0.0:
+                    work_cost = base_cost
+                else:
+                    home = int(self.agent_home_positions[agent_idx])
+                    target = int(actions[agent_idx, 0])
+                    raw = abs(home - target)
+                    dist = min(raw, 10 - raw)  # ring_dist on the 10-house ring
+                    work_cost = base_cost + alpha * dist
+                individual_rewards[agent_idx] -= work_cost
             else:
                 individual_rewards[agent_idx] += 0.5  # Rest reward
 

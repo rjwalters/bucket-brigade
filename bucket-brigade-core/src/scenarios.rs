@@ -45,6 +45,26 @@ where
     }
 }
 
+/// Default for `Scenario::distance_cost_alpha`. Zero preserves bit-exact
+/// backward compatibility with pre-#203 behavior (no spatial cost term).
+fn default_distance_cost_alpha() -> f32 {
+    0.0
+}
+
+/// Default for `Scenario::distance_metric`. `"ring_arc"` is the only supported
+/// value today; the field is future-proofing for alternative geometries.
+fn default_distance_metric() -> String {
+    "ring_arc".to_string()
+}
+
+/// Default for `Scenario::agent_home_positions`. Empty means "fall back to the
+/// existing `house_owners` round-robin assignment" so the field is optional in
+/// JSON and pre-#203 scenarios behave identically. When set, length must equal
+/// `num_agents` at engine instantiation time (see `engine/core.rs`).
+fn default_agent_home_positions() -> Vec<u8> {
+    Vec::new()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
     // Fire dynamics
@@ -75,6 +95,23 @@ pub struct Scenario {
     // Costs and structure
     pub cost_to_work_one_night: f32, // Cost incurred when agent chooses to work
     pub min_nights: u32,             // Minimum nights before game can end
+
+    // Spatial cost asymmetry (issue #203, optional, additive).
+    //
+    // Per-agent "home position" on the 10-house ring. When non-empty (length
+    // must equal `num_agents` at engine init), the work cost for agent `i`
+    // working at house `j` is `cost_to_work_one_night + distance_cost_alpha *
+    // ring_dist(agent_home_positions[i], j)`. When empty (the default for every
+    // pre-#203 scenario) the engine falls back to the existing `house_owners`
+    // assignment to derive a home position; behavior is still unchanged because
+    // `distance_cost_alpha` defaults to `0.0` (the spatial term collapses to
+    // zero). Serde defaults make all three fields optional in JSON.
+    #[serde(default = "default_agent_home_positions")]
+    pub agent_home_positions: Vec<u8>,
+    #[serde(default = "default_distance_cost_alpha")]
+    pub distance_cost_alpha: f32,
+    #[serde(default = "default_distance_metric")]
+    pub distance_metric: String,
 }
 
 /// Predefined scenarios.
@@ -101,6 +138,11 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
     // (preserves Slepian-Wolf protocol's reward scale). #198 generalized the
     // ownership fields to per-agent vectors; the rebalanced scalars are wrapped
     // via the per_agent() helper.
+    //
+    // NOTE: every entry below uses `agent_home_positions: Vec::new()`,
+    // `distance_cost_alpha: 0.0`, and `distance_metric: "ring_arc"` — the
+    // pre-#203 defaults. The `positional_default` scenario at the bottom
+    // overrides these to enable spatial cost asymmetry.
     m.insert(
         "default",
         Scenario {
@@ -115,6 +157,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(40.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -132,6 +177,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -149,6 +197,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -167,6 +218,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -184,6 +238,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -201,6 +258,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -218,6 +278,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -235,6 +298,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -252,6 +318,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -269,6 +338,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -286,6 +358,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -303,6 +378,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
         },
     );
 
@@ -327,6 +405,35 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(100.0),
             penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
+        },
+    );
+
+    // Issue #203 option A: spatial cost asymmetry on the 10-ring. Same reward
+    // magnitudes as `default`, but per-agent work cost is
+    // `base_cost + alpha * ring_dist(home, target)`. Home positions
+    // [0, 3, 5, 8] give max spread on a 10-ring for 4 agents; alpha = 0.1
+    // means working 5 steps from home costs 1.0 (2x the base). This creates
+    // a per-agent gradient that doesn't rely on reward magnitude differences.
+    m.insert(
+        "positional_default",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.25,
+            prob_solo_agent_extinguishes_fire: 0.5,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 100.0,
+            team_penalty_house_burns: 100.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(20.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(40.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: vec![0, 3, 5, 8],
+            distance_cost_alpha: 0.1,
+            distance_metric: "ring_arc".to_string(),
         },
     );
 
@@ -360,6 +467,7 @@ mod tests {
         assert!(SCENARIOS.get("overcrowding").is_some());
         assert!(SCENARIOS.get("mixed_motivation").is_some());
         assert!(SCENARIOS.get("minimal_specialization").is_some());
+        assert!(SCENARIOS.get("positional_default").is_some());
     }
 
     #[test]
@@ -501,8 +609,8 @@ mod tests {
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
         assert_eq!(
-            count, 13,
-            "Expected 13 predefined scenarios (3 difficulty + 9 research + 1 sanity-check)"
+            count, 14,
+            "Expected 14 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional)"
         );
     }
 
@@ -667,5 +775,81 @@ mod tests {
         let v = per_agent(3.5);
         assert_eq!(v.len(), MAX_AGENTS);
         assert!(v.iter().all(|&x| x == 3.5));
+    }
+
+    /// Issue #203: ``positional_default`` introduces spatial cost asymmetry.
+    /// Same reward magnitudes as ``default``, but with four agents anchored at
+    /// home positions [0, 3, 5, 8] and a distance cost coefficient of 0.1.
+    #[test]
+    fn test_positional_default_values() {
+        let scenario = SCENARIOS.get("positional_default").unwrap();
+        // Reward magnitudes match `default` (so the only difference is spatial).
+        assert_eq!(scenario.team_reward_house_survives, 100.0);
+        assert_eq!(scenario.team_penalty_house_burns, 100.0);
+        assert_eq!(scenario.cost_to_work_one_night, 0.5);
+        assert!(scenario.reward_own_house_survives.iter().all(|&v| v == 20.0));
+        assert!(scenario.penalty_own_house_burns.iter().all(|&v| v == 40.0));
+        // New spatial knobs.
+        assert_eq!(scenario.agent_home_positions, vec![0u8, 3, 5, 8]);
+        assert_eq!(scenario.distance_cost_alpha, 0.1);
+        assert_eq!(scenario.distance_metric, "ring_arc");
+        // Fire dynamics unchanged from `default`.
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
+        assert_eq!(scenario.prob_house_catches_fire, 0.02);
+        assert_eq!(scenario.min_nights, 12);
+    }
+
+    /// Backward compat: every scenario other than ``positional_default`` must
+    /// preserve the pre-#203 spatial defaults so existing scenarios are
+    /// bit-exactly identical to today's behavior.
+    #[test]
+    fn test_non_positional_scenarios_have_zero_distance_cost() {
+        for (name, scenario) in SCENARIOS.iter() {
+            if name == &"positional_default" {
+                continue;
+            }
+            assert_eq!(
+                scenario.distance_cost_alpha, 0.0,
+                "Scenario '{}' must keep distance_cost_alpha=0.0 \
+                 to preserve pre-#203 behavior",
+                name
+            );
+            assert!(
+                scenario.agent_home_positions.is_empty(),
+                "Scenario '{}' must keep agent_home_positions empty \
+                 (engine then falls back to house_owners round-robin)",
+                name
+            );
+            assert_eq!(
+                scenario.distance_metric, "ring_arc",
+                "Scenario '{}' must use the default ring_arc distance metric",
+                name
+            );
+        }
+    }
+
+    /// Scalar JSON inputs that omit the new #203 fields should round-trip
+    /// through serde, yielding the documented defaults
+    /// (alpha=0.0, metric="ring_arc", home_positions=[]).
+    #[test]
+    fn test_scenario_pre203_fields_optional_in_json() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.distance_cost_alpha, 0.0);
+        assert_eq!(scenario.distance_metric, "ring_arc");
+        assert!(scenario.agent_home_positions.is_empty());
     }
 }

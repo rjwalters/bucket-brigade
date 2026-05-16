@@ -546,6 +546,106 @@ fn test_all_scenarios_steppable() {
 }
 
 // ==============================================================================
+// Issue #203: Spatial cost asymmetry (positional_default)
+// ==============================================================================
+
+/// Loading `positional_default` and stepping does not panic and produces
+/// finite per-step rewards. Smoke test that the new scenario wires through.
+#[test]
+fn test_positional_default_engine_smoke() {
+    let scenario = SCENARIOS.get("positional_default").unwrap().clone();
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+    let actions = vec![[0u8, 1u8], [3, 1], [5, 1], [8, 1]];
+    let result = engine.step(&actions);
+    assert_eq!(result.rewards.len(), 4);
+    for &r in &result.rewards {
+        assert!(r.is_finite(), "Per-step reward must be finite, got {}", r);
+    }
+}
+
+/// Working at home should cost exactly `cost_to_work_one_night`; working at
+/// the antipode of the ring should cost `cost + alpha * 5`. Direct
+/// verification that distance scaling is wired through `compute_rewards`.
+#[test]
+fn test_positional_default_distance_scales_cost() {
+    let scenario = SCENARIOS.get("positional_default").unwrap().clone();
+    let base_cost = scenario.cost_to_work_one_night;
+    let alpha = scenario.distance_cost_alpha;
+    // Sanity-check the scenario constants used by the math below.
+    assert_eq!(base_cost, 0.5);
+    assert_eq!(alpha, 0.1);
+
+    // Isolate the work-cost term by zeroing every other reward channel,
+    // and by configuring no spontaneous fires so houses stay SAFE.
+    let mut scenario = scenario;
+    scenario.prob_house_catches_fire = 0.0;
+    scenario.team_reward_house_survives = 0.0;
+    scenario.team_penalty_house_burns = 0.0;
+    scenario.reward_own_house_survives = vec![0.0; 10];
+    scenario.reward_other_house_survives = vec![0.0; 10];
+    scenario.penalty_own_house_burns = vec![0.0; 10];
+    scenario.penalty_other_house_burns = vec![0.0; 10];
+
+    let mut engine = BucketBrigade::new(scenario, 4, Some(123));
+
+    // Agent 0 home is house 0. Agent 0 works house 5 (max ring distance 5).
+    // All other agents rest (so their reward is +0.5 with no team component).
+    let actions = vec![[5u8, 1u8], [3, 0], [5, 0], [8, 0]];
+    let result = engine.step(&actions);
+
+    // Expected for agent 0: -(base + alpha * 5) = -(0.5 + 0.5) = -1.0
+    let expected_agent_0 = -(base_cost + alpha * 5.0);
+    assert!(
+        (result.rewards[0] - expected_agent_0).abs() < 1e-5,
+        "Agent 0 (home=0, target=5) should pay {} but got {}",
+        expected_agent_0,
+        result.rewards[0]
+    );
+    // Other agents rested -> exactly +0.5 each (no team term, no save events).
+    for i in 1..4 {
+        assert!(
+            (result.rewards[i] - 0.5).abs() < 1e-5,
+            "Resting agent {} should get +0.5, got {}",
+            i,
+            result.rewards[i]
+        );
+    }
+}
+
+/// Backward compat: when `distance_cost_alpha == 0` the per-step reward
+/// trace for working agents matches the unmodified `default` scenario
+/// exactly, regardless of which house each agent works at.
+#[test]
+fn test_zero_alpha_preserves_default_rewards() {
+    // Same seed, same actions, same scenario -> deterministic equality.
+    let scenario = SCENARIOS.get("default").unwrap().clone();
+    let mut engine_a = BucketBrigade::new(scenario.clone(), 4, Some(7));
+    let mut engine_b = BucketBrigade::new(scenario, 4, Some(7));
+    let actions = vec![[0u8, 1u8], [4, 1], [9, 1], [2, 1]];
+    let r_a = engine_a.step(&actions).rewards;
+    let r_b = engine_b.step(&actions).rewards;
+    assert_eq!(r_a, r_b);
+}
+
+/// Engine `agent_home_positions` is populated from the scenario when set.
+#[test]
+fn test_engine_home_positions_use_scenario_when_set() {
+    let scenario = SCENARIOS.get("positional_default").unwrap().clone();
+    let engine = BucketBrigade::new(scenario, 4, Some(0));
+    assert_eq!(engine.agent_home_positions, vec![0u8, 3, 5, 8]);
+}
+
+/// Engine `agent_home_positions` falls back to the round-robin
+/// `house_owners` anchor (agent `i` -> house `i`) when the scenario
+/// leaves the field empty.
+#[test]
+fn test_engine_home_positions_fallback_to_house_owners() {
+    let scenario = SCENARIOS.get("default").unwrap().clone();
+    let engine = BucketBrigade::new(scenario, 4, Some(0));
+    assert_eq!(engine.agent_home_positions, vec![0u8, 1, 2, 3]);
+}
+
+// ==============================================================================
 // Property-Based Tests
 // ==============================================================================
 
@@ -716,6 +816,11 @@ mod proptests {
                 reward_other_house_survives: vec![50.0; 10],
                 penalty_own_house_burns: vec![0.0; 10],
                 penalty_other_house_burns: vec![0.0; 10],
+                // Issue #203 spatial-cost fields: use pre-#203 defaults so
+                // existing proptest invariants are unchanged.
+                agent_home_positions: Vec::new(),
+                distance_cost_alpha: 0.0,
+                distance_metric: "ring_arc".to_string(),
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));

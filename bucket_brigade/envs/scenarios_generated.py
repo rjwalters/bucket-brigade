@@ -10,7 +10,7 @@ To modify scenarios, edit definitions/scenarios.json and run:
 Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Union
 import numpy as np
 
@@ -27,6 +27,13 @@ class Scenario:
     ``num_agents`` (issue #198). Scalar inputs are auto-promoted to
     a length-``num_agents`` list of that value by ``__post_init__``
     for backward compatibility with existing scenario definitions.
+
+    Issue #203 adds three optional spatial-cost fields:
+    ``agent_home_positions`` (per-agent home position on the 10-ring,
+    empty => fall back to the round-robin ``i % num_agents`` anchor),
+    ``distance_cost_alpha`` (additive coefficient, ``0.0`` preserves
+    pre-#203 behavior), and ``distance_metric`` (only ``"ring_arc"``
+    is supported today).
     """
 
     # Fire dynamics
@@ -60,6 +67,16 @@ class Scenario:
     # Game setup
     num_agents: int  # Number of agents participating
 
+    # Spatial cost asymmetry (issue #203, optional, additive).
+    # Empty ``agent_home_positions`` falls back to the round-robin
+    # ``house_owners`` anchor (agent i -> house i). ``distance_cost_alpha
+    # == 0.0`` (the implicit default for every pre-#203 scenario)
+    # collapses the spatial term to zero, so existing scenarios are
+    # bit-exactly unchanged.
+    agent_home_positions: List[int] = field(default_factory=list)
+    distance_cost_alpha: float = 0.0
+    distance_metric: str = "ring_arc"
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -67,6 +84,8 @@ class Scenario:
         for issue #198. Existing scenarios with scalar JSON values are
         still valid: a scalar ``v`` becomes ``[v] * num_agents``. Lists
         are validated to have exactly ``num_agents`` entries.
+
+        Also validates the #203 spatial fields when present.
         """
         for fname in (
             "reward_own_house_survives",
@@ -87,6 +106,28 @@ class Scenario:
                         f"ownership reward vectors must match num_agents."
                     )
                 setattr(self, fname, promoted)
+
+        # Issue #203 spatial-field validation.
+        if self.agent_home_positions:
+            positions = [int(p) for p in self.agent_home_positions]
+            if len(positions) != self.num_agents:
+                raise ValueError(
+                    f"Scenario.agent_home_positions has length "
+                    f"{len(positions)} but num_agents={self.num_agents}. "
+                    "Per-agent home position vectors must match num_agents."
+                )
+            for i, p in enumerate(positions):
+                if not (0 <= p < 10):
+                    raise ValueError(
+                        f"Scenario.agent_home_positions[{i}]={p} "
+                        "is out of range [0, 10)."
+                    )
+            self.agent_home_positions = positions
+        if self.distance_metric != "ring_arc":
+            raise ValueError(
+                f"Scenario.distance_metric={self.distance_metric!r} "
+                "is not supported; only 'ring_arc' is implemented today."
+            )
 
     def to_feature_vector(self) -> np.ndarray:
         """
@@ -352,6 +393,27 @@ def minimal_specialization_scenario(num_agents: int) -> Scenario:
     )
 
 
+def positional_default_scenario(num_agents: int) -> Scenario:
+    """Issue #203 option A: spatial cost asymmetry on the 10-ring. Same reward magnitudes as `default`, but per-agent work cost is base_cost + alpha * ring_dist(home, target). With home positions [0,3,5,8] and alpha=0.1 the cheapest action for each agent is to defend its own neighborhood, creating a per-agent gradient that doesn't rely on reward magnitude differences. When distance_cost_alpha=0 (the implicit default for every other scenario) behavior is bit-exactly identical to today's env."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=20.0,
+        reward_other_house_survives=0.0,
+        penalty_own_house_burns=40.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=12,
+        num_agents=num_agents,
+        agent_home_positions=[0, 3, 5, 8],
+        distance_cost_alpha=0.1,
+        distance_metric="ring_arc",
+    )
+
+
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -367,6 +429,7 @@ SCENARIO_REGISTRY = {
     "overcrowding": overcrowding_scenario,
     "mixed_motivation": mixed_motivation_scenario,
     "minimal_specialization": minimal_specialization_scenario,
+    "positional_default": positional_default_scenario,
 }
 
 

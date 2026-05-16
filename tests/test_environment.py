@@ -744,3 +744,125 @@ class TestPerAgentOwnershipRewards:
             _make_minimal_scenario(
                 reward_own_house_survives=[1.0, 2.0, 3.0, 4.0, 5.0],
             )
+
+
+class TestPositionalScenario:
+    """Issue #203: spatial cost asymmetry on the 10-house ring.
+
+    The new ``positional_default`` scenario adds three optional fields to
+    ``Scenario`` (``agent_home_positions``, ``distance_cost_alpha``,
+    ``distance_metric``). When ``distance_cost_alpha == 0.0`` (the default
+    for every other scenario) behavior is bit-exactly identical to the
+    pre-#203 env.
+    """
+
+    def test_positional_default_loads_with_expected_fields(self):
+        """The Python factory exposes the new spatial-cost fields."""
+        from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+
+        s = get_scenario_by_name("positional_default", num_agents=4)
+        assert s.agent_home_positions == [0, 3, 5, 8]
+        assert s.distance_cost_alpha == 0.1
+        assert s.distance_metric == "ring_arc"
+        # Reward magnitudes mirror `default`.
+        assert s.team_reward_house_survives == 100.0
+        assert s.team_penalty_house_burns == 100.0
+        assert s.reward_own_house_survives == [20.0, 20.0, 20.0, 20.0]
+        assert s.penalty_own_house_burns == [40.0, 40.0, 40.0, 40.0]
+
+    def test_zero_alpha_preserves_default_work_cost(self):
+        """``distance_cost_alpha == 0.0`` => work cost == cost_to_work_one_night."""
+        scenario = _make_minimal_scenario(cost_to_work_one_night=0.5)
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env._prev_houses_state = env.houses.copy()
+        # All agents WORK at house 0 (max distance from agent 3's home=3).
+        actions = np.zeros((env.num_agents, 2), dtype=np.int8)
+        actions[:, 0] = 0
+        actions[:, 1] = env.WORK
+        rewards = env._compute_rewards(actions)
+        # No team component, no own/other transitions => only -base_cost each.
+        np.testing.assert_allclose(rewards, [-0.5, -0.5, -0.5, -0.5])
+
+    def test_positive_alpha_scales_cost_with_ring_distance(self):
+        """Work cost = base + alpha * ring_dist(home, target)."""
+        scenario = _make_minimal_scenario(
+            cost_to_work_one_night=0.5,
+            agent_home_positions=[0, 3, 5, 8],
+            distance_cost_alpha=0.1,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env._prev_houses_state = env.houses.copy()
+        # All four agents WORK at house 5.
+        # ring_dist on 10-ring:  (0,5)=5, (3,5)=2, (5,5)=0, (8,5)=3
+        actions = np.array(
+            [[5, 1], [5, 1], [5, 1], [5, 1]], dtype=np.int8
+        )
+        rewards = env._compute_rewards(actions)
+        expected = -np.array(
+            [0.5 + 0.1 * 5, 0.5 + 0.1 * 2, 0.5 + 0.1 * 0, 0.5 + 0.1 * 3],
+            dtype=np.float32,
+        )
+        np.testing.assert_allclose(rewards, expected, atol=1e-6)
+
+    def test_resting_is_immune_to_distance_cost(self):
+        """Distance cost only applies to WORK actions, not REST."""
+        scenario = _make_minimal_scenario(
+            cost_to_work_one_night=0.5,
+            agent_home_positions=[0, 3, 5, 8],
+            distance_cost_alpha=0.1,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env._prev_houses_state = env.houses.copy()
+        # All agents REST.
+        actions = np.zeros((env.num_agents, 2), dtype=np.int8)
+        rewards = env._compute_rewards(actions)
+        # Pure rest bonus +0.5 for every agent regardless of "where" they rest.
+        np.testing.assert_allclose(rewards, [0.5, 0.5, 0.5, 0.5])
+
+    def test_wrong_length_home_positions_rejected(self):
+        """num_agents mismatch raises ValueError."""
+        with pytest.raises(ValueError, match="num_agents"):
+            _make_minimal_scenario(agent_home_positions=[0, 3, 5])  # len=3, na=4
+
+    def test_out_of_range_home_position_rejected(self):
+        """Home positions must satisfy ``0 <= p < 10``."""
+        with pytest.raises(ValueError, match=r"out of range"):
+            _make_minimal_scenario(agent_home_positions=[0, 3, 5, 10])
+
+    def test_unsupported_distance_metric_rejected(self):
+        """Only ``"ring_arc"`` is supported today."""
+        with pytest.raises(ValueError, match="distance_metric"):
+            _make_minimal_scenario(distance_metric="euclidean")
+
+    def test_empty_home_positions_falls_back_to_round_robin(self):
+        """Empty ``agent_home_positions`` => engine uses ``np.arange(num_agents)``."""
+        scenario = _make_minimal_scenario()  # defaults: empty list, alpha=0.0
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        np.testing.assert_array_equal(
+            env.agent_home_positions, np.arange(env.num_agents, dtype=np.int8)
+        )
+
+    def test_zero_alpha_matches_pre203_full_episode(self):
+        """End-to-end: alpha=0 produces the same per-step reward trace as no
+        spatial field at all. Guards against accidental side effects of
+        threading the new field through the engine."""
+        from bucket_brigade.envs.scenarios_generated import default_scenario
+
+        env_a = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env_b = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env_a.reset(seed=99)
+        env_b.reset(seed=99)
+        rng = np.random.RandomState(0)
+        for _ in range(5):
+            actions = rng.randint(0, 2, size=(4, 2)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 10, size=4)
+            _, r_a, _, _ = env_a.step(actions)
+            _, r_b, _, _ = env_b.step(actions)
+            np.testing.assert_allclose(r_a, r_b)

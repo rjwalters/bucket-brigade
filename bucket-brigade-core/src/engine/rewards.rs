@@ -1,4 +1,4 @@
-use super::core::BucketBrigade;
+use super::core::{ring_dist_10, BucketBrigade};
 use crate::{Action, HouseState};
 
 impl BucketBrigade {
@@ -23,9 +23,27 @@ impl BucketBrigade {
             - self.scenario.team_penalty_house_burns * total_burned_fraction;
 
         for agent_idx in 0..self.num_agents {
-            // 1. Work/rest component
+            // 1. Work/rest component.
+            //
+            // Issue #203 (option A): when `scenario.distance_cost_alpha != 0`,
+            // the work cost is additively scaled by the ring-arc distance
+            // between the agent's home position and the house it works at:
+            //     cost = base_cost + alpha * ring_dist_10(home, target).
+            // When `alpha == 0` (the implicit default for every pre-#203
+            // scenario) this collapses to the unscaled `base_cost`, so
+            // existing scenarios are bit-exactly unchanged.
             if actions[agent_idx][1] == 1 {
-                rewards[agent_idx] -= self.scenario.cost_to_work_one_night; // Work cost
+                let base_cost = self.scenario.cost_to_work_one_night;
+                let alpha = self.scenario.distance_cost_alpha;
+                let work_cost = if alpha == 0.0 {
+                    base_cost
+                } else {
+                    let home = self.agent_home_positions[agent_idx];
+                    let target = actions[agent_idx][0];
+                    let dist = ring_dist_10(home, target) as f32;
+                    base_cost + alpha * dist
+                };
+                rewards[agent_idx] -= work_cost;
             } else {
                 rewards[agent_idx] += 0.5; // Rest reward
             }

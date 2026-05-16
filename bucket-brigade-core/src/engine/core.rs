@@ -20,11 +20,65 @@ pub struct BucketBrigade {
     /// `BucketBrigadeEnv.house_owners` array so that the per-house ownership
     /// reward fields (`reward_own_house_survives` etc.) can be applied per-agent.
     pub(super) house_owners: Vec<u8>,
+    /// Per-agent "home position" on the 10-house ring (issue #203). Used by
+    /// the rewards engine to scale the per-step work cost by the ring-arc
+    /// distance from the agent's home to the house it works at. Derived from
+    /// `scenario.agent_home_positions` when non-empty, otherwise from the
+    /// existing `house_owners` round-robin (the first house each agent owns —
+    /// agent `i` -> house `i`). When `scenario.distance_cost_alpha == 0.0`
+    /// the cost contribution is zero, so pre-#203 scenarios are bit-exactly
+    /// unchanged.
+    pub(super) agent_home_positions: Vec<u8>,
     pub(super) trajectory: Vec<GameNight>,
+}
+
+/// Derive the per-agent home-position vector from a scenario.
+///
+/// * If `scenario.agent_home_positions` is non-empty, it is used directly
+///   after a length and bounds check.
+/// * Otherwise the round-robin `house_owners` assignment is reused (agent
+///   `i`'s home is house `i`, since `i % num_agents == i` for `i < num_agents`).
+fn derive_agent_home_positions(scenario: &Scenario, num_agents: usize) -> Vec<u8> {
+    if scenario.agent_home_positions.is_empty() {
+        // Backward-compat fallback: reuse the round-robin ownership anchor.
+        (0..num_agents as u8).collect()
+    } else {
+        assert_eq!(
+            scenario.agent_home_positions.len(),
+            num_agents,
+            "Scenario.agent_home_positions has length {} but num_agents = {}. \
+             Per-agent home position vectors must match num_agents.",
+            scenario.agent_home_positions.len(),
+            num_agents
+        );
+        for (i, &pos) in scenario.agent_home_positions.iter().enumerate() {
+            assert!(
+                (pos as usize) < 10,
+                "Scenario.agent_home_positions[{}] = {} is out of range [0, 10)",
+                i,
+                pos
+            );
+        }
+        scenario.agent_home_positions.clone()
+    }
+}
+
+/// Minimum-arc distance between two indices on a ring of length 10.
+///
+/// Used by the work-cost calculation in `engine/rewards.rs` (issue #203) and
+/// exposed at crate-private scope for direct unit-testing of the spatial
+/// cost term.
+#[inline]
+pub(super) fn ring_dist_10(a: u8, b: u8) -> u8 {
+    let a = a as i32;
+    let b = b as i32;
+    let raw = (a - b).abs();
+    raw.min(10 - raw) as u8
 }
 
 impl BucketBrigade {
     pub fn new(scenario: Scenario, num_agents: usize, seed: Option<u64>) -> Self {
+        let agent_home_positions = derive_agent_home_positions(&scenario, num_agents);
         let mut engine = Self {
             houses: vec![0; 10],
             agent_positions: vec![0; num_agents],
@@ -37,6 +91,7 @@ impl BucketBrigade {
             scenario,
             num_agents,
             house_owners: (0..10).map(|i| (i % num_agents) as u8).collect(),
+            agent_home_positions,
             trajectory: Vec::new(),
         };
         engine.reset();
@@ -53,6 +108,9 @@ impl BucketBrigade {
         self.rewards = vec![0.0; self.num_agents];
         // Re-initialize house ownership in case num_agents changed via external mutation.
         self.house_owners = (0..10).map(|i| (i % self.num_agents) as u8).collect();
+        // Re-derive home positions for the same reason (and to pick up any
+        // scenario mutation).
+        self.agent_home_positions = derive_agent_home_positions(&self.scenario, self.num_agents);
         self.trajectory = Vec::new();
 
         // Initialize fires - probabilistic per-house
