@@ -24,9 +24,12 @@ Five metrics per cell, per the issue #220 curator protocol:
    ``diagnostics/pairwise_action_kl.py``). Pre-#216 → KL ≈ 0; post-#216
    → KL > 0 iff agents specialize.
 5. **Gap closed** — for ``minimal_specialization``:
-   ``(ppo_trailing5 − random) / (specialist − random)`` with the 2026-05-15
-   references (random = −96.07, specialist = −22.07; pre-#216 reference
-   was 18.1%). Pass bar: treatment ≥ 50%.
+   ``(ppo_trailing5 − random) / (specialist − random)`` with the
+   post-#236 re-derived references from issue #238 (random = −96.07,
+   specialist = −22.07; pre-#216 reference was 18.1%). The post-#236
+   eval reproduces the pre-#236 values exactly because specialist
+   policies signal honestly and random samples uniformly over the new
+   3-element action space. Pass bar: treatment ≥ 50%.
 
 Usage::
 
@@ -49,7 +52,10 @@ LAMBDA_DIR = "lambda_0e0"
 NUM_AGENTS = 4
 TRAILING_N = 5
 
-# 2026-05-15 references from research_notebook/issue199 entry.
+# Post-#236 references re-derived under issue #238 (2026-05-16).
+# Source: diagnostics/results/issue238_post236_minspec/baselines.json.
+# Identical to the 2026-05-15 pre-#236 values to <0.01 per-step (specialists
+# signal honestly; random samples uniformly over the new 3-element action).
 MINSPEC_RANDOM = -96.07
 MINSPEC_SPECIALIST = -22.07
 

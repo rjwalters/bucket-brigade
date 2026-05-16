@@ -148,3 +148,24 @@ The bar between the two decision-tree branches is set at 50%; the result here (1
 1. **Algorithm-side:** open follow-up issue for centralized-critic / MAPPO / COMA. Reuses `minimal_specialization` as the entry point — if the new algorithm can learn this clean signal, that's a green light for `default`; if it can't, the problem is more fundamental than independent critics.
 2. **Run-length extension:** if MAPPO matters more than expected, run `minimal_specialization` PPO to 200+ iters to definitively reject "PPO just needs more time" before committing to algorithm rewrite.
 3. **Default rebalance:** explicitly *out of scope* per the user — but if MAPPO succeeds on `minimal_specialization` and existing PPO does poorly on `default`, the env redesign question reopens.
+
+## Amendment 2026-05-16 — Post-#236 baseline re-derivation (issue #238)
+
+PR #236 promoted the signal channel to a first-class action dimension, so the action width changed from 2 to 3 (`[house, mode, signal]`). To make the `gap_closed` denominator honest under post-#236 evaluations, the specialist + random baselines were re-derived on commit `dffe1060`:
+
+```
+uv run python experiments/p3_specialization/diagnostics/issue199_baselines.py \
+  --scenarios minimal_specialization default \
+  --output-dir experiments/p3_specialization/diagnostics/results/issue238_post236_minspec
+```
+
+| Scenario | Source | Random per-step | Specialist per-step | Gap |
+|---|---|---|---|---|
+| `minimal_specialization` | pre-#236 (issue199_minspec) | -96.0704 | -22.0717 | 73.9987 |
+| `minimal_specialization` | post-#236 (issue238) | **-96.0704** | **-22.0717** | **73.9987** |
+| `default` | pre-#236 (issue199_minspec) | 241.8461 | 320.9365 | 79.0904 |
+| `default` | post-#236 (issue238) | **241.8461** | **320.9365** | **79.0904** |
+
+Absolute shift: **0.0000** per-step (identical to 6 decimal places). This is the expected outcome: the specialist policy signals honestly (`signal == mode`, verified at `bucket_brigade/baselines/specialist.py:107-115`) and the random policy samples uniformly over the 3-element action — so neither lies, and the team-reward distribution under these two evaluators is invariant under #236. Only *trained* policies that learn to lie can shift the denominator.
+
+`analyze_220.py` constants (`MINSPEC_RANDOM`, `MINSPEC_SPECIALIST`) are unchanged in value; the source-of-truth comment was repointed to `diagnostics/results/issue238_post236_minspec/baselines.json` and the docstring was updated to note the post-#236 re-derivation.
