@@ -207,6 +207,65 @@ class PolicyNetwork(nn.Module):
         )
 
 
+class CentralizedCritic(nn.Module):
+    """Centralized state-value network for MAPPO (issue #208).
+
+    A separate value network used by :class:`JointPPOTrainer` when
+    ``centralized_critic=True``. The critic consumes the **global** part of
+    the observation (i.e. the per-agent flat obs with the identity one-hot
+    tail stripped) and produces a single scalar value estimate that is
+    shared across all agents at training time. Per-agent advantages are
+    still computed off the per-agent reward streams, so each agent gets a
+    distinct learning signal (the value baseline is shared, the targets
+    are not).
+
+    This is the conservative MAPPO formulation from Yu et al. 2021,
+    adapted to this codebase's particular setup where the env already
+    returns a global observation (see ``joint_trainer.flatten_dict_obs``)
+    --- no per-agent obs concatenation is needed.
+
+    Architecture mirrors :class:`PolicyNetwork`'s shared trunk: a 2-layer
+    MLP with ReLU, then a linear scalar head. Default hidden size matches
+    the actor trunk so the critic has comparable capacity.
+
+    Args:
+        obs_dim: Dimension of the global observation input (i.e. the
+            actor-side ``obs_dim`` minus the identity-one-hot tail length).
+        hidden_size: Size of the hidden layers (default: 64, matching
+            :class:`PolicyNetwork`).
+
+    Example:
+        >>> critic = CentralizedCritic(obs_dim=42, hidden_size=64)
+        >>> obs = torch.randn(16, 42)
+        >>> value = critic(obs)
+        >>> value.shape
+        torch.Size([16, 1])
+    """
+
+    def __init__(self, obs_dim: int, hidden_size: int = 64) -> None:
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.hidden_size = hidden_size
+        self.shared = nn.Sequential(
+            nn.Linear(obs_dim, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+        )
+        self.value_head = nn.Linear(hidden_size, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+
+        Args:
+            x: Global observation tensor of shape ``(batch_size, obs_dim)``.
+
+        Returns:
+            Value estimates of shape ``(batch_size, 1)``.
+        """
+        return self.value_head(self.shared(x))
+
+
 def compute_gae(
     rewards: List[float],
     values: List[float],
