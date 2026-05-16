@@ -23,11 +23,17 @@ specified in issue #174:
 Each condition has 5 seeds (42..46). All cells use scenario=default,
 lambda_red=0, num_iterations=50, rollout_steps=2048.
 
-Random per-step team-reward baseline on default = 293.4 (re-derived in PR
-#196 / issue #192, n=1000 episodes; 95% CI [288.87, 297.78]). The original
-#145 value (308) was an n=50 outlier and sits outside the n=1000 CI.
+Random per-step team-reward baseline on default = 247.58 (re-derived in
+issue #218 on post-#197/#198 main at commit ``a38667b5``, n=1000 episodes,
+seeds 42..46; 95% CI [241.07, 253.89]). PR #196's previous value of 293.4
+measured the pre-#197 reward function and is therefore stale — PR #205
+(#197) rebalanced ownership rewards 20x on ``default``, which lowered the
+random per-step mean (random play burns houses more often than it saves
+them, so the larger ownership term contributes net-negative reward).
+The original #145 value (308) was an n=50 outlier on the pre-rebalance
+function.
 
-Acceptance bar = CI upper bound of the re-derived random baseline (297.78).
+Acceptance bar = CI upper bound of the re-derived random baseline (253.89).
 "Crosses bar" therefore means "statistically distinguishable from random,"
 not "exceeds an arbitrary buffer above a noisy single-sample baseline."
 The original #174 acceptance bar of 320 (= 308 + 12) was derived from the
@@ -51,8 +57,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-RAND_BASELINE = 293.4
-ACCEPTANCE_BAR = 297.78
+RAND_BASELINE = 247.58
+ACCEPTANCE_BAR = 253.89
 SEEDS = [42, 43, 44, 45, 46]
 NUM_AGENTS = 4
 
