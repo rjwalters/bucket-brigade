@@ -37,16 +37,28 @@ impl HeuristicAgent {
     /// Select action based on heuristic strategy
     ///
     /// This implementation matches the Python `_heuristic_action` function
-    /// in bucket_brigade/equilibrium/payoff_evaluator_rust.py:33-69
+    /// in bucket_brigade/equilibrium/payoff_evaluator_rust.py:40-80.
     ///
-    /// Issue #235: returns a 3-element `[house, mode, signal]`. This Rust
-    /// HeuristicAgent doesn't currently model `honesty_bias` (param 0), so
-    /// it always signals honestly — `signal == mode`. The richer Python
-    /// `HeuristicAgent.act` in `bucket_brigade/agents/heuristic_agent.py`
-    /// *does* use `honesty_bias` and is the one to look at for the Liar
-    /// archetype's deceptive behavior.
+    /// Issue #235: returns a 3-element `[house, mode, signal]`.
+    ///
+    /// Issue #240: the signal channel now honors `honesty_bias` (param 0).
+    /// With probability `honesty_bias` the agent broadcasts truthfully
+    /// (`signal == mode`); otherwise it broadcasts the opposite bit.
+    /// For archetypes with `honesty_bias == 1.0` (firefighter, hero) the
+    /// behavior is unchanged. For the Liar archetype (`honesty_bias = 0.1`)
+    /// the agent signals deceptively roughly 90% of the time.
+    ///
+    /// This is a simplified version of the deception logic in the richer
+    /// Python `HeuristicAgent.act` (`bucket_brigade/agents/heuristic_agent.py`):
+    /// the Python path computes a continuous `work_intent` and then signals
+    /// the *thresholded* intent (potentially flipped), whereas this Rust
+    /// path signals the *realized mode* (potentially flipped). Both paths
+    /// produce the same marginal `P(signal != mode) ≈ 1 - honesty_bias` for
+    /// the Liar archetype, which is what the Nash equilibrium analyses
+    /// over the archetype space care about.
     pub fn select_action<R: Rng>(&self, obs: &AgentObservation, rng: &mut R) -> Action {
         // Extract key parameters
+        let honesty_bias = self.params[0];
         let work_tendency = self.params[1];
         let own_house_priority = self.params[3];
         let rest_reward_bias = self.params[8];
@@ -81,8 +93,17 @@ impl HeuristicAgent {
                 (owned_house as u8, 0)
             };
 
-        // Honest signal by default — signal == mode.
-        [house, mode, mode]
+        // Issue #240: thread honesty_bias into the signal channel. With
+        // probability `honesty_bias`, broadcast the true mode; otherwise
+        // broadcast the opposite bit. Honest archetypes (honesty_bias=1.0)
+        // are unchanged; the Liar archetype (honesty_bias=0.1) lies ~90%.
+        let signal = if rng.gen::<f64>() < honesty_bias {
+            mode
+        } else {
+            1 - mode
+        };
+
+        [house, mode, signal]
     }
 }
 
@@ -283,5 +304,101 @@ mod tests {
             let action = agent.select_action(&obs, &mut rng);
             assert_eq!(action[1], 0, "Should be resting due to rest_reward_bias");
         }
+    }
+
+    /// Issue #240: Verify that `honesty_bias` actually controls the signal
+    /// channel. Prior to this fix the Rust path hardcoded `signal == mode`
+    /// regardless of `honesty_bias`, which silently made the Rust-backed
+    /// Nash evaluator disagree with the Python `HeuristicAgent.act` path
+    /// for the Liar archetype. This test pins both ends of the spectrum.
+    #[test]
+    fn test_heuristic_agent_honesty_bias_signaling() {
+        // Honest agent (honesty_bias=1.0): signal must always equal mode.
+        let mut honest_params = [0.0; 10];
+        honest_params[0] = 1.0; // honesty_bias
+        honest_params[1] = 0.5; // work_tendency — yields mix of work/rest
+        let honest = HeuristicAgent::new(0, "Honest", honest_params);
+
+        // Liar agent (honesty_bias=0.0): signal must always be flipped.
+        let mut liar_params = [0.0; 10];
+        liar_params[0] = 0.0; // honesty_bias
+        liar_params[1] = 0.5;
+        let liar = HeuristicAgent::new(0, "Liar", liar_params);
+
+        let obs = AgentObservation {
+            signals: vec![0; 4],
+            locations: vec![0; 4],
+            houses: vec![0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            last_actions: vec![[0, 0, 0]; 4],
+            scenario_info: vec![0.0; 10],
+            agent_id: 0,
+            night: 0,
+        };
+
+        let mut rng = Pcg64::seed_from_u64(12345);
+        let mut honest_agreements = 0;
+        let mut liar_agreements = 0;
+        let n = 200;
+
+        for _ in 0..n {
+            let a = honest.select_action(&obs, &mut rng);
+            if a[1] == a[2] {
+                honest_agreements += 1;
+            }
+        }
+        for _ in 0..n {
+            let a = liar.select_action(&obs, &mut rng);
+            if a[1] == a[2] {
+                liar_agreements += 1;
+            }
+        }
+
+        assert_eq!(
+            honest_agreements, n,
+            "honesty_bias=1.0 must always signal honestly (signal == mode)"
+        );
+        assert_eq!(
+            liar_agreements, 0,
+            "honesty_bias=0.0 must always signal deceptively (signal != mode)"
+        );
+    }
+
+    /// Issue #240: Verify the partial-honesty path. With honesty_bias=0.1
+    /// (the Liar archetype) the signal should disagree with mode in
+    /// roughly 90% of decisions. Use a large sample and a wide tolerance
+    /// so the test is robust to RNG variance.
+    #[test]
+    fn test_heuristic_agent_liar_archetype_lies_most_of_time() {
+        // Liar archetype params (matches Python LIAR_PARAMS).
+        let params = [0.1, 0.7, 0.0, 0.9, 0.2, 0.8, 0.3, 0.0, 0.4, 0.2];
+        let liar = HeuristicAgent::new(0, "Liar", params);
+
+        let obs = AgentObservation {
+            signals: vec![0; 4],
+            locations: vec![0; 4],
+            houses: vec![1, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            last_actions: vec![[0, 0, 0]; 4],
+            scenario_info: vec![0.0; 10],
+            agent_id: 0,
+            night: 0,
+        };
+
+        let mut rng = Pcg64::seed_from_u64(99);
+        let n = 2000;
+        let mut disagreements = 0;
+        for _ in 0..n {
+            let a = liar.select_action(&obs, &mut rng);
+            if a[1] != a[2] {
+                disagreements += 1;
+            }
+        }
+
+        let lie_rate = disagreements as f64 / n as f64;
+        // Expected ~0.90, allow ±0.05 for RNG noise.
+        assert!(
+            (0.85..=0.95).contains(&lie_rate),
+            "Liar archetype should lie ~90% of the time, got {:.3}",
+            lie_rate
+        );
     }
 }

@@ -43,10 +43,19 @@ def _heuristic_action(
     """
     Simplified heuristic action selection based on parameters.
 
-    This is a fast approximation of HeuristicAgent behavior.
-    For Nash equilibrium, we primarily care about work_tendency.
+    This is a fast approximation of ``HeuristicAgent.act`` behavior, used by
+    the legacy ``use_full_rust=False`` path. The full Rust path
+    (``run_heuristic_episode_focal`` -> ``HeuristicAgent::select_action``)
+    uses the same logic — see ``bucket-brigade-core/src/agents/heuristic.rs``.
+
+    Issue #240: honors ``honesty_bias`` (theta[0]) so the signal can be
+    deceptive. Before this fix the signal was hardcoded to ``mode`` here,
+    which made the Liar archetype (``honesty_bias=0.1``) behave identically
+    to a free_rider through the Rust-backed evaluator while behaving
+    correctly through the pure-Python ``HeuristicAgent.act`` path.
     """
     # Unpack key parameters
+    honesty_bias = theta[0]
     work_tendency = theta[1]
     own_house_priority = theta[3]
     rest_reward_bias = theta[8]
@@ -73,11 +82,17 @@ def _heuristic_action(
         house = agent_id % 10
         mode = 0  # REST
 
-    # Issue #235: 3-element [house, mode, signal]. Honest by default; Nash
-    # equilibrium analyses care primarily about work_tendency, so the
-    # signal channel is wired through here only to satisfy the engine's
-    # new action shape.
-    return [house, mode, mode]
+    # Issue #240: thread honesty_bias into the signal. With probability
+    # honesty_bias broadcast the true mode; otherwise broadcast the
+    # opposite bit. Honest archetypes (honesty_bias=1.0) are unchanged;
+    # the Liar archetype (honesty_bias=0.1) signals deceptively ~90%.
+    if rng.random() < honesty_bias:  # type: ignore[attr-defined]
+        signal = mode
+    else:
+        signal = 1 - mode
+
+    # Issue #235: 3-element [house, mode, signal].
+    return [house, mode, signal]
 
 
 def _run_rust_simulation(args):
