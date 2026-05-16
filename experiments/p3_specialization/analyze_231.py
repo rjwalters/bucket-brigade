@@ -133,9 +133,7 @@ def aggregate_arm(root: Path, arm: str) -> Dict[str, Dict]:
         ents = np.array([d["mean_entropy_final"] for d in present])
         spreads = np.array([d["entropy_spread"] for d in present])
         kl_means = [
-            d["kl_off_diag_mean"]
-            for d in present
-            if d["kl_off_diag_mean"] is not None
+            d["kl_off_diag_mean"] for d in present if d["kl_off_diag_mean"] is not None
         ]
         per_scenario[scenario] = {
             "seeds": seeds_data,
@@ -147,9 +145,7 @@ def aggregate_arm(root: Path, arm: str) -> Dict[str, Dict]:
             "entropy_spread_mean": float(spreads.mean()),
             "kl_off_diag_mean": (float(np.mean(kl_means)) if kl_means else None),
             "gap_closed_mean": float(gap_closed(scenario, team.mean())),
-            "gap_closed_per_seed": [
-                float(gap_closed(scenario, x)) for x in team
-            ],
+            "gap_closed_per_seed": [float(gap_closed(scenario, x)) for x in team],
         }
     return per_scenario
 
