@@ -32,7 +32,7 @@ export class FirefighterAgent extends BrowserAgent {
       return [sorted[0], 1]; // Work on nearest fire
     }
 
-    return [this.id % 10, 0]; // Rest if no fires
+    return [this.id % 10, 0, 0]; // Rest if no fires
   }
 }
 
@@ -49,7 +49,7 @@ export class FreeRiderAgent extends BrowserAgent {
 
     // Only work if own house is burning
     if (obs.houses[own_house] === 1) {
-      return [own_house, 1];
+      return [own_house, 1, 1];
     }
 
     // Check if immediate neighbors are burning (threat to own house)
@@ -60,11 +60,11 @@ export class FreeRiderAgent extends BrowserAgent {
 
     const threatening_neighbor = neighbors.find(n => obs.houses[n] === 1);
     if (threatening_neighbor !== undefined) {
-      return [threatening_neighbor, 1];
+      return [threatening_neighbor, 1, 1];
     }
 
     // Otherwise, rest
-    return [own_house, 0];
+    return [own_house, 0, 0];
   }
 }
 
@@ -80,11 +80,11 @@ export class HeroAgent extends BrowserAgent {
     // Always work if there are any fires
     const burning_house = obs.houses.findIndex(h => h === 1);
     if (burning_house !== -1) {
-      return [burning_house, 1];
+      return [burning_house, 1, 1];
     }
 
     // Even if no fires, patrol own house
-    return [this.id % 10, 1];
+    return [this.id % 10, 1, 1];
   }
 }
 
@@ -104,7 +104,7 @@ export class CoordinatorAgent extends BrowserAgent {
       .map(({ idx }) => idx);
 
     if (burning_houses.length === 0) {
-      return [this.id % 10, 0]; // Rest if no fires
+      return [this.id % 10, 0, 0]; // Rest if no fires
     }
 
     // Avoid redundant work - find house with fewest workers
@@ -126,7 +126,7 @@ export class CoordinatorAgent extends BrowserAgent {
       }
     }
 
-    return [best_house, 1];
+    return [best_house, 1, 1];
   }
 }
 
@@ -143,7 +143,7 @@ export class LiarAgent extends BrowserAgent {
 
     // Prioritize own house
     if (obs.houses[own_house] === 1) {
-      return [own_house, 1];
+      return [own_house, 1, 1];
     }
 
     // Sometimes work on other fires, sometimes rest
@@ -156,7 +156,7 @@ export class LiarAgent extends BrowserAgent {
       return [burning_houses[0], 1];
     }
 
-    return [own_house, 0]; // Rest most of the time
+    return [own_house, 0, 0]; // Rest most of the time
   }
 }
 

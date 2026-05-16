@@ -44,29 +44,44 @@ def _make_rollout(actions_np: Dict[int, np.ndarray]) -> _FakeRollout:
 
 
 class TestOtherAgentActionCodes:
+    # Issue #235: action is now ``[house, mode, signal]`` (length 3) and
+    # the pack is ``a[:, 0] * 4 + a[:, 1] * 2 + a[:, 2]`` (range 0..39).
+    # All test action streams below use the honest convention
+    # ``signal == mode`` so the packed code is
+    # ``house * 4 + mode * 2 + mode = house * 4 + mode * 3``.
+
     def test_lag1_shifts_and_sentinels_t0(self):
-        # Agent 0 takes the same packed-action pattern (5, 7, 11, 3); we
-        # expect t=0 to be the sentinel and the rest to be the prior step.
-        a0 = np.array([[2, 1], [3, 1], [5, 1], [1, 1]])  # packed = 5, 7, 11, 3
+        # Agent 0 takes the packed-action pattern. With honest signaling
+        # the pack ``a[:, 0] * 4 + a[:, 1] * 2 + a[:, 2]`` reduces to
+        # ``house * 4 + mode * 3``:
+        #   [2, 1, 1] -> 8 + 3 = 11
+        #   [3, 1, 1] -> 12 + 3 = 15
+        #   [5, 1, 1] -> 20 + 3 = 23
+        #   [1, 1, 1] -> 4 + 3 = 7
+        a0 = np.array([[2, 1, 1], [3, 1, 1], [5, 1, 1], [1, 1, 1]])
         rollout = _make_rollout({0: a0, 1: a0.copy()})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=1)
-        expected = np.array([_ACTION_NO_PRIOR_SENTINEL, 5, 7, 11], dtype=np.int64)
+        expected = np.array(
+            [_ACTION_NO_PRIOR_SENTINEL, 11, 15, 23], dtype=np.int64
+        )
         np.testing.assert_array_equal(codes, expected)
 
     def test_lag_k_sentinels_first_k_steps(self):
-        a0 = np.array([[1, 0], [2, 1], [3, 0], [4, 1], [0, 0]])
-        # packed = 2, 5, 6, 9, 0
+        a0 = np.array(
+            [[1, 0, 0], [2, 1, 1], [3, 0, 0], [4, 1, 1], [0, 0, 0]]
+        )
+        # packed (honest): 4, 11, 12, 19, 0
         rollout = _make_rollout({0: a0})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=3)
         # First 3 entries are sentinel; then prior-prior-prior actions.
         assert codes[0] == _ACTION_NO_PRIOR_SENTINEL
         assert codes[1] == _ACTION_NO_PRIOR_SENTINEL
         assert codes[2] == _ACTION_NO_PRIOR_SENTINEL
-        assert codes[3] == 2
-        assert codes[4] == 5
+        assert codes[3] == 4
+        assert codes[4] == 11
 
     def test_short_rollout_all_sentinel_when_lag_ge_T(self):
-        a0 = np.array([[1, 0], [2, 1]])
+        a0 = np.array([[1, 0, 0], [2, 1, 1]])
         rollout = _make_rollout({0: a0})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=2)
         # T == lag → entire output is sentinel (no t with a defined prior).
@@ -80,38 +95,40 @@ class TestOtherAgentActionCodes:
         )
 
     def test_pack_matches_existing_convention(self):
-        # The pack is ``a[:, 0] * 2 + a[:, 1]`` and must match the
-        # convention used by the existing ``action_entropy`` metric in
-        # ``_measure_information`` (lines 287-289 of train.py).
-        a0 = np.array([[7, 1], [9, 0]])  # packed = 15, 18
+        # The pack is ``a[:, 0] * 4 + a[:, 1] * 2 + a[:, 2]`` (issue #235).
+        # [7, 1, 1] -> 28 + 2 + 1 = 31; [9, 0, 0] -> 36 + 0 + 0 = 36.
+        a0 = np.array([[7, 1, 1], [9, 0, 0]])
         rollout = _make_rollout({0: a0})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=1)
-        # codes[1] is the prior packed action (15); codes[0] is sentinel.
-        assert codes[1] == 15
+        # codes[1] is the prior packed action (31); codes[0] is sentinel.
+        assert codes[1] == 31
 
-    def test_alphabet_max_is_19(self):
-        # Largest legal packed action with action_dims = [10, 2] is
-        # ``9 * 2 + 1 = 19`` (< _ACTION_NO_PRIOR_SENTINEL = 20).
-        a0 = np.array([[9, 1], [0, 0]])
+    def test_alphabet_max_is_39(self):
+        # Largest legal packed action with action_dims = [10, 2, 2] is
+        # ``9 * 4 + 1 * 2 + 1 = 39`` (< _ACTION_NO_PRIOR_SENTINEL = 40).
+        a0 = np.array([[9, 1, 1], [0, 0, 0]])
         rollout = _make_rollout({0: a0})
         codes = _other_agent_action_codes(rollout, agent_j=0, lag=1)
-        assert codes[1] == 19
+        assert codes[1] == 39
         # Sentinel value sits strictly above the legal range.
-        assert _ACTION_NO_PRIOR_SENTINEL == 20
+        assert _ACTION_NO_PRIOR_SENTINEL == 40
 
     def test_per_agent_independence(self):
         # Each agent's codes are computed from that agent's own action stream;
         # passing different action_dims values should not cross-contaminate.
-        a0 = np.array([[1, 0], [2, 0], [3, 0]])  # packed = 2, 4, 6
-        a1 = np.array([[5, 1], [6, 0], [7, 1]])  # packed = 11, 12, 15
+        # Honest signaling so packed = house * 4 + mode * 3:
+        # a0: [1,0,0]=4, [2,0,0]=8, [3,0,0]=12
+        # a1: [5,1,1]=23, [6,0,0]=24, [7,1,1]=31
+        a0 = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
+        a1 = np.array([[5, 1, 1], [6, 0, 0], [7, 1, 1]])
         rollout = _make_rollout({0: a0, 1: a1})
         codes0 = _other_agent_action_codes(rollout, agent_j=0, lag=1)
         codes1 = _other_agent_action_codes(rollout, agent_j=1, lag=1)
-        assert codes0[1] == 2 and codes0[2] == 4
-        assert codes1[1] == 11 and codes1[2] == 12
+        assert codes0[1] == 4 and codes0[2] == 8
+        assert codes1[1] == 23 and codes1[2] == 24
 
     def test_rejects_lag_zero(self):
-        a0 = np.array([[1, 0], [2, 0]])
+        a0 = np.array([[1, 0, 0], [2, 0, 0]])
         rollout = _make_rollout({0: a0})
         with pytest.raises(ValueError):
             _other_agent_action_codes(rollout, agent_j=0, lag=0)

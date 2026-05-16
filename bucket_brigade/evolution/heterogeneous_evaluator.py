@@ -57,7 +57,8 @@ def _heuristic_action(
         house = agent_id % 10
         mode = 0  # REST
 
-    return [house, mode]
+    # Issue #235: 3-element [house, mode, signal]. Honest by default.
+    return [house, mode, mode]
 
 
 class HeterogeneousEvaluator:

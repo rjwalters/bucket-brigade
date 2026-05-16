@@ -21,7 +21,7 @@ from bucket_brigade.training.networks import CentralizedCritic
 
 NUM_AGENTS = 4
 ROLLOUT_STEPS = 64
-ACTION_DIMS = [10, 2]  # [house index, mode]
+ACTION_DIMS = [10, 2, 2]  # [house index, mode, signal] (issue #235)
 
 
 def _env_fn():

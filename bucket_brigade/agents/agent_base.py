@@ -48,10 +48,14 @@ class AgentBase(ABC):
                 - "scenario_info": np.ndarray[float32], shape (k,), scenario vector
 
         Returns:
-            Action as np.ndarray[int8], shape (2,):
-                [house_index, mode_flag]
-                - house_index ∈ [0..9]
-                - mode_flag ∈ {0=REST, 1=WORK}
+            Action as np.ndarray[int8], shape (3,) per issue #235:
+                ``[house_index, mode_flag, signal]``
+                - ``house_index`` in [0..9]
+                - ``mode_flag`` in {0=REST, 1=WORK} — the action actually taken
+                - ``signal`` in {0=REST, 1=WORK} — the broadcast intent
+                  (may differ from ``mode_flag``; i.e. a lie)
+
+            Honest agents simply emit ``signal == mode_flag``.
         """
         pass
 
@@ -68,7 +72,16 @@ class RandomAgent(AgentBase):
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         """
         Choose a random house and random mode (work/rest).
+
+        Issue #235: the random baseline is **honest** by default —
+        ``signal == mode_flag``. A truly random-over-the-full-action-space
+        baseline would lie 25% of the time, which is research-meaningful;
+        keeping the random baseline honest preserves the prior-PR semantic
+        of "uniform-random house, uniform-random mode" and isolates the
+        signal channel as a deliberate degree of freedom available to
+        strategic agents.
         """
         house_index = np.random.randint(0, 10)  # Random house 0-9
         mode_flag = np.random.randint(0, 2)  # Random mode 0=REST, 1=WORK
-        return np.array([house_index, mode_flag], dtype=np.int8)
+        signal = int(mode_flag)  # Honest signal — see docstring above.
+        return np.array([house_index, mode_flag, signal], dtype=np.int8)

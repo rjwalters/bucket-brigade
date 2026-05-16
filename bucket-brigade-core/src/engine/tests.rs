@@ -43,7 +43,7 @@ fn test_reset() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // Take some steps
-    let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
     engine.step(&actions);
     engine.step(&actions);
 
@@ -66,7 +66,7 @@ fn test_deterministic_with_seed() {
     assert_eq!(engine1.houses, engine2.houses);
 
     // And identical behavior
-    let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
     let result1 = engine1.step(&actions);
     let result2 = engine2.step(&actions);
 
@@ -80,7 +80,7 @@ fn test_step_advances_night() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     let initial_night = engine.night;
-    let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
     engine.step(&actions);
 
     assert_eq!(engine.night, initial_night + 1);
@@ -92,7 +92,7 @@ fn test_work_vs_rest_rewards() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
     // All agents rest
-    let rest_actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let rest_actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     let result = engine.step(&rest_actions);
 
     // Resting gives +0.5 reward (plus other factors)
@@ -115,7 +115,7 @@ fn test_fire_extinguishing() {
     engine.houses[5] = 1;
 
     // Send all agents to work on it
-    let actions = vec![[5, 1], [5, 1], [5, 1], [5, 1]];
+    let actions = vec![[5, 1, 1], [5, 1, 1], [5, 1, 1], [5, 1, 1]];
 
     engine.step(&actions);
 
@@ -141,7 +141,7 @@ fn test_fire_spreads_to_neighbors() {
     engine.houses[5] = 1; // House 5 is burning
 
     // No one works (let it spread)
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     engine.step(&actions);
 
     // Neighbors (4 and 6) should catch fire with prob_fire_spreads_to_neighbor=1.0
@@ -161,7 +161,7 @@ fn test_burn_out_phase() {
     engine.houses[3] = 1;
 
     // Let it burn without intervention
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     engine.step(&actions);
 
     // Burning house should become ruined (unless extinguished, which is unlikely with no workers)
@@ -184,7 +184,7 @@ fn test_spontaneous_ignition() {
     engine.night = 0;
 
     // Step once - should create spontaneous ignitions
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     engine.step(&actions);
 
     // With prob_house_catches_fire=1.0, all safe houses should catch fire
@@ -204,7 +204,7 @@ fn test_continuous_spontaneous_ignition() {
     engine.houses = vec![0; 10];
 
     // Step multiple nights
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     for _ in 0..10 {
         engine.houses = vec![0; 10]; // Clear fires each round
         engine.step(&actions);
@@ -228,7 +228,7 @@ fn test_termination_all_safe() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10]; // All safe
 
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     let result = engine.step(&actions);
 
     assert!(result.done, "Game should end when all houses are safe");
@@ -242,7 +242,7 @@ fn test_termination_all_ruined() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![2; 10]; // All ruined
 
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     let result = engine.step(&actions);
 
     assert!(result.done, "Game should end when all houses are ruined");
@@ -256,7 +256,7 @@ fn test_minimum_nights_prevents_early_termination() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10]; // All safe
 
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
 
     // Step through 3 nights
     for _ in 0..3 {
@@ -285,7 +285,7 @@ fn test_trajectory_recording() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
-    let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
     engine.step(&actions);
     engine.step(&actions);
 
@@ -304,7 +304,7 @@ fn test_final_score_calculation() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
-    let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
     engine.step(&actions);
 
     let result = engine.get_result();
@@ -319,7 +319,7 @@ fn test_agent_positions_update() {
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
-    let actions = vec![[5, 1], [6, 1], [7, 1], [8, 1]];
+    let actions = vec![[5, 1, 1], [6, 1, 1], [7, 1, 1], [8, 1, 1]];
     engine.step(&actions);
 
     let state = engine.get_current_state();
@@ -328,14 +328,28 @@ fn test_agent_positions_update() {
 
 #[test]
 fn test_agent_signals_update() {
+    // Issue #235: signals are now action[2], independent of the work bit
+    // action[1]. This test pins the *decoupled* semantics: we construct
+    // agents whose broadcast signal differs from their actual mode, and
+    // assert the engine records the broadcast (action[2]) — not the mode.
     let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
-    let actions = vec![[0, 0], [1, 1], [2, 0], [3, 1]];
+    // [house, mode, signal] — agent 0 rests but signals work (a lie);
+    // agent 1 works but signals rest (a lie); agents 2/3 are honest.
+    let actions = vec![[0, 0, 1], [1, 1, 0], [2, 0, 0], [3, 1, 1]];
     engine.step(&actions);
 
     let state = engine.get_current_state();
-    assert_eq!(state.agent_signals, vec![0, 1, 0, 1]);
+    // Signals reflect the broadcast column, not the mode column.
+    assert_eq!(state.agent_signals, vec![1, 0, 0, 1]);
+    // And the broadcast differs from the work bit for the two liars
+    // (the whole point of issue #235 vs the deterministic-copy bug).
+    let work_bits: Vec<u8> = actions.iter().map(|a| a[1]).collect();
+    assert_ne!(
+        state.agent_signals, work_bits,
+        "Signal channel must be decoupled from the work/rest action bit"
+    );
 }
 
 #[test]
@@ -347,7 +361,7 @@ fn test_step_after_done_panics() {
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
     engine.houses = vec![0; 10];
 
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     engine.step(&actions);
 
     // Game should be done now, stepping again should panic
@@ -362,7 +376,7 @@ fn test_ownership_rewards() {
     // Agent 0 owns house 0, agent 1 owns house 1, etc.
     engine.houses = vec![0; 10]; // All safe
 
-    let actions = vec![[0, 0], [1, 0], [2, 0], [3, 0]];
+    let actions = vec![[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
     let result = engine.step(&actions);
 
     // Per-step rewards now include rest bonus + team rewards (all houses safe)
@@ -392,7 +406,7 @@ fn test_ownership_penalty() {
     engine.houses = vec![0; 10];
     engine.houses[0] = 2;
 
-    let actions = vec![[5, 0], [5, 0], [5, 0], [5, 0]];
+    let actions = vec![[5, 0, 0], [5, 0, 0], [5, 0, 0], [5, 0, 0]];
     let result = engine.step(&actions);
 
     // Per-step rewards now include rest, team rewards, and ownership penalties
@@ -480,7 +494,7 @@ fn test_large_population_step() {
     let mut engine = BucketBrigade::new(scenario, 20, Some(42));
 
     // Generate 20 actions (one per agent)
-    let actions: Vec<[u8; 2]> = (0..20).map(|i| [i % 10, 1]).collect();
+    let actions: Vec<[u8; 3]> = (0..20).map(|i| [i % 10, 1, 1]).collect();
 
     let result = engine.step(&actions);
 
@@ -500,7 +514,7 @@ fn test_population_scalability_all_sizes() {
         assert_eq!(engine.num_agents, num_agents);
 
         // Take one step
-        let actions: Vec<[u8; 2]> = (0..num_agents).map(|i| [(i % 10) as u8, 1]).collect();
+        let actions: Vec<[u8; 3]> = (0..num_agents).map(|i| [(i % 10) as u8, 1, 1]).collect();
         let result = engine.step(&actions);
 
         assert_eq!(result.rewards.len(), num_agents);
@@ -517,7 +531,7 @@ fn test_large_population_game_completion() {
     let max_steps = 100;
 
     while !engine.done && steps < max_steps {
-        let actions: Vec<[u8; 2]> = (0..15).map(|i| [(i % 10) as u8, 1]).collect();
+        let actions: Vec<[u8; 3]> = (0..15).map(|i| [(i % 10) as u8, 1, 1]).collect();
         engine.step(&actions);
         steps += 1;
     }
@@ -558,7 +572,7 @@ fn test_all_scenarios_steppable() {
     for (name, scenario) in SCENARIOS.iter() {
         let mut engine = BucketBrigade::new(scenario.clone(), 4, Some(42));
 
-        let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+        let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
         let result = engine.step(&actions);
 
         assert_eq!(result.rewards.len(), 4);
@@ -576,7 +590,7 @@ fn test_all_scenarios_steppable() {
 fn test_positional_default_engine_smoke() {
     let scenario = SCENARIOS.get("positional_default").unwrap().clone();
     let mut engine = BucketBrigade::new(scenario, 4, Some(42));
-    let actions = vec![[0u8, 1u8], [3, 1], [5, 1], [8, 1]];
+    let actions = vec![[0u8, 1u8, 1u8], [3, 1, 1], [5, 1, 1], [8, 1, 1]];
     let result = engine.step(&actions);
     assert_eq!(result.rewards.len(), 4);
     for &r in &result.rewards {
@@ -611,7 +625,7 @@ fn test_positional_default_distance_scales_cost() {
 
     // Agent 0 home is house 0. Agent 0 works house 5 (max ring distance 5).
     // All other agents rest (so their reward is +0.5 with no team component).
-    let actions = vec![[5u8, 1u8], [3, 0], [5, 0], [8, 0]];
+    let actions = vec![[5u8, 1u8, 1u8], [3, 0, 0], [5, 0, 0], [8, 0, 0]];
     let result = engine.step(&actions);
 
     // Expected for agent 0: -(base + alpha * 5) = -(0.5 + 0.5) = -1.0
@@ -642,7 +656,7 @@ fn test_zero_alpha_preserves_default_rewards() {
     let scenario = SCENARIOS.get("default").unwrap().clone();
     let mut engine_a = BucketBrigade::new(scenario.clone(), 4, Some(7));
     let mut engine_b = BucketBrigade::new(scenario, 4, Some(7));
-    let actions = vec![[0u8, 1u8], [4, 1], [9, 1], [2, 1]];
+    let actions = vec![[0u8, 1u8, 1u8], [4, 1, 1], [9, 1, 1], [2, 1, 1]];
     let r_a = engine_a.step(&actions).rewards;
     let r_b = engine_b.step(&actions).rewards;
     assert_eq!(r_a, r_b);
@@ -690,8 +704,8 @@ mod proptests {
                 if engine.done {
                     break;
                 }
-                let actions: Vec<[u8; 2]> = (0..num_agents)
-                    .map(|i| [(i % 10) as u8, 1])
+                let actions: Vec<[u8; 3]> = (0..num_agents)
+                    .map(|i| [(i % 10) as u8, 1, 1])
                     .collect();
                 engine.step(&actions);
             }
@@ -723,8 +737,8 @@ mod proptests {
             let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
             let mut engine = BucketBrigade::new(scenario.clone(), num_agents, Some(seed));
 
-            let actions: Vec<[u8; 2]> = (0..num_agents)
-                .map(|i| [(i % 10) as u8, 1])
+            let actions: Vec<[u8; 3]> = (0..num_agents)
+                .map(|i| [(i % 10) as u8, 1, 1])
                 .collect();
 
             let result = engine.step(&actions);
@@ -753,8 +767,8 @@ mod proptests {
             let max_steps = 200;
 
             while !engine.done && steps < max_steps {
-                let actions: Vec<[u8; 2]> = (0..num_agents)
-                    .map(|i| [(i % 10) as u8, 1])
+                let actions: Vec<[u8; 3]> = (0..num_agents)
+                    .map(|i| [(i % 10) as u8, 1, 1])
                     .collect();
                 engine.step(&actions);
                 steps += 1;
@@ -785,8 +799,8 @@ mod proptests {
                 if engine.done {
                     break;
                 }
-                let actions: Vec<[u8; 2]> = (0..num_agents)
-                    .map(|i| [(i % 10) as u8, 1])
+                let actions: Vec<[u8; 3]> = (0..num_agents)
+                    .map(|i| [(i % 10) as u8, 1, 1])
                     .collect();
                 engine.step(&actions);
 
@@ -804,8 +818,8 @@ mod proptests {
             let scenario = SCENARIOS.get("trivial_cooperation").unwrap().clone();
             let mut engine = BucketBrigade::new(scenario, num_agents, Some(seed));
 
-            let actions: Vec<[u8; 2]> = (0..num_agents)
-                .map(|i| [(i % 10) as u8, 1])
+            let actions: Vec<[u8; 3]> = (0..num_agents)
+                .map(|i| [(i % 10) as u8, 1, 1])
                 .collect();
 
             let result = engine.step(&actions);
@@ -847,7 +861,7 @@ mod proptests {
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));
 
             // Should not panic with any valid probabilities
-            let actions = vec![[0, 1], [1, 1], [2, 1], [3, 1]];
+            let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]];
             let result = engine.step(&actions);
 
             prop_assert_eq!(result.rewards.len(), 4);

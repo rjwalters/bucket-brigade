@@ -60,7 +60,9 @@ class PolicyLearner:
         Args:
             agent_id: ID of the agent this learner is training
             obs_dim: Observation dimension
-            action_dims: List of action dimensions [num_houses, num_modes]
+            action_dims: List of action dimensions, e.g.
+                ``[num_houses, num_modes, num_signals] = [10, 2, 2]``
+                (issue #235; pre-#235 this was ``[10, 2]``).
             hidden_size: Hidden layer size
             learning_rate: Learning rate
             device: Device to use ("cuda" or "cpu")

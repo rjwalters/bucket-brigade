@@ -18,8 +18,18 @@ pub use scenarios::{Scenario, SCENARIOS};
 /// House states: 0 = Safe, 1 = Burning, 2 = Ruined
 pub type HouseState = u8;
 
-/// Agent actions: [house_index, mode] where mode is 0=REST, 1=WORK
-pub type Action = [u8; 2];
+/// Agent actions: [house_index, mode, signal] (issue #235).
+///
+/// * `action[0]` — house to visit (0..10)
+/// * `action[1]` — mode: 0=REST, 1=WORK (the action actually taken)
+/// * `action[2]` — signal: 0=REST, 1=WORK (the broadcast intent, may differ
+///   from `action[1]` — i.e. the agent can lie about its intended action)
+///
+/// Prior to #235 this was a 2-element array `[house, mode]` and the engine
+/// derived the signal deterministically from the mode bit. Making the signal
+/// a first-class action dimension is what enables deception research; honest
+/// agents simply set `action[2] == action[1]`.
+pub type Action = [u8; 3];
 
 /// Represents a single night in the game
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,7 +79,9 @@ impl RandomAgent {
 
 impl Agent for RandomAgent {
     fn act(&self, _obs: &AgentObservation) -> Action {
-        [rand::random::<u8>() % 10, rand::random::<u8>() % 2]
+        let mode = rand::random::<u8>() % 2;
+        // Default: honest random — signal matches mode.
+        [rand::random::<u8>() % 10, mode, mode]
     }
 
     fn reset(&mut self) {}
@@ -101,7 +113,7 @@ mod tests {
             signals: vec![0, 0, 0, 0],
             locations: vec![0, 0, 0, 0],
             houses: vec![0; 10],
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
@@ -112,6 +124,7 @@ mod tests {
             let action = agent.act(&obs);
             assert!(action[0] < 10, "House index should be < 10");
             assert!(action[1] < 2, "Mode should be 0 or 1");
+            assert!(action[2] < 2, "Signal should be 0 or 1");
         }
     }
 
@@ -128,7 +141,7 @@ mod tests {
             signals: vec![0, 1, 0, 1],
             locations: vec![3, 5, 7, 9],
             houses: vec![0, 1, 2, 0, 0, 1, 2, 0, 0, 1],
-            last_actions: vec![[0, 0], [1, 1], [2, 0], [3, 1]],
+            last_actions: vec![[0, 0, 0], [1, 1, 1], [2, 0, 0], [3, 1, 1]],
             scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 4.0],
             agent_id: 2,
             night: 5,
@@ -148,7 +161,7 @@ mod tests {
             signals: vec![0, 1],
             locations: vec![3, 5],
             houses: vec![0; 10],
-            last_actions: vec![[0, 0], [1, 1]],
+            last_actions: vec![[0, 0, 0], [1, 1, 1]],
             scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 2.0],
             agent_id: 0,
             night: 1,
@@ -169,7 +182,7 @@ mod tests {
             houses: vec![0, 1, 2, 0, 1, 2, 0, 1, 2, 0],
             signals: vec![0, 1, 0, 1],
             locations: vec![2, 3, 4, 5],
-            actions: vec![[2, 1], [3, 1], [4, 0], [5, 1]],
+            actions: vec![[2, 1, 1], [3, 1, 1], [4, 0, 0], [5, 1, 1]],
             rewards: vec![1.5, 2.0, 0.5, -0.5],
         };
 
@@ -188,7 +201,7 @@ mod tests {
             houses: vec![0; 10],
             signals: vec![0; 4],
             locations: vec![0; 4],
-            actions: vec![[0, 0]; 4],
+            actions: vec![[0, 0, 0]; 4],
             rewards: vec![0.0; 4],
         };
 
@@ -211,9 +224,10 @@ mod tests {
 
     #[test]
     fn test_action_type() {
-        let action: Action = [5, 1];
+        let action: Action = [5, 1, 0];
         assert_eq!(action[0], 5); // House index
         assert_eq!(action[1], 1); // Mode (work)
+        assert_eq!(action[2], 0); // Signal (rest — i.e. a lie about working)
     }
 
     #[test]

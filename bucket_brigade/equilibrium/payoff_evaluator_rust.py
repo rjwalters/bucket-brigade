@@ -73,7 +73,11 @@ def _heuristic_action(
         house = agent_id % 10
         mode = 0  # REST
 
-    return [house, mode]
+    # Issue #235: 3-element [house, mode, signal]. Honest by default; Nash
+    # equilibrium analyses care primarily about work_tendency, so the
+    # signal channel is wired through here only to satisfy the engine's
+    # new action shape.
+    return [house, mode, mode]
 
 
 def _run_rust_simulation(args):

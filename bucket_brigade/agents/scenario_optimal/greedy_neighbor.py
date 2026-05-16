@@ -31,7 +31,7 @@ class GreedyNeighborAgent(AgentBase):
 
         # Check if own house is burning
         if houses[self.own_house] == 1:
-            return np.array([self.own_house, 1])  # Work on own house
+            return np.array([self.own_house, 1, 1])  # Work on own house
 
         # Check if neighbor houses are burning (could spread to you)
         neighbors = [(self.own_house - 1) % 10, (self.own_house + 1) % 10]
@@ -44,7 +44,7 @@ class GreedyNeighborAgent(AgentBase):
             )  # Work on first threatening neighbor
 
         # No immediate threats - rest to save costs
-        return np.array([self.own_house, 0])  # Rest at own house
+        return np.array([self.own_house, 0, 0])  # Rest at own house
 
 
 # For agent submission system

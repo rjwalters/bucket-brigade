@@ -26,7 +26,19 @@ impl PyBucketBrigade {
     }
 
     fn step(&mut self, py: Python, actions: Vec<Vec<u8>>) -> PyResult<(PyObject, bool, PyObject)> {
-        let rust_actions: Vec<[u8; 2]> = actions.iter().map(|a| [a[0], a[1]]).collect();
+        // Issue #235: action is [house, mode, signal] (length 3). For
+        // backward compatibility we accept length-2 inputs and default the
+        // signal to the mode bit (honest signaling) so existing Python
+        // callers that haven't been migrated yet keep working. Length-3
+        // inputs pass through unchanged.
+        let rust_actions: Vec<[u8; 3]> = actions
+            .iter()
+            .map(|a| match a.len() {
+                2 => [a[0], a[1], a[1]],
+                3 => [a[0], a[1], a[2]],
+                _ => [a[0], a.get(1).copied().unwrap_or(0), a.get(2).copied().unwrap_or(0)],
+            })
+            .collect();
 
         let result = self.inner.step(&rust_actions);
 
@@ -244,6 +256,13 @@ impl PyAgentObservation {
     }
     #[getter]
     fn last_actions(&self, py: Python) -> PyObject {
+        // Issue #235: the engine Action is now [house, mode, signal]
+        // (length 3), but this getter keeps the legacy length-2
+        // [house, mode] shape so the obs vector width is unchanged and
+        // trained policies from PRs #216/#225 stay structurally
+        // loadable. The broadcast signal is exposed separately via the
+        // ``signals`` getter (length num_agents), so no information is
+        // hidden — only deduplicated.
         let actions: Vec<Vec<u8>> = self
             .inner
             .last_actions
@@ -255,6 +274,8 @@ impl PyAgentObservation {
 
     #[getter]
     fn actions(&self, py: Python) -> PyObject {
+        // See ``last_actions`` getter above for the [house, mode] vs
+        // [house, mode, signal] decision.
         let actions: Vec<Vec<u8>> = self
             .inner
             .last_actions
@@ -347,7 +368,7 @@ impl PyGameResult {
                     night
                         .actions
                         .iter()
-                        .map(|a| vec![a[0], a[1]])
+                        .map(|a| vec![a[0], a[1], a[2]])
                         .collect::<Vec<Vec<u8>>>(),
                 )
                 .unwrap();
@@ -398,7 +419,10 @@ impl PyVectorEnv {
     /// Step all environments with given actions
     ///
     /// Args:
-    ///     actions: List of actions, shape (num_envs, 2) where each action is [house_id, mode]
+    ///     actions: List of actions, shape (num_envs, 3) where each action is
+    ///         [house_id, mode, signal] (issue #235). Length-2 inputs are
+    ///         accepted for backward compatibility and default the signal to
+    ///         the mode bit (honest signaling).
     ///
     /// Returns:
     ///     Tuple of (observations, rewards, dones, infos) where each is batched
@@ -420,13 +444,17 @@ impl PyVectorEnv {
 
         // Step each environment
         for (env, action) in self.envs.iter_mut().zip(actions.iter()) {
-            if action.len() != 2 {
+            // Issue #235: accept length-2 (legacy, honest default) or
+            // length-3 (post-#235, explicit signal) action shapes.
+            if action.len() != 2 && action.len() != 3 {
                 return Err(pyo3::exceptions::PyValueError::new_err(
-                    "Each action must have exactly 2 elements [house_id, mode]",
+                    "Each action must have 2 (legacy [house, mode]) or 3 \
+                     ([house, mode, signal]) elements",
                 ));
             }
 
-            let rust_action = [action[0], action[1]];
+            let signal = if action.len() == 3 { action[2] } else { action[1] };
+            let rust_action = [action[0], action[1], signal];
             let result = env.step(&[rust_action]);
 
             all_rewards.push(result.rewards[0]); // Get reward for agent 0
@@ -492,7 +520,17 @@ fn obs_to_vector(obs: &AgentObservation) -> Vec<f32> {
     // Add houses (num_agents elements)
     vec.extend(obs.houses.iter().map(|&x| x as f32));
 
-    // Add flattened last_actions (num_agents * 2 elements)
+    // Add flattened last_actions (num_agents * 2 elements).
+    //
+    // Issue #235 note: per the curator's recommendation we keep
+    // last_actions at length 2 (house + mode) here even though the
+    // underlying Action is now length 3. The signal channel is already
+    // exposed via ``obs.signals`` (length num_agents), so duplicating it
+    // here would just widen the obs vector without adding information.
+    // Keeping the width unchanged means trained policies from PRs #216
+    // and #225 still load structurally, though their *semantics* are
+    // stale (signals now carry real bits, so the learned filters are
+    // operating on a different signal distribution).
     for action in &obs.last_actions {
         vec.push(action[0] as f32);
         vec.push(action[1] as f32);
@@ -573,8 +611,8 @@ fn run_heuristic_episode(
         let observations: Vec<AgentObservation> =
             (0..num_agents).map(|id| game.get_observation(id)).collect();
 
-        // Get actions from heuristic agents
-        let actions: Vec<[u8; 2]> = observations
+        // Get actions from heuristic agents (issue #235: 3-element Action)
+        let actions: Vec<[u8; 3]> = observations
             .iter()
             .enumerate()
             .map(|(id, obs)| agents[id].select_action(obs, &mut rng))

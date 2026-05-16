@@ -111,7 +111,16 @@ export class WasmGameEngine {
   }
 
   /**
-   * Execute one game night
+   * Execute one game night.
+   *
+   * Issue #235: each action is now a 3-element array
+   * ``[house_index, mode, signal]`` (was 2-element ``[house, mode]``).
+   * The TypeScript signature ``number[][]`` is permissive and will NOT
+   * catch a shape mismatch — only the Rust-side ``serde_json`` will. The
+   * WASM step path also accepts legacy 2-element arrays for transitional
+   * compatibility and promotes them to honest 3-element actions
+   * (``signal := mode``); new code should emit 3-element arrays so it can
+   * broadcast a signal independent of its actual mode.
    */
   step(actions: number[][]): { rewards: number[]; done: boolean; info: any } {
     const actionsJson = JSON.stringify(actions);

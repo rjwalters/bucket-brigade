@@ -26,8 +26,23 @@ impl WasmBucketBrigade {
 
     #[wasm_bindgen]
     pub fn step(&mut self, actions_json: &str) -> Result<String, JsValue> {
-        let actions: Vec<[u8; 2]> = serde_json::from_str(actions_json)
-            .map_err(|e| JsValue::from_str(&format!("Failed to parse actions: {}", e)))?;
+        // Issue #235: action vector is [house, mode, signal] (length 3).
+        // For backward compat with already-deployed frontends we first try
+        // to deserialize the post-#235 length-3 form; if that fails, we
+        // fall back to the legacy length-2 form and promote it to length-3
+        // by copying the mode bit into the signal slot (honest default).
+        // JavaScript callers should migrate to the length-3 form so they
+        // can emit deceptive signals; the fallback is purely transitional.
+        let actions: Vec<[u8; 3]> = match serde_json::from_str::<Vec<[u8; 3]>>(actions_json) {
+            Ok(a) => a,
+            Err(_) => {
+                let legacy: Vec<[u8; 2]> =
+                    serde_json::from_str(actions_json).map_err(|e| {
+                        JsValue::from_str(&format!("Failed to parse actions: {}", e))
+                    })?;
+                legacy.into_iter().map(|a| [a[0], a[1], a[1]]).collect()
+            }
+        };
 
         let result = self.inner.step(&actions);
 

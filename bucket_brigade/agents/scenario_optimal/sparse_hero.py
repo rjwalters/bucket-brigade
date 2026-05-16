@@ -32,19 +32,19 @@ class SparseHeroAgent(AgentBase):
 
         # If no fires, rest
         if burning_count == 0:
-            return np.array([self.own_house, 0])  # Rest
+            return np.array([self.own_house, 0, 0])  # Rest
 
         # If fires exist, work on the most critical one
         burning_houses = np.where(houses == 1)[0]
 
         # Prioritize own house if burning
         if houses[self.own_house] == 1:
-            return np.array([self.own_house, 1])
+            return np.array([self.own_house, 1, 1])
 
         # Otherwise work on first burning house (simple strategy)
         # In a more sophisticated version, could consider distance or cluster size
         target_house = burning_houses[0]
-        return np.array([target_house, 1])  # Work on fire
+        return np.array([target_house, 1, 1])  # Work on fire
 
 
 # For agent submission system

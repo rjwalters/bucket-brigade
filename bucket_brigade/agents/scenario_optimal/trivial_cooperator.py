@@ -33,11 +33,11 @@ class TrivialCooperator(AgentBase):
         if len(burning_houses) > 0:
             # Work on first burning house
             target_house = burning_houses[0]
-            return np.array([target_house, 1])  # [house, WORK]
+            return np.array([target_house, 1, 1])  # [house, WORK]
         else:
             # No fires, work on own house (house index = agent_id % 10)
             own_house = self.agent_id % 10
-            return np.array([own_house, 1])  # [house, WORK]
+            return np.array([own_house, 1, 1])  # [house, WORK]
 
 
 # For agent submission system

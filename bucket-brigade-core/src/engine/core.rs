@@ -92,7 +92,7 @@ impl BucketBrigade {
             houses: vec![0; 10],
             agent_positions: vec![0; num_agents],
             agent_signals: vec![0; num_agents],
-            last_actions: vec![[0, 0]; num_agents],
+            last_actions: vec![[0, 0, 0]; num_agents],
             night: 0,
             done: false,
             rewards: vec![0.0; num_agents],
@@ -111,7 +111,7 @@ impl BucketBrigade {
         self.houses = vec![0; 10];
         self.agent_positions = vec![0; self.num_agents];
         self.agent_signals = vec![0; self.num_agents];
-        self.last_actions = vec![[0, 0]; self.num_agents];
+        self.last_actions = vec![[0, 0, 0]; self.num_agents];
         self.night = 0;
         self.done = false;
         self.rewards = vec![0.0; self.num_agents];
@@ -140,8 +140,12 @@ impl BucketBrigade {
         // Store previous house states for reward calculation
         let prev_houses = self.houses.clone();
 
-        // 1. Signal phase (signals are implicit in actions for now)
-        self.agent_signals = actions.iter().map(|action| action[1]).collect();
+        // 1. Signal phase (issue #235): signals are now a first-class action
+        // dimension. Each agent broadcasts `action[2]` independently of the
+        // work/rest bit `action[1]`, enabling deceptive signaling. Pre-#235
+        // this was `action[1]` (the work bit), so signals carried no
+        // information beyond the action itself.
+        self.agent_signals = actions.iter().map(|action| action[2]).collect();
 
         // 2. Action phase: update agent positions
         self.last_actions = actions.to_vec();

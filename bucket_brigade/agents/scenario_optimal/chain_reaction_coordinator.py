@@ -29,19 +29,19 @@ class ChainReactionCoordinator(AgentBase):
         burning_houses = set(np.where(houses == 1)[0])
 
         if not burning_houses:
-            return np.array([self.own_house, 0])  # Rest if no fires
+            return np.array([self.own_house, 0, 0])  # Rest if no fires
 
         # Find fire clusters (connected components)
         clusters = self._find_fire_clusters(houses, burning_houses)
 
         if not clusters:
-            return np.array([self.own_house, 0])
+            return np.array([self.own_house, 0, 0])
 
         # Choose cluster to work on (prioritize larger or more spread-risk clusters)
         target_cluster = self._select_best_cluster(clusters, houses)
         target_house = target_cluster[0]  # Work on first house in cluster
 
-        return np.array([target_house, 1])  # Work
+        return np.array([target_house, 1, 1])  # Work
 
     def _find_fire_clusters(
         self, houses: np.ndarray, burning_houses: set
