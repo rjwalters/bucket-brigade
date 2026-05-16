@@ -42,7 +42,9 @@ def _signal_disagreement_rate(theta: np.ndarray, n: int = 4000, seed: int = 0) -
 def test_firefighter_archetype_signals_honestly():
     """honesty_bias=1.0 must produce signal == mode in every draw."""
     rate = _signal_disagreement_rate(FIREFIGHTER_PARAMS, n=2000, seed=11)
-    assert rate == 0.0, f"Firefighter should never lie; got disagreement rate {rate:.4f}"
+    assert rate == 0.0, (
+        f"Firefighter should never lie; got disagreement rate {rate:.4f}"
+    )
 
 
 def test_liar_archetype_signals_deceptively():
