@@ -57,13 +57,22 @@ import numpy as np
 # function. See ``research_notebook/2026-05-15_h3_random_baseline.md`` and the
 # 2026-05-16 amendment in ``2026-05-14_p3_specialization_results.md``.
 #
-# The ``trivial_cooperation`` and ``chain_reaction`` random values, and the
-# three ``heuristic`` values, share the same uncommitted #145 provenance and
-# remain flagged for sibling re-derivation (see issue #202 follow-up).
+# The ``chain_reaction`` random baseline was re-derived in issue #219 against
+# current post-#197/#198 main using ``diagnostics/random_baseline.py``
+# (n=1000 episodes, 5 seeds at commit ``b053d38e``): 220.75 with 95% bootstrap
+# CI [215.39, 225.86]. The previous value (233.0) traced to the same
+# uncommitted #145 n=50 measurement as ``default``'s old 308; the n=1000
+# re-derivation places it ~5% lower and outside its own implied CI. See
+# ``research_notebook/2026-05-15_h3_random_baseline.md`` (2026-05-16
+# chain_reaction amendment).
+#
+# The ``trivial_cooperation`` random value and the three ``heuristic`` values
+# share the same uncommitted #145 provenance and remain flagged for sibling
+# re-derivation (see issue #202 follow-up).
 BASELINES: Dict[str, Dict[str, float]] = {
     "trivial_cooperation": {"random": 400.0, "heuristic": 400.0},
     "default": {"random": 247.58, "heuristic": 307.0},
-    "chain_reaction": {"random": 233.0, "heuristic": 226.0},
+    "chain_reaction": {"random": 220.75, "heuristic": 226.0},
 }
 
 # Coefficients used in joint_trainer (default values from CellConfig).

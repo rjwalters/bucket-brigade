@@ -160,3 +160,37 @@ Side-by-side:
 - Judge's PR #215 spot-check (n=20, per-step mean 238.5) was directionally correct and inside the new n=1000 CI's loose neighborhood, confirming the rebalance had lowered the random baseline materially.
 
 References: issue #218; PR #205 (#197 ownership rebalance, commit `cee2000a`); PR #206 (#198 per-agent vector promotion, commit `19afcd76`); PR #196 (prior n=1000 derivation, commit `ec6e521c`); PR #215 (Judge spot-check that flagged the staleness).
+
+## Amendment (2026-05-16): chain_reaction random baseline re-derived (issue #219)
+
+The `chain_reaction` row of the `λ_red = 1e-1` results table (line 38)
+reports iter-49 mean reward `222.37 [218.29, 226.75]`. The implied
+contextual baseline cited as `233.0` in `analyze_plateau.py` is itself
+the same uncommitted #145 n=50 measurement that produced `default`'s old
+`308`. Re-derived on `COMPUTE_HOST_PRIMARY` against current main (commit
+`b053d38e`, post-#197/#198) using `random_baseline.py --scenario
+chain_reaction --episodes-per-seed 200 --seeds 5`:
+
+- **Uniform-random per-step team reward on `chain_reaction`**: **220.75, 95% CI [215.39, 225.86]** (n=1000).
+- **Random-init MLP iter-0 per-step**: 218.79, 95% CI [208.96, 228.54] (n=250); statistically indistinguishable from uniform-random.
+
+**Body conclusion unchanged.** The iter-49 mean `222.37 [218.29, 226.75]`
+sits inside the new random CI `[215.39, 225.86]` (overlap on the upper
+end; the iter-49 CI extends slightly above), so the "chain_reaction PPO
+plateau sits at random" framing holds under the corrected baseline. The
+original 233 figure read PPO as sitting ~10 reward below random; under
+the re-derived 220.75 it sits effectively *at* random (Δ ≈ +1.6, well
+inside both CIs). This is qualitatively the same flip as PR #213's
+`default` finding ("PPO is at random, not below it") and PR #218's
+follow-up ("post-#197/#198 the absolute scales shift but the at-random
+interpretation persists"). No body edits — only this footer.
+
+`BASELINES["chain_reaction"]["random"]` updated from `233.0` → `220.75`
+in `analyze_plateau.py`. The `226.0` heuristic baseline in the same dict
+still traces to the uncommitted #145 protocol and remains flagged for a
+separate heuristic-policy re-derivation pass (out of scope for #219).
+
+References: issue #219; PR #213 (sister `default` fix, n=1000 → 293.4);
+PR #228 (the `--scenario` CLI foundation this PR builds on); issue #145
+(origin of the inflated 233); issue #202 (audit-policy issue that
+deferred `chain_reaction` from PR #213).
