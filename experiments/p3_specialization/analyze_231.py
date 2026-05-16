@@ -54,15 +54,26 @@ SEEDS = [42, 43, 44]
 NUM_AGENTS = 4
 TRAILING_N = 5
 
-# Per-scenario (random, specialist) per-step references. Sources:
-#   random: experiments/p3_specialization/diagnostics/results/issue237_postmerge/
-#           (post-#236 re-derivation at commit dffe1060, n=1000 each;
-#           issue #237). Replaces the pre-#236 n=50 figures from
-#           issue199_minspec/baselines.json and issue221_positional/baselines.json.
-#   specialist: experiments/p3_specialization/diagnostics/results/issue199_minspec/baselines.json
-#               and issue221_positional/baselines.json (specialist provenance is
-#               separate from random; specialist baselines tracked by sibling
-#               issue #238 family, NOT updated here).
+# Per-scenario (random, specialist) per-step references. Sources are
+# tracked separately because the two underlying scripts have different
+# sampling power and were updated by different PRs:
+#
+#   random (n=1000 × 5 seeds, 3-dim sampler):
+#     experiments/p3_specialization/diagnostics/results/issue237_postmerge/
+#     (post-#236 re-derivation at commit dffe1060; issue #237 / PR #244).
+#     Replaces the pre-#236 figures from issue199_minspec/ and
+#     issue221_positional/ baselines.json.
+#
+#   specialist (n=50, seed 42):
+#     experiments/p3_specialization/diagnostics/results/issue238_post236_minspec/baselines.json
+#     experiments/p3_specialization/diagnostics/results/issue238_post236_positional/baselines.json
+#     (re-derived post-#236 under issue #238 / PR #243). Specialist policies
+#     signal honestly (`signal == mode`), so the team-reward distribution is
+#     unchanged from pre-#236 — values match pre-#236 references at the
+#     precision of the n=50 sampler. Note: issue199_baselines.py:53-54 still
+#     uses a 2-dim sampler (issue #246), which masks any random-side shift
+#     in #238's own random measurements; that's why we cite random values
+#     from random_baseline.py instead.
 BASELINES: Dict[str, Tuple[float, float]] = {
     "default": (251.23, 320.94),
     "minimal_specialization": (-87.72, -22.07),

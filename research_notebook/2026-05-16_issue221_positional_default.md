@@ -200,3 +200,22 @@ specialist baseline was unchanged by #237.
 Reference: issue #237 amendment block in
 ``research_notebook/2026-05-14_p3_specialization_results.md``.
 4. **MAPPO / CTDE on `positional_default`** — tracked separately in #208 and not blocking this validation.
+
+## Amendment 2026-05-16 — Post-#236 baseline re-derivation (issue #238)
+
+PR #236 promoted the signal channel to a first-class action dimension. Random and specialist baselines for `positional_default` (and the `default` cross-check) were re-derived on commit `dffe1060`:
+
+```
+uv run python experiments/p3_specialization/diagnostics/issue199_baselines.py \
+  --scenarios positional_default default \
+  --output-dir experiments/p3_specialization/diagnostics/results/issue238_post236_positional
+```
+
+| Scenario | Source | Random per-step | Specialist per-step | Gap |
+|---|---|---|---|---|
+| `positional_default` | pre-#236 (issue221_positional) | 241.3597 | 320.8872 | 79.5276 |
+| `positional_default` | post-#236 (issue238) | **241.3597** | **320.8872** | **79.5276** |
+| `default` | pre-#236 (issue221_positional) | 241.8461 | 320.9365 | 79.0904 |
+| `default` | post-#236 (issue238) | **241.8461** | **320.9365** | **79.0904** |
+
+Absolute shift: **0.0000** per-step (identical to 6 decimal places). Same reasoning as the issue #199 amendment — honest specialists + uniform-random action sampling yield invariant team-reward distributions under the new action width. `analyze_231.py`'s `BASELINES` dict is unchanged in value; the comment block was repointed to the post-#236 source JSONs and updated to record the invariance.
