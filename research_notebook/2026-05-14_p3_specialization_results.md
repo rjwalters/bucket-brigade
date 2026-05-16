@@ -132,3 +132,31 @@ After #192's diagnostic (PR #196, commit `ec6e521c`) re-derived the random basel
 - F2 (reward strictly worse at every λ > 0) verdict: was previously "not triggered" (reward essentially constant in λ). The constancy-in-λ finding is unchanged; the interpretation of constancy moves from "PPO learned no specialization at any λ" to "PPO did not move from random at any λ." Both are consistent with the same data; the second is the honest framing given the corrected baseline.
 
 The canonical baseline script is now at `experiments/p3_specialization/diagnostics/random_baseline.py` (#192 / PR #196). The matching diagnostic write-up lives at `research_notebook/2026-05-15_h3_random_baseline.md`.
+
+## Amendment (2026-05-16): re-derived random baseline on post-#197/#198 main (issue #218)
+
+The 293.4 figure from the 2026-05-15 amendment above is itself stale. PR #196 ran the diagnostic on the pre-#197 reward function. PR #205 (#197) then rebalanced ownership rewards 20x on `default` (`reward_own_house_survives` 1.0 → 20.0, `penalty_own_house_burns` 2.0 → 40.0; team rewards unchanged) and PR #206 (#198) made the per-agent reward field structural (vector promotion, no behavior change on `default`). Net effect: the same uniform-random policy that produced 293.4 on the pre-rebalance function now produces a different number, because the larger ownership term contributes net-negative reward at random play (random agents burn more than they save).
+
+Re-ran `experiments/p3_specialization/diagnostics/random_baseline.py` against current main (commit `a38667b5`) on `COMPUTE_HOST_PRIMARY`, defaults (n=1000 episodes, 5 seeds 42..46; n=250 MLP at 5×50):
+
+- **Uniform-random per-step team reward on `default`**: **247.58, 95% CI [241.07, 253.89]** (n=1000).
+- **Uniform-random per-episode**: 3261.95, 95% CI [3175.52, 3345.19].
+- **Episode length**: median 13, mean 13.18, range [13, 16]. Unchanged from PR #196.
+- **Random-init MLP iter-0 per-step**: 241.20, 95% CI [228.04, 254.29] (n=250). The MLP mean differs from uniform-random by 6.4 (just outside the script's ±5 verdict, but the MLP CI [228.04, 254.29] brackets the uniform-random mean of 247.58, so the two are statistically consistent at this n).
+
+Side-by-side:
+
+| baseline | per-step mean | 95% CI | acceptance bar (CI hi) | provenance |
+|---|---|---|---|---|
+| #145 cited | 308.0 | — (n=50, single seed) | 320 (= 308 + 12) | uncommitted protocol on pre-rebalance env |
+| #196 re-derivation (pre-#197) | 293.4 | [288.87, 297.78] (n=1000) | 297.78 | PR #196 / `ec6e521c` |
+| **#218 re-derivation (post-#197/#198, current)** | **247.58** | **[241.07, 253.89] (n=1000)** | **253.89** | this run / `a38667b5` |
+
+**Implications:**
+
+- `RAND_BASELINE` and `ACCEPTANCE_BAR` in `experiments/p3_specialization/analyze_174.py` and the `BASELINES["default"]["random"]` constant in `experiments/p3_specialization/analyze_plateau.py` updated to the new numbers.
+- The H3 regression-test band `H3_RANDOM_PER_STEP_RANGE_DEFAULT = [220, 290]` in `tests/test_env_health_diagnostics.py` already brackets 247.58 — no test change needed. The window was deliberately widened in PR #211 specifically to accommodate the post-#197/#198 scale.
+- The "PPO sits at random" reading of the #145 sweep is unchanged in spirit: the sweep was run on the pre-rebalance env (where the random baseline was 293.4), and the iter-49 means there (~290) still sit inside the pre-rebalance random CI [288.87, 297.78]. The 2026-05-15 amendment's conclusion ("PPO is at random, not below it") stands for the data it describes; the absolute scale just doesn't apply to runs on current main.
+- Judge's PR #215 spot-check (n=20, per-step mean 238.5) was directionally correct and inside the new n=1000 CI's loose neighborhood, confirming the rebalance had lowered the random baseline materially.
+
+References: issue #218; PR #205 (#197 ownership rebalance, commit `cee2000a`); PR #206 (#198 per-agent vector promotion, commit `19afcd76`); PR #196 (prior n=1000 derivation, commit `ec6e521c`); PR #215 (Judge spot-check that flagged the staleness).

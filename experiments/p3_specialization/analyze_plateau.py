@@ -45,18 +45,24 @@ import numpy as np
 # Hard-coded baselines (random-policy and heuristic per-step team reward).
 # These are not in the metrics files; they were measured separately.
 #
-# The ``default`` random baseline was re-derived in PR #196 / issue #192 using
-# ``diagnostics/random_baseline.py`` (n=1000 episodes, 5 seeds): 293.39 with
-# 95% bootstrap CI [288.87, 297.78]. The previous value (308.0, from #145 at
-# n=50) was an outlier on the right tail of a high-variance distribution and
-# sits outside the n=1000 CI. See ``research_notebook/2026-05-15_h3_random_baseline.md``.
+# The ``default`` random baseline was re-derived in issue #218 against current
+# post-#197/#198 main using ``diagnostics/random_baseline.py`` (n=1000 episodes,
+# 5 seeds at commit ``a38667b5``): 247.58 with 95% bootstrap CI [241.07, 253.89].
+# The previous value (293.4, from PR #196 at n=1000) measured the pre-#197/#198
+# reward function and is therefore stale — PR #205 (#197) rebalanced ownership
+# rewards 20x on ``default``, which lowered the random per-step mean (random
+# agents burn houses more often than they save them, so the larger ownership
+# term contributes net-negative reward at random play). The original 308 value
+# from #145 (n=50) was a separate high-variance outlier on the pre-rebalance
+# function. See ``research_notebook/2026-05-15_h3_random_baseline.md`` and the
+# 2026-05-16 amendment in ``2026-05-14_p3_specialization_results.md``.
 #
 # The ``trivial_cooperation`` and ``chain_reaction`` random values, and the
 # three ``heuristic`` values, share the same uncommitted #145 provenance and
 # remain flagged for sibling re-derivation (see issue #202 follow-up).
 BASELINES: Dict[str, Dict[str, float]] = {
     "trivial_cooperation": {"random": 400.0, "heuristic": 400.0},
-    "default": {"random": 293.4, "heuristic": 307.0},
+    "default": {"random": 247.58, "heuristic": 307.0},
     "chain_reaction": {"random": 233.0, "heuristic": 226.0},
 }
 
