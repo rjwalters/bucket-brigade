@@ -592,7 +592,7 @@ y = [
 
 ### 📚 Documentation
 - Mathematical framework: `docs/game-design/RANKING_SYSTEM.md`
-- Scenario research: `SCENARIO_RESEARCH.md`
+- Scenario research: `archive/SCENARIO_RESEARCH.md` (archived proposal)
 - Tournament UI: `docs/features/TEAM_BUILDER_TOURNAMENT.md`
 - This methodology overview: `RANKING_METHODOLOGY.md`
 

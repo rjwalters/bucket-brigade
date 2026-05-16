@@ -968,7 +968,7 @@ ssh my-gpu-server "cd bucket-brigade && rm -rf .venv && uv venv && uv sync"
 ### See Also
 
 - **Remote Execution Guide**: `experiments/REMOTE_EXECUTION.md` - Detailed guide for running research experiments
-- **Training Guide**: `TRAINING_GUIDE.md` - PPO training with PufferLib
+- **Training Guide**: `docs/TRAINING_GUIDE.md` - PPO training with PufferLib
 - **Hyperparameter Tuning**: `docs/HYPERPARAMETER_TUNING.md` - Optuna-based tuning guide
 
 ## Resources
@@ -978,7 +978,7 @@ ssh my-gpu-server "cd bucket-brigade && rm -rf .venv && uv venv && uv sync"
 - **Main Repository**: https://github.com/loomhq/loom
 - **Getting Started**: https://github.com/loomhq/loom#getting-started
 - **Role Definitions**: See `.loom/roles/*.md` in this repository
-- **Workflow Details**: See `LOOM_AGENTS.md` in this repository
+- **Workflow Details**: See `.loom/LOOM_AGENTS.md` in this repository
 
 ### Local Configuration
 

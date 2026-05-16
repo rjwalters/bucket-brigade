@@ -165,7 +165,7 @@ To rank evolved agents (evolved, evolved_v3, evolved_v4, evolved_v5):
 
 ### Comparison to Simple Averages
 
-**Simple average** (Method A from RANKING_METHODOLOGY.md):
+**Simple average** (Method A from docs/RANKING_METHODOLOGY.md):
 ```
 coordinator: 35.1 ± 37.8
 firefighter: 33.4 ± 34.2

@@ -8,11 +8,11 @@
 
 > **📖 Terminology Note:** This project uses "agent" in two distinct contexts:
 > - **Game Policies/Strategies**: AI decision-makers in the bucket brigade game (the focus of this research)
-> - **Loom Roles**: Development automation workers (see [LOOM_AGENTS.md](LOOM_AGENTS.md) for development workflow)
+> - **Loom Roles**: Development automation workers (see [LOOM_AGENTS.md](.loom/LOOM_AGENTS.md) for development workflow)
 >
 > When we say "agent" in the game context below, we mean the AI policies that play the bucket brigade game.
 >
-> See [GLOSSARY.md](GLOSSARY.md) for complete terminology definitions.
+> See [GLOSSARY.md](docs/GLOSSARY.md) for complete terminology definitions.
 
 ## 🧭 The Story & Challenge
 
@@ -37,8 +37,8 @@ See [docs/game_mechanics.md](docs/game_mechanics.md) for the complete game rules
 - **Extract individual policy performance** with statistical validation
 - **Evolve optimal heuristic agents** through evolutionary algorithms - see [Evolution Research](experiments/evolution/README.md)
 - **Train neural network policies** using reinforcement learning:
-  - Population-based training (recommended) - see [POPULATION_TRAINING.md](POPULATION_TRAINING.md)
-  - Single agent training - see [TRAINING_GUIDE.md](TRAINING_GUIDE.md)
+  - Population-based training (recommended) - see [POPULATION_TRAINING.md](docs/POPULATION_TRAINING.md)
+  - Single agent training - see [TRAINING_GUIDE.md](docs/TRAINING_GUIDE.md)
 - **Analyze Nash equilibria** to find stable strategic configurations
 - **Understand cooperation dynamics** through scenario analysis and agent ranking
 
@@ -249,7 +249,7 @@ All results are logged to a local SQLite database and saved as JSON replays for 
 | ✅ 5 | Build ranking orchestration loop | Batch runner + basic analysis |
 | ✅ 6 | Create TypeScript web visualizer | Game replay + ranking dashboard |
 | ✅ 7 | **Rust core engine** | `bucket-brigade-core/` - 100x faster |
-| ✅ 8 | **PufferLib integration** | Train learned policies with PPO - see [TRAINING_GUIDE.md](TRAINING_GUIDE.md) |
+| ✅ 8 | **PufferLib integration** | Train learned policies with PPO - see [TRAINING_GUIDE.md](docs/TRAINING_GUIDE.md) |
 | ✅ 9 | **Nash equilibrium analysis** | Complete framework with Rust-backed performance |
 | ✅ 10 | **100x performance boost** | All critical modules use Rust backend |
 
@@ -380,10 +380,10 @@ pnpm run dev
 
 ## 🧵 Development Orchestration
 
-This repository is set up to use **Loom** for AI-powered development orchestration in future development stages. See `LOOM_AGENTS.md` and `CLAUDE.md` for details on the autonomous Loom agent workflow system (Builder, Judge, Curator, etc.) that will be used for managing complex development tasks like implementing the full Bayesian ranking system and PufferLib integration.
+This repository is set up to use **Loom** for AI-powered development orchestration in future development stages. See `.loom/LOOM_AGENTS.md` and `CLAUDE.md` for details on the autonomous Loom agent workflow system (Builder, Judge, Curator, etc.) that will be used for managing complex development tasks like implementing the full Bayesian ranking system and PufferLib integration.
 
 **Note**: The term "agent" in this project refers to two different concepts:
-- **Loom Agents** (development): Builder, Judge, Curator - autonomous development workers (see `LOOM_AGENTS.md`)
+- **Loom Agents** (development): Builder, Judge, Curator - autonomous development workers (see `.loom/LOOM_AGENTS.md`)
 - **Game Agents** (AI): Firefighter, Hero, Free Rider - AI players in the simulation (see `docs/AGENT_ROSTER.md`)
 
 ## 🧪 Testing & Quality

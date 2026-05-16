@@ -500,9 +500,9 @@ But for MVP: **No backend needed!**
 ## 📖 Related Documentation
 
 - [SIMPLIFICATION_PLAN.md](./SIMPLIFICATION_PLAN.md) - Removal plan
-- [API.md](../API.md) - Data structures (will be updated)
-- [TRAINING_GUIDE.md](../TRAINING_GUIDE.md) - RL training
-- [DEPLOYMENT.md](../DEPLOYMENT.md) - Static site deployment (will be updated)
+- [API.md](archive/API.md) - Data structures (archived, aspirational)
+- [TRAINING_GUIDE.md](TRAINING_GUIDE.md) - RL training
+- [DEPLOYMENT.md](archive/DEPLOYMENT.md) - Static site deployment (archived, aspirational)
 
 ---
 
