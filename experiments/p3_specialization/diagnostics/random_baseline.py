@@ -39,11 +39,14 @@ Usage::
         --episodes-per-seed 50 --seeds 1 --no-mlp   # reproduce #145 protocol
     uv run python experiments/p3_specialization/diagnostics/random_baseline.py \\
         --scenario positional_default --no-mlp      # issue #221
+    uv run python experiments/p3_specialization/diagnostics/random_baseline.py \\
+        --scenario chain_reaction                   # issue #219
 
-Issue #219 will extend this script with a per-scenario cited-value table
-(currently CITED_308 / CITED_290 only apply to the ``default`` scenario; for
-other scenarios the verdict comparison is suppressed but raw measurements still
-print).
+Issue #219 added the ``SCENARIO_CITED_VALUES`` table below. For each named
+scenario in the table, the verdict block compares the re-derived value against
+the cited number from #145 (and, for ``default``, also against the iter-0 MLP
+number from #183). For scenarios outside the table, raw measurements still
+print but the verdict comparison is suppressed.
 """
 
 from __future__ import annotations
@@ -63,15 +66,38 @@ from bucket_brigade.training.joint_trainer import JointPPOTrainer, flatten_dict_
 HIDDEN_SIZE = 64
 NUM_AGENTS = 4
 ACTION_DIMS = [10, 2]
-# Default scenario name; override via ``--scenario`` (issue #221). A broader
-# generalization with a per-scenario cited-value table is tracked in issue #219.
+# Default scenario name; override via ``--scenario`` (issue #221).
 DEFAULT_SCENARIO_NAME = "default"
 
-# The widely cited number we are re-deriving (applies to ``default`` only).
-CITED_308 = 308.0
-# Iter-0 per-step team reward from issue #183's phase-3 L1_norm cell
-# (``default`` scenario only).
-CITED_290 = 290.52
+# Per-scenario cited-value table (issue #219).
+#
+# ``random`` is the per-step team-reward number cited in the literature (almost
+# always traceable to issue #145's uncommitted n=50 measurement). ``mlp_iter0``
+# is the iter-0 per-step MLP team reward cited alongside it (e.g. the L1_norm
+# phase-3 cell from #183) — currently only defined for ``default``. ``note``
+# records the provenance so re-derivations stay auditable.
+#
+# When ``--scenario`` matches an entry here, the verdict block compares the
+# re-derived value against ``random`` (and, if non-None, against ``mlp_iter0``).
+# Scenarios outside this table still print their raw measurements; the verdict
+# comparison is just suppressed.
+SCENARIO_CITED_VALUES: dict[str, dict[str, float | str | None]] = {
+    "default": {
+        "random": 308.0,
+        "mlp_iter0": 290.52,
+        "note": "#145 (random) / #183 (iter-0 MLP); both load-bearing in analyze_plateau.py and analyze_174.py",
+    },
+    "chain_reaction": {
+        "random": 233.0,
+        "mlp_iter0": None,
+        "note": "#145 (same uncommitted n=50 protocol as default's 308); load-bearing in analyze_plateau.py",
+    },
+}
+
+# Backwards-compat aliases for callers that imported these constants directly.
+# Kept for one release cycle; new code should consult ``SCENARIO_CITED_VALUES``.
+CITED_308 = SCENARIO_CITED_VALUES["default"]["random"]
+CITED_290 = SCENARIO_CITED_VALUES["default"]["mlp_iter0"]
 
 
 def run_random_episode(
@@ -183,28 +209,32 @@ def main() -> None:
         type=str,
         default=DEFAULT_SCENARIO_NAME,
         help=(
-            "Scenario name to evaluate (e.g. 'default', 'positional_default', "
-            "'minimal_specialization'). Cited values CITED_308 / CITED_290 only "
-            "apply to 'default'; for other scenarios the verdict comparison is "
-            "suppressed (issue #221). Issue #219 will add a per-scenario "
-            "cited-value table."
+            "Scenario name to evaluate (e.g. 'default', 'chain_reaction', "
+            "'positional_default', 'minimal_specialization'). Scenarios listed "
+            "in SCENARIO_CITED_VALUES get a verdict comparison against the cited "
+            "number; others print raw measurements only. See issue #219."
         ),
     )
     args = ap.parse_args()
 
     scenario_name = args.scenario
     scenario = get_scenario_by_name(scenario_name, num_agents=NUM_AGENTS)
+    cited = SCENARIO_CITED_VALUES.get(scenario_name)
     print(
         f"Scenario: {scenario_name}, num_agents={NUM_AGENTS}, min_nights={scenario.min_nights}"
     )
-    if scenario_name == "default":
-        print(
-            f"Cited values: random={CITED_308} (issue #145), iter-0 MLP={CITED_290} (issue #183)"
+    if cited is not None:
+        rand_cite = cited["random"]
+        mlp_cite = cited["mlp_iter0"]
+        provenance = cited["note"]
+        mlp_str = (
+            f", iter-0 MLP={mlp_cite}" if mlp_cite is not None else ""
         )
+        print(f"Cited values: random={rand_cite}{mlp_str} ({provenance})")
     else:
         print(
-            "Cited values: n/a for this scenario "
-            "(CITED_308 / CITED_290 apply only to 'default'; see issue #219 for a per-scenario table)."
+            f"Cited values: n/a for scenario '{scenario_name}' "
+            "(not in SCENARIO_CITED_VALUES; raw measurements only)."
         )
     print()
 
@@ -279,18 +309,23 @@ def main() -> None:
 
     # ----- Verdict -----
     print("=== Verdict ===")
-    if scenario_name == "default":
+    if cited is not None:
+        rand_cite = cited["random"]
+        mlp_cite = cited["mlp_iter0"]
         lo, hi = bootstrap_ci(rand_per_step_arr)
-        rand_agrees = lo <= CITED_308 <= hi
-        print(f"Uniform-random per-step CI contains cited 308: {rand_agrees}")
+        rand_agrees = lo <= rand_cite <= hi
+        print(
+            f"Uniform-random per-step CI contains cited {rand_cite}: {rand_agrees}"
+        )
         if mlp_per_step_arr is not None:
-            lo_m, hi_m = bootstrap_ci(mlp_per_step_arr)
-            mlp_agrees_290 = lo_m <= CITED_290 <= hi_m
+            if mlp_cite is not None:
+                lo_m, hi_m = bootstrap_ci(mlp_per_step_arr)
+                mlp_agrees_cite = lo_m <= mlp_cite <= hi_m
+                print(
+                    f"Random-init MLP per-step CI contains cited {mlp_cite}: {mlp_agrees_cite}"
+                )
             mlp_agrees_rand = (
                 abs(mlp_per_step_arr.mean() - rand_per_step_arr.mean()) < 5.0
-            )
-            print(
-                f"Random-init MLP per-step CI contains cited 290.52: {mlp_agrees_290}"
             )
             print(
                 f"Random-init MLP within ±5 of uniform-random: {mlp_agrees_rand}"
@@ -298,7 +333,7 @@ def main() -> None:
     else:
         print(
             f"(No cited verdict for scenario '{scenario_name}'; "
-            "see issue #219 for a per-scenario cited-value table.)"
+            "add an entry to SCENARIO_CITED_VALUES to enable.)"
         )
 
 
