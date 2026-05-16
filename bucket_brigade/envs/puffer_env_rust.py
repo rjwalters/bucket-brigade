@@ -22,8 +22,14 @@ def _heuristic_action(
     obs_dict: dict[str, np.ndarray],
     agent_id: int,
     rng: np.random.Generator,
-) -> np.ndarray:
-    """Simplified heuristic action selection for opponent agents."""
+) -> list[int]:
+    """Simplified heuristic action selection for opponent agents.
+
+    Issue #235: returns a 3-element ``[house, mode, signal]``. This helper
+    is the opponent-agent fast-path and defaults to honest signaling
+    (``signal == mode``); the full Python ``HeuristicAgent.act`` is what
+    drives the Liar archetype's deceptive behavior.
+    """
     work_tendency = theta[1]
     own_house_priority = theta[3]
     rest_reward_bias = theta[8]
@@ -43,7 +49,8 @@ def _heuristic_action(
         house = agent_id % 10
         mode = 0  # REST
 
-    return [house, mode]
+    # Honest signal: broadcast matches actual mode.
+    return [house, mode, mode]
 
 
 class RustPufferBucketBrigade(gym.Env):
@@ -121,8 +128,11 @@ class RustPufferBucketBrigade(gym.Env):
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
 
-        # Action: [house_index, mode] where house_index ∈ [0,9], mode ∈ [0,1]
-        self.action_space = spaces.MultiDiscrete([10, 2])
+        # Action: [house_index, mode, signal] (issue #235) where
+        # house_index in [0,9], mode in {0=REST, 1=WORK}, signal in
+        # {0=REST, 1=WORK}. The signal is broadcast independently of the
+        # mode; honest agents emit ``signal == mode``, liars don't.
+        self.action_space = spaces.MultiDiscrete([10, 2, 2])
 
         # Track episode statistics
         self.episode_rewards: List[float] = []
@@ -156,7 +166,7 @@ class RustPufferBucketBrigade(gym.Env):
             "houses": np.array(rust_obs.houses),
             "signals": np.array(rust_obs.signals),
             "locations": np.array(rust_obs.locations),
-            "last_actions": np.zeros((self.num_agents, 2)),  # No actions yet
+            "last_actions": np.zeros((self.num_agents, 2)),  # No actions yet (issue #235: width stays 2 per obs_to_vector compat)
             "scenario_info": np.array(
                 [
                     self.rust_scenario.prob_fire_spreads_to_neighbor,
@@ -183,8 +193,14 @@ class RustPufferBucketBrigade(gym.Env):
         """Take a step in the environment."""
         self.steps_taken += 1
 
-        # Convert action to [house, mode] format
-        agent_action = [int(action[0]), int(action[1])]
+        # Convert action to [house, mode, signal] format (issue #235).
+        # If the caller provided a 2-element action (legacy), default the
+        # signal to the mode bit (honest).
+        if len(action) >= 3:
+            agent_action = [int(action[0]), int(action[1]), int(action[2])]
+        else:
+            mode = int(action[1])
+            agent_action = [int(action[0]), mode, mode]
 
         # Get actions from all agents
         all_actions = [agent_action]  # Trained agent first
@@ -317,7 +333,8 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
             low=-np.inf, high=np.inf, shape=(num_envs, obs_size), dtype=np.float32
         )
 
-        self.action_space = spaces.MultiDiscrete([num_envs, 10, 2])
+        # Issue #235: 3-element action [house, mode, signal] per env.
+        self.action_space = spaces.MultiDiscrete([num_envs, 10, 2, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None

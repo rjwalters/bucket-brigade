@@ -155,7 +155,7 @@ class GameSimulator:
 
     def select_action(
         self, agent_id: int, observation: np.ndarray
-    ) -> Tuple[int, int, float]:
+    ) -> Tuple[int, int, int, float]:
         """
         Select action for an agent given observation.
 
@@ -164,7 +164,13 @@ class GameSimulator:
             observation: Flattened observation array
 
         Returns:
-            Tuple of (house_action, mode_action, log_prob)
+            Tuple of (house_action, mode_action, signal_action, log_prob).
+
+            Issue #235: the policy now has three action heads
+            ``[house, mode, signal]``. If the policy network was constructed
+            with only two heads (legacy pre-#235 checkpoints) we fall back
+            to honest signaling (``signal := mode``) so old checkpoints
+            still load and run.
         """
         policy = self.policies[agent_id]
         obs_tensor = torch.FloatTensor(observation).unsqueeze(0)  # Add batch dimension
@@ -182,12 +188,24 @@ class GameSimulator:
             house = house_dist.sample().item()
             mode = mode_dist.sample().item()
 
-            # Calculate log probability
             house_logprob = house_dist.log_prob(torch.tensor(house))
             mode_logprob = mode_dist.log_prob(torch.tensor(mode))
-            total_logprob = (house_logprob + mode_logprob).item()
 
-        return house, mode, total_logprob
+            # Optional third head: signal (issue #235).
+            if len(action_logits) >= 3:
+                signal_probs = torch.softmax(action_logits[2], dim=-1)
+                signal_dist = torch.distributions.Categorical(signal_probs)
+                signal = signal_dist.sample().item()
+                signal_logprob = signal_dist.log_prob(torch.tensor(signal))
+                total_logprob = (
+                    house_logprob + mode_logprob + signal_logprob
+                ).item()
+            else:
+                # Legacy 2-head policy — honest signaling.
+                signal = int(mode)
+                total_logprob = (house_logprob + mode_logprob).item()
+
+        return house, mode, signal, total_logprob
 
     def run_episode(self, env_id: int) -> Dict[int, List]:
         """
@@ -226,8 +244,10 @@ class GameSimulator:
 
             for i, agent_id in enumerate(agent_ids):
                 obs = observations[i]
-                house, mode, logprob = self.select_action(agent_id, obs)
-                actions.append([house, mode])
+                # Issue #235: select_action now returns
+                # (house, mode, signal, logprob).
+                house, mode, signal, logprob = self.select_action(agent_id, obs)
+                actions.append([house, mode, signal])
                 logprobs.append(logprob)
 
             # Step environment (returns tuple: rewards_list, done, info)

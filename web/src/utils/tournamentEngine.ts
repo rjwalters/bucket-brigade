@@ -179,7 +179,12 @@ class HeuristicAgent extends BrowserAgent {
       }
     }
 
-    return [targetHouse, mode];
+    // Issue #235: action is [house, mode, signal]. This archetype-driven
+    // browser agent emits an honest signal by default (signal == mode);
+    // the Python-side HeuristicAgent uses honesty_bias to drive a
+    // potentially deceptive signal — wire that through here in a future
+    // pass if browser tournaments need to exercise lying behavior.
+    return [targetHouse, mode, mode];
   }
 }
 

@@ -65,7 +65,7 @@ from bucket_brigade.training.joint_trainer import JointPPOTrainer, flatten_dict_
 # training stack (info_theory, torch optim, etc.) just to read three numbers.
 HIDDEN_SIZE = 64
 NUM_AGENTS = 4
-ACTION_DIMS = [10, 2]
+ACTION_DIMS = [10, 2, 2]  # [house, mode, signal] (issue #235)
 # Default scenario name; override via ``--scenario`` (issue #221).
 DEFAULT_SCENARIO_NAME = "default"
 
@@ -107,11 +107,14 @@ def run_random_episode(
     env.reset(seed=int(rng.integers(0, 2**31 - 1)))
     total_reward = 0.0
     while not env.done:
-        # MultiDiscrete([10, 2]) per agent. See bucket_brigade_env.py:117 and
-        # puffer_env.py:77 for the verified shape (N, 2) = [house_index, mode_flag].
+        # MultiDiscrete([10, 2, 2]) per agent (issue #235).
+        # Shape (N, 3) = [house_index, mode_flag, signal]. Pre-#235 was
+        # (N, 2); the third column is the broadcast signal, sampled
+        # independently here to fully exercise the action space.
         actions = np.stack(
             [
                 rng.integers(0, 10, size=env.num_agents),
+                rng.integers(0, 2, size=env.num_agents),
                 rng.integers(0, 2, size=env.num_agents),
             ],
             axis=-1,

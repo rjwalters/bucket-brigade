@@ -234,17 +234,25 @@ class TestGameSimulatorActionSelection:
         # Create dummy observation (36 dims for standard game)
         observation = np.random.randn(36).astype(np.float32)
 
-        # Select action
-        house, mode, logprob = simulator.select_action(
+        # Select action — issue #235: returns 4-tuple (house, mode, signal, logprob).
+        house, mode, signal, logprob = simulator.select_action(
             agent_id=0, observation=observation
         )
 
         # Verify types and ranges
         assert isinstance(house, int)
         assert isinstance(mode, int)
+        assert isinstance(signal, int)
         assert isinstance(logprob, float)
         assert 0 <= house < 10
         assert 0 <= mode < 3
+        # Note: this test uses an *unrelated* test fixture with
+        # ``action_dims=[10, 3]`` (the third entry there is the test
+        # author's choice for a 3-way mode head, *not* the post-#235
+        # signal head). With only 2 heads in the policy, select_action
+        # falls back to ``signal := mode`` (see game_simulator
+        # docstring), so we just check ``signal == mode`` here.
+        assert signal == mode
 
     def test_select_action_determinism(self):
         """Test that same observation with same seed produces same action."""
@@ -261,10 +269,11 @@ class TestGameSimulatorActionSelection:
             simulator.register_policy(agent_id=0, policy=policy)
 
             torch.manual_seed(42)
-            house, mode, logprob = simulator.select_action(
+            # Issue #235: select_action now returns 4-tuple.
+            house, mode, signal, logprob = simulator.select_action(
                 agent_id=0, observation=observation
             )
-            results.append((house, mode))
+            results.append((house, mode, signal))
 
         # All results should be the same (with same seed)
         assert all(r == results[0] for r in results)

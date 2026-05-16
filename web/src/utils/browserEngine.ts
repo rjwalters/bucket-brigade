@@ -132,7 +132,8 @@ export class BrowserBucketBrigade {
     this.houses = new Array(10).fill(0);
     this.agent_positions = new Array(this.scenario.num_agents).fill(0);
     this.agent_signals = new Array(this.scenario.num_agents).fill(0);
-    this.last_actions = new Array(this.scenario.num_agents).fill(null).map(() => [0, 0]);
+    // Issue #235: action is now [house, mode, signal] (length 3).
+    this.last_actions = new Array(this.scenario.num_agents).fill(null).map(() => [0, 0, 0]);
     this.night = 0;
     this.done = false;
     this.rewards = new Array(this.scenario.num_agents).fill(0);
@@ -156,16 +157,24 @@ export class BrowserBucketBrigade {
     // Store previous house states for reward calculation
     const prev_houses = [...this.houses];
 
-    // 1. Signal phase (signals are implicit in actions for now)
-    this.agent_signals = actions.map(action => action[1]);
+    // Normalize action shape (issue #235). Each action is
+    // [house, mode, signal] (length 3). Length-2 inputs are accepted
+    // for backward compat and promoted to honest 3-element form
+    // (signal := mode).
+    const normalized = actions.map(a => a.length >= 3 ? a : [a[0], a[1], a[1]]);
+
+    // 1. Signal phase (issue #235): signals are now action[2], decoupled
+    // from the mode bit action[1]. Pre-#235 the broadcast was a
+    // deterministic copy of the work bit.
+    this.agent_signals = normalized.map(action => action[2]);
 
     // 2. Action phase: update agent positions
-    this.last_actions = actions.map(action => [...action]);
-    this.agent_positions = actions.map(action => action[0]);
+    this.last_actions = normalized.map(action => [...action]);
+    this.agent_positions = normalized.map(action => action[0]);
 
     // 3. Extinguish phase
     // Agents respond to fires visible at start of turn
-    this.extinguish_fires(actions);
+    this.extinguish_fires(normalized);
 
     // 4. Burn-out phase
     // Unextinguished fires become ruined houses
@@ -180,7 +189,7 @@ export class BrowserBucketBrigade {
     this.spark_fires();
 
     // 7. Compute rewards
-    this.rewards = this.compute_rewards(actions, prev_houses);
+    this.rewards = this.compute_rewards(normalized, prev_houses);
 
     // 8. Check termination
     this.done = this.check_termination();

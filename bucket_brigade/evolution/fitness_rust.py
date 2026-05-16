@@ -51,7 +51,10 @@ def _heuristic_action(
         house = agent_id % 10
         mode = 0  # REST
 
-    return [house, mode]
+    # Issue #235: 3-element [house, mode, signal]. Honest by default
+    # (signal == mode); the deceptive behavior lives in HeuristicAgent.act
+    # where the honesty_bias parameter actually drives the broadcast.
+    return [house, mode, mode]
 
 
 def _run_rust_game(args: tuple[np.ndarray, str, int, int]) -> float:

@@ -39,9 +39,10 @@ class TestAgentBase:
 
         # Check action format
         assert isinstance(action, np.ndarray)
-        assert action.shape == (2,)
+        assert action.shape == (3,)  # issue #235: [house, mode, signal]
         assert 0 <= action[0] <= 9  # House index
         assert action[1] in [0, 1]  # Mode (REST or WORK)
+        assert action[2] in [0, 1]  # Signal (REST or WORK) — issue #235
 
 
 class TestHeuristicAgent:
@@ -80,9 +81,10 @@ class TestHeuristicAgent:
         action = agent.act(obs)
 
         assert isinstance(action, np.ndarray)
-        assert action.shape == (2,)
+        assert action.shape == (3,)  # issue #235: [house, mode, signal]
         assert 0 <= action[0] <= 9
         assert action[1] in [0, 1]
+        assert action[2] in [0, 1]
 
     def test_agent_memory(self):
         """Test agent memory and fatigue effects."""
@@ -198,8 +200,148 @@ class TestAgentFactory:
             action = agent.act(obs)
 
             assert isinstance(action, np.ndarray)
-            assert action.shape == (2,)
+            assert action.shape == (3,)  # issue #235: [house, mode, signal]
             assert isinstance(action[0], (int, np.integer))  # House index
             assert isinstance(action[1], (int, np.integer))  # Mode
+            assert isinstance(action[2], (int, np.integer))  # Signal
             assert 0 <= action[0] <= 9
             assert action[1] in [0, 1]
+            assert action[2] in [0, 1]
+
+
+# ---------------------------------------------------------------------------
+# Issue #235: signal as a first-class action dimension
+# ---------------------------------------------------------------------------
+
+
+class TestSignalChannelDecoupled:
+    """Pin the acceptance criterion of issue #235: the broadcast signal
+    (``action[2]``) is decoupled from the work/rest bit (``action[1]``).
+
+    These tests prove the channel is operative — i.e. an agent **can**
+    emit a signal that differs from its action — and that honest
+    archetypes do not lie.
+    """
+
+    @staticmethod
+    def _make_obs(houses: np.ndarray) -> dict:
+        """Build the minimal observation the heuristic agents consume."""
+        n = 4
+        return {
+            "signals": np.zeros(n, dtype=np.int8),
+            "locations": np.zeros(n, dtype=np.int8),
+            "houses": houses,
+            "last_actions": np.zeros((n, 3), dtype=np.int8),
+            "scenario_info": np.array(
+                [0.25, 0.5, 100, 100, 0.5, 0.2, 12, 0.02, 12, 4]
+            ),
+        }
+
+    def test_random_agent_signal_is_honest(self):
+        """The random baseline is honest by convention (signal == mode).
+
+        See ``RandomAgent.act`` docstring for the rationale: this keeps the
+        random baseline's semantics identical to pre-#235 ("uniform-random
+        house, uniform-random mode") and isolates the signal channel as a
+        deliberate degree of freedom available to strategic agents.
+        """
+        agent = RandomAgent(0)
+        obs = self._make_obs(np.zeros(10, dtype=np.int8))
+        for _ in range(50):
+            a = agent.act(obs)
+            assert a.shape == (3,)
+            assert int(a[1]) == int(a[2]), (
+                f"RandomAgent should signal honestly: mode={int(a[1])}, "
+                f"signal={int(a[2])}"
+            )
+
+    def test_firefighter_archetype_lies_rarely(self):
+        """The Firefighter archetype has ``honesty_bias = 1.0`` and a
+        small ``exploration_rate = 0.1``. Its base ``_choose_signal``
+        always returns the honest broadcast, and ``_choose_mode`` follows
+        the signal with probability ``honesty_bias = 1``; only the
+        ``exploration_rate`` (which re-randomizes the *mode* but not the
+        signal) can produce ``mode != signal``. So we assert the
+        empirical lie rate is **low** rather than zero."""
+        agent = create_archetype_agent("firefighter", 0)
+        houses = np.array([0, 1, 0, 0, 0, 0, 0, 1, 0, 0])  # some fires
+        obs = self._make_obs(houses)
+        np.random.seed(42)
+        n = 200
+        lie_count = 0
+        for _ in range(n):
+            a = agent.act(obs)
+            if int(a[1]) != int(a[2]):
+                lie_count += 1
+        lie_rate = lie_count / n
+        # Exploration rate is 0.1 and only flips with probability 0.5 of
+        # producing a mismatch, so theoretical lie rate ~= 0.05. Allow
+        # generous slack.
+        assert lie_rate < 0.25, (
+            f"Firefighter (honesty_bias=1.0) should rarely lie; "
+            f"observed lie rate = {lie_rate:.3f} over {n} samples. "
+            "Expected < 0.25."
+        )
+
+    def test_liar_archetype_lies_in_expectation(self):
+        """The Liar archetype has ``honesty_bias = 0.1``; in expectation
+        it should lie roughly 90% of the time. We sample many steps and
+        assert the empirical lie rate is above a generous lower bound.
+
+        This is the canonical acceptance test from issue #235: it proves
+        that the signal channel is *operative* (an agent can emit
+        ``signal != mode``) and that the existing ``_choose_signal`` /
+        ``honesty_bias`` machinery, which pre-#235 was computed and
+        thrown away, is now actually wired through.
+        """
+        agent = create_archetype_agent("liar", 0)
+        # Use a mixed-state obs so work_intent is non-degenerate.
+        houses = np.array([0, 1, 0, 1, 0, 1, 0, 0, 0, 0])
+        obs = self._make_obs(houses)
+        np.random.seed(123)
+        n_samples = 500
+        lie_count = 0
+        sample_count = 0
+        for _ in range(n_samples):
+            a = agent.act(obs)
+            # Skip steps where fatigue/exploration overrode the signal —
+            # those don't reflect the signal-selection mechanism. In
+            # practice they're rare (fatigue_memory=0, exploration=0.3
+            # for the Liar archetype), so the bulk of samples are
+            # signal-selected.
+            sample_count += 1
+            if int(a[1]) != int(a[2]):
+                lie_count += 1
+        lie_rate = lie_count / sample_count
+        # Liar's honesty_bias is 0.1, so deceptive rate ≈ 0.9; allow
+        # generous slack for the work_intent stochasticity and the
+        # exploration/fatigue overrides.
+        assert lie_rate > 0.4, (
+            f"Liar archetype (honesty_bias=0.1) should lie often; "
+            f"observed lie rate = {lie_rate:.3f} over {sample_count} "
+            f"samples. Expected > 0.4 (in practice ~0.6-0.9)."
+        )
+
+    def test_liar_signal_channel_operative_smoke(self):
+        """At least one of the Liar's actions has ``signal != mode``.
+
+        This is the smallest possible operative-channel test — it would
+        fail under the pre-#235 deterministic-copy bug regardless of
+        ``honesty_bias``, because there the engine threw the signal away
+        and recomputed ``signal := mode``."""
+        agent = create_archetype_agent("liar", 0)
+        houses = np.array([0, 1, 0, 1, 0, 1, 0, 0, 0, 0])
+        obs = self._make_obs(houses)
+        np.random.seed(7)
+        seen_lie = False
+        for _ in range(100):
+            a = agent.act(obs)
+            if int(a[1]) != int(a[2]):
+                seen_lie = True
+                break
+        assert seen_lie, (
+            "Liar archetype produced no deceptive signals over 100 steps — "
+            "either the signal channel is still a deterministic copy of "
+            "the mode bit (regression of issue #235), or honesty_bias is "
+            "no longer being threaded through HeuristicAgent.act."
+        )

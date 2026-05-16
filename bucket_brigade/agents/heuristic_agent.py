@@ -55,7 +55,12 @@ class HeuristicAgent(AgentBase):
         Choose action based on observations and parameters.
 
         Returns:
-            Action [house_index, mode_flag]
+            Action ``[house_index, mode_flag, signal]`` (issue #235).
+            The signal is broadcast independently of the actual mode; for
+            archetypes with ``honesty_bias == 1.0`` the signal always
+            matches the mode (honest), and for ``honesty_bias < 1.0`` the
+            signal can disagree with the mode (deception). The Liar
+            archetype (``honesty_bias = 0.1``) lies roughly 90% of the time.
         """
         # Extract observation components
         signals = obs["signals"]  # (N,) - current signals
@@ -67,7 +72,11 @@ class HeuristicAgent(AgentBase):
         # Determine owned house
         owned_house = self.agent_id % 10
 
-        # 1. Signal selection (internal intent)
+        # 1. Signal selection (broadcast intent)
+        # Pre-#235 this signal was computed and then thrown away — the engine
+        # used the deterministic copy of the work bit instead. Now it is
+        # emitted as ``action[2]`` so deceptive signals (``signal != mode``)
+        # actually reach other agents through the obs.signals channel.
         work_intent = self._compute_work_intent(houses, scenario_info)
         signal = self._choose_signal(work_intent)
 
@@ -89,7 +98,7 @@ class HeuristicAgent(AgentBase):
         # Store for next time
         self.last_action = (house_choice, mode_choice)
 
-        return np.array([house_choice, mode_choice], dtype=np.int8)
+        return np.array([house_choice, mode_choice, signal], dtype=np.int8)
 
     def _compute_work_intent(
         self, houses: np.ndarray, scenario_info: np.ndarray

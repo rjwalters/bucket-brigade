@@ -20,7 +20,7 @@ class TestPolicyNetwork:
     def test_forward_pass_shape(self):
         """Test that forward pass produces expected output shapes."""
         obs_dim = 42
-        action_dims = [10, 2]
+        action_dims = [10, 2, 2]  # [house, mode, signal] (issue #235)
         hidden_size = 64
         batch_size = 16
 
@@ -37,6 +37,8 @@ class TestPolicyNetwork:
         # Check shapes of action logits
         assert action_logits[0].shape == (batch_size, action_dims[0])
         assert action_logits[1].shape == (batch_size, action_dims[1])
+        # Issue #235: third head is the broadcast-signal dimension.
+        assert action_logits[2].shape == (batch_size, action_dims[2])
 
         # Check value shape
         assert value.shape == (batch_size, 1)
@@ -44,7 +46,7 @@ class TestPolicyNetwork:
     def test_get_action_deterministic(self):
         """Test deterministic action selection returns argmax."""
         obs_dim = 42
-        action_dims = [10, 2]
+        action_dims = [10, 2, 2]  # [house, mode, signal] (issue #235)
 
         policy = PolicyNetwork(obs_dim=obs_dim, action_dims=action_dims, hidden_size=64)
         obs = torch.randn(1, obs_dim)
@@ -63,7 +65,7 @@ class TestPolicyNetwork:
     def test_get_action_stochastic(self):
         """Test stochastic action sampling returns log probabilities."""
         obs_dim = 42
-        action_dims = [10, 2]
+        action_dims = [10, 2, 2]  # [house, mode, signal] (issue #235)
 
         policy = PolicyNetwork(obs_dim=obs_dim, action_dims=action_dims, hidden_size=64)
         obs = torch.randn(1, obs_dim)
@@ -83,7 +85,7 @@ class TestPolicyNetwork:
     def test_checkpoint_save_load(self):
         """Test that checkpoint saving and loading preserves network behavior."""
         obs_dim = 42
-        action_dims = [10, 2]
+        action_dims = [10, 2, 2]  # [house, mode, signal] (issue #235)
         hidden_size = 64
 
         # Create first policy

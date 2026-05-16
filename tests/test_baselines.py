@@ -2,10 +2,12 @@
 
 The specialist policy must:
 
-* Return ``MultiDiscrete([10, 2])``-compatible actions (shape (2,), int64,
-  values in range).
+* Return ``MultiDiscrete([10, 2, 2])``-compatible actions (shape (3,),
+  int64, values in range; issue #235 promoted the action from
+  ``[house, mode]`` to ``[house, mode, signal]``).
 * Choose WORK on a burning owned house, REST otherwise.
 * Be reusable across scenarios (no scenario-specific assumption).
+* Signal honestly (``signal == mode``) — the specialist has no reason to lie.
 
 These tests are pure-Python and very fast (<1s) so they live in the normal
 ``tests/`` directory.
@@ -59,25 +61,32 @@ def test_owned_houses_round_robin_4_agents() -> None:
 
 
 def test_specialist_action_returns_valid_multidiscrete() -> None:
-    """Action is shape (2,), int64, with values in ``MultiDiscrete([10, 2])``."""
+    """Action is shape (3,), int64, with values in ``MultiDiscrete([10, 2, 2])``
+    (issue #235). The specialist signals honestly (``signal == mode``)."""
     obs = _make_obs(np.zeros(10, dtype=np.int8))  # all SAFE
     act = specialist_action(obs, agent_id=0, num_agents=4)
 
     assert isinstance(act, np.ndarray)
-    assert act.shape == (2,)
+    assert act.shape == (3,)
     assert act.dtype == np.int64
     assert 0 <= int(act[0]) < 10
     assert int(act[1]) in (0, 1)
+    assert int(act[2]) in (0, 1)
+    # Specialist is honest by design.
+    assert int(act[2]) == int(act[1])
 
 
 def test_specialist_action_joint_shape_for_4_agents() -> None:
-    """Joint specialist returns a (num_agents, 2) int64 array."""
+    """Joint specialist returns a (num_agents, 3) int64 array (issue #235)."""
     obs = _make_obs(np.zeros(10, dtype=np.int8))
     joint = specialist_action_joint(obs, num_agents=4)
-    assert joint.shape == (4, 2)
+    assert joint.shape == (4, 3)
     assert joint.dtype == np.int64
     assert np.all((joint[:, 0] >= 0) & (joint[:, 0] < 10))
     assert np.all((joint[:, 1] >= 0) & (joint[:, 1] < 2))
+    assert np.all((joint[:, 2] >= 0) & (joint[:, 2] < 2))
+    # Honest signaling: signal column equals mode column.
+    assert np.array_equal(joint[:, 2], joint[:, 1])
 
 
 # ---------------------------------------------------------------------------
@@ -182,7 +191,7 @@ def test_minimal_specialization_env_plays_to_completion_with_specialist() -> Non
     steps = 0
     while not env.done and steps < 500:  # 500 step safety cap
         actions = specialist_action_joint(obs, num_agents=4)
-        assert actions.shape == (4, 2)
+        assert actions.shape == (4, 3)  # issue #235: [house, mode, signal]
         obs, _, _, _ = env.step(actions)
         steps += 1
     assert env.done, "Episode did not terminate within 500 steps"

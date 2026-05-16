@@ -49,9 +49,15 @@ class BucketBrigadeEnv:
         self.signals = np.zeros(
             self.num_agents, dtype=np.int8
         )  # Agent signals: REST, WORK
+        # Issue #235 note: action is now [house, mode, signal] (length 3).
+        # But the obs vector ``last_actions`` width stays 2 (house, mode)
+        # per the curator's recommendation — the broadcast signal is
+        # already exposed through obs.signals, so widening last_actions
+        # would just add a redundant feature column. We slice the signal
+        # off before storing into ``last_actions``.
         self.last_actions = np.zeros(
             (self.num_agents, 2), dtype=np.int8
-        )  # [house, mode]
+        )  # [house, mode] — signal lives in self.signals
 
         # Game state
         self.night = 0
@@ -115,6 +121,7 @@ class BucketBrigadeEnv:
         # Initialize agent positions and signals
         self.locations = np.zeros(self.num_agents, dtype=np.int8)
         self.signals = np.zeros(self.num_agents, dtype=np.int8)
+        # Issue #235: keep last_actions width 2 in obs (see __init__ comment).
         self.last_actions = np.zeros((self.num_agents, 2), dtype=np.int8)
 
         # Record initial state
@@ -129,7 +136,10 @@ class BucketBrigadeEnv:
         Execute one night of the game.
 
         Args:
-            actions: Per-agent actions, shape (N, 2) with [house_index, mode_flag]
+            actions: Per-agent actions, shape (N, 3) with
+                ``[house_index, mode_flag, signal]`` (issue #235). Length-2
+                inputs are accepted for backward compatibility and treated
+                as honest (``signal := mode_flag``).
 
         Returns:
             observation, rewards, dones, info
@@ -137,12 +147,24 @@ class BucketBrigadeEnv:
         if self.done:
             raise RuntimeError("Game is already finished")
 
-        # 1. Signal phase (signals are implicit in actions for now)
-        # In this simplified version, we assume agents signal their intended mode
-        self.signals = actions[:, 1].copy()  # mode_flag becomes the signal
+        # Accept legacy length-2 actions by promoting them to honest
+        # length-3 actions (signal == mode_flag). This keeps any external
+        # caller that still emits the pre-#235 shape working.
+        if actions.shape[1] == 2:
+            signal_col = actions[:, 1:2]
+            actions = np.concatenate([actions, signal_col], axis=1)
 
-        # 2. Action phase: update agent locations
-        self.last_actions = actions.copy()
+        # 1. Signal phase (issue #235): signals are now their own action
+        # dimension. Pre-#235 ``self.signals = actions[:, 1]`` made the
+        # signal a deterministic copy of the work bit; now agents can
+        # broadcast independently of their mode (e.g. lie).
+        self.signals = actions[:, 2].copy()
+
+        # 2. Action phase: update agent locations.
+        # Issue #235: store only ``[house, mode]`` in last_actions to keep
+        # the obs vector width unchanged (the broadcast signal is
+        # already exposed via ``self.signals``).
+        self.last_actions = actions[:, :2].copy()
         self.locations = actions[:, 0].copy()
 
         # 3. Extinguish phase

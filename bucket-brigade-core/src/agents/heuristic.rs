@@ -38,6 +38,13 @@ impl HeuristicAgent {
     ///
     /// This implementation matches the Python `_heuristic_action` function
     /// in bucket_brigade/equilibrium/payoff_evaluator_rust.py:33-69
+    ///
+    /// Issue #235: returns a 3-element `[house, mode, signal]`. This Rust
+    /// HeuristicAgent doesn't currently model `honesty_bias` (param 0), so
+    /// it always signals honestly — `signal == mode`. The richer Python
+    /// `HeuristicAgent.act` in `bucket_brigade/agents/heuristic_agent.py`
+    /// *does* use `honesty_bias` and is the one to look at for the Liar
+    /// archetype's deceptive behavior.
     pub fn select_action<R: Rng>(&self, obs: &AgentObservation, rng: &mut R) -> Action {
         // Extract key parameters
         let work_tendency = self.params[1];
@@ -45,39 +52,37 @@ impl HeuristicAgent {
         let rest_reward_bias = self.params[8];
 
         // Decide whether to work or rest
-        if rng.gen::<f64>() < work_tendency * (1.0 - rest_reward_bias) {
-            // Work - choose which house
-            let owned_house = self.id % 10;
+        let (house, mode): (u8, u8) =
+            if rng.gen::<f64>() < work_tendency * (1.0 - rest_reward_bias) {
+                // Work - choose which house
+                let owned_house = self.id % 10;
 
-            // Check if owned house is burning and prioritize it
-            if obs.houses[owned_house] == 1 && rng.gen::<f64>() < own_house_priority {
-                // Work on owned house
-                [owned_house as u8, 1]
-            } else {
-                // Choose a burning house
-                let burning: Vec<usize> = obs
-                    .houses
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, &state)| state == 1)
-                    .map(|(idx, _)| idx)
-                    .collect();
-
-                let house = if !burning.is_empty() {
-                    // Pick random burning house
-                    burning[rng.gen_range(0..burning.len())]
+                // Check if owned house is burning and prioritize it
+                if obs.houses[owned_house] == 1 && rng.gen::<f64>() < own_house_priority {
+                    (owned_house as u8, 1)
                 } else {
-                    // No burning houses, go to owned house
-                    owned_house
-                };
+                    let burning: Vec<usize> = obs
+                        .houses
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, &state)| state == 1)
+                        .map(|(idx, _)| idx)
+                        .collect();
+                    let house = if !burning.is_empty() {
+                        burning[rng.gen_range(0..burning.len())]
+                    } else {
+                        owned_house
+                    };
+                    (house as u8, 1)
+                }
+            } else {
+                // Rest at owned house
+                let owned_house = self.id % 10;
+                (owned_house as u8, 0)
+            };
 
-                [house as u8, 1]
-            }
-        } else {
-            // Rest at owned house
-            let owned_house = self.id % 10;
-            [owned_house as u8, 0]
-        }
+        // Honest signal by default — signal == mode.
+        [house, mode, mode]
     }
 }
 
@@ -125,7 +130,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![0, 1, 0, 1, 0, 0, 0, 0, 0, 0], // Houses 1 and 3 burning
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
@@ -154,7 +159,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![0, 1, 0, 0, 0, 0, 0, 0, 0, 0], // House 1 burning
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
@@ -181,7 +186,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
@@ -210,7 +215,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![1, 1, 1, 1, 0, 0, 0, 0, 0, 0], // Owned house (0) and others burning
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
@@ -239,7 +244,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![0; 10], // No burning houses
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 3,
             night: 0,
@@ -265,7 +270,7 @@ mod tests {
             signals: vec![0; 4],
             locations: vec![0; 4],
             houses: vec![1; 10], // All houses burning
-            last_actions: vec![[0, 0]; 4],
+            last_actions: vec![[0, 0, 0]; 4],
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,

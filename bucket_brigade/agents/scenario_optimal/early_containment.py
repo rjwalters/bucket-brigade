@@ -41,11 +41,11 @@ class EarlyContainmentAgent(AgentBase):
         if len(burning_houses) > 0:
             # Work on burning houses, prioritizing clusters
             target_house = self._select_best_burning_house(houses, burning_houses)
-            return np.array([target_house, 1])  # [house, WORK]
+            return np.array([target_house, 1, 1])  # [house, WORK]
         else:
             # No fires - rest to save costs for potential future fires
             own_house = self.agent_id % 10
-            return np.array([own_house, 0])  # [house, REST]
+            return np.array([own_house, 0, 0])  # [house, REST]
 
     def _select_best_burning_house(
         self, houses: np.ndarray, burning_houses: np.ndarray

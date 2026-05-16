@@ -29,7 +29,7 @@ Typical use::
         env_fn=env_fn,
         num_agents=4,
         obs_dim=46,
-        action_dims=[10, 2],
+        action_dims=[10, 2, 2],  # [house, mode, signal] (issue #235)
         redundancy_coef=0.01,
     )
     for epoch in range(num_epochs):

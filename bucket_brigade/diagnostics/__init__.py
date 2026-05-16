@@ -84,7 +84,7 @@ def random_init_rollout_stats(
 
     Hermetic version of the H1 diagnostic — no ``/tmp/h1_cell`` dependency.
     Builds a ``JointPPOTrainer`` with the canonical phase-3 hyperparameters
-    (``hidden_size=64``, ``num_agents=4``, ``action_dims=[10, 2]``) and runs
+    (``hidden_size=64``, ``num_agents=4``, ``action_dims=[10, 2, 2]``) and runs
     ``trainer.collect_rollout(rollout_steps)``. Returns the per-step reward
     matrix, action matrix, and per-agent stats dicts.
 
@@ -141,7 +141,7 @@ def random_init_rollout_stats(
         env_fn=env_fn,
         num_agents=num_agents,
         obs_dim=obs_dim,
-        action_dims=[10, 2],
+        action_dims=[10, 2, 2],  # [house, mode, signal] (issue #235)
         hidden_size=hidden_size,
         seed=seed,
     )
@@ -156,7 +156,12 @@ def random_init_rollout_stats(
         r = R[i]
         a = A[i]
         stats = per_agent_reward_stats(r)
-        packed = a[:, 0] * 2 + a[:, 1]  # 10 houses × {rest, work}
+        # Issue #235: pack [house, mode, signal] into 0..39 for R^2 keying.
+        # Defensive fallback for legacy 2-element actions (signal := mode).
+        if a.shape[-1] >= 3:
+            packed = a[:, 0] * 4 + a[:, 1] * 2 + a[:, 2]
+        else:
+            packed = a[:, 0] * 4 + a[:, 1] * 2 + a[:, 1]
         stats["r2_packed"] = float(conditional_mean_r2(r, packed))
         stats["r2_work"] = float(conditional_mean_r2(r, a[:, 1]))
         per_agent.append(stats)

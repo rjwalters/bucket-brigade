@@ -33,7 +33,10 @@ export class RandomAgent extends BrowserAgent {
   act(_obs: AgentObservation): number[] {
     const house = Math.floor(Math.random() * 10);
     const mode = Math.floor(Math.random() * 2);
-    return [house, mode];
+    // Issue #235: 3-element action [house, mode, signal]. Random baseline
+    // is honest (signal == mode) — see Python RandomAgent.act docstring
+    // for the rationale.
+    return [house, mode, mode];
   }
 }
 
@@ -48,9 +51,9 @@ export class TrivialCooperator extends BrowserAgent {
     // Find first burning house
     const burning_house = obs.houses.findIndex(house => house === 1);
     if (burning_house !== -1) {
-      return [burning_house, 1]; // Work on burning house
+      return [burning_house, 1, 1]; // Work on burning house
     }
-    return [this.id % 10, 1]; // Work on own house
+    return [this.id % 10, 1, 1]; // Work on own house
   }
 }
 
@@ -68,10 +71,10 @@ export class EarlyContainmentAgent extends BrowserAgent {
     if (burning_houses.length > 0) {
       // Prioritize clusters
       const target_house = this.find_best_cluster_target(obs.houses, burning_houses);
-      return [target_house, 1];
+      return [target_house, 1, 1];
     }
 
-    return [this.id % 10, 0]; // Rest
+    return [this.id % 10, 0, 0]; // Rest
   }
 
   private find_best_cluster_target(houses: number[], burning_houses: number[]): number {
@@ -108,7 +111,7 @@ export class GreedyNeighborAgent extends BrowserAgent {
 
     // If own house is burning, work on it
     if (obs.houses[own_house] === 1) {
-      return [own_house, 1];
+      return [own_house, 1, 1];
     }
 
     // Check if neighbors are burning (threat to own house)
@@ -119,11 +122,11 @@ export class GreedyNeighborAgent extends BrowserAgent {
 
     const threatening_neighbor = neighbors.find(n => obs.houses[n] === 1);
     if (threatening_neighbor !== undefined) {
-      return [threatening_neighbor, 1];
+      return [threatening_neighbor, 1, 1];
     }
 
     // No immediate threats - rest
-    return [own_house, 0];
+    return [own_house, 0, 0];
   }
 }
 
@@ -137,17 +140,17 @@ export class SparseHeroAgent extends BrowserAgent {
     const own_house = this.id % 10;
 
     if (burning_count === 0) {
-      return [own_house, 0]; // Rest if no fires
+      return [own_house, 0, 0]; // Rest if no fires
     }
 
     // Prioritize own house if burning
     if (obs.houses[own_house] === 1) {
-      return [own_house, 1];
+      return [own_house, 1, 1];
     }
 
     // Work on first burning house
     const burning_house = obs.houses.findIndex(h => h === 1);
-    return [burning_house, 1];
+    return [burning_house, 1, 1];
   }
 }
 
@@ -183,10 +186,10 @@ export class HonestSignaler extends BrowserAgent {
 
     if (burning_houses.length > 0) {
       const target_house = new_fires.length > 0 ? new_fires[0] : burning_houses[0];
-      return [target_house, 1]; // Honest work signal
+      return [target_house, 1, 1]; // Honest work signal
     }
 
-    return [this.id % 10, 0]; // Rest honestly
+    return [this.id % 10, 0, 0]; // Rest honestly
   }
 }
 
@@ -221,12 +224,16 @@ export class UserAgent extends BrowserAgent {
     try {
       const result = this.user_function(obs);
 
-      // Validate result
-      if (!Array.isArray(result) || result.length !== 2) {
-        throw new Error("Agent must return [house_index, mode]");
+      // Validate result (issue #235: action is [house, mode, signal],
+      // length 3). Length-2 inputs are accepted for backward compat and
+      // promoted to honest signaling (signal := mode).
+      if (!Array.isArray(result) || (result.length !== 3 && result.length !== 2)) {
+        throw new Error("Agent must return [house_index, mode, signal] (or legacy [house_index, mode])");
       }
 
       const [house, mode] = result;
+      const signal = result.length === 3 ? result[2] : mode;
+
       if (typeof house !== 'number' || house < 0 || house > 9) {
         throw new Error("House index must be 0-9");
       }
@@ -235,11 +242,16 @@ export class UserAgent extends BrowserAgent {
         throw new Error("Mode must be 0 (REST) or 1 (WORK)");
       }
 
-      return result;
+      if (typeof signal !== 'number' || (signal !== 0 && signal !== 1)) {
+        throw new Error("Signal must be 0 (REST) or 1 (WORK)");
+      }
+
+      return [house, mode, signal];
     } catch (error) {
       console.error(`Agent ${this.name} error:`, error);
-      // Fallback to random action
-      return [Math.floor(Math.random() * 10), Math.floor(Math.random() * 2)];
+      // Fallback to random honest action
+      const mode = Math.floor(Math.random() * 2);
+      return [Math.floor(Math.random() * 10), mode, mode];
     }
   }
 }
@@ -267,7 +279,8 @@ export function create_user_agent_from_code(id: number, name: string, code: stri
           ${code}
         } catch (error) {
           console.error("Agent execution error:", error);
-          return [Math.floor(Math.random() * 10), Math.floor(Math.random() * 2)];
+          const _m = Math.floor(Math.random() * 2);
+          return [Math.floor(Math.random() * 10), _m, _m];
         }
       `
     ).bind(null, context.Math, context.console);

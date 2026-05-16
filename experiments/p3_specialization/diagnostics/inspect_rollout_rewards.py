@@ -327,7 +327,7 @@ def main() -> None:
             cfg = {
                 "scenario": args.scenario,
                 "num_agents": 4,
-                "action_dims": [10, 2],
+                "action_dims": [10, 2, 2],  # [house, mode, signal] (issue #235)
                 "hidden_size": 64,
                 "lr": 3e-4,
                 "ppo_epochs": 4,

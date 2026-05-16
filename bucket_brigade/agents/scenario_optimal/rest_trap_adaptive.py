@@ -57,10 +57,10 @@ class RestTrapAdaptiveAgent(AgentBase):
         if persistent_fires:
             # Emergency: work on persistent fire
             target_house = persistent_fires[0]  # Work on first persistent fire
-            return np.array([target_house, 1])  # Work
+            return np.array([target_house, 1, 1])  # Work
         else:
             # Normal case: rest and let fires extinguish naturally
-            return np.array([self.own_house, 0])  # Rest
+            return np.array([self.own_house, 0, 0])  # Rest
 
 
 # For agent submission system

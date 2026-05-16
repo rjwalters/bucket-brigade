@@ -77,8 +77,10 @@ def specialist_action(
     Returns
     -------
     np.ndarray
-        Length-2 ``int64`` array ``[house_idx, mode]`` matching the
-        ``MultiDiscrete([num_houses, 2])`` action space.
+        Length-3 ``int64`` array ``[house_idx, mode, signal]`` matching the
+        ``MultiDiscrete([num_houses, 2, 2])`` action space (issue #235).
+        The specialist signals honestly (``signal == mode``); it has no
+        reason to lie because its policy is deterministic from the obs.
 
     Policy
     ------
@@ -105,12 +107,13 @@ def specialist_action(
         # Defensive: with round-robin ownership and num_agents <= num_houses
         # every agent owns at least one house. Fall back to house 0 + REST
         # rather than raise, so this function never errors on a well-formed obs.
-        return np.array([0, _REST], dtype=np.int64)
+        # Honest signaling: signal == mode (issue #235).
+        return np.array([0, _REST, _REST], dtype=np.int64)
 
     burning_owned = owned[houses[owned] == _BURNING]
     if burning_owned.size > 0:
-        return np.array([int(burning_owned[0]), _WORK], dtype=np.int64)
-    return np.array([int(owned[0]), _REST], dtype=np.int64)
+        return np.array([int(burning_owned[0]), _WORK, _WORK], dtype=np.int64)
+    return np.array([int(owned[0]), _REST, _REST], dtype=np.int64)
 
 
 def specialist_action_joint(
@@ -120,8 +123,9 @@ def specialist_action_joint(
 ) -> np.ndarray:
     """Compute joint specialist actions for all agents.
 
-    Returns an ``(num_agents, 2)`` ``int64`` array suitable for passing
-    directly to :meth:`BucketBrigadeEnv.step`.
+    Returns an ``(num_agents, 3)`` ``int64`` array suitable for passing
+    directly to :meth:`BucketBrigadeEnv.step` (issue #235: post-#235 the
+    action shape is ``[house, mode, signal]``).
     """
     return np.stack(
         [

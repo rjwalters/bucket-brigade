@@ -51,10 +51,10 @@ class HonestSignaler(AgentBase):
             target_house = new_fires[0] if new_fires else burning_houses[0]
 
             # Honest signaling: signal matches action
-            return np.array([target_house, 1])  # Signal WORK, work
+            return np.array([target_house, 1, 1])  # Signal WORK, work
         else:
             # No fires - rest honestly
-            return np.array([self.own_house, 0])  # Signal REST, rest
+            return np.array([self.own_house, 0, 0])  # Signal REST, rest
 
 
 # For agent submission system

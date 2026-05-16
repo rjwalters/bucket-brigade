@@ -86,7 +86,10 @@ class CellConfig:
     n_bins: int = 4
     mi_proj_dims: int = 3
     device: str = "cpu"
-    action_dims: List[int] = field(default_factory=lambda: [10, 2])
+    # Issue #235: action is now [house, mode, signal] (10*2*2 = 40 values).
+    # Pre-#235 was [10, 2]; the third entry (signal alphabet) makes the
+    # broadcast channel a learned action dimension.
+    action_dims: List[int] = field(default_factory=lambda: [10, 2, 2])
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -165,16 +168,20 @@ def _state_summary_codes(
 
 
 # Packed-action alphabet used by ``_other_agent_action_codes`` and the
-# ``action_entropy`` metric below. With ``action_dims = [10, 2]`` the pack
-# ``a[:, 0] * 2 + a[:, 1]`` covers ``0..19`` inclusive (20 distinct values).
-# We reserve code 20 as a sentinel for the "no prior action" case at ``t=0``
-# (and just after an episode boundary), so the conditioner's alphabet is
-# ``[0, 21)``. Using a dedicated sentinel keeps the conditioner well-defined
-# at the cost of one extra bin; ``is_degenerate_conditioner`` will still fire
-# correctly if real actions collapse to a single value.
-_ACTION_PACK_BASE = 2  # second action dimension cardinality
-_ACTION_NO_PRIOR_SENTINEL = 20
-_ACTION_CODE_ALPHABET = 21  # 0..19 real + 20 sentinel
+# ``action_entropy`` metric below.
+#
+# Issue #235: with ``action_dims = [10, 2, 2]`` (post-#235) the pack
+# ``a[:, 0] * 4 + a[:, 1] * 2 + a[:, 2]`` covers ``0..39`` inclusive
+# (40 distinct values). We reserve code 40 as a sentinel for the
+# "no prior action" case at ``t=0`` (and just after an episode boundary),
+# so the conditioner's alphabet is ``[0, 41)``.
+#
+# Pre-#235 was ``a[:, 0] * 2 + a[:, 1]`` (range ``0..19``) with sentinel 20.
+_ACTION_PACK_BASE_MODE = 2  # mode dimension cardinality (action_dims[1])
+_ACTION_PACK_BASE_SIGNAL = 2  # signal dimension cardinality (action_dims[2])
+_ACTION_PACK_BASE = _ACTION_PACK_BASE_MODE * _ACTION_PACK_BASE_SIGNAL  # 4
+_ACTION_NO_PRIOR_SENTINEL = 40
+_ACTION_CODE_ALPHABET = 41  # 0..39 real + 40 sentinel
 
 
 def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray:
@@ -192,10 +199,12 @@ def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray
     here, agent ``j``'s action at ``t - lag``. This matches the convention
     used in the four-way diagnostic table in the architect notebook.
 
-    Codes use the existing pack ``a[:, 0] * _ACTION_PACK_BASE + a[:, 1]``
-    (range ``0..19`` for ``action_dims = [10, 2]``). For ``t < lag`` (no
-    prior action exists yet) we emit the sentinel ``_ACTION_NO_PRIOR_SENTINEL``
-    so the conditioner is defined on every step.
+    Codes use the pack
+    ``a[:, 0] * _ACTION_PACK_BASE + a[:, 1] * _ACTION_PACK_BASE_SIGNAL + a[:, 2]``
+    (range ``0..39`` for ``action_dims = [10, 2, 2]``, issue #235).
+    For ``t < lag`` (no prior action exists yet) we emit the sentinel
+    ``_ACTION_NO_PRIOR_SENTINEL`` so the conditioner is defined on
+    every step.
 
     Note: we do **not** reset the sentinel at episode boundaries here. The
     architect spec calls for a single-step lag and defensive ``t=0`` handling;
@@ -207,8 +216,22 @@ def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray
     if lag < 1:
         raise ValueError(f"lag must be >= 1, got {lag}")
     a = rollout.actions[agent_j].cpu().numpy()
-    # Pack the multi-discrete action: a[:, 0] in [0, 10), a[:, 1] in [0, 2).
-    packed = (a[:, 0] * _ACTION_PACK_BASE + a[:, 1]).astype(np.int64)
+    # Pack the multi-discrete action (issue #235):
+    # a[:, 0] in [0, 10), a[:, 1] in [0, 2), a[:, 2] in [0, 2).
+    if a.shape[-1] >= 3:
+        packed = (
+            a[:, 0] * _ACTION_PACK_BASE
+            + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
+            + a[:, 2]
+        ).astype(np.int64)
+    else:
+        # Legacy 2-element actions (pre-#235): pretend the agent was honest
+        # (signal == mode) so the packed code remains well-defined.
+        packed = (
+            a[:, 0] * _ACTION_PACK_BASE
+            + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
+            + a[:, 1]
+        ).astype(np.int64)
     T = packed.shape[0]
     codes = np.full(T, _ACTION_NO_PRIOR_SENTINEL, dtype=np.int64)
     if T > lag:
@@ -438,7 +461,22 @@ def _measure_information(
     for i in range(n):
         a = rollout.actions[i].cpu().numpy()
         # Pack multi-discrete action into a single label per step.
-        packed = a[:, 0] * 2 + a[:, 1]  # 0..19 for [house, mode]
+        # Issue #235: pack [house, mode, signal] into 0..39 (action_dims
+        # = [10, 2, 2]). Pre-#235 was [house, mode] into 0..19. Handle
+        # legacy 2-element actions defensively by treating them as honest
+        # (signal == mode).
+        if a.shape[-1] >= 3:
+            packed = (
+                a[:, 0] * _ACTION_PACK_BASE
+                + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
+                + a[:, 2]
+            )
+        else:
+            packed = (
+                a[:, 0] * _ACTION_PACK_BASE
+                + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
+                + a[:, 1]
+            )
         out[f"action_entropy/agent_{i}"] = entropy_discrete(packed)
     out["action_entropy/mean"] = float(
         np.mean([out[f"action_entropy/agent_{i}"] for i in range(n)])

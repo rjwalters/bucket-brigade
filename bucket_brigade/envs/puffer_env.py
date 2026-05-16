@@ -73,8 +73,11 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
 
-        # Action: [house_index, mode] where house_index ∈ [0,9], mode ∈ [0,1]
-        self.single_action_space = gym_spaces.MultiDiscrete([10, 2])
+        # Action: [house_index, mode, signal] (issue #235) where
+        # house_index in [0,9], mode in {0=REST, 1=WORK}, signal in
+        # {0=REST, 1=WORK}. The signal is broadcast independently of the
+        # mode; honest agents emit ``signal == mode``.
+        self.single_action_space = gym_spaces.MultiDiscrete([10, 2, 2])
 
         # Initialize PufferEnv (sets up buffers and joint spaces)
         # PufferLib's __init__ will call set_buffers() which assigns directly to attributes
@@ -131,13 +134,20 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
 
         self.steps_taken += 1
 
-        # Convert action to [house, mode] format
-        # Action comes as array from MultiDiscrete space
+        # Convert action to [house, mode, signal] format (issue #235).
+        # Action comes as array from MultiDiscrete space. Length-2 actions
+        # are accepted for backward compatibility and default to honest
+        # signaling (signal := mode).
         if len(action.shape) > 1:
             # If batched, take first element
-            agent_action = [int(action[0][0]), int(action[0][1])]
+            a = action[0]
         else:
-            agent_action = [int(action[0]), int(action[1])]
+            a = action
+        if len(a) >= 3:
+            agent_action = [int(a[0]), int(a[1]), int(a[2])]
+        else:
+            mode = int(a[1])
+            agent_action = [int(a[0]), mode, mode]
 
         # Get actions from all agents
         all_actions = [agent_action]  # Trained agent first
@@ -242,7 +252,8 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
             low=-np.inf, high=np.inf, shape=(num_envs, obs_size), dtype=np.float32
         )
 
-        self.action_space = gym_spaces.MultiDiscrete([num_envs, 10, 2])
+        # Issue #235: 3-element [house, mode, signal] action.
+        self.action_space = gym_spaces.MultiDiscrete([num_envs, 10, 2, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None
