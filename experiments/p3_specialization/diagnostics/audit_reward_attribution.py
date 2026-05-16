@@ -76,12 +76,25 @@ def run_rollouts(
 
             own = np.zeros(4, dtype=np.float64)
             work = np.zeros(4, dtype=np.float64)
+            # Issue #221: positional_default (#203 option A) adds a spatial
+            # cost term: when distance_cost_alpha != 0 the work cost becomes
+            # base_cost + alpha * ring_dist(home, target). When alpha == 0
+            # this reduces to base_cost so pre-#203 scenarios are unchanged.
+            # See bucket_brigade_env.py:276-295.
+            alpha = float(getattr(scenario, "distance_cost_alpha", 0.0))
+            agent_home_positions = getattr(scenario, "agent_home_positions", None)
             for a in range(4):
-                work[a] = (
-                    -scenario.cost_to_work_one_night
-                    if actions[a, 1] == env.WORK
-                    else 0.5
-                )
+                if actions[a, 1] == env.WORK:
+                    cost = scenario.cost_to_work_one_night
+                    if alpha != 0.0 and agent_home_positions:
+                        home = int(agent_home_positions[a])
+                        target = int(actions[a, 0])
+                        raw = abs(home - target)
+                        dist = min(raw, 10 - raw)  # ring_arc on 10-house ring
+                        cost = cost + alpha * dist
+                    work[a] = -cost
+                else:
+                    work[a] = 0.5
                 for h in range(10):
                     is_own = env.house_owners[h] == a
                     # Save event (any non-SAFE -> SAFE transition this step).
