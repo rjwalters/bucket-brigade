@@ -1,0 +1,22 @@
+{
+  "scenario": "positional_default",
+  "lambda_red": 0.0,
+  "seed": 44,
+  "num_iterations": 50,
+  "rollout_steps": 2048,
+  "num_agents": 4,
+  "hidden_size": 64,
+  "lr": 0.0003,
+  "ppo_epochs": 4,
+  "minibatch_size": 256,
+  "value_coef": 0.5,
+  "entropy_coef": 0.01,
+  "normalize_returns": true,
+  "n_bins": 4,
+  "mi_proj_dims": 3,
+  "device": "cpu",
+  "action_dims": [
+    10,
+    2
+  ]
+}

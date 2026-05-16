@@ -129,8 +129,17 @@ def _state_summary_codes(
     Architect-validated; see ``research_notebook/2026-05-15_p3_conditioner_decision.md``.
     """
     obs_np = rollout.observations.cpu().numpy()
+    # Issue #221: post-#216, ``rollout.observations`` is ``[T, N, obs_dim]``;
+    # before #216 it was ``[T, obs_dim]``. The houses-state slice lives in the
+    # trailing ``obs_dim`` axis, and the first ``num_houses`` slots are shared
+    # across agents (the per-agent identity one-hot is in the tail), so we
+    # read agent 0's view as a stand-in.
+    if obs_np.ndim == 3:
+        houses = obs_np[:, 0, _HOUSES_OBS_SLICE]  # [T, 10]
+    else:
+        houses = obs_np[:, _HOUSES_OBS_SLICE]  # [T, 10]
     # Per-house state ∈ {SAFE=0, BURNING=1, RUINED=2}; count BURNING per step.
-    num_burning = (obs_np[:, _HOUSES_OBS_SLICE] == _BURNING_CODE).sum(axis=1)
+    num_burning = (houses == _BURNING_CODE).sum(axis=1)
     num_burning = num_burning.astype(np.int64)  # range [0, 10]
 
     # Reconstruct per-step day_index from the shared dones flag. ``dones[t] == 1``

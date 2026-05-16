@@ -699,10 +699,26 @@ class JointPPOTrainer:
 
     @torch.no_grad()
     def encoder_outputs_batch(self, observations: torch.Tensor) -> List[torch.Tensor]:
-        """Run every policy's encoder tap on a shared batch of observations.
+        """Run every policy's encoder tap on its per-agent observation slice.
+
+        Issue #221: after PR #216, ``observations`` is ``[T, N, obs_dim]`` (one
+        row per agent, each carrying its own identity one-hot tail). Each
+        policy ``i`` consumes its own row ``observations[:, i, :]`` of shape
+        ``[T, obs_dim]`` so the encoder output is the 2-D ``[T, hidden_size]``
+        that downstream consumers (``_measure_information`` →
+        ``quantize_uniform``) expect.
+
+        Legacy 2-D ``[B, obs_dim]`` input is still accepted — every policy
+        sees the same batch — to preserve callers that haven't been migrated.
 
         Returns a list of ``[B, hidden_size]`` tensors (no gradients). Use this
         to feed the plug-in conditional-MI estimator in
         :mod:`bucket_brigade.analysis.info_theory` for reporting.
         """
+        if observations.dim() == 3:
+            # ``[T, N, obs_dim]`` → per-agent ``[T, obs_dim]`` slice.
+            return [
+                p.encoder_output(observations[:, i, :])
+                for i, p in enumerate(self.policies)
+            ]
         return [p.encoder_output(observations) for p in self.policies]
