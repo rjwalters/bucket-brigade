@@ -76,7 +76,7 @@ Architecture details: [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITEC
 
 ## Scenarios
 
-Thirteen named scenarios live in `bucket-brigade-core/src/scenarios.rs` (the canonical source): `default`, `easy`, `hard`, `trivial_cooperation`, `early_containment`, `greedy_neighbor`, `sparse_heroics`, `rest_trap`, `chain_reaction`, `deceptive_calm`, `overcrowding`, `mixed_motivation`, `minimal_specialization`. Each isolates a different dynamic — coordination pressure, social dilemma, sparse work, deceptive signaling, etc. See [docs/game_description.md](docs/game_description.md) for narrative descriptions.
+Fourteen named scenarios live in `bucket-brigade-core/src/scenarios.rs` (the canonical source): `default`, `easy`, `hard`, `trivial_cooperation`, `early_containment`, `greedy_neighbor`, `sparse_heroics`, `rest_trap`, `chain_reaction`, `deceptive_calm`, `overcrowding`, `mixed_motivation`, `minimal_specialization`, `positional_default`. Each isolates a different dynamic — coordination pressure, social dilemma, sparse work, deceptive signaling, etc. See [docs/game_description.md](docs/game_description.md) for narrative descriptions.
 
 ## Custom agents
 

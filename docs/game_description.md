@@ -88,7 +88,7 @@ This is a **social dilemma** — the Nash equilibrium is not the social optimum.
 
 5. **Parameterizable Scenarios**
    - 12 scenario parameters (fire spread rate, work cost, etc.)
-   - Create diverse cooperation challenges (12 named scenarios)
+   - Create diverse cooperation challenges (14 named scenarios)
    - Same game engine, different strategic landscapes
 
 ---
@@ -162,7 +162,7 @@ assert result1 == result2  # Guaranteed identical
 
 ### 3. Parameterizable Difficulty
 
-**12 Named Scenarios** span the cooperation spectrum:
+**14 Named Scenarios** span the cooperation spectrum:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -626,7 +626,7 @@ But it's designed for **AI vs. AI**, not human play. Human reaction time doesn't
 ✅ **Small enough to understand**: 30-bit state space, 500 lines of code
 ✅ **Fast enough to scale**: 5ms per game, 1000-game tournaments in seconds
 ✅ **Rich enough to be interesting**: Social dilemmas, deception, coordination
-✅ **Parameterizable enough to generalize**: 12 scenarios, continuous parameter space
+✅ **Parameterizable enough to generalize**: 14 scenarios, continuous parameter space
 ✅ **Observable enough to interpret**: Full visibility, hand-coded baselines
 ✅ **Simple enough to implement**: No dependencies, cross-platform support
 

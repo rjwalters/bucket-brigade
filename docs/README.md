@@ -53,7 +53,7 @@ This documentation directory contains detailed guides, specifications, and resea
 - **Agents**: 4-10 players, each owning one house
 - **Signals**: Work/Rest intentions (may be deceptive)
 - **Actions**: Choose house and work/rest mode
-- **Scenarios**: 12 named configurations testing different cooperation aspects
+- **Scenarios**: 14 named configurations testing different cooperation aspects
 
 ### Agent Types
 - **Heuristic Agents**: Parameterized behavioral models (Firefighter, Coordinator, etc.)
