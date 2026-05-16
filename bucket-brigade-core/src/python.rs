@@ -127,6 +127,16 @@ impl PyScenario {
                 reward_other_house_survives: to_vec(py, reward_other_house_survives)?,
                 penalty_own_house_burns: to_vec(py, penalty_own_house_burns)?,
                 penalty_other_house_burns: to_vec(py, penalty_other_house_burns)?,
+                // Issue #203 spatial-cost fields. The PyScenario constructor
+                // doesn't yet accept these (kwargs would break backward
+                // compat); to use them from Python pull the scenario out of
+                // ``bucket_brigade_core.SCENARIOS["positional_default"]`` (the
+                // SCENARIOS dict preserves all fields). Manually-constructed
+                // PyScenarios default to the pre-#203 behavior so existing
+                // callers are unchanged.
+                agent_home_positions: Vec::new(),
+                distance_cost_alpha: 0.0,
+                distance_metric: "ring_arc".to_string(),
             },
         })
     }
@@ -184,6 +194,26 @@ impl PyScenario {
     #[getter]
     fn penalty_other_house_burns(&self) -> Vec<f32> {
         self.inner.penalty_other_house_burns.clone()
+    }
+
+    // Issue #203 spatial-cost field getters. These let Python read the new
+    // fields from scenarios pulled out of the SCENARIOS dict (the canonical
+    // entry point for ``positional_default``). Empty
+    // ``agent_home_positions`` means "engine falls back to the round-robin
+    // anchor"; ``distance_cost_alpha == 0.0`` means "no spatial cost term".
+    #[getter]
+    fn agent_home_positions(&self) -> Vec<u8> {
+        self.inner.agent_home_positions.clone()
+    }
+
+    #[getter]
+    fn distance_cost_alpha(&self) -> f32 {
+        self.inner.distance_cost_alpha
+    }
+
+    #[getter]
+    fn distance_metric(&self) -> String {
+        self.inner.distance_metric.clone()
     }
 }
 

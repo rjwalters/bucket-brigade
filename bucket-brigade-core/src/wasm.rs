@@ -128,6 +128,14 @@ impl WasmScenario {
                     penalty_other_house_burns.unwrap_or(0.0);
                     DEFAULT_LEN
                 ],
+                // Issue #203 spatial-cost fields. The WASM constructor uses
+                // pre-#203 defaults so existing JS/TS callers are unchanged.
+                // To consume the `positional_default` scenario from JS, use
+                // the JSON serialization path (`Scenario::to_json` /
+                // `from_json`) which preserves the new fields.
+                agent_home_positions: Vec::new(),
+                distance_cost_alpha: 0.0,
+                distance_metric: "ring_arc".to_string(),
             },
         }
     }

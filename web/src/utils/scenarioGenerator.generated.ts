@@ -30,6 +30,7 @@ export const SCENARIO_TYPES = {
   OVERCROWDING: 'overcrowding',
   MIXED_MOTIVATION: 'mixed_motivation',
   MINIMAL_SPECIALIZATION: 'minimal_specialization',
+  POSITIONAL_DEFAULT: 'positional_default',
 } as const;
 
 export type ScenarioType = (typeof SCENARIO_TYPES)[keyof typeof SCENARIO_TYPES];
@@ -278,6 +279,24 @@ const SCENARIO_TEMPLATES: Record<
       reward_other_house_survives: [0.0, 0.0, 0.0, 0.0],
       penalty_own_house_burns: [100.0, 100.0, 100.0, 100.0],
       penalty_other_house_burns: [0.0, 0.0, 0.0, 0.0],
+      num_agents: 4,
+    },
+  },
+  [SCENARIO_TYPES.POSITIONAL_DEFAULT]: {
+    name: 'Positional Default',
+    description: 'Issue #203 option A: spatial cost asymmetry on the 10-ring. Same reward magnitudes as `default`, but per-agent work cost is base_cost + alpha * ring_dist(home, target). With home positions [0,3,5,8] and alpha=0.1 the cheapest action for each agent is to defend its own neighborhood, creating a per-agent gradient that doesn\'t rely on reward magnitude differences. When distance_cost_alpha=0 (the implicit default for every other scenario) behavior is bit-exactly identical to today\'s env.',
+    parameters: {
+      prob_fire_spreads_to_neighbor: 0.25,
+      prob_solo_agent_extinguishes_fire: 0.5,
+      prob_house_catches_fire: 0.02,
+      team_reward_house_survives: 100.0,
+      team_penalty_house_burns: 100.0,
+      cost_to_work_one_night: 0.5,
+      min_nights: 12,
+      reward_own_house_survives: 20.0,
+      reward_other_house_survives: 0.0,
+      penalty_own_house_burns: 40.0,
+      penalty_other_house_burns: 0.0,
       num_agents: 4,
     },
   },

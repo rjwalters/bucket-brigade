@@ -225,10 +225,11 @@ class TestPythonGeneration:
             )
 
             # Get factory function. For scenarios that hard-code per-agent
-            # vectors in JSON (e.g. ``minimal_specialization``, issue #199)
-            # the construction num_agents is dictated by the vector length:
-            # ``Scenario.__post_init__`` rejects a mismatch. For all-scalar
-            # scenarios any num_agents is fine; we use 10 for stress.
+            # vectors in JSON (e.g. ``minimal_specialization``, issue #199, or
+            # ``positional_default`` from #203) the construction num_agents is
+            # dictated by the vector length: ``Scenario.__post_init__`` rejects
+            # a mismatch. For all-scalar scenarios any num_agents is fine; we
+            # use 10 for stress.
             factory = PY_SCENARIOS[name]
             num_agents = 10
             for fname in per_agent_fields:
@@ -236,6 +237,12 @@ class TestPythonGeneration:
                 if isinstance(v, list):
                     num_agents = len(v)
                     break
+            # Issue #203: ``agent_home_positions`` is another per-agent vector
+            # that pins num_agents. If neither the reward vectors nor
+            # ``agent_home_positions`` were lists in JSON, fall back to 10.
+            home_positions = spec.get("agent_home_positions")
+            if isinstance(home_positions, list):
+                num_agents = len(home_positions)
             scenario = factory(num_agents=num_agents)
 
             # Verify it's a Scenario instance
