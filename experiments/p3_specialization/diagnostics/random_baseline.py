@@ -227,9 +227,7 @@ def main() -> None:
         rand_cite = cited["random"]
         mlp_cite = cited["mlp_iter0"]
         provenance = cited["note"]
-        mlp_str = (
-            f", iter-0 MLP={mlp_cite}" if mlp_cite is not None else ""
-        )
+        mlp_str = f", iter-0 MLP={mlp_cite}" if mlp_cite is not None else ""
         print(f"Cited values: random={rand_cite}{mlp_str} ({provenance})")
     else:
         print(
@@ -314,9 +312,7 @@ def main() -> None:
         mlp_cite = cited["mlp_iter0"]
         lo, hi = bootstrap_ci(rand_per_step_arr)
         rand_agrees = lo <= rand_cite <= hi
-        print(
-            f"Uniform-random per-step CI contains cited {rand_cite}: {rand_agrees}"
-        )
+        print(f"Uniform-random per-step CI contains cited {rand_cite}: {rand_agrees}")
         if mlp_per_step_arr is not None:
             if mlp_cite is not None:
                 lo_m, hi_m = bootstrap_ci(mlp_per_step_arr)
@@ -327,9 +323,7 @@ def main() -> None:
             mlp_agrees_rand = (
                 abs(mlp_per_step_arr.mean() - rand_per_step_arr.mean()) < 5.0
             )
-            print(
-                f"Random-init MLP within ±5 of uniform-random: {mlp_agrees_rand}"
-            )
+            print(f"Random-init MLP within ±5 of uniform-random: {mlp_agrees_rand}")
     else:
         print(
             f"(No cited verdict for scenario '{scenario_name}'; "
