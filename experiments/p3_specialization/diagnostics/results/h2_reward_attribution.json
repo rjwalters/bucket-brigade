@@ -51,5 +51,6 @@
   "min_off_diag_corr": 0.7145144195940472,
   "team_var": 580.4684941260234,
   "mean_per_agent_var": 1583.6987255250976,
-  "team_share_lower_bound_on_corr": 0.3665270955708832
+  "team_share_lower_bound_on_corr": 0.3665270955708832,
+  "scenario": "default"
 }

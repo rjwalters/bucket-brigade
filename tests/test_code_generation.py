@@ -224,9 +224,18 @@ class TestPythonGeneration:
                 f"Scenario {name} not found in Python SCENARIO_REGISTRY"
             )
 
-            # Get factory function
+            # Get factory function. For scenarios that hard-code per-agent
+            # vectors in JSON (e.g. ``minimal_specialization``, issue #199)
+            # the construction num_agents is dictated by the vector length:
+            # ``Scenario.__post_init__`` rejects a mismatch. For all-scalar
+            # scenarios any num_agents is fine; we use 10 for stress.
             factory = PY_SCENARIOS[name]
             num_agents = 10
+            for fname in per_agent_fields:
+                v = spec.get(fname)
+                if isinstance(v, list):
+                    num_agents = len(v)
+                    break
             scenario = factory(num_agents=num_agents)
 
             # Verify it's a Scenario instance

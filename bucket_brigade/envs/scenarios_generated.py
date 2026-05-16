@@ -10,7 +10,7 @@ To modify scenarios, edit definitions/scenarios.json and run:
 Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Union
 import numpy as np
 
@@ -326,6 +326,24 @@ def mixed_motivation_scenario(num_agents: int) -> Scenario:
     )
 
 
+def minimal_specialization_scenario(num_agents: int) -> Scenario:
+    """Sanity-check scenario for issue #199: per-agent ownership signal is dominant (50/100 own vs 0 other) and team signal is reduced (10 vs default 100). Disambiguates whether PPO can learn specialization when per-agent gradient signal is truly dominant; if PPO learns this but not default, env design is the issue; if it fails this too, algorithm change (MAPPO/COMA) is needed."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=10.0,
+        team_penalty_house_burns=10.0,
+        reward_own_house_survives=[50.0, 50.0, 50.0, 50.0],
+        reward_other_house_survives=[0.0, 0.0, 0.0, 0.0],
+        penalty_own_house_burns=[100.0, 100.0, 100.0, 100.0],
+        penalty_other_house_burns=[0.0, 0.0, 0.0, 0.0],
+        cost_to_work_one_night=0.5,
+        min_nights=12,
+        num_agents=num_agents,
+    )
+
+
 
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
@@ -341,6 +359,7 @@ SCENARIO_REGISTRY = {
     "deceptive_calm": deceptive_calm_scenario,
     "overcrowding": overcrowding_scenario,
     "mixed_motivation": mixed_motivation_scenario,
+    "minimal_specialization": minimal_specialization_scenario,
 }
 
 

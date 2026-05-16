@@ -169,6 +169,20 @@
       "penalty_own_house_burns": 2.0,
       "penalty_other_house_burns": 0.0,
       "description": "House ownership creates conflicting incentives"
+    },
+    "minimal_specialization": {
+      "prob_fire_spreads_to_neighbor": 0.25,
+      "prob_solo_agent_extinguishes_fire": 0.5,
+      "prob_house_catches_fire": 0.02,
+      "team_reward_house_survives": 10.0,
+      "team_penalty_house_burns": 10.0,
+      "cost_to_work_one_night": 0.5,
+      "min_nights": 12,
+      "reward_own_house_survives": [50.0, 50.0, 50.0, 50.0],
+      "reward_other_house_survives": [0.0, 0.0, 0.0, 0.0],
+      "penalty_own_house_burns": [100.0, 100.0, 100.0, 100.0],
+      "penalty_other_house_burns": [0.0, 0.0, 0.0, 0.0],
+      "description": "Sanity-check scenario for issue #199: per-agent ownership signal is dominant (50/100 own vs 0 other) and team signal is reduced (10 vs default 100). Disambiguates whether PPO can learn specialization when per-agent gradient signal is truly dominant; if PPO learns this but not default, env design is the issue; if it fails this too, algorithm change (MAPPO/COMA) is needed."
     }
   }
 }
