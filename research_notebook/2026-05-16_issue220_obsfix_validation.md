@@ -107,3 +107,95 @@ Per-agent action-entropy divergence and pairwise KL > 0 are *necessary*
 conditions for the fix to have done anything structurally — even if team
 reward doesn't move, divergence > 0 confirms the bug is gone and points the
 next intervention at credit assignment rather than identical-gradient collapse.
+
+## Results (2026-05-16, rerun via PR #230)
+
+The treatment arm was rerun on the post-#228 main HEAD; the baseline arm
+was rebased onto commit `2b963630` (the parent of the obs-fix commit
+`a38667b5`) because `19afcd76` (the originally-cited baseline pin) predates
+`minimal_specialization` (scenario added by PR #207 / commit `6d8bcc66`)
+and so could not have produced the missing baseline-arm minspec cells. The
+3 pre-existing baseline `default` cells on disk (from the PR #227 kickoff
+on `19afcd76`) are scientifically equivalent for the obs-fix question (the
+diff between `19afcd76` and `2b963630` is `positional_default` scenario
+addition; `default` and the rest of the env code are unchanged) and were
+retained via `--skip-existing`.
+
+**Treatment HEAD:** `89ed2ebb` (current main at rerun time; first commit
+post-#228 fix). **Baseline HEAD:** `2b963630` (parent of `a38667b5`
+obs-fix commit; contains `minimal_specialization`).
+
+All 12 cells completed (2 arms × 2 scenarios × 3 seeds). Pairwise action-KL
+was computed for the 6 treatment cells; baseline cells produced 38-dim
+policies that can't be loaded by the post-#216 trainer (42-dim input) so
+KL on the baseline arm is reported as `n/a` — see the "divergence" table
+interpretation below.
+
+### Team reward (trailing-5 mean of `mean_step_reward_team`)
+
+| scenario | arm | n | mean ± std | per-seed |
+|---|---|---|---|---|
+| default | baseline | 3 | +249.49 ± 1.40 | [251.11, 248.69, 248.66] |
+| default | treatment | 3 | +253.70 ± 2.38 | [256.23, 253.38, 251.51] |
+| minimal_specialization | baseline | 3 | -86.24 ± 6.21 | [-79.72, -92.07, -86.94] |
+| minimal_specialization | treatment | 3 | -91.71 ± 7.38 | [-87.34, -100.23, -87.55] |
+
+### Policy divergence (final-iter entropy spread + pairwise action KL)
+
+| scenario | arm | mean_entropy | entropy_spread (max-min across agents) | KL off-diag mean |
+|---|---|---|---|---|
+| default | baseline | 2.399 | 1.628 | n/a |
+| default | treatment | 2.293 | 1.653 | 3.7178 |
+| minimal_specialization | baseline | 2.907 | 1.370 | n/a |
+| minimal_specialization | treatment | 2.829 | 1.871 | 2.7252 |
+
+The KL off-diagonal mean is strongly positive (2.7-3.7) on every treatment
+cell. The necessary-condition check **passes**: the obs-fix produces
+distinguishable per-agent policies, with mean pairwise KL well above zero
+(the identical-input pathology). The baseline arm policies have 38-dim
+input (no identity one-hot) and cannot be loaded by the post-#216 trainer
+for KL computation, but their state was, by construction, the
+identical-gradient pathology PR #216 was written to fix.
+
+### Gap-closed on `minimal_specialization`
+
+| arm | gap_closed (trailing-5 mean) | per-seed | pre-reg verdict |
+|---|---|---|---|
+| baseline | 0.133 | [0.221, 0.054, 0.123] | < 25% — MAPPO needed |
+| treatment | 0.059 | [0.118, -0.056, 0.115] | **< 25% — MAPPO needed** |
+
+## Verdict (pre-registered)
+
+**Treatment gap-closed = 5.9 %** (per-seed range: -5.6 % to +11.8 %).
+This falls into the **< 25 %** bin of the pre-registered verdict table:
+
+> Obs-differentiation wasn't the bottleneck. Tighten memory note to
+> "MAPPO is necessary"; raise #208.
+
+Treatment is actually slightly **worse** than baseline (13.3 % vs 5.9 % on
+minimal_specialization), within seed-level noise. The most informative
+finding is the necessary-condition split: pairwise KL on the treatment arm
+is 2.7-3.7 (strongly differentiated policies — the obs-fix worked
+structurally), and team reward on `default` improves modestly
+(+249.49 → +253.70). But that structural fix does **not** translate into
+the credit-assignment gap closure that `minimal_specialization` was
+designed to measure. Per the existing project-memory analysis: this points
+the next intervention squarely at **independent-PPO's credit-assignment
+failure**, not at observation structure.
+
+### Action items applied
+
+- Project memory `project_ppo_failure_mode.md`: tightened from "obs-fix
+  verified working" to "obs-fix verified structurally but insufficient —
+  gap-closure still 5.9 %; MAPPO/CTDE remains necessary".
+- Issue #208 (MAPPO): should remain active / be raised in priority (this
+  PR does not touch #208 labels — leaves that to Guide/Curator).
+
+### Artifacts
+
+- `experiments/p3_specialization/runs/issue220_baseline/**/metrics.json` (6 cells)
+- `experiments/p3_specialization/runs/issue220_treatment/**/metrics.json` (6 cells)
+- `experiments/p3_specialization/runs/issue220_treatment/**/pairwise_action_kl.json` (6 cells)
+- `experiments/p3_specialization/diagnostics/results/issue220_obsfix/summary.{md,json}`
+- Remote worktrees on `robbs-mac-studio`: `~/GitHub/bb_issue220_baseline`
+  (HEAD `2b963630`), `~/GitHub/bb_issue220_treatment` (HEAD `89ed2ebb`).
