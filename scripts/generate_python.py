@@ -225,6 +225,12 @@ def generate_scenarios(json_path: Path, output_path: Path):
                             "is out of range [0, 10)."
                         )
                 self.agent_home_positions = positions
+            # Keep in sync with the Rust allowlist in
+            # `bucket-brigade-core/src/scenarios.rs::ALLOWED_DISTANCE_METRICS`.
+            # Both sides reject unknown values to prevent silent ring-arc
+            # fallback (issue #222 — `engine/rewards.rs` does not branch on
+            # this field, so any unrecognized string would otherwise run
+            # ring-arc geometry).
             if self.distance_metric != "ring_arc":
                 raise ValueError(
                     f"Scenario.distance_metric={self.distance_metric!r} "

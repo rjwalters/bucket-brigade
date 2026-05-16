@@ -51,10 +51,40 @@ fn default_distance_cost_alpha() -> f32 {
     0.0
 }
 
+/// Allowed values for `Scenario::distance_metric`.
+///
+/// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
+/// unconditionally — it does not branch on `distance_metric`. That makes any
+/// unrecognized string a silent ring-arc fallback. To prevent that, the
+/// deserializer (`deserialize_distance_metric`) and the programmatic-construction
+/// chokepoint (`Scenario::validate`) both reject any value not listed here.
+///
+/// Keep in sync with the Python validator in
+/// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
+pub const ALLOWED_DISTANCE_METRICS: &[&str] = &["ring_arc"];
+
 /// Default for `Scenario::distance_metric`. `"ring_arc"` is the only supported
 /// value today; the field is future-proofing for alternative geometries.
 fn default_distance_metric() -> String {
     "ring_arc".to_string()
+}
+
+/// Custom serde deserializer for `Scenario::distance_metric` that enforces the
+/// `ALLOWED_DISTANCE_METRICS` allowlist. Without this, the field accepts any
+/// string and silently falls back to ring-arc geometry at runtime (since
+/// `engine/rewards.rs` never reads the field) — see issue #222.
+fn deserialize_distance_metric<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if !ALLOWED_DISTANCE_METRICS.contains(&s.as_str()) {
+        return Err(D::Error::custom(format!(
+            "Scenario.distance_metric={s:?} is not supported; allowed values: {ALLOWED_DISTANCE_METRICS:?}"
+        )));
+    }
+    Ok(s)
 }
 
 /// Default for `Scenario::agent_home_positions`. Empty means "fall back to the
@@ -110,8 +140,32 @@ pub struct Scenario {
     pub agent_home_positions: Vec<u8>,
     #[serde(default = "default_distance_cost_alpha")]
     pub distance_cost_alpha: f32,
-    #[serde(default = "default_distance_metric")]
+    #[serde(
+        default = "default_distance_metric",
+        deserialize_with = "deserialize_distance_metric"
+    )]
     pub distance_metric: String,
+}
+
+impl Scenario {
+    /// Validate fields that have allowlist constraints.
+    ///
+    /// The serde deserializer (`deserialize_distance_metric`) catches unknown
+    /// `distance_metric` values on the JSON path, but programmatic construction
+    /// (e.g. building a `Scenario` literal in Rust, the `PyScenario::new`
+    /// kwargs path, or the WASM constructor) bypasses serde entirely. This
+    /// helper is the single chokepoint for re-checking the allowlist on those
+    /// paths; it is called from `BucketBrigade::new` so the engine fails fast
+    /// rather than running with a silent ring-arc fallback (issue #222).
+    pub fn validate(&self) -> Result<(), String> {
+        if !ALLOWED_DISTANCE_METRICS.contains(&self.distance_metric.as_str()) {
+            return Err(format!(
+                "Scenario.distance_metric={:?} is not supported; allowed values: {:?}",
+                self.distance_metric, ALLOWED_DISTANCE_METRICS
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// Predefined scenarios.
@@ -595,14 +649,8 @@ mod tests {
         let scenario: Scenario = serde_json::from_str(json).unwrap();
         // Scalar 1.0 should expand to MAX_AGENTS == 10 entries.
         assert_eq!(scenario.reward_own_house_survives.len(), MAX_AGENTS);
-        assert!(scenario
-            .reward_own_house_survives
-            .iter()
-            .all(|&v| v == 1.0));
-        assert!(scenario
-            .penalty_own_house_burns
-            .iter()
-            .all(|&v| v == 2.0));
+        assert!(scenario.reward_own_house_survives.iter().all(|&v| v == 1.0));
+        assert!(scenario.penalty_own_house_burns.iter().all(|&v| v == 2.0));
     }
 
     #[test]
@@ -624,7 +672,10 @@ mod tests {
         let scenario = SCENARIOS.get("minimal_specialization").unwrap();
         assert_eq!(scenario.team_reward_house_survives, 10.0);
         assert_eq!(scenario.team_penalty_house_burns, 10.0);
-        assert!(scenario.reward_own_house_survives.iter().all(|&v| v == 50.0));
+        assert!(scenario
+            .reward_own_house_survives
+            .iter()
+            .all(|&v| v == 50.0));
         assert!(scenario
             .reward_other_house_survives
             .iter()
@@ -662,30 +713,48 @@ mod tests {
     fn test_trivial_cooperation_is_easy() {
         let scenario = SCENARIOS.get("trivial_cooperation").unwrap();
         // Should have high extinguish rate and low spread
-        assert!(scenario.prob_solo_agent_extinguishes_fire >= 0.8, "Trivial cooperation should have high extinguish rate");
-        assert!(scenario.prob_fire_spreads_to_neighbor <= 0.2, "Trivial cooperation should have low spread rate");
-        assert!(scenario.cost_to_work_one_night <= 0.5, "Trivial cooperation should have low work cost");
+        assert!(
+            scenario.prob_solo_agent_extinguishes_fire >= 0.8,
+            "Trivial cooperation should have high extinguish rate"
+        );
+        assert!(
+            scenario.prob_fire_spreads_to_neighbor <= 0.2,
+            "Trivial cooperation should have low spread rate"
+        );
+        assert!(
+            scenario.cost_to_work_one_night <= 0.5,
+            "Trivial cooperation should have low work cost"
+        );
     }
 
     #[test]
     fn test_greedy_neighbor_creates_social_dilemma() {
         let scenario = SCENARIOS.get("greedy_neighbor").unwrap();
         // Should have high work cost to create free-riding incentive
-        assert!(scenario.cost_to_work_one_night >= 0.8, "Greedy neighbor should have high work cost to create social dilemma");
+        assert!(
+            scenario.cost_to_work_one_night >= 0.8,
+            "Greedy neighbor should have high work cost to create social dilemma"
+        );
     }
 
     #[test]
     fn test_early_containment_is_aggressive() {
         let scenario = SCENARIOS.get("early_containment").unwrap();
         // Should have high spread rate requiring fast response
-        assert!(scenario.prob_fire_spreads_to_neighbor >= 0.3, "Early containment should have high spread rate");
+        assert!(
+            scenario.prob_fire_spreads_to_neighbor >= 0.3,
+            "Early containment should have high spread rate"
+        );
     }
 
     #[test]
     fn test_chain_reaction_has_highest_spread() {
         let scenario = SCENARIOS.get("chain_reaction").unwrap();
         // Chain reaction should have the highest spread rate
-        assert!(scenario.prob_fire_spreads_to_neighbor >= 0.4, "Chain reaction should have very high spread rate");
+        assert!(
+            scenario.prob_fire_spreads_to_neighbor >= 0.4,
+            "Chain reaction should have very high spread rate"
+        );
         for (name, other) in SCENARIOS.iter() {
             if name != &"chain_reaction" {
                 assert!(
@@ -701,33 +770,57 @@ mod tests {
     fn test_rest_trap_has_highest_extinguish_rate() {
         let scenario = SCENARIOS.get("rest_trap").unwrap();
         // Rest trap should have very high extinguish rate (fires usually extinguish themselves)
-        assert!(scenario.prob_solo_agent_extinguishes_fire >= 0.9, "Rest trap should have very high extinguish rate");
-        assert!(scenario.prob_fire_spreads_to_neighbor <= 0.1, "Rest trap should have very low spread rate");
-        assert!(scenario.cost_to_work_one_night <= 0.3, "Rest trap should have low work cost");
+        assert!(
+            scenario.prob_solo_agent_extinguishes_fire >= 0.9,
+            "Rest trap should have very high extinguish rate"
+        );
+        assert!(
+            scenario.prob_fire_spreads_to_neighbor <= 0.1,
+            "Rest trap should have very low spread rate"
+        );
+        assert!(
+            scenario.cost_to_work_one_night <= 0.3,
+            "Rest trap should have low work cost"
+        );
     }
 
     #[test]
     fn test_sparse_heroics_has_long_games() {
         let scenario = SCENARIOS.get("sparse_heroics").unwrap();
         // Sparse heroics should have longer minimum game length
-        assert!(scenario.min_nights >= 15, "Sparse heroics should have longer minimum nights");
+        assert!(
+            scenario.min_nights >= 15,
+            "Sparse heroics should have longer minimum nights"
+        );
     }
 
     #[test]
     fn test_deceptive_calm_has_long_games() {
         let scenario = SCENARIOS.get("deceptive_calm").unwrap();
         // Deceptive calm should have longer games with occasional sparks
-        assert!(scenario.min_nights >= 15, "Deceptive calm should have longer minimum nights");
-        assert!(scenario.prob_house_catches_fire >= 0.03, "Deceptive calm should have occasional sparks");
+        assert!(
+            scenario.min_nights >= 15,
+            "Deceptive calm should have longer minimum nights"
+        );
+        assert!(
+            scenario.prob_house_catches_fire >= 0.03,
+            "Deceptive calm should have occasional sparks"
+        );
     }
 
     #[test]
     fn test_overcrowding_has_low_efficiency() {
         let scenario = SCENARIOS.get("overcrowding").unwrap();
         // Overcrowding should have low extinguish efficiency
-        assert!(scenario.prob_solo_agent_extinguishes_fire <= 0.4, "Overcrowding should have low extinguish efficiency");
+        assert!(
+            scenario.prob_solo_agent_extinguishes_fire <= 0.4,
+            "Overcrowding should have low extinguish efficiency"
+        );
         // May also have lower team reward
-        assert!(scenario.team_reward_house_survives <= 100.0, "Overcrowding may have reduced rewards");
+        assert!(
+            scenario.team_reward_house_survives <= 100.0,
+            "Overcrowding may have reduced rewards"
+        );
     }
 
     #[test]
@@ -737,16 +830,26 @@ mod tests {
         let hard = SCENARIOS.get("hard").unwrap();
 
         // Easy should have easier parameters than default
-        assert!(easy.prob_solo_agent_extinguishes_fire > default_scenario.prob_solo_agent_extinguishes_fire,
-                "Easy should have higher extinguish rate than default");
-        assert!(easy.prob_fire_spreads_to_neighbor < default_scenario.prob_fire_spreads_to_neighbor,
-                "Easy should have lower spread rate than default");
+        assert!(
+            easy.prob_solo_agent_extinguishes_fire
+                > default_scenario.prob_solo_agent_extinguishes_fire,
+            "Easy should have higher extinguish rate than default"
+        );
+        assert!(
+            easy.prob_fire_spreads_to_neighbor < default_scenario.prob_fire_spreads_to_neighbor,
+            "Easy should have lower spread rate than default"
+        );
 
         // Hard should have harder parameters than default
-        assert!(hard.prob_solo_agent_extinguishes_fire < default_scenario.prob_solo_agent_extinguishes_fire,
-                "Hard should have lower extinguish rate than default");
-        assert!(hard.prob_fire_spreads_to_neighbor > default_scenario.prob_fire_spreads_to_neighbor,
-                "Hard should have higher spread rate than default");
+        assert!(
+            hard.prob_solo_agent_extinguishes_fire
+                < default_scenario.prob_solo_agent_extinguishes_fire,
+            "Hard should have lower extinguish rate than default"
+        );
+        assert!(
+            hard.prob_fire_spreads_to_neighbor > default_scenario.prob_fire_spreads_to_neighbor,
+            "Hard should have higher spread rate than default"
+        );
     }
 
     #[test]
@@ -762,10 +865,16 @@ mod tests {
             if name == &"overcrowding" || name == &"minimal_specialization" {
                 continue;
             }
-            assert_eq!(scenario.team_reward_house_survives, 100.0,
-                      "Scenario '{}' should use standard reward (100)", name);
-            assert_eq!(scenario.team_penalty_house_burns, 100.0,
-                      "Scenario '{}' should use standard penalty (100)", name);
+            assert_eq!(
+                scenario.team_reward_house_survives, 100.0,
+                "Scenario '{}' should use standard reward (100)",
+                name
+            );
+            assert_eq!(
+                scenario.team_penalty_house_burns, 100.0,
+                "Scenario '{}' should use standard penalty (100)",
+                name
+            );
         }
     }
 
@@ -787,7 +896,10 @@ mod tests {
         assert_eq!(scenario.team_reward_house_survives, 100.0);
         assert_eq!(scenario.team_penalty_house_burns, 100.0);
         assert_eq!(scenario.cost_to_work_one_night, 0.5);
-        assert!(scenario.reward_own_house_survives.iter().all(|&v| v == 20.0));
+        assert!(scenario
+            .reward_own_house_survives
+            .iter()
+            .all(|&v| v == 20.0));
         assert!(scenario.penalty_own_house_burns.iter().all(|&v| v == 40.0));
         // New spatial knobs.
         assert_eq!(scenario.agent_home_positions, vec![0u8, 3, 5, 8]);
@@ -851,5 +963,124 @@ mod tests {
         assert_eq!(scenario.distance_cost_alpha, 0.0);
         assert_eq!(scenario.distance_metric, "ring_arc");
         assert!(scenario.agent_home_positions.is_empty());
+    }
+
+    /// Issue #222: unknown ``distance_metric`` values must be rejected at
+    /// deserialization time. Without this guard, the engine silently falls
+    /// back to ring-arc geometry because ``engine/rewards.rs`` never branches
+    /// on the field.
+    #[test]
+    fn test_unknown_distance_metric_rejected_in_deserialize() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "distance_metric": "euclidean"
+        }"#;
+        let err = serde_json::from_str::<Scenario>(json)
+            .expect_err("euclidean should be rejected by the allowlist");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("distance_metric") && msg.contains("euclidean"),
+            "Deserialization error should name the offending field and value, got: {msg}"
+        );
+        assert!(
+            msg.contains("ring_arc"),
+            "Error should advertise the allowed values, got: {msg}"
+        );
+    }
+
+    /// Empty-string, mixed-case, and trailing-whitespace variants must all be
+    /// rejected — only the exact ``"ring_arc"`` literal is supported.
+    #[test]
+    fn test_distance_metric_edge_cases_rejected_in_deserialize() {
+        for bogus in ["", "Ring_Arc", "ring_arc ", "RING_ARC", " ring_arc"] {
+            let json = format!(
+                r#"{{
+                    "prob_fire_spreads_to_neighbor": 0.25,
+                    "prob_solo_agent_extinguishes_fire": 0.5,
+                    "prob_house_catches_fire": 0.02,
+                    "team_reward_house_survives": 100.0,
+                    "team_penalty_house_burns": 100.0,
+                    "reward_own_house_survives": 1.0,
+                    "reward_other_house_survives": 0.0,
+                    "penalty_own_house_burns": 2.0,
+                    "penalty_other_house_burns": 0.0,
+                    "cost_to_work_one_night": 0.5,
+                    "min_nights": 12,
+                    "distance_metric": "{bogus}"
+                }}"#
+            );
+            assert!(
+                serde_json::from_str::<Scenario>(&json).is_err(),
+                "Expected rejection for distance_metric={bogus:?}, but it was accepted"
+            );
+        }
+    }
+
+    /// Programmatic construction path: building a ``Scenario`` literal with a
+    /// bogus ``distance_metric`` should fail ``validate()``. This guards every
+    /// non-serde construction site (PyScenario, WasmScenario, engine init).
+    #[test]
+    fn test_validate_rejects_unknown_distance_metric() {
+        let scenario = Scenario {
+            prob_fire_spreads_to_neighbor: 0.25,
+            prob_solo_agent_extinguishes_fire: 0.5,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 100.0,
+            team_penalty_house_burns: 100.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(1.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(2.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: "bogus".to_string(),
+        };
+        let err = scenario
+            .validate()
+            .expect_err("bogus metric should fail validate()");
+        assert!(
+            err.contains("distance_metric"),
+            "Error should name the field, got: {err}"
+        );
+        assert!(
+            err.contains("bogus"),
+            "Error should name the offending value, got: {err}"
+        );
+        assert!(
+            err.contains("ring_arc"),
+            "Error should list allowed values, got: {err}"
+        );
+    }
+
+    /// ``validate()`` should accept every value listed in the allowlist (and
+    /// every predefined scenario which uses the canonical default).
+    #[test]
+    fn test_validate_accepts_known_distance_metrics() {
+        for (name, scenario) in SCENARIOS.iter() {
+            assert!(
+                scenario.validate().is_ok(),
+                "Predefined scenario {name:?} should pass validate()"
+            );
+        }
+    }
+
+    /// Allowlist invariant: ``"ring_arc"`` is always allowed and the default
+    /// matches an allowed value.
+    #[test]
+    fn test_allowlist_contains_default_metric() {
+        assert!(ALLOWED_DISTANCE_METRICS.contains(&"ring_arc"));
+        assert!(ALLOWED_DISTANCE_METRICS.contains(&default_distance_metric().as_str()));
     }
 }

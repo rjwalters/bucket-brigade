@@ -78,6 +78,15 @@ pub(super) fn ring_dist_10(a: u8, b: u8) -> u8 {
 
 impl BucketBrigade {
     pub fn new(scenario: Scenario, num_agents: usize, seed: Option<u64>) -> Self {
+        // Issue #222: fail fast on allowlisted-but-unrecognized fields.
+        // `engine/rewards.rs` unconditionally uses ring-arc geometry, so an
+        // unknown `distance_metric` would silently fall back to it. Mirroring
+        // the Python `Scenario.__post_init__` validator here keeps every
+        // engine-construction path (Rust literal, PyScenario kwargs, WASM JSON)
+        // consistent.
+        scenario
+            .validate()
+            .unwrap_or_else(|e| panic!("Invalid Scenario passed to BucketBrigade::new: {e}"));
         let agent_home_positions = derive_agent_home_positions(&scenario, num_agents);
         let mut engine = Self {
             houses: vec![0; 10],
