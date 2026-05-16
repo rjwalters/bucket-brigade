@@ -126,3 +126,50 @@ If Phase 3 also fails to cross 320, the answer is *not* in the PPO hyperparamete
 - Per-cell outputs (gitignored): `experiments/p3_specialization/runs/p3_174_ablation/{condition}/default/lambda_0e0/seed_{N}/{metrics.json,config.json,policies/}`.
 - Aggregated outputs (committed): `experiments/p3_specialization/results_174_ablation/{summary.json,summary.md,reward_trajectories.png,gradient_ratios.png}`.
 - Branch: `feature/issue-174`. Worktree: `.loom/worktrees/issue-174`.
+
+## Amendment 2026-05-15
+
+**Trigger:** Issue #202 baseline audit + H3 diagnostic (#192 / PR #196).
+
+**What changed.** The `default` random per-step team-reward baseline used
+throughout this notebook (308) and the derived #174 acceptance bar (320 =
+308 + 12) were both built on an uncommitted n=50 measurement from issue
+#145. PR #196 re-derived the random baseline at n=1000 episodes across 5
+seeds: **293.39 with 95% bootstrap CI [288.87, 297.78]**. The cited 308
+sits outside this CI. The 320 acceptance bar was therefore ~26 reward too
+high relative to the corrected baseline (and was anyway an arbitrary "+12
+buffer" with no statistical justification).
+
+Per issue #202's hybrid policy, `analyze_174.py` now uses:
+
+- `RAND_BASELINE = 293.4` (re-derived mean)
+- `ACCEPTANCE_BAR = 297.78` (re-derived CI upper bound — "statistically
+  distinguishable from random," not "exceeds an arbitrary buffer")
+
+The regenerated `results_174_ablation/summary.md` and `summary.json`
+reflect the new constants.
+
+**Effect on this notebook's conclusions.** None of the qualitative
+conclusions change:
+
+- *Acceptance criterion not met.* The original criterion ("CI lower bound
+  > 320") is not met by any condition. The corrected criterion ("CI lower
+  bound > 297.78") is also not met by any condition — the best lower bound
+  is L1L3's 293.59, which barely clears the corrected random mean (293.4)
+  but still falls below the corrected acceptance bar.
+- *No condition unlocked learning.* All conditions land in the 296–299
+  band, which under the corrected baseline is "at random ± a few points,"
+  not "below random." The "below random" framing in the TL;DR ("None of
+  the six conditions clears even the 308 random baseline") should be read
+  as "None of the six conditions is statistically distinguishable from
+  random under the corrected n=1000 baseline."
+- *L1_norm slope is still the only positive signal.* +0.173 reward/iter
+  over iters 25–50 is unchanged; the long-horizon Phase 3 recommendation
+  still stands.
+- *Defaults change recommendation.* Still "no change recommended at this
+  time" — corrected or not, no condition clears the new acceptance bar.
+
+**Why an amendment and not an edit.** The body above is the dated research
+record. Silent edits would erase the provenance of the original analysis.
+Future readers should see the original 308/320 numbers and this footer
+together.
