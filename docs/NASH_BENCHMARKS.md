@@ -1,5 +1,27 @@
 # Nash Equilibrium Computation Benchmarks
 
+## Provenance Notes
+
+**2026-05-16 (issue #240)**: The Rust-backed payoff evaluator
+(`bucket_brigade.equilibrium.payoff_evaluator_rust`) and its Rust
+counterpart `HeuristicAgent::select_action` hardcoded `signal == mode`
+in the action vector, regardless of the agent's `honesty_bias`
+parameter. Post-#236 (signaling first-class), this silently disagreed
+with `HeuristicAgent.act`, which honors `honesty_bias`. The Liar
+archetype (`honesty_bias = 0.1`) was therefore evaluated as honest
+through every Rust path, biasing equilibrium results that include the
+Liar archetype or any strategy with `honesty_bias < 1.0`. The Nov 4 2025
+benchmarks below were computed before this fix. A post-#240 re-run is
+underway (see `experiments/nash/v1_results_python_post240/`); table
+will be updated when complete.
+
+**2025-11-04 (original)**: Initial 12-scenario benchmark on an AWS
+c5.16xlarge with the pre-#236 deterministic signaling semantics
+(`signal == work bit` enforced by the engine itself). Numbers below
+predate both #236 and #240, so the Liar archetype's strength is
+understated and dominant-strategy verdicts should not be relied upon
+without the post-#240 re-derivation.
+
 ## Hardware Configuration
 
 **Machine**: SkyPilot rwalters-sandbox-1
@@ -16,7 +38,7 @@
 - **Max iterations**: 50 (Double Oracle algorithm)
 - **Convergence threshold**: ε = 0.01
 
-## Timing Results (November 4, 2025)
+## Timing Results (November 4, 2025, pre-#240)
 
 ### Overall Performance
 
@@ -119,5 +141,33 @@
 
 ---
 
+## Post-#240 Re-Derivation (in progress)
+
+A canonical re-derivation of all 12 v1 scenarios on `COMPUTE_HOST_PRIMARY`
+(Mac Studio, M-series; ~16 performance cores) was launched as part of
+issue #240 alongside the `honesty_bias`-signaling fix. Results land in
+`experiments/nash/v1_results_python_post240/{scenario}/equilibrium.json`.
+
+**Why a re-run**: with the fix, Liar (`honesty_bias=0.1`) now broadcasts
+deceptive signals through every evaluator path (Rust full-rust,
+Rust+Python helper, pure-Python). Equilibria in scenarios where
+signal-conditioned strategies could exploit deception may shift; in
+particular, mixed equilibria containing Liar should be re-evaluated.
+
+**Expected verdict diff** (to be filled in when the run completes):
+
+| Scenario | Pre-#240 equilibrium | Post-#240 equilibrium | Liar mass change |
+|----------|----------------------|------------------------|------------------|
+| chain_reaction      | Pure Free_Rider (2.94)       | (pending) | (pending) |
+| greedy_neighbor     | Pure Coordinator (58.77)      | (pending) | (pending) |
+| trivial_cooperation | Mixed (Free_Rider, 108.78)    | (pending) | (pending) |
+| (9 more)            | (see v1_results_python README) | (pending) | (pending) |
+
+This section will be updated by a follow-up commit once the remote
+re-derivation finishes.
+
+---
+
 *Benchmarks collected on rwalters-sandbox-1 (64 vCPU) on November 4, 2025*
-*For issue #85: Compute Nash Equilibria for All Scenarios*
+*Post-#240 re-derivation on robbs-mac-studio (Mac Studio M-series), 2026-05-16*
+*For issues #85, #240: Compute Nash Equilibria for All Scenarios*

@@ -1,10 +1,14 @@
 # Nash V1 Results (Python - Deprecated)
 
-**⚠️ DEPRECATED**: These results used Python `BucketBrigadeEnv`, not Rust.
+**⚠️ DEPRECATED — and stale**: These results used Python `BucketBrigadeEnv`,
+not Rust, AND predate both #236 (signaling first-class) and #240
+(`honesty_bias` plumbed into the Rust-path heuristic action). They do
+not reflect the current game semantics. For the post-#240 canonical
+re-derivation see `experiments/nash/v1_results_python_post240/`.
 
 **Date Generated**: 2025-11-04
 **Evaluator**: `bucket_brigade.equilibrium.payoff_evaluator` (Python)
-**Status**: Questionable - needs Rust validation
+**Status**: Superseded — see `v1_results_python_post240/`
 
 ---
 

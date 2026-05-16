@@ -5,6 +5,15 @@
 **Scenarios Analyzed:** 12
 **Next**: [V2 Plan](./V2_PLAN.md) - Integration with evolved strategies
 
+> **Stale (pre-#236 and pre-#240)**: This summary table was produced
+> before #236 (signaling first-class) and before #240 (`honesty_bias`
+> threaded into the Rust-path heuristic-action signal channel). The
+> Liar archetype was silently evaluated as honest in both regimes,
+> which suppresses any equilibrium mass it would otherwise carry. The
+> v1 canonical re-derivation lives in `v1_results_python_post240/` —
+> consult that directory rather than the tables below for current
+> verdicts. The Nov 4 2025 numbers are retained for historical diff.
+
 ## Overview
 
 This report presents Nash equilibrium analysis for all Bucket Brigade scenarios,
