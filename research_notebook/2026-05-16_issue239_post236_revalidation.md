@@ -84,6 +84,39 @@ trained on post-#236 main, paired by scenario and seed.
 
 ## Post-#236 results
 
+**Status at PR creation: training IN PROGRESS.** The 24-cell sweep was
+launched on `COMPUTE_HOST_PRIMARY` via `nohup bash
+experiments/p3_specialization/run_issue239_sweep.sh all > /tmp/issue239_sweep.log 2>&1 &`
+at 2026-05-16T22:28Z. The repo is checked out into worktree
+`/Users/rwalters/GitHub/bb_issue239` (detached HEAD at commit `1061b3dd`).
+
+Each cell takes ~10-15 wall-min at 100 iters x 2048 rollout steps, much
+longer than the curator-estimated 3 min/cell. Estimated completion:
+~5-7 hours from launch, depending on parallel-pool sibling contention
+(#240 is running 13 parallel Nash computations on the same host).
+
+When the sweep completes, run on the same host:
+
+```bash
+cd /Users/rwalters/GitHub/bb_issue239
+# Optionally rebase to pick up sibling baselines:
+git fetch origin && git rebase origin/main   # if PRs #243/#244 merged
+bash experiments/p3_specialization/finalize_issue239.sh
+```
+
+That script:
+1. Computes `pairwise_action_kl.json` for every cell (with the new
+   40-class joint).
+2. Re-runs `analyze_220.py` and `analyze_231.py`, which write
+   `summary.{md,json}` under
+   `diagnostics/results/issue220_obsfix/` and `.../issue231_mappo/`
+   (clobbering pre-#236 summaries; backups preserved as
+   `summary.pre236.{md,json}`).
+3. Prints the post-#236 summaries to stdout.
+
+Edit this notebook to fill in the placeholder TBDs below with the actual
+numbers from the rendered summaries.
+
 _Filled when the sweep completes and `analyze_220.py` + `analyze_231.py`
 have been re-run with the post-#236 baselines from PRs #243/#244 (siblings
 #237/#238)._
