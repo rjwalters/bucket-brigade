@@ -1,0 +1,155 @@
+{
+  "args": {
+    "num_agents": 4,
+    "scenario": "minimal_specialization",
+    "num_steps": 2500,
+    "epsilon": 0.1,
+    "hidden_size": 64,
+    "lr": 0.0003,
+    "batch_size": 64,
+    "epochs": 10,
+    "train_frac": 0.8,
+    "seed": 0,
+    "out": "experiments/p3_specialization/bc_fit_only_result.json"
+  },
+  "demo_info": {
+    "num_pairs": 10000,
+    "num_episodes_completed": 189,
+    "flat_obs_dim": 42,
+    "mode_counts": [
+      9505,
+      495
+    ],
+    "signal_counts": [
+      9505,
+      495
+    ],
+    "house_counts": [
+      2397,
+      2399,
+      2454,
+      2445,
+      57,
+      51,
+      46,
+      55,
+      46,
+      50
+    ],
+    "work_frac": 0.0495
+  },
+  "result": {
+    "n_params": 7887,
+    "obs_dim": 42,
+    "n_train": 8000,
+    "n_eval": 2000,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 2.1354199962615965,
+        "eval_loss": 1.9744559526443481,
+        "house_acc": 0.27900001406669617,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.2745000123977661
+      },
+      {
+        "epoch": 2,
+        "train_loss": 1.8805186977386474,
+        "eval_loss": 1.9682914018630981,
+        "house_acc": 0.4090000092983246,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.3970000147819519
+      },
+      {
+        "epoch": 3,
+        "train_loss": 1.841040937423706,
+        "eval_loss": 1.9027063846588135,
+        "house_acc": 0.43050000071525574,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.42250001430511475
+      },
+      {
+        "epoch": 4,
+        "train_loss": 1.7832818880081176,
+        "eval_loss": 1.8303426504135132,
+        "house_acc": 0.48350000381469727,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.4715000092983246
+      },
+      {
+        "epoch": 5,
+        "train_loss": 1.6883878335952758,
+        "eval_loss": 1.7133584022521973,
+        "house_acc": 0.9390000104904175,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9200000166893005
+      },
+      {
+        "epoch": 6,
+        "train_loss": 1.5484805221557618,
+        "eval_loss": 1.5557154417037964,
+        "house_acc": 0.9390000104904175,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9200000166893005
+      },
+      {
+        "epoch": 7,
+        "train_loss": 1.3477255401611328,
+        "eval_loss": 1.3173601627349854,
+        "house_acc": 0.9635000228881836,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9434999823570251
+      },
+      {
+        "epoch": 8,
+        "train_loss": 1.1164321284294128,
+        "eval_loss": 1.084700584411621,
+        "house_acc": 0.9635000228881836,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9434999823570251
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.9036037042140961,
+        "eval_loss": 0.9167248010635376,
+        "house_acc": 0.9635000228881836,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9434999823570251
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.7605536680221557,
+        "eval_loss": 0.8057560920715332,
+        "house_acc": 0.9635000228881836,
+        "mode_acc": 0.9434999823570251,
+        "signal_acc": 0.9434999823570251,
+        "joint_acc": 0.9434999823570251
+      }
+    ],
+    "final": {
+      "epoch": 10,
+      "train_loss": 0.7605536680221557,
+      "eval_loss": 0.8057560920715332,
+      "house_acc": 0.9635000228881836,
+      "mode_acc": 0.9434999823570251,
+      "signal_acc": 0.9434999823570251,
+      "joint_acc": 0.9434999823570251
+    },
+    "house_acc_on_work_subset": 0.3539822995662689,
+    "eval_work_rows": 113
+  },
+  "verdict": "INDUCTIVE_BIAS_GAP",
+  "timing": {
+    "data_gen_sec": 1.1434359550476074,
+    "train_sec": 2.6986870765686035
+  }
+}
