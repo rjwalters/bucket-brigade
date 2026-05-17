@@ -15,9 +15,18 @@ import json
 from pathlib import Path
 
 SCENARIOS = [
-    "chain_reaction", "deceptive_calm", "default", "early_containment",
-    "easy", "greedy_neighbor", "hard", "mixed_motivation",
-    "overcrowding", "rest_trap", "sparse_heroics", "trivial_cooperation",
+    "chain_reaction",
+    "deceptive_calm",
+    "default",
+    "early_containment",
+    "easy",
+    "greedy_neighbor",
+    "hard",
+    "mixed_motivation",
+    "overcrowding",
+    "rest_trap",
+    "sparse_heroics",
+    "trivial_cooperation",
 ]
 PRE = Path("experiments/nash/v1_results_python")
 POST = Path("experiments/nash/v1_results_python_post240")
@@ -35,8 +44,12 @@ def summarize(eq_json):
 
 
 def main():
-    print("| Scenario | Pre-#240 (type, payoff, top) | Post-#240 (type, payoff, top) | Liar mass Δ |")
-    print("|----------|------------------------------|-------------------------------|-------------|")
+    print(
+        "| Scenario | Pre-#240 (type, payoff, top) | Post-#240 (type, payoff, top) | Liar mass Δ |"
+    )
+    print(
+        "|----------|------------------------------|-------------------------------|-------------|"
+    )
     for s in SCENARIOS:
         pre_path = PRE / s / "equilibrium.json"
         post_path = POST / s / "equilibrium.json"
