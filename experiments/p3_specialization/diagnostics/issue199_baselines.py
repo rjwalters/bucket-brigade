@@ -48,9 +48,14 @@ def _run_random_episode(
     env.reset(seed=int(rng.integers(0, 2**31 - 1)))
     total_reward = 0.0
     while not env.done:
+        # MultiDiscrete([10, 2, 2]) per agent post-#236 (issue #235). Third
+        # column is the broadcast signal channel; without this row the env
+        # silently drops signals and the baseline measures a pre-#236 policy
+        # (the bug class issue #237 / PR #244 fixed in two sibling sites).
         actions = np.stack(
             [
                 rng.integers(0, 10, size=env.num_agents),
+                rng.integers(0, 2, size=env.num_agents),
                 rng.integers(0, 2, size=env.num_agents),
             ],
             axis=-1,

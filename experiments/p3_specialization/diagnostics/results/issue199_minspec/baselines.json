@@ -1,46 +1,4 @@
 {
-  "minimal_specialization": {
-    "scenario": "minimal_specialization",
-    "num_agents": 4,
-    "episodes_per_baseline": 50,
-    "seed": 42,
-    "random": {
-      "label": "random",
-      "n_episodes": 50,
-      "per_step": {
-        "mean": -96.0704468864469,
-        "ci95_lo": -118.34502435897437,
-        "ci95_hi": -74.95526282051283,
-        "std": 78.81588003638295
-      },
-      "per_episode_mean": -1268.54,
-      "episode_length": {
-        "mean": 13.22,
-        "median": 13.0,
-        "min": 13,
-        "max": 15
-      }
-    },
-    "specialist": {
-      "label": "specialist",
-      "n_episodes": 50,
-      "per_step": {
-        "mean": -22.07174358974359,
-        "ci95_lo": -41.64844890109891,
-        "ci95_hi": -3.2004866300366492,
-        "std": 70.17649194068679
-      },
-      "per_episode_mean": -294.3,
-      "episode_length": {
-        "mean": 13.26,
-        "median": 13.0,
-        "min": 13,
-        "max": 15
-      }
-    },
-    "specialist_minus_random_per_step": 73.99870329670331,
-    "ratio_specialist_over_random_per_step": 0.22974540355612058
-  },
   "default": {
     "scenario": "default",
     "num_agents": 4,
@@ -50,14 +8,14 @@
       "label": "random",
       "n_episodes": 50,
       "per_step": {
-        "mean": 241.8460805860806,
-        "ci95_lo": 216.46809523809523,
-        "ci95_hi": 265.9192527472527,
-        "std": 89.53143684898231
+        "mean": 245.77118681318683,
+        "ci95_lo": 215.65444999999994,
+        "ci95_hi": 274.16993846153844,
+        "std": 107.31521731179296
       },
-      "per_episode_mean": 3198.46,
+      "per_episode_mean": 3225.04,
       "episode_length": {
-        "mean": 13.22,
+        "mean": 13.14,
         "median": 13.0,
         "min": 13,
         "max": 15
@@ -80,7 +38,91 @@
         "max": 15
       }
     },
-    "specialist_minus_random_per_step": 79.09043956043953,
-    "ratio_specialist_over_random_per_step": 1.3270279980092081
+    "specialist_minus_random_per_step": 75.16533333333331,
+    "ratio_specialist_over_random_per_step": 1.305834602940935
+  },
+  "minimal_specialization": {
+    "scenario": "minimal_specialization",
+    "num_agents": 4,
+    "episodes_per_baseline": 50,
+    "seed": 42,
+    "random": {
+      "label": "random",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": -92.92147252747253,
+        "ci95_lo": -119.51967582417582,
+        "ci95_hi": -67.87476923076923,
+        "std": 94.74505320312267
+      },
+      "per_episode_mean": -1224.8,
+      "episode_length": {
+        "mean": 13.14,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist": {
+      "label": "specialist",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": -22.07174358974359,
+        "ci95_lo": -41.64844890109891,
+        "ci95_hi": -3.2004866300366492,
+        "std": 70.17649194068679
+      },
+      "per_episode_mean": -294.3,
+      "episode_length": {
+        "mean": 13.26,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist_minus_random_per_step": 70.84972893772894,
+    "ratio_specialist_over_random_per_step": 0.237531143118917
+  },
+  "positional_default": {
+    "scenario": "positional_default",
+    "num_agents": 4,
+    "episodes_per_baseline": 50,
+    "seed": 42,
+    "random": {
+      "label": "random",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": 245.26716336540252,
+        "ci95_lo": 215.16203630135084,
+        "ci95_hi": 273.67535998278396,
+        "std": 107.30272389832368
+      },
+      "per_episode_mean": 3218.4119999694826,
+      "episode_length": {
+        "mean": 13.14,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist": {
+      "label": "specialist",
+      "n_episodes": 50,
+      "per_step": {
+        "mean": 320.88723344918833,
+        "ci95_lo": 299.30359973755577,
+        "ci95_hi": 341.66901771394635,
+        "std": 77.75886575795121
+      },
+      "per_episode_mean": 4252.081996612549,
+      "episode_length": {
+        "mean": 13.26,
+        "median": 13.0,
+        "min": 13,
+        "max": 15
+      }
+    },
+    "specialist_minus_random_per_step": 75.6200700837858,
+    "ratio_specialist_over_random_per_step": 1.3083171389360668
   }
 }
