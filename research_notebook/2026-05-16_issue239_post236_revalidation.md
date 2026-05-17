@@ -1,8 +1,8 @@
 # Issue #239 — Post-#236 re-derivation of PR #216 obs-fix and PR #225 MAPPO
 
-**Date:** 2026-05-16
+**Date:** 2026-05-16 (results finalized 2026-05-17 under issue [#255](https://github.com/rjwalters/bucket-brigade/issues/255))
 **Issue:** [#239](https://github.com/rjwalters/bucket-brigade/issues/239)
-**PR (this commit):** TBD — see PR body for tmux/nohup session names and result status.
+**Finalization PR:** see #255 — verdict tier 3 (`INSUFFICIENT`) on both arms.
 
 ## Why re-derive?
 
@@ -117,54 +117,119 @@ That script:
 Edit this notebook to fill in the placeholder TBDs below with the actual
 numbers from the rendered summaries.
 
-_Filled when the sweep completes and `analyze_220.py` + `analyze_231.py`
-have been re-run with the post-#236 baselines from PRs #243/#244 (siblings
-#237/#238)._
+_Filled 2026-05-17 from `finalize_issue239.sh` rendered summaries on
+`COMPUTE_HOST_PRIMARY`, with the `bb_issue239` worktree rebased onto
+post-#243/#244/#245/#246/#248/#250 main (`06cb0fac`)._
 
 ### Obs-fix on `minimal_specialization` (post-#236)
-- treatment arm gap_closed: **TBD**
-- per-seed: TBD
+- treatment arm gap_closed: **0.182** (trailing-5 team-reward mean)
+- per-seed: 0.264, 0.078, 0.203
+- Treatment team reward: −82.63 ± 7.04 per-step (per-seed: −76.51, −90.33, −81.04)
+- Pre-registered verdict: **< 25% — MAPPO needed** (tier 3)
+- Pre-#236 treatment baseline (preserved in the pre-overwrite `git diff` of
+  this PR; the `summary.pre236.{md,json}` files referenced in the finalize
+  script never made it into git history): 0.059
 
 ### MAPPO sweep (post-#236)
-| scenario | gap_ippo | gap_mappo | delta | tier |
+| scenario | gap_ippo | gap_mappo | delta (mappo−ippo) | tier |
 |---|---|---|---|---|
-| default | TBD | TBD | TBD | TBD |
-| minimal_specialization | TBD | TBD | TBD | TBD |
-| positional_default | TBD | TBD | TBD | TBD |
+| default | +0.003 | +0.022 | +0.019 | `tier_3_insufficient` |
+| minimal_specialization | +0.078 | +0.011 | −0.066 | `tier_3_insufficient` |
+| positional_default | +0.012 | −0.019 | −0.031 | `tier_3_insufficient` |
 
-**Headline verdict post-#236**: TBD
+**Headline verdict post-#236**: **`INSUFFICIENT`** (Tier 3 — 0 succeed, 0
+partial, 3 insufficient). The signaling-as-action substrate did not flip
+the MAPPO verdict on any scenario; on `minimal_specialization` and
+`positional_default` MAPPO remains *worse* than IPPO.
 
 ## Side-by-side
 
 | scenario | pre-#236 ippo gap | post-#236 ippo gap | pre-#236 mappo gap | post-#236 mappo gap |
 |---|---|---|---|---|
-| default | TBD | TBD | TBD | TBD |
-| minimal_specialization | 0.059 | TBD | TBD | TBD |
-| positional_default | TBD | TBD | TBD | TBD |
+| default | n/a (delta −0.083) | +0.003 | n/a (delta −0.083) | +0.022 |
+| minimal_specialization | 0.059 (obs-fix treatment) / n/a (mappo arm delta −0.038) | +0.078 (ippo) / 0.182 (obs-fix treatment) | n/a (delta −0.038) | +0.011 |
+| positional_default | n/a (delta −0.026) | +0.012 | n/a (delta −0.026) | −0.019 |
+
+Pre-#236 absolute `gap_ippo` / `gap_mappo` were not preserved in the
+analyzers' source-of-truth — only the `delta` (mappo − ippo) was reported
+in PR #232. The deltas above are reproduced from project memory for
+comparison.
 
 ## Discussion
 
-(To be added when results are in. Key questions to address:
-1. Did the substrate change in #236 raise the IPPO floor, the MAPPO ceiling,
-   or neither?
-2. If MAPPO now succeeds, does the headline shift from `INSUFFICIENT` to
-   `MAPPO_SUCCEEDS` or `MAPPO_HELPS_GLOBALLY_NOT_DECISIVE`?
-3. Does the post-#236 KL diagnostic show signal-head divergence between
-   agents? (Now that we capture the 40-class joint.))
+The headline did **not** flip. Three observations:
+
+1. **Substrate change (#236) did not raise either the IPPO floor or the
+   MAPPO ceiling on the gap-closed metric.** Post-#236 IPPO gap_closed on
+   `default`/`positional_default` is essentially zero (0.003/0.012); pre-#236
+   was likewise near-zero relative to the same references. The
+   `minimal_specialization` IPPO bump from 0.059 (obs-fix treatment) to
+   0.078 (this run's IPPO) is within the per-seed standard deviation
+   (std ~7 per-step on a 65-per-step gap) and should not be over-interpreted.
+2. **MAPPO is still net-negative on `minimal_specialization` and
+   `positional_default`** (delta = −0.066 and −0.031). The shared critic
+   continues to pull policies toward a worse mode, even with a real signal
+   channel available. The diagnostic KL pattern is informative: MAPPO
+   collapses pairwise action KL by ~3× (e.g. `default`: IPPO=21.6 →
+   MAPPO=7.4; `minimal_specialization`: 21.1 → 5.6) while *raising*
+   per-agent entropy (`default`: 0.001 → 1.874; `minimal_specialization`:
+   0.067 → 2.319). MAPPO is averaging policies toward a softer-but-more-
+   homogeneous distribution — exactly the failure mode flagged in the
+   pre-#236 project-memory entry.
+3. **Signal-head divergence under post-#236 IPPO is high but
+   uninterpretable as specialization.** IPPO KL ≈ 21-22 across scenarios
+   means agents have collapsed to *different* near-deterministic policies
+   (entropy ~0.001-0.07), not that they are coordinating via the signal
+   channel. The 40-class joint KL fix from this PR's pre-flight is doing
+   its job — pre-#216-style identical-input collapse would have shown
+   KL ≈ 0 — but the divergence is being driven by random-init lottery
+   among low-quality local optima, not by signal honesty.
+
+**Recommendation:** the project-memory ladder stands. Promote #193 (reward
+shaping) as the next intervention; the bug is upstream of obs
+differentiation, value-baseline centralization, *and* signal-channel
+dimensionality.
+
+### MINSPEC_RANDOM discrepancy (flagged by curator)
+
+`analyze_220.py:59` uses `MINSPEC_RANDOM = -96.07` (from PR #243 /
+issue #238). `analyze_231.py:77` uses `BASELINES['minimal_specialization'] =
+(-87.72, -22.07)` (random from PR #244 / issue #237). Both are "live"
+post-#236 numbers, but they come from different upstream samplers:
+
+- `-96.07`: PR #243's specialist re-derivation pipeline, which samples
+  random uniformly over the **full post-#236 action space**
+  (`MultiDiscrete([10, 2, 2])`).
+- `-87.72`: PR #244's random-baseline pipeline, which (prior to the #246 /
+  PR #250 fix) sampled with a stale 2-dim joint. After PR #250
+  (`06cb0fac`), `issue199_baselines.py` uses the 3-dim sampler, so
+  *re-running* `#244` would converge with `#243`. The `-87.72` constant
+  in `analyze_231.py` predates PR #250 and is the **only place** in this
+  finalize that uses the stale sample.
+
+This means `gap_closed` for `minimal_specialization` is sensitive to the
+choice of random reference. Using `analyze_220.py`'s `-96.07` for the
+IPPO arm: gap = (−82.63 − (−96.07)) / (−22.07 − (−96.07)) = 13.44 / 74.00
+= 0.182 (matches the obs-fix render). Using `analyze_231.py`'s `-87.72`:
+gap = (−82.63 − (−87.72)) / (−22.07 − (−87.72)) = 5.09 / 65.65 = 0.078
+(matches the IPPO render). The verdict is **tier 3 in either case**, so
+the discrepancy does not change the headline, but follow-up to unify
+the constants once PR #250's sampler propagates is tracked under #246.
 
 ## Baselines used
 
 Post-#236 random and specialist baselines were re-derived in parallel by
 sibling issues:
-- #237 (PR #244): random baselines across all 14 scenarios. Status at PR
-  creation: TBD.
+- #237 (PR #244): random baselines across all 14 scenarios. **MERGED.**
 - #238 (PR #243): specialist baselines on `minimal_specialization`,
-  `positional_default`, `default`. Status at PR creation: TBD.
+  `positional_default`, `default`. **MERGED.**
+- #246 (PR #250): 3-dim MultiDiscrete sampler in `issue199_baselines.py`.
+  **MERGED.** Resolves the `-96.07`/`-87.72` discrepancy at source for
+  future re-runs; this run's analyzers still carry the stale constant in
+  `analyze_231.py:77` (see Discussion).
 
-If both sibling PRs have merged when this PR runs the analyzers, the
-constants in `analyze_220.py:53-54` and `analyze_231.py:61-65` will reflect
-post-#236 values; otherwise the analyzers retain pre-#236 constants and
-the verdict is marked PENDING.
+All sibling PRs merged before this finalize ran. Constants in
+`analyze_220.py:59-60` and `analyze_231.py:77-81` reflect post-#236 values.
 
 ## See also
 

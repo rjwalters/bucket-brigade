@@ -5,207 +5,207 @@
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/default/seed_42",
-            "trailing5_team_reward": 256.22998046875,
+            "trailing5_team_reward": 254.576171875,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              1.9760577548306684,
-              1.9270287340117007,
-              2.4324849530945536,
-              2.760269935954415
+              0.00642758314625143,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 2.2739603444728345,
-            "entropy_spread": 0.8332412019427142,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0016068957865628575,
+            "entropy_spread": 0.00642758314625143,
+            "kl_off_diag_mean": 19.187640861962183,
+            "kl_off_diag_max": 23.025850296020508,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/default/seed_43",
-            "trailing5_team_reward": 253.37646484375,
+            "trailing5_team_reward": 244.13662109375,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.5168488864084946,
-              2.8232077623924883,
-              2.7673367211678506,
-              0.9430679637786167
+              0.0,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 2.262615333436863,
-            "entropy_spread": 1.8801397986138717,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0,
+            "entropy_spread": 0.0,
+            "kl_off_diag_mean": 22.722083409627277,
+            "kl_off_diag_max": 23.025850296020508,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/default/seed_44",
-            "trailing5_team_reward": 251.508203125,
+            "trailing5_team_reward": 255.50390625,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.7930549027250926,
-              1.052764559390835,
-              2.228319814060957,
-              3.2985985711022634
+              0.0,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 2.343184461819787,
-            "entropy_spread": 2.2458340117114286,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0,
+            "entropy_spread": 0.0,
+            "kl_off_diag_mean": 23.025800228118896,
+            "kl_off_diag_max": 23.025850296020508,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": 253.70488281250002,
-        "team_reward_std": 2.3779590182835615,
+        "team_reward_mean": 251.40556640625002,
+        "team_reward_std": 6.3121586826319565,
         "team_reward_per_seed": [
-          256.22998046875,
-          253.37646484375,
-          251.508203125
+          254.576171875,
+          244.13662109375,
+          255.50390625
         ],
-        "mean_entropy_mean": 2.293253379909828,
-        "entropy_spread_mean": 1.653071670756005,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.14989104580225088,
+        "mean_entropy_mean": 0.0005356319288542859,
+        "entropy_spread_mean": 0.0021425277154171435,
+        "kl_off_diag_mean": 21.645174833236116,
+        "gap_closed_mean": 0.002518525408837,
         "gap_closed_per_seed": [
-          0.1818179348685043,
-          0.1457385869737009,
-          0.12211661556454671
+          0.04800131796012064,
+          -0.10175554305336386,
+          0.0613098013197534
         ]
       },
       "minimal_specialization": {
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/minimal_specialization/seed_42",
-            "trailing5_team_reward": -87.34228515625,
+            "trailing5_team_reward": -76.5126953125,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              3.6043440732151093,
-              3.087232878746042,
-              3.165187410956134,
-              1.7336835825598582
+              0.0,
+              0.00642758314625143,
+              0.5661146474502893,
+              0.06142855404234769
             ],
-            "mean_entropy_final": 2.897611986369286,
-            "entropy_spread": 1.870660490655251,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.1584926961597221,
+            "entropy_spread": 0.5661146474502893,
+            "kl_off_diag_mean": 19.973986864089966,
+            "kl_off_diag_max": 23.02581787109375,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/minimal_specialization/seed_43",
-            "trailing5_team_reward": -100.2322265625,
+            "trailing5_team_reward": -90.32919921875,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              3.667222934996478,
-              2.4947285465524915,
-              2.5055631538086955,
-              3.102756618768403
+              0.0,
+              0.0,
+              0.02922609883967134,
+              0.0
             ],
-            "mean_entropy_final": 2.942567813531517,
-            "entropy_spread": 1.1724943884439862,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.007306524709917835,
+            "entropy_spread": 0.02922609883967134,
+            "kl_off_diag_mean": 21.5387548605601,
+            "kl_off_diag_max": 23.025835037231445,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/minimal_specialization/seed_44",
-            "trailing5_team_reward": -87.5513671875,
+            "trailing5_team_reward": -81.04072265625,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              1.271996107944186,
-              2.220396831328161,
-              3.2543328596856496,
-              3.841639984927217
+              0.0,
+              0.0,
+              0.07631561714294695,
+              0.06507472171217013
             ],
-            "mean_entropy_final": 2.647091445971303,
-            "entropy_spread": 2.569643876983031,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.03534758471377927,
+            "entropy_spread": 0.07631561714294695,
+            "kl_off_diag_mean": 21.681028525034588,
+            "kl_off_diag_max": 23.025691986083984,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": -91.70862630208335,
-        "team_reward_std": 7.382394589391656,
+        "team_reward_mean": -82.62753906249999,
+        "team_reward_std": 7.043609499270494,
         "team_reward_per_seed": [
-          -87.34228515625,
-          -100.2322265625,
-          -87.5513671875
+          -76.5126953125,
+          -90.32919921875,
+          -81.04072265625
         ],
-        "mean_entropy_mean": 2.829090415290702,
-        "entropy_spread_mean": 1.8709329186940895,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.05893748240427902,
+        "mean_entropy_mean": 0.06704893519447307,
+        "entropy_spread_mean": 0.22388545447763586,
+        "kl_off_diag_mean": 21.06459008322822,
+        "gap_closed_mean": 0.07756985434120346,
         "gap_closed_per_seed": [
-          0.11794209248310801,
-          -0.05624630489864878,
-          0.1151166596283782
+          0.1707129426884996,
+          -0.03974408558644336,
+          0.10174070592155371
         ]
       },
       "positional_default": {
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/positional_default/seed_42",
-            "trailing5_team_reward": 254.9419677734375,
+            "trailing5_team_reward": 253.69962463378906,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.7342975488717083,
-              0.8069975881839528,
-              2.2037396360303907,
-              3.2673903205039982
+              0.0,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 2.2531062733975125,
-            "entropy_spread": 2.460392732320045,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0,
+            "entropy_spread": 0.0,
+            "kl_off_diag_mean": 19.187946176547864,
+            "kl_off_diag_max": 23.02584457397461,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/positional_default/seed_43",
-            "trailing5_team_reward": 248.60977172851562,
+            "trailing5_team_reward": 246.1187713623047,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              3.8253029834932275,
-              2.614046674969179,
-              3.124457283235434,
-              0.11359327525193985
+              0.0,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 2.4193500542374453,
-            "entropy_spread": 3.7117097082412878,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0,
+            "entropy_spread": 0.0,
+            "kl_off_diag_mean": 23.01719856262207,
+            "kl_off_diag_max": 23.025848388671875,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/ippo/positional_default/seed_44",
-            "trailing5_team_reward": 256.0182647705078,
+            "trailing5_team_reward": 254.97072143554686,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              1.1079799570667417,
-              2.199292720773058,
-              0.7364500803731416,
-              3.2781566726490916
+              0.0,
+              0.0,
+              0.0,
+              0.0
             ],
-            "mean_entropy_final": 1.8304698577155083,
-            "entropy_spread": 2.54170659227595,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.0,
+            "entropy_spread": 0.0,
+            "kl_off_diag_mean": 23.025843461354572,
+            "kl_off_diag_max": 23.025850296020508,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": 253.19000142415362,
-        "team_reward_std": 4.002934155726138,
+        "team_reward_mean": 251.59637247721352,
+        "team_reward_std": 4.786126539321507,
         "team_reward_per_seed": [
-          254.9419677734375,
-          248.60977172851562,
-          256.0182647705078
+          253.69962463378906,
+          246.1187713623047,
+          254.97072143554686
         ],
-        "mean_entropy_mean": 2.167642061783489,
-        "entropy_spread_mean": 2.904603010945761,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.14874891769336868,
+        "mean_entropy_mean": 0.0,
+        "entropy_spread_mean": 0.0,
+        "kl_off_diag_mean": 21.74366273350817,
+        "gap_closed_mean": 0.012348524475677468,
         "gap_closed_per_seed": [
-          0.17077791743288698,
-          0.09115769808268093,
-          0.1843111375645392
+          0.042326462853321936,
+          -0.0657244674700013,
+          0.06044357804371257
         ]
       }
     },
@@ -214,207 +214,207 @@
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/default/seed_42",
-            "trailing5_team_reward": 257.0654296875,
+            "trailing5_team_reward": 255.6140625,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              0.29300779874184935,
-              1.4309265638204658,
-              1.9826773916339275,
-              2.367881300503771
+              2.1181664682623262,
+              1.0358246440767274,
+              2.8970626783023197,
+              1.4868483649731883
             ],
-            "mean_entropy_final": 1.5186232636750034,
-            "entropy_spread": 2.0748735017619215,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 1.8844755389036405,
+            "entropy_spread": 1.8612380342255923,
+            "kl_off_diag_mean": 8.593685984611511,
+            "kl_off_diag_max": 15.75642204284668,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/default/seed_43",
-            "trailing5_team_reward": 234.5552734375,
+            "trailing5_team_reward": 248.57080078125,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.052263044427072,
-              1.9255031465715016,
-              2.122947283123929,
-              0.9261969934287944
+              3.252752947938872,
+              1.2768553669549925,
+              0.57340376485601,
+              3.0385333088037143
             ],
-            "mean_entropy_final": 1.7567276168878243,
-            "entropy_spread": 1.1967502896951348,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 2.035386347138397,
+            "entropy_spread": 2.679349183082862,
+            "kl_off_diag_mean": 4.828439354896545,
+            "kl_off_diag_max": 11.485806465148926,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/default/seed_44",
-            "trailing5_team_reward": 249.9185546875,
+            "trailing5_team_reward": 254.0384765625,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              0.08740940738561148,
-              0.5908990433479929,
-              0.8516226458121489,
-              3.354509953910866
+              1.3339915782529175,
+              1.1944260843351722,
+              2.266855605490187,
+              2.0117153433847186
             ],
-            "mean_entropy_final": 1.2211102626141548,
-            "entropy_spread": 3.2671005465252545,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 1.7017471528657486,
+            "entropy_spread": 1.0724295211550148,
+            "kl_off_diag_mean": 8.793205658594767,
+            "kl_off_diag_max": 17.85814666748047,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": 247.17975260416665,
-        "team_reward_std": 11.5022850442252,
+        "team_reward_mean": 252.74111328125,
+        "team_reward_std": 3.6965182973108743,
         "team_reward_per_seed": [
-          257.0654296875,
-          234.5552734375,
-          249.9185546875
+          255.6140625,
+          248.57080078125,
+          254.0384765625
         ],
-        "mean_entropy_mean": 1.4988203810589942,
-        "entropy_spread_mean": 2.179574779327437,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.06738845118430468,
+        "mean_entropy_mean": 1.8738696796359289,
+        "entropy_spread_mean": 1.871005579487823,
+        "kl_off_diag_mean": 7.40511033270094,
+        "gap_closed_mean": 0.021677137874766956,
         "gap_closed_per_seed": [
-          0.19238120732709577,
-          -0.09223323508028813,
-          0.1020173813061071
+          0.06289000860708648,
+          -0.03814659616626007,
+          0.040288001183474455
         ]
       },
       "minimal_specialization": {
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/minimal_specialization/seed_42",
-            "trailing5_team_reward": -97.18701171875,
+            "trailing5_team_reward": -89.12392578125,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              3.8169635874374577,
-              1.7551795065171658,
-              3.424206178936418,
-              2.7209449809332744
+              3.1740563515237565,
+              0.7141871400207941,
+              3.3759007674328356,
+              2.891839260930576
             ],
-            "mean_entropy_final": 2.9293235634560792,
-            "entropy_spread": 2.061784080920292,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 2.5389958799769907,
+            "entropy_spread": 2.6617136274120416,
+            "kl_off_diag_mean": 4.435692618290584,
+            "kl_off_diag_max": 9.114080429077148,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/minimal_specialization/seed_43",
-            "trailing5_team_reward": -98.29931640625,
+            "trailing5_team_reward": -86.73828125,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              3.0205864223910575,
-              2.579119917743299,
-              1.8943399370540395,
-              2.729908621856557
+              3.814838764659802,
+              0.9357121593895396,
+              1.707139062493902,
+              2.710377024802355
             ],
-            "mean_entropy_final": 2.5559887247612383,
-            "entropy_spread": 1.126246485337018,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 2.2920167528363997,
+            "entropy_spread": 2.8791266052702627,
+            "kl_off_diag_mean": 5.260257204373677,
+            "kl_off_diag_max": 9.805426597595215,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/minimal_specialization/seed_44",
-            "trailing5_team_reward": -88.0619140625,
+            "trailing5_team_reward": -85.1150390625,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.8793763228189557,
-              3.311398993356312,
-              2.7977127302964053,
-              2.2804354547049996
+              1.5587133510939843,
+              2.9258001103398708,
+              0.9735096504449229,
+              3.0457503551452514
             ],
-            "mean_entropy_final": 2.817230875294168,
-            "entropy_spread": 1.0309635386513123,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 2.1259433667560073,
+            "entropy_spread": 2.0722407047003286,
+            "kl_off_diag_mean": 7.115476965904236,
+            "kl_off_diag_max": 12.629796981811523,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": -94.51608072916667,
-        "team_reward_std": 5.617072720758739,
+        "team_reward_mean": -86.99241536458334,
+        "team_reward_std": 2.016489844281099,
         "team_reward_per_seed": [
-          -97.18701171875,
-          -98.29931640625,
-          -88.0619140625
+          -89.12392578125,
+          -86.73828125,
+          -85.1150390625
         ],
-        "mean_entropy_mean": 2.7675143878371617,
-        "entropy_spread_mean": 1.4063313683028742,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.02099890906531512,
+        "mean_entropy_mean": 2.3189853331897994,
+        "entropy_spread_mean": 2.5376936457942114,
+        "kl_off_diag_mean": 5.603808929522832,
+        "gap_closed_mean": 0.011082781956080147,
         "gap_closed_per_seed": [
-          -0.015094752956081174,
-          -0.03012589738175685,
-          0.10821737753378377
+          -0.021385008092155298,
+          0.01495382711348056,
+          0.0396795268469154
         ]
       },
       "positional_default": {
         "seeds": [
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/positional_default/seed_42",
-            "trailing5_team_reward": 256.7802978515625,
+            "trailing5_team_reward": 258.8728485107422,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.748099436769185,
-              1.3164950068778372,
-              0.2764635719793337,
-              2.364406181472731
+              2.5727742661429955,
+              2.28297945183685,
+              1.5442110812500123,
+              0.6879424720406541
             ],
-            "mean_entropy_final": 1.6763660492747718,
-            "entropy_spread": 2.4716358647898513,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 1.771976817817628,
+            "entropy_spread": 1.8848317941023414,
+            "kl_off_diag_mean": 7.986302018165588,
+            "kl_off_diag_max": 12.189733505249023,
             "seed": 42
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/positional_default/seed_43",
-            "trailing5_team_reward": 247.03651733398436,
+            "trailing5_team_reward": 239.66396484375,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.8227186895288434,
-              2.7340997086047376,
-              0.7389131736613253,
-              0.6244002496174815
+              2.4161849490955434,
+              0.6156927658296334,
+              3.448722462871306,
+              2.331966129336501
             ],
-            "mean_entropy_final": 1.730032955353097,
-            "entropy_spread": 2.198318439911362,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 2.2031415767832456,
+            "entropy_spread": 2.833029697041672,
+            "kl_off_diag_mean": 6.306024253368378,
+            "kl_off_diag_max": 15.197132110595703,
             "seed": 43
           },
           {
             "cell": "experiments/p3_specialization/runs/issue231/mappo/positional_default/seed_44",
-            "trailing5_team_reward": 249.64633178710938,
+            "trailing5_team_reward": 249.64334411621093,
             "final_iter": 99,
             "per_agent_entropy_final": [
-              2.325208649318635,
-              1.4955754711601275,
-              0.17231616529127908,
-              3.773766477212455
+              0.9382464652845819,
+              0.15375788702990845,
+              1.2091547880138052,
+              0.21460617408819077
             ],
-            "mean_entropy_final": 1.9417166907456243,
-            "entropy_spread": 3.601450311921176,
-            "kl_off_diag_mean": null,
-            "kl_off_diag_max": null,
+            "mean_entropy_final": 0.6289413286041216,
+            "entropy_spread": 1.0553969009838968,
+            "kl_off_diag_mean": 14.99829920132955,
+            "kl_off_diag_max": 22.774402618408203,
             "seed": 44
           }
         ],
         "n_seeds": 3,
-        "team_reward_mean": 251.15438232421874,
-        "team_reward_std": 5.0439049367073565,
+        "team_reward_mean": 249.39338582356768,
+        "team_reward_std": 9.606880986774827,
         "team_reward_per_seed": [
-          256.7802978515625,
-          247.03651733398436,
-          249.64633178710938
+          258.8728485107422,
+          239.66396484375,
+          249.64334411621093
         ],
-        "mean_entropy_mean": 1.7827052317911647,
-        "entropy_spread_mean": 2.757134872207463,
-        "kl_off_diag_mean": null,
-        "gap_closed_mean": 0.12315330471795215,
+        "mean_entropy_mean": 1.5346865744016653,
+        "entropy_spread_mean": 1.9244194640426369,
+        "kl_off_diag_mean": 9.76354182428784,
+        "gap_closed_mean": -0.019050943221669128,
         "gap_closed_per_seed": [
-          0.19389284360068545,
-          0.07137579949684839,
-          0.10419127105632295
+          0.11606112472551594,
+          -0.1577257006307012,
+          -0.015488253759821317
         ]
       }
     }
@@ -422,21 +422,21 @@
   "verdict": {
     "per_scenario": {
       "default": {
-        "gap_ippo": 0.14989104580225088,
-        "gap_mappo": 0.06738845118430468,
-        "delta": -0.08250259461794619,
+        "gap_ippo": 0.002518525408837,
+        "gap_mappo": 0.021677137874766956,
+        "delta": 0.019158612465929956,
         "tier": "tier_3_insufficient"
       },
       "minimal_specialization": {
-        "gap_ippo": 0.05893748240427902,
-        "gap_mappo": 0.02099890906531512,
-        "delta": -0.0379385733389639,
+        "gap_ippo": 0.07756985434120346,
+        "gap_mappo": 0.011082781956080147,
+        "delta": -0.06648707238512332,
         "tier": "tier_3_insufficient"
       },
       "positional_default": {
-        "gap_ippo": 0.14874891769336868,
-        "gap_mappo": 0.12315330471795215,
-        "delta": -0.02559561297541653,
+        "gap_ippo": 0.012348524475677468,
+        "gap_mappo": -0.019050943221669128,
+        "delta": -0.0313994676973466,
         "tier": "tier_3_insufficient"
       }
     },
@@ -450,15 +450,15 @@
   },
   "baselines": {
     "default": [
-      241.85,
+      251.23,
       320.94
     ],
     "minimal_specialization": [
-      -96.07,
+      -87.72,
       -22.07
     ],
     "positional_default": [
-      241.36,
+      250.73,
       320.89
     ]
   }
