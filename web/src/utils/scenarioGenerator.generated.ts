@@ -31,6 +31,7 @@ export const SCENARIO_TYPES = {
   MIXED_MOTIVATION: 'mixed_motivation',
   MINIMAL_SPECIALIZATION: 'minimal_specialization',
   POSITIONAL_DEFAULT: 'positional_default',
+  V2_MINIMAL: 'v2_minimal',
 } as const;
 
 export type ScenarioType = (typeof SCENARIO_TYPES)[keyof typeof SCENARIO_TYPES];
@@ -297,6 +298,24 @@ const SCENARIO_TEMPLATES: Record<
       reward_other_house_survives: 0.0,
       penalty_own_house_burns: 40.0,
       penalty_other_house_burns: 0.0,
+      num_agents: 4,
+    },
+  },
+  [SCENARIO_TYPES.V2_MINIMAL]: {
+    name: 'V2 Minimal',
+    description: 'Issue #254 / option E of architect proposal #234: 2-house x 4-agent PPO learnability diagnostic. Joint action space shrinks to 4 * (2 * 2 * 2) = 32 per-agent moves vs default 4 * (10 * 2 * 2) = 1600, so PPO has a tractable exploration problem. Reward shape mirrors minimal_specialization (per-agent ownership dominates 10 team reward). Ignition rate bumped 0.02->0.05 because at 0.02 a 2-house ring has too many fire-free episodes. Python/Rust only - WASM frontend (web/) is fixed at 10 houses; non-10 scenarios panic in wasm.rs.',
+    parameters: {
+      prob_fire_spreads_to_neighbor: 0.25,
+      prob_solo_agent_extinguishes_fire: 0.5,
+      prob_house_catches_fire: 0.05,
+      team_reward_house_survives: 10.0,
+      team_penalty_house_burns: 10.0,
+      cost_to_work_one_night: 0.5,
+      min_nights: 8,
+      reward_own_house_survives: [50.0, 50.0, 50.0, 50.0],
+      reward_other_house_survives: [0.0, 0.0, 0.0, 0.0],
+      penalty_own_house_burns: [100.0, 100.0, 100.0, 100.0],
+      penalty_other_house_burns: [0.0, 0.0, 0.0, 0.0],
       num_agents: 4,
     },
   },

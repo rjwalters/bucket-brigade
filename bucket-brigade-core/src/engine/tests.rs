@@ -681,6 +681,129 @@ fn test_engine_home_positions_fallback_to_house_owners() {
 }
 
 // ==============================================================================
+// Issue #254 — `num_houses` parameterization smoke tests
+// ==============================================================================
+
+/// `v2_minimal` (2 houses, 4 agents) constructs cleanly and exposes the
+/// expected per-ring sizing on the engine state vectors.
+#[test]
+fn test_v2_minimal_engine_construction() {
+    let scenario = SCENARIOS.get("v2_minimal").unwrap().clone();
+    let engine = BucketBrigade::new(scenario, 4, Some(42));
+
+    assert_eq!(engine.scenario.num_houses, 2);
+    assert_eq!(engine.houses.len(), 2);
+    assert_eq!(engine.house_owners.len(), 2);
+    // House owners on a 2-house ring with 4 agents: [0 % 4, 1 % 4] = [0, 1].
+    assert_eq!(engine.house_owners, vec![0, 1]);
+    assert_eq!(engine.num_agents, 4);
+    assert_eq!(engine.agent_positions.len(), 4);
+    assert_eq!(engine.rewards.len(), 4);
+}
+
+/// Random rollout on `v2_minimal` completes 20 steps without panicking on
+/// out-of-range house indices (the engine paths previously hardcoded
+/// `0..10` and would index out of bounds at length-2).
+#[test]
+fn test_v2_minimal_random_rollout() {
+    let scenario = SCENARIOS.get("v2_minimal").unwrap().clone();
+    let mut engine = BucketBrigade::new(scenario, 4, Some(7));
+
+    for step in 0..20 {
+        if engine.done {
+            break;
+        }
+        // Actions confined to the 2-house ring (action[0] in {0, 1}).
+        let actions: Vec<[u8; 3]> = (0..4).map(|i| [(i % 2) as u8, 1, 1]).collect();
+        let result = engine.step(&actions);
+        assert_eq!(
+            result.rewards.len(),
+            4,
+            "step {} returned wrong reward count",
+            step
+        );
+    }
+
+    let obs = engine.get_observation(0);
+    assert_eq!(
+        obs.houses.len(),
+        2,
+        "observation houses must size to num_houses=2"
+    );
+}
+
+/// `v2_minimal` observation has the expected shape: `houses` is length 2
+/// (from `num_houses`), other fields scale with `num_agents=4`.
+#[test]
+fn test_v2_minimal_observation_shape() {
+    let scenario = SCENARIOS.get("v2_minimal").unwrap().clone();
+    let engine = BucketBrigade::new(scenario, 4, None);
+    let obs = engine.get_observation(0);
+
+    assert_eq!(obs.houses.len(), 2);
+    assert_eq!(obs.signals.len(), 4);
+    assert_eq!(obs.locations.len(), 4);
+    assert_eq!(obs.last_actions.len(), 4);
+    // scenario_info layout is fixed (12 elements regardless of ring size).
+    assert_eq!(obs.scenario_info.len(), 12);
+}
+
+/// Backward compat: every pre-#254 scenario constructed via `BucketBrigade::new`
+/// must still produce a 10-element `houses` vector. This is the engine-side
+/// mirror of `scenarios::tests::test_non_v2_scenarios_have_ten_houses`.
+#[test]
+fn test_pre_254_scenarios_still_ten_houses_in_engine() {
+    for name in SCENARIOS.keys() {
+        if name.starts_with("v2_") {
+            continue;
+        }
+        let scenario = SCENARIOS.get(name).unwrap().clone();
+        let engine = BucketBrigade::new(scenario, 4, Some(0));
+        assert_eq!(
+            engine.houses.len(),
+            10,
+            "Pre-#254 scenario '{}' regressed: houses.len()={}, expected 10",
+            name,
+            engine.houses.len()
+        );
+        assert_eq!(
+            engine.house_owners.len(),
+            10,
+            "Pre-#254 scenario '{}' regressed: house_owners.len()={}, expected 10",
+            name,
+            engine.house_owners.len()
+        );
+    }
+}
+
+/// `BucketBrigade::new` rejects degenerate `num_houses` values
+/// (`num_houses < 2` doesn't allow any wraparound; the spread phase math
+/// assumes a real ring).
+#[test]
+#[should_panic(expected = "num_houses must be at least 2")]
+fn test_engine_rejects_one_house_scenario() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.num_houses = 1;
+    let _ = BucketBrigade::new(scenario, 1, Some(0));
+}
+
+/// Issue #254: `num_agents > num_houses` is supported (this is the
+/// `v2_minimal` case — 4 agents on 2 houses, with agents 2 and 3 as
+/// "unowned-house workers"). Verifies the engine doesn't panic on this
+/// configuration and that the round-robin ownership pattern is correct.
+#[test]
+fn test_engine_allows_more_agents_than_houses() {
+    let scenario = SCENARIOS.get("v2_minimal").unwrap().clone();
+    let engine = BucketBrigade::new(scenario, 4, Some(0));
+    // House ownership is `i % num_agents`, not `i % num_houses`, so houses
+    // 0 and 1 are owned by agents 0 and 1 respectively.
+    assert_eq!(engine.house_owners, vec![0, 1]);
+    // Agent home positions wrap modulo `num_houses` (issue #254 fallback),
+    // so agents [0, 1, 2, 3] anchor to houses [0, 1, 0, 1].
+    assert_eq!(engine.agent_home_positions, vec![0, 1, 0, 1]);
+}
+
+// ==============================================================================
 // Property-Based Tests
 // ==============================================================================
 
@@ -856,6 +979,8 @@ mod proptests {
                 agent_home_positions: Vec::new(),
                 distance_cost_alpha: 0.0,
                 distance_metric: "ring_arc".to_string(),
+                // Issue #254: pre-#254 fixed-10 ring for these proptests.
+                num_houses: 10,
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));

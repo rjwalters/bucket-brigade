@@ -65,12 +65,16 @@ class HeuristicAgent(AgentBase):
         # Extract observation components
         signals = obs["signals"]  # (N,) - current signals
         locations = obs["locations"]  # (N,) - current locations
-        houses = obs["houses"]  # (10,) - house states
+        # Issue #254: ring size is now `len(obs["houses"])`, not hardcoded
+        # 10. Every pre-#254 scenario produces length-10 observations so
+        # behavior is unchanged for them; v2_minimal yields length-2 here.
+        houses = obs["houses"]  # (num_houses,) - house states
+        num_houses = int(len(houses))
         # last_actions = obs['last_actions'] # (N,2) - previous actions (not used)
         scenario_info = obs["scenario_info"]  # Scenario parameters
 
-        # Determine owned house
-        owned_house = self.agent_id % 10
+        # Determine owned house (round-robin over the ring).
+        owned_house = self.agent_id % num_houses
 
         # 1. Signal selection (broadcast intent)
         # Pre-#235 this signal was computed and then thrown away — the engine
@@ -86,9 +90,9 @@ class HeuristicAgent(AgentBase):
         )
         mode_choice = self._choose_mode(signal, work_intent)
 
-        # 3. Apply exploration
+        # 3. Apply exploration (uniform over the actual ring).
         if np.random.random() < self.exploration_rate:
-            house_choice = np.random.randint(10)
+            house_choice = np.random.randint(num_houses)
             mode_choice = np.random.randint(2)
 
         # 4. Apply fatigue memory (tendency to repeat)
@@ -105,7 +109,9 @@ class HeuristicAgent(AgentBase):
     ) -> float:
         """Compute internal tendency to work this night."""
         burning_fraction = np.mean(houses == 1)  # Fraction of burning houses
-        owned_house = self.agent_id % 10
+        # Issue #254: ring size from len(houses), not hardcoded 10.
+        num_houses = int(len(houses))
+        owned_house = self.agent_id % num_houses
         own_house_burning = houses[owned_house] == 1
 
         # Base work tendency
@@ -140,16 +146,24 @@ class HeuristicAgent(AgentBase):
         owned_house: int,
         scenario_info: np.ndarray,
     ) -> int:
-        """Choose which house to target."""
+        """Choose which house to target.
+
+        Issue #254: ring length is `len(houses)`, not hardcoded 10. This
+        lets the heuristic agent run on non-10-house scenarios like
+        `v2_minimal` (2 houses) without indexing past the end of the array.
+        """
+        # Ring length derived from the observation.
+        num_houses = int(len(houses))
         candidates = []
 
         # Evaluate each house
-        for house_idx in range(10):
+        for house_idx in range(num_houses):
             score = 0.0
 
             # Distance from owned house (prefer closer houses)
             distance = min(
-                abs(house_idx - owned_house), 10 - abs(house_idx - owned_house)
+                abs(house_idx - owned_house),
+                num_houses - abs(house_idx - owned_house),
             )
             proximity_bonus = 1.0 / (1.0 + distance)
             score += proximity_bonus * 0.1
@@ -162,8 +176,11 @@ class HeuristicAgent(AgentBase):
             if houses[house_idx] == 1:  # Burning
                 score += 0.5
 
-            # Neighbor help bias
-            neighbors = [(house_idx - 1) % 10, (house_idx + 1) % 10]
+            # Neighbor help bias (ring wrap modulo num_houses).
+            neighbors = [
+                (house_idx - 1) % num_houses,
+                (house_idx + 1) % num_houses,
+            ]
             neighbor_burning = any(houses[n] == 1 for n in neighbors)
             if neighbor_burning:
                 score += self.neighbor_help_bias * 0.3

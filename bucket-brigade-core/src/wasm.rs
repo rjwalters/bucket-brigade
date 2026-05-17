@@ -14,6 +14,24 @@ impl WasmBucketBrigade {
         let scenario: Scenario = serde_json::from_str(scenario_json)
             .map_err(|e| JsValue::from_str(&format!("Failed to parse scenario: {}", e)))?;
 
+        // Issue #254: the WASM frontend (browser UI in `web/`) is fixed at
+        // 10 houses visually and assumes that ring length throughout the
+        // TypeScript layer. Approach 3 of the issue's curator analysis
+        // explicitly defers the WASM/UI rework to a follow-up issue, so we
+        // reject non-10 scenarios here with a clear message rather than
+        // letting them render broken or crash deep in the renderer. The
+        // Rust core, PyO3 surface, and Python envs all support arbitrary
+        // `num_houses`; non-10 scenarios (e.g. `v2_minimal`) are
+        // Python-only for now.
+        if scenario.num_houses != 10 {
+            return Err(JsValue::from_str(&format!(
+                "WASM frontend is fixed at 10 houses; scenario has num_houses={}. \
+                 Non-10-house scenarios (e.g. v2_minimal, issue #254) are \
+                 Python-only — use bucket_brigade.envs.* from Python instead.",
+                scenario.num_houses
+            )));
+        }
+
         Ok(Self {
             inner: BucketBrigade::new(scenario, num_agents, None),
         })
@@ -36,10 +54,8 @@ impl WasmBucketBrigade {
         let actions: Vec<[u8; 3]> = match serde_json::from_str::<Vec<[u8; 3]>>(actions_json) {
             Ok(a) => a,
             Err(_) => {
-                let legacy: Vec<[u8; 2]> =
-                    serde_json::from_str(actions_json).map_err(|e| {
-                        JsValue::from_str(&format!("Failed to parse actions: {}", e))
-                    })?;
+                let legacy: Vec<[u8; 2]> = serde_json::from_str(actions_json)
+                    .map_err(|e| JsValue::from_str(&format!("Failed to parse actions: {}", e)))?;
                 legacy.into_iter().map(|a| [a[0], a[1], a[1]]).collect()
             }
         };
@@ -144,6 +160,10 @@ impl WasmScenario {
             agent_home_positions: Vec::new(),
             distance_cost_alpha: 0.0,
             distance_metric: "ring_arc".to_string(),
+            // Issue #254: WASM frontend is fixed at 10 houses; hardcode
+            // here so the rest of the constructor path can't accidentally
+            // produce a non-10 scenario via the WASM surface.
+            num_houses: 10,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent

@@ -14,8 +14,10 @@ class BucketBrigadeEnv:
     """
     Multi-agent environment implementing the Bucket Brigade firefighting game.
 
-    Agents cooperate on a ring of 10 houses to prevent fires from spreading.
-    The game ends when all fires are extinguished or all houses are ruined.
+    Agents cooperate on a ring of houses to prevent fires from spreading.
+    Ring length is ``scenario.num_houses`` (defaults to 10 for every
+    pre-#254 scenario; ``v2_minimal`` uses 2). The game ends when all fires
+    are extinguished or all houses are ruined.
     """
 
     # House states
@@ -42,9 +44,15 @@ class BucketBrigadeEnv:
 
         self.scenario = scenario
         self.num_agents = scenario.num_agents
+        # Issue #254: read ring size from the scenario rather than hardcoding
+        # 10. Every pre-#254 scenario keeps num_houses=10 (the dataclass
+        # default), so this is bit-exact backward compatible.
+        self.num_houses = int(getattr(scenario, "num_houses", 10))
 
         # Environment state
-        self.houses = np.zeros(10, dtype=np.int8)  # House states: SAFE, BURNING, RUINED
+        self.houses = np.zeros(
+            self.num_houses, dtype=np.int8
+        )  # House states: SAFE, BURNING, RUINED
         self.locations = np.zeros(self.num_agents, dtype=np.int8)  # Agent positions
         self.signals = np.zeros(
             self.num_agents, dtype=np.int8
@@ -68,12 +76,13 @@ class BucketBrigadeEnv:
         self.trajectory: List[Dict] = []
 
         # Previous house state for reward computation
-        self._prev_houses_state: np.ndarray = np.zeros(10, dtype=np.int8)
+        self._prev_houses_state: np.ndarray = np.zeros(self.num_houses, dtype=np.int8)
 
-        # House ownership: assign agents to houses in round-robin fashion
-        self.house_owners = np.arange(10) % self.num_agents
+        # House ownership: assign agents to houses in round-robin fashion.
+        # Issue #254: vector length scales with num_houses.
+        self.house_owners = np.arange(self.num_houses) % self.num_agents
 
-        # Per-agent "home position" on the 10-house ring (issue #203). Used by
+        # Per-agent "home position" on the ring (issue #203). Used by
         # ``_compute_rewards`` to scale the per-step work cost by the ring-arc
         # distance from the agent's home to the house it works at. Sourced from
         # ``scenario.agent_home_positions`` when non-empty; otherwise the
@@ -81,12 +90,18 @@ class BucketBrigadeEnv:
         # When ``scenario.distance_cost_alpha == 0.0`` (the implicit default
         # for every pre-#203 scenario) the spatial term collapses to zero, so
         # behavior is bit-exactly identical to the pre-#203 env.
+        #
+        # Issue #254: the round-robin fallback now wraps modulo
+        # ``num_houses`` so it stays in-range when ``num_agents > num_houses``
+        # (e.g. v2_minimal: 4 agents on 2 houses -> [0, 1, 0, 1]).
         if getattr(self.scenario, "agent_home_positions", None):
             self.agent_home_positions = np.array(
                 self.scenario.agent_home_positions, dtype=np.int8
             )
         else:
-            self.agent_home_positions = np.arange(self.num_agents, dtype=np.int8)
+            self.agent_home_positions = np.array(
+                [i % self.num_houses for i in range(self.num_agents)], dtype=np.int8
+            )
 
         # Initialize random state for reproducibility
         self.rng = np.random.RandomState()
@@ -112,8 +127,9 @@ class BucketBrigadeEnv:
         # Houses and the prev-houses cache must be cleared before
         # _initialize_houses() rolls fresh fires --- otherwise RUINED houses
         # from a previous episode leak into the new one.
-        self.houses = np.zeros(10, dtype=np.int8)
-        self._prev_houses_state = np.zeros(10, dtype=np.int8)
+        # Issue #254: vector length scales with num_houses.
+        self.houses = np.zeros(self.num_houses, dtype=np.int8)
+        self._prev_houses_state = np.zeros(self.num_houses, dtype=np.int8)
 
         # Initialize house states
         self._initialize_houses()
@@ -205,8 +221,9 @@ class BucketBrigadeEnv:
 
     def _initialize_houses(self) -> None:
         """Initialize houses with probabilistic fires based on prob_house_catches_fire."""
-        # Each house has independent probability of starting on fire
-        for house_idx in range(10):
+        # Each house has independent probability of starting on fire.
+        # Issue #254: iterate over scenario.num_houses, not literal 10.
+        for house_idx in range(self.num_houses):
             if self.rng.random() < self.scenario.prob_house_catches_fire:
                 self.houses[house_idx] = self.BURNING
 
@@ -217,7 +234,7 @@ class BucketBrigadeEnv:
         Formula: P(extinguish with k workers) = 1 - (1 - kappa)^k
         This matches the Rust implementation and game design specification.
         """
-        for house_idx in range(10):
+        for house_idx in range(self.num_houses):
             if self.houses[house_idx] != self.BURNING:
                 continue
 
@@ -238,15 +255,22 @@ class BucketBrigadeEnv:
                 self.houses[house_idx] = self.SAFE
 
     def _spread_fires(self) -> None:
-        """Spread fires to neighboring safe houses."""
+        """Spread fires to neighboring safe houses.
+
+        Issue #254: ring length is now `scenario.num_houses` rather than a
+        hardcoded 10, and the neighbor wraparound modulo tracks the
+        scenario value so 2-house and other small-ring topologies wrap
+        correctly. Mirrors the Rust ``engine/phases.rs::spread_fires``
+        behavior.
+        """
         # Burning houses try to ignite their safe neighbors
-        for house_idx in range(10):
+        for house_idx in range(self.num_houses):
             if self.houses[house_idx] != self.BURNING:
                 continue
 
             # Check both neighbors
             for neighbor_offset in [-1, 1]:
-                neighbor_idx = (house_idx + neighbor_offset) % 10
+                neighbor_idx = (house_idx + neighbor_offset) % self.num_houses
                 if self.houses[neighbor_idx] == self.SAFE:
                     if self.rng.random() < self.scenario.prob_fire_spreads_to_neighbor:
                         self.houses[neighbor_idx] = self.BURNING
@@ -259,7 +283,8 @@ class BucketBrigadeEnv:
 
     def _spark_fires(self) -> None:
         """Add spontaneous fires."""
-        for house_idx in range(10):
+        # Issue #254: iterate over scenario.num_houses, not literal 10.
+        for house_idx in range(self.num_houses):
             if (
                 self.houses[house_idx] == self.SAFE
                 and self.rng.random() < self.scenario.prob_house_catches_fire
@@ -279,8 +304,11 @@ class BucketBrigadeEnv:
         # Count final outcomes
         saved_houses = np.sum(self.houses == self.SAFE)
         ruined_houses = np.sum(self.houses == self.RUINED)
-        total_saved_fraction = saved_houses / 10.0
-        total_burned_fraction = ruined_houses / 10.0
+        # Issue #254: divide by scenario.num_houses (defaults to 10 for
+        # every pre-#254 scenario, so the math is unchanged).
+        num_houses_f = float(self.num_houses)
+        total_saved_fraction = saved_houses / num_houses_f
+        total_burned_fraction = ruined_houses / num_houses_f
 
         # Team reward component (shared by all)
         team_reward = (
@@ -312,7 +340,8 @@ class BucketBrigadeEnv:
                     home = int(self.agent_home_positions[agent_idx])
                     target = int(actions[agent_idx, 0])
                     raw = abs(home - target)
-                    dist = min(raw, 10 - raw)  # ring_dist on the 10-house ring
+                    # Issue #254: ring length now reads from the scenario.
+                    dist = min(raw, self.num_houses - raw)
                     work_cost = base_cost + alpha * dist
                 individual_rewards[agent_idx] -= work_cost
             else:
@@ -330,7 +359,7 @@ class BucketBrigadeEnv:
             # ``Scenario.__post_init__`` auto-promotes scalar JSON inputs
             # to ``[scalar] * num_agents`` so existing scenarios behave
             # identically.
-            for house_idx in range(10):
+            for house_idx in range(self.num_houses):
                 is_own = self.house_owners[house_idx] == agent_idx
 
                 # Save event: any non-SAFE state -> SAFE this step.
@@ -417,6 +446,9 @@ class BucketBrigadeEnv:
                 "cost_to_work_one_night": self.scenario.cost_to_work_one_night,
                 "min_nights": self.scenario.min_nights,
                 "num_agents": self.scenario.num_agents,
+                # Issue #254: include num_houses so replays of non-10-house
+                # scenarios (e.g. v2_minimal) round-trip cleanly.
+                "num_houses": int(getattr(self.scenario, "num_houses", 10)),
             },
             "nights": self.trajectory,
         }

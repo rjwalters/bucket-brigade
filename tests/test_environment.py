@@ -873,3 +873,82 @@ class TestPositionalScenario:
             _, r_a, _, _ = env_a.step(actions)
             _, r_b, _, _ = env_b.step(actions)
             np.testing.assert_allclose(r_a, r_b)
+
+
+class TestV2MinimalScenario:
+    """Issue #254: ``v2_minimal`` (2 houses x 4 agents) — the PPO
+    learnability diagnostic. The Python env must size all its
+    house-indexed arrays from ``scenario.num_houses`` rather than the
+    pre-#254 hardcoded 10."""
+
+    def _v2_scenario(self):
+        from bucket_brigade.envs.scenarios_generated import v2_minimal_scenario
+
+        return v2_minimal_scenario(num_agents=4)
+
+    def test_v2_minimal_scenario_values(self):
+        """Scenario factory produces the documented values."""
+        s = self._v2_scenario()
+        assert s.num_houses == 2
+        assert s.num_agents == 4
+        assert s.team_reward_house_survives == 10.0
+        assert s.team_penalty_house_burns == 10.0
+        assert s.prob_house_catches_fire == 0.05
+        assert s.min_nights == 8
+        # Per-agent vectors length 4.
+        assert s.reward_own_house_survives == [50.0, 50.0, 50.0, 50.0]
+        assert s.penalty_own_house_burns == [100.0, 100.0, 100.0, 100.0]
+
+    def test_env_construction_uses_num_houses(self):
+        """``BucketBrigadeEnv`` sizes its house vectors from
+        ``scenario.num_houses``."""
+        env = BucketBrigadeEnv(scenario=self._v2_scenario())
+        assert env.num_houses == 2
+        assert env.houses.shape == (2,)
+        assert env._prev_houses_state.shape == (2,)
+        assert env.house_owners.shape == (2,)
+        # Round-robin: house 0 -> agent 0, house 1 -> agent 1.
+        np.testing.assert_array_equal(env.house_owners, np.array([0, 1]))
+        # Home positions wrap modulo num_houses for the 4-on-2 case.
+        np.testing.assert_array_equal(env.agent_home_positions, np.array([0, 1, 0, 1]))
+
+    def test_reset_observation_shape(self):
+        """After ``reset()`` the observation houses field is length 2."""
+        env = BucketBrigadeEnv(scenario=self._v2_scenario())
+        obs = env.reset(seed=42)
+        assert obs["houses"].shape == (2,)
+
+    def test_random_rollout_no_crash(self):
+        """A 20-step random rollout completes without panicking on
+        out-of-range house indices."""
+        env = BucketBrigadeEnv(scenario=self._v2_scenario())
+        env.reset(seed=42)
+        rng = np.random.RandomState(0)
+        for _ in range(20):
+            actions = rng.randint(0, 2, size=(4, 3)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 2, size=4)  # house in [0, 1]
+            obs, rewards, dones, _ = env.step(actions)
+            assert obs["houses"].shape == (2,)
+            assert rewards.shape == (4,)
+            if dones[0]:
+                break
+
+    def test_pre_254_scenarios_still_ten_houses(self):
+        """Backward compat: every existing scenario still produces a
+        10-house env (the engine paths previously hardcoded 10 now read
+        ``scenario.num_houses`` which defaults to 10, but the resulting
+        behavior must be identical for pre-#254 scenarios)."""
+        from bucket_brigade.envs.scenarios_generated import (
+            SCENARIO_REGISTRY,
+        )
+
+        for name, factory in SCENARIO_REGISTRY.items():
+            if name.startswith("v2_"):
+                continue
+            scenario = factory(num_agents=4)
+            assert scenario.num_houses == 10, (
+                f"Pre-#254 scenario '{name}' regressed: num_houses={scenario.num_houses}"
+            )
+            env = BucketBrigadeEnv(scenario=scenario)
+            assert env.num_houses == 10
+            assert env.houses.shape == (10,)

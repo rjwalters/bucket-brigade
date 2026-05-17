@@ -77,6 +77,14 @@ class Scenario:
     distance_cost_alpha: float = 0.0
     distance_metric: str = "ring_arc"
 
+    # Topology (issue #254). Number of houses on the ring. Defaults to
+    # 10 so all 14 pre-#254 scenarios (and any external JSON without the
+    # field) remain bit-exact. New scenarios like ``v2_minimal`` set
+    # this to a smaller value (2 in the v2 case). The Python env
+    # wrappers read ``scenario.num_houses`` to size their action space
+    # (``MultiDiscrete([num_houses, 2, 2])``) and observation arrays.
+    num_houses: int = 10
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -107,6 +115,16 @@ class Scenario:
                     )
                 setattr(self, fname, promoted)
 
+        # Issue #254 num_houses validation. Must be at least 2 for the
+        # spread phase ring math to have distinct neighbors. Kept tight
+        # to surface configuration mistakes early rather than blowing
+        # up deep in a rollout.
+        if self.num_houses < 2:
+            raise ValueError(
+                f"Scenario.num_houses={self.num_houses} is too small; "
+                "must be at least 2."
+            )
+
         # Issue #203 spatial-field validation.
         if self.agent_home_positions:
             positions = [int(p) for p in self.agent_home_positions]
@@ -117,10 +135,13 @@ class Scenario:
                     "Per-agent home position vectors must match num_agents."
                 )
             for i, p in enumerate(positions):
-                if not (0 <= p < 10):
+                # Issue #254: range bound is now `num_houses`, not the
+                # hardcoded 10. Pre-#254 scenarios are unchanged because
+                # `num_houses` defaults to 10.
+                if not (0 <= p < self.num_houses):
                     raise ValueError(
                         f"Scenario.agent_home_positions[{i}]={p} "
-                        "is out of range [0, 10)."
+                        f"is out of range [0, {self.num_houses})."
                     )
             self.agent_home_positions = positions
         # Keep in sync with the Rust allowlist in
@@ -420,6 +441,25 @@ def positional_default_scenario(num_agents: int) -> Scenario:
     )
 
 
+def v2_minimal_scenario(num_agents: int) -> Scenario:
+    """Issue #254 / option E of architect proposal #234: 2-house x 4-agent PPO learnability diagnostic. Joint action space shrinks to 4 * (2 * 2 * 2) = 32 per-agent moves vs default 4 * (10 * 2 * 2) = 1600, so PPO has a tractable exploration problem. Reward shape mirrors minimal_specialization (per-agent ownership dominates 10 team reward). Ignition rate bumped 0.02->0.05 because at 0.02 a 2-house ring has too many fire-free episodes. Python/Rust only - WASM frontend (web/) is fixed at 10 houses; non-10 scenarios panic in wasm.rs."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.05,
+        team_reward_house_survives=10.0,
+        team_penalty_house_burns=10.0,
+        reward_own_house_survives=[50.0, 50.0, 50.0, 50.0],
+        reward_other_house_survives=[0.0, 0.0, 0.0, 0.0],
+        penalty_own_house_burns=[100.0, 100.0, 100.0, 100.0],
+        penalty_other_house_burns=[0.0, 0.0, 0.0, 0.0],
+        cost_to_work_one_night=0.5,
+        min_nights=8,
+        num_agents=num_agents,
+        num_houses=2,
+    )
+
+
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -436,6 +476,7 @@ SCENARIO_REGISTRY = {
     "mixed_motivation": mixed_motivation_scenario,
     "minimal_specialization": minimal_specialization_scenario,
     "positional_default": positional_default_scenario,
+    "v2_minimal": v2_minimal_scenario,
 }
 
 

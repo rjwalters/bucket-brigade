@@ -1,4 +1,4 @@
-use super::core::{ring_dist_10, BucketBrigade};
+use super::core::{ring_dist, BucketBrigade};
 use crate::{Action, HouseState};
 
 impl BucketBrigade {
@@ -12,11 +12,16 @@ impl BucketBrigade {
 
         let mut rewards = vec![0.0; self.num_agents];
 
+        // Issue #254: divide by `scenario.num_houses` (defaults to 10 for
+        // every pre-#254 scenario, so the math is unchanged).
+        let num_houses = self.scenario.num_houses as usize;
+        let num_houses_f = num_houses as f32;
+
         // Count current house states
         let saved_houses = self.houses.iter().filter(|&&h| h == 0).count() as f32;
         let ruined_houses = self.houses.iter().filter(|&&h| h == 2).count() as f32;
-        let total_saved_fraction = saved_houses / 10.0;
-        let total_burned_fraction = ruined_houses / 10.0;
+        let total_saved_fraction = saved_houses / num_houses_f;
+        let total_burned_fraction = ruined_houses / num_houses_f;
 
         // Team reward component (shared by all, public goods)
         let team_reward = self.scenario.team_reward_house_survives * total_saved_fraction
@@ -40,7 +45,8 @@ impl BucketBrigade {
                 } else {
                     let home = self.agent_home_positions[agent_idx];
                     let target = actions[agent_idx][0];
-                    let dist = ring_dist_10(home, target) as f32;
+                    // Issue #254: ring length now reads from the scenario.
+                    let dist = ring_dist(self.scenario.num_houses, home, target) as f32;
                     base_cost + alpha * dist
                 };
                 rewards[agent_idx] -= work_cost;
@@ -60,7 +66,7 @@ impl BucketBrigade {
             // vectors by `deserialize_scalar_or_vec` in `scenarios.rs`, so
             // existing scenarios behave identically to the pre-#198 scalar
             // semantics.
-            for house_idx in 0..10 {
+            for house_idx in 0..num_houses {
                 let is_own = (self.house_owners[house_idx] as usize) == agent_idx;
 
                 // Save event: BURNING -> SAFE this step.

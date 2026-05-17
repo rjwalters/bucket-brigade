@@ -7,6 +7,18 @@ use std::sync::LazyLock;
 /// the default vector length for the four ownership reward fields.
 const MAX_AGENTS: usize = 10;
 
+/// Default for `Scenario::num_houses` (issue #254).
+///
+/// Every pre-#254 scenario assumed a 10-house ring; this default keeps JSON
+/// deserialization, programmatic construction, and the WASM frontend
+/// bit-exactly backward-compatible. New scenarios (`v2_minimal`) override it
+/// by setting the field explicitly. The WASM surface (`wasm.rs`) panics if
+/// it sees any other value — the browser UI is still hard-coded to 10
+/// houses visually, so non-10 scenarios are Python-only for now.
+fn default_num_houses() -> u8 {
+    10
+}
+
 /// Deserialize a value that is either a scalar `f32` or an array of `f32`s.
 ///
 /// This allows JSON scenario definitions (and other external serialized
@@ -97,6 +109,16 @@ fn default_agent_home_positions() -> Vec<u8> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Scenario {
+    // Topology (issue #254): number of houses on the ring. Defaults to 10
+    // for backward compatibility with every pre-#254 scenario; serde reads
+    // the field as optional so existing JSON files don't need updating.
+    // The engine, Python envs, and PyO3 surface all read this field instead
+    // of the literal `10`. The WASM frontend (`wasm.rs`) panics if it
+    // receives a scenario with `num_houses != 10` because the browser UI
+    // still assumes a 10-house ring visually.
+    #[serde(default = "default_num_houses")]
+    pub num_houses: u8,
+
     // Fire dynamics
     pub prob_fire_spreads_to_neighbor: f32, // Probability fire spreads to adjacent house
     pub prob_solo_agent_extinguishes_fire: f32, // Probability one agent extinguishes fire
@@ -214,6 +236,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -234,6 +257,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -254,6 +278,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -275,6 +300,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -295,6 +321,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -315,6 +342,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -335,6 +363,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -355,6 +384,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -375,6 +405,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -395,6 +426,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -415,6 +447,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -435,6 +468,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -462,6 +496,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
         },
     );
 
@@ -488,6 +523,37 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             agent_home_positions: vec![0, 3, 5, 8],
             distance_cost_alpha: 0.1,
             distance_metric: "ring_arc".to_string(),
+            num_houses: default_num_houses(),
+        },
+    );
+
+    // Issue #254 / option E of architect proposal #234: a minimal 2-house x
+    // 4-agent diagnostic for PPO learnability. Joint action space shrinks
+    // from `4 * (10 * 2 * 2)` = 1,600 per-agent moves to `4 * (2 * 2 * 2)`
+    // = 32 per-agent moves, so PPO has a tractable exploration problem.
+    // Ownership pattern is round-robin: houses 0 and 1 are owned by
+    // agents 0 and 1 respectively (agents 2 and 3 are unowned-house
+    // workers under the pre-#254 `house_owners = i % num_agents`
+    // semantics). Ignition rate is bumped to 0.05 because with only
+    // 2 houses the default 0.02 leaves most episodes empty of fires.
+    m.insert(
+        "v2_minimal",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.25,
+            prob_solo_agent_extinguishes_fire: 0.5,
+            prob_house_catches_fire: 0.05,
+            team_reward_house_survives: 10.0,
+            team_penalty_house_burns: 10.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 8,
+            reward_own_house_survives: per_agent(50.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(100.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
+            num_houses: 2,
         },
     );
 
@@ -522,6 +588,8 @@ mod tests {
         assert!(SCENARIOS.get("mixed_motivation").is_some());
         assert!(SCENARIOS.get("minimal_specialization").is_some());
         assert!(SCENARIOS.get("positional_default").is_some());
+        // Issue #254: v2_minimal is the 2x4 PPO learnability diagnostic.
+        assert!(SCENARIOS.get("v2_minimal").is_some());
     }
 
     #[test]
@@ -657,8 +725,8 @@ mod tests {
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
         assert_eq!(
-            count, 14,
-            "Expected 14 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional)"
+            count, 15,
+            "Expected 15 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional + 1 v2 minimal)"
         );
     }
 
@@ -861,8 +929,12 @@ mod tests {
         //     reward=penalty=10 so the per-agent ownership signal (50/100)
         //     dominates the shared team signal — that's the entire point
         //     of the sanity-check scenario.
+        //   - "v2_minimal" (issue #254) mirrors `minimal_specialization`'s
+        //     reward shape on a 2-house ring as a PPO learnability unit
+        //     test (option E of architect proposal #234).
         for (name, scenario) in SCENARIOS.iter() {
-            if name == &"overcrowding" || name == &"minimal_specialization" {
+            if name == &"overcrowding" || name == &"minimal_specialization" || name == &"v2_minimal"
+            {
                 continue;
             }
             assert_eq!(
@@ -944,6 +1016,9 @@ mod tests {
     /// Scalar JSON inputs that omit the new #203 fields should round-trip
     /// through serde, yielding the documented defaults
     /// (alpha=0.0, metric="ring_arc", home_positions=[]).
+    ///
+    /// Issue #254 extension: also confirms `num_houses` defaults to 10
+    /// when omitted, so all 14 pre-#254 scenarios remain bit-exact.
     #[test]
     fn test_scenario_pre203_fields_optional_in_json() {
         let json = r#"{
@@ -963,6 +1038,8 @@ mod tests {
         assert_eq!(scenario.distance_cost_alpha, 0.0);
         assert_eq!(scenario.distance_metric, "ring_arc");
         assert!(scenario.agent_home_positions.is_empty());
+        // Issue #254: num_houses defaults to 10 when omitted.
+        assert_eq!(scenario.num_houses, 10);
     }
 
     /// Issue #222: unknown ``distance_metric`` values must be rejected at
@@ -1046,6 +1123,7 @@ mod tests {
             agent_home_positions: default_agent_home_positions(),
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: "bogus".to_string(),
+            num_houses: default_num_houses(),
         };
         let err = scenario
             .validate()
@@ -1082,5 +1160,93 @@ mod tests {
     fn test_allowlist_contains_default_metric() {
         assert!(ALLOWED_DISTANCE_METRICS.contains(&"ring_arc"));
         assert!(ALLOWED_DISTANCE_METRICS.contains(&default_distance_metric().as_str()));
+    }
+
+    /// Issue #254: ``v2_minimal`` is the 2-house x 4-agent PPO learnability
+    /// diagnostic (option E from architect proposal #234). Reward shape
+    /// mirrors ``minimal_specialization``; ignition rate is bumped to 0.05
+    /// because a 2-house ring at 0.02 has too many fire-free episodes.
+    #[test]
+    fn test_v2_minimal_values() {
+        let scenario = SCENARIOS.get("v2_minimal").unwrap();
+        assert_eq!(scenario.num_houses, 2);
+        assert_eq!(scenario.team_reward_house_survives, 10.0);
+        assert_eq!(scenario.team_penalty_house_burns, 10.0);
+        assert_eq!(scenario.prob_house_catches_fire, 0.05);
+        assert_eq!(scenario.prob_fire_spreads_to_neighbor, 0.25);
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
+        assert_eq!(scenario.cost_to_work_one_night, 0.5);
+        assert_eq!(scenario.min_nights, 8);
+        assert!(scenario
+            .reward_own_house_survives
+            .iter()
+            .all(|&v| v == 50.0));
+        assert!(scenario
+            .reward_other_house_survives
+            .iter()
+            .all(|&v| v == 0.0));
+        assert!(scenario.penalty_own_house_burns.iter().all(|&v| v == 100.0));
+        assert!(scenario.penalty_other_house_burns.iter().all(|&v| v == 0.0));
+    }
+
+    /// Issue #254: every non-v2 scenario must keep `num_houses = 10` so the
+    /// pre-#254 14 scenarios are bit-exactly preserved (the engine paths
+    /// that previously hardcoded `10` now read `scenario.num_houses`, but
+    /// the result is identical when `num_houses == 10`).
+    #[test]
+    fn test_non_v2_scenarios_have_ten_houses() {
+        for (name, scenario) in SCENARIOS.iter() {
+            if name.starts_with("v2_") {
+                continue;
+            }
+            assert_eq!(
+                scenario.num_houses, 10,
+                "Pre-#254 scenario '{}' must keep num_houses = 10 (bit-exact)",
+                name
+            );
+        }
+    }
+
+    /// Issue #254: `num_houses` is optional in JSON and defaults to 10.
+    /// Verifies the serde default function is wired up.
+    #[test]
+    fn test_num_houses_defaults_to_ten_in_json() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.num_houses, 10);
+    }
+
+    /// Issue #254: explicit `num_houses` in JSON is preserved (not silently
+    /// overridden by the default).
+    #[test]
+    fn test_num_houses_explicit_value_preserved() {
+        let json = r#"{
+            "num_houses": 2,
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.num_houses, 2);
     }
 }
