@@ -33,7 +33,7 @@ import json
 import warnings
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -109,6 +109,13 @@ class CellConfig:
     # the ``--action-shaping-alpha`` / ``--action-shaping-beta`` flags.
     action_shaping_alpha: float = 0.0
     action_shaping_beta: float = 0.0
+    # Issue #270: optional BC-pretrained init. Directory containing per-agent
+    # ``agent_{i}.pt`` state dicts produced by
+    # ``experiments/p3_specialization/bc_init.py``. ``None`` (default)
+    # preserves bit-identical pre-#270 random-init behavior. When set, the
+    # state dicts are loaded into ``trainer.policies[i]`` immediately after
+    # trainer construction, before the first PPO iteration.
+    bc_init_checkpoint_dir: Optional[str] = None
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -649,6 +656,36 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         seed=cfg.seed,
     )
 
+    # Issue #270: optionally warm-start the actor weights from a BC-pretrained
+    # checkpoint directory produced by ``experiments/p3_specialization/bc_init.py``.
+    # Loaded after the trainer is constructed (which sets the random-init
+    # baseline) so the per-agent state dict overwrites only the actor; the
+    # value head, optimizer state, and (when ``centralized_critic=True``)
+    # the critic remain freshly initialized. This is the basin-trap vs
+    # anti-attractor probe — BC sets the actor near specialist, then PPO
+    # continues from there.
+    if cfg.bc_init_checkpoint_dir is not None:
+        bc_dir = Path(cfg.bc_init_checkpoint_dir)
+        if not bc_dir.is_dir():
+            raise FileNotFoundError(
+                f"bc_init_checkpoint_dir does not exist or is not a directory: {bc_dir}"
+            )
+        for i, policy in enumerate(trainer.policies):
+            ckpt_path = bc_dir / f"agent_{i}.pt"
+            if not ckpt_path.exists():
+                raise FileNotFoundError(
+                    f"BC checkpoint missing for agent {i}: expected {ckpt_path}"
+                )
+            sd = torch.load(ckpt_path, map_location=cfg.device, weights_only=True)
+            # ``load_state_dict`` is strict by default; a shape mismatch (e.g.,
+            # the BC fit used a different hidden_size) will raise here instead
+            # of silently shifting the obs encoding mid-training.
+            policy.load_state_dict(sd)
+        print(
+            f"  BC-init (#270): loaded {cfg.num_agents} per-agent state dicts "
+            f"from {bc_dir}"
+        )
+
     # Shared random projection matrix for MI measurement. Seeded from cfg.seed
     # so the metric is reproducible and comparable across iterations.
     rng = np.random.default_rng(cfg.seed)
@@ -811,6 +848,19 @@ def main() -> None:
             "behavior. Use 0.0/0.1/0.5 in the calibration sweep."
         ),
     )
+    p.add_argument(
+        "--bc-init-checkpoint-dir",
+        type=str,
+        default=None,
+        help=(
+            "Issue #270: directory containing per-agent BC-pretrained "
+            "state dicts (agent_{i}.pt) produced by "
+            "experiments/p3_specialization/bc_init.py. When set, the actor "
+            "weights are loaded into trainer.policies[i] after trainer "
+            "construction, before the first PPO iteration. Default None "
+            "preserves bit-identical pre-#270 random-init behavior."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -828,6 +878,7 @@ def main() -> None:
         curriculum=args.curriculum,
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,
+        bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         device=args.device,
     )
     print(
