@@ -1,0 +1,382 @@
+"""Specialist BC-fit-only diagnostic (issue #272).
+
+Phase-1 discriminator for the PPO-plateau debugging effort: can the standard
+``PolicyNetwork`` (obs_dim=46, action_dims=[10,2,2], hidden_size=64, ~8.1k
+params) actually represent the hand-coded specialist policy on
+``minimal_specialization``? If supervised behavioural-cloning loss collapses
+and per-head accuracy is high, the PPO plateau is a path-finding problem
+(strengthens the case for MAPPO/CTDE in #270 etc.). If BC plateaus high,
+we have a representational gap and need a wider/deeper net.
+
+No env rollouts during training — pure supervised cross-entropy on
+``(flatten_dict_obs, specialist_action)`` pairs. See issue #272 + the
+curator-enriched comment for thresholds.
+
+Usage:
+    uv run python experiments/p3_specialization/bc_fit_only.py
+    uv run python experiments/p3_specialization/bc_fit_only.py --epochs 10 --seed 0
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from pathlib import Path
+from typing import Tuple
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
+from bucket_brigade.baselines.specialist import (
+    specialist_action,
+    specialist_action_joint,
+)
+from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+from bucket_brigade.training.joint_trainer import flatten_dict_obs
+from bucket_brigade.training.networks import PolicyNetwork
+
+
+# ---------------------------------------------------------------------------
+# Demonstration generation
+# ---------------------------------------------------------------------------
+
+
+def generate_demonstrations(
+    num_steps: int,
+    num_agents: int,
+    scenario_name: str,
+    seed: int,
+    epsilon: float = 0.1,
+) -> Tuple[np.ndarray, np.ndarray, dict]:
+    """Roll a (mostly-specialist + epsilon-noise) policy and record
+    ``(flat_obs, specialist_label)`` pairs across all agents.
+
+    The behaviour policy is specialist + epsilon-greedy noise (random house +
+    random mode/signal) so we visit some states the pure specialist would
+    never reach. The *labels* are always the specialist's deterministic
+    action on the current obs — that is what we want the BC net to fit.
+
+    Returns
+    -------
+    obs_array : np.ndarray, shape (num_steps * num_agents, obs_dim), float32
+    label_array : np.ndarray, shape (num_steps * num_agents, 3), int64
+    info : dict with bookkeeping (label distribution, etc.)
+    """
+    rng = np.random.RandomState(seed)
+    scenario = get_scenario_by_name(scenario_name, num_agents)
+    env = BucketBrigadeEnv(scenario=scenario, num_agents=num_agents)
+    obs = env.reset(seed=seed)
+
+    num_houses = env.num_houses
+
+    flat_dim = flatten_dict_obs(obs, agent_id=0, num_agents=num_agents).shape[0]
+
+    obs_buf = np.zeros((num_steps * num_agents, flat_dim), dtype=np.float32)
+    label_buf = np.zeros((num_steps * num_agents, 3), dtype=np.int64)
+
+    cursor = 0
+    episodes = 0
+    for _ in range(num_steps):
+        # Record (per-agent flat obs, specialist label) for the current state.
+        # Specialist labels are deterministic functions of obs + agent_id.
+        for agent_id in range(num_agents):
+            obs_buf[cursor] = flatten_dict_obs(
+                obs, agent_id=agent_id, num_agents=num_agents
+            )
+            label_buf[cursor] = specialist_action(obs, agent_id, num_agents, num_houses)
+            cursor += 1
+
+        # Behaviour policy: specialist + epsilon-greedy noise. Joint action
+        # has shape (num_agents, 3).
+        joint = specialist_action_joint(obs, num_agents, num_houses)
+        for agent_id in range(num_agents):
+            if rng.random() < epsilon:
+                joint[agent_id, 0] = rng.randint(num_houses)
+                joint[agent_id, 1] = rng.randint(2)
+                joint[agent_id, 2] = rng.randint(2)
+
+        obs, _rewards, dones, _info = env.step(joint)
+        if bool(dones[0]):
+            obs = env.reset(seed=seed + 1 + episodes)
+            episodes += 1
+
+    obs_buf = obs_buf[:cursor]
+    label_buf = label_buf[:cursor]
+
+    # Label distribution bookkeeping — verifies we see enough WORK rows.
+    mode_counts = np.bincount(label_buf[:, 1], minlength=2).tolist()
+    signal_counts = np.bincount(label_buf[:, 2], minlength=2).tolist()
+    house_counts = np.bincount(label_buf[:, 0], minlength=num_houses).tolist()
+    work_frac = float(label_buf[:, 1].mean())
+
+    info = {
+        "num_pairs": int(cursor),
+        "num_episodes_completed": int(episodes),
+        "flat_obs_dim": int(flat_dim),
+        "mode_counts": mode_counts,
+        "signal_counts": signal_counts,
+        "house_counts": house_counts,
+        "work_frac": work_frac,
+    }
+    return obs_buf, label_buf, info
+
+
+# ---------------------------------------------------------------------------
+# Supervised training
+# ---------------------------------------------------------------------------
+
+
+def train_bc(
+    obs: np.ndarray,
+    labels: np.ndarray,
+    num_houses: int,
+    hidden_size: int,
+    lr: float,
+    batch_size: int,
+    epochs: int,
+    train_frac: float,
+    seed: int,
+) -> dict:
+    """Train ``PolicyNetwork`` via sum-of-cross-entropy over its 3 heads.
+
+    Returns a dict with per-epoch eval losses + per-head accuracies and the
+    final-epoch summary for verdict thresholding.
+    """
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    n = obs.shape[0]
+    perm = np.random.RandomState(seed).permutation(n)
+    n_train = int(round(train_frac * n))
+    train_idx = perm[:n_train]
+    eval_idx = perm[n_train:]
+
+    x_train = torch.from_numpy(obs[train_idx])
+    y_train = torch.from_numpy(labels[train_idx])
+    x_eval = torch.from_numpy(obs[eval_idx])
+    y_eval = torch.from_numpy(labels[eval_idx])
+
+    obs_dim = obs.shape[1]
+    action_dims = [num_houses, 2, 2]
+    net = PolicyNetwork(
+        obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+    )
+
+    n_params = sum(p.numel() for p in net.parameters())
+
+    optim = torch.optim.Adam(net.parameters(), lr=lr)
+
+    history = []
+    for epoch in range(epochs):
+        net.train()
+        idx = torch.randperm(n_train)
+        train_loss_sum = 0.0
+        for start in range(0, n_train, batch_size):
+            batch = idx[start : start + batch_size]
+            xb = x_train[batch]
+            yb = y_train[batch]
+            logits, _ = net(xb)
+            loss = sum(F.cross_entropy(logits[k], yb[:, k]) for k in range(3))
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
+            train_loss_sum += float(loss.detach()) * xb.shape[0]
+        train_loss_avg = train_loss_sum / n_train
+
+        # Eval
+        net.eval()
+        with torch.no_grad():
+            logits, _ = net(x_eval)
+            eval_loss = sum(F.cross_entropy(logits[k], y_eval[:, k]) for k in range(3))
+            preds = [logits[k].argmax(dim=-1) for k in range(3)]
+            head_acc = [
+                float((preds[k] == y_eval[:, k]).float().mean()) for k in range(3)
+            ]
+            joint_correct = (
+                (preds[0] == y_eval[:, 0])
+                & (preds[1] == y_eval[:, 1])
+                & (preds[2] == y_eval[:, 2])
+            )
+            joint_acc = float(joint_correct.float().mean())
+
+        history.append(
+            {
+                "epoch": epoch + 1,
+                "train_loss": train_loss_avg,
+                "eval_loss": float(eval_loss),
+                "house_acc": head_acc[0],
+                "mode_acc": head_acc[1],
+                "signal_acc": head_acc[2],
+                "joint_acc": joint_acc,
+            }
+        )
+        print(
+            f"  epoch {epoch + 1:2d}/{epochs}  "
+            f"train_loss={train_loss_avg:.4f}  "
+            f"eval_loss={float(eval_loss):.4f}  "
+            f"house={head_acc[0]:.3f}  mode={head_acc[1]:.3f}  "
+            f"signal={head_acc[2]:.3f}  joint={joint_acc:.3f}"
+        )
+
+    # Confusion bookkeeping on the house head conditioned on mode==WORK,
+    # since that's the only non-trivial case for the specialist policy.
+    net.eval()
+    with torch.no_grad():
+        logits, _ = net(x_eval)
+        pred_house = logits[0].argmax(dim=-1)
+    work_mask = y_eval[:, 1] == 1
+    work_count = int(work_mask.sum())
+    if work_count > 0:
+        house_acc_work = float(
+            (pred_house[work_mask] == y_eval[work_mask, 0]).float().mean()
+        )
+    else:
+        house_acc_work = float("nan")
+
+    final = history[-1]
+    return {
+        "n_params": n_params,
+        "obs_dim": obs_dim,
+        "n_train": n_train,
+        "n_eval": int(n - n_train),
+        "history": history,
+        "final": final,
+        "house_acc_on_work_subset": house_acc_work,
+        "eval_work_rows": work_count,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Verdict
+# ---------------------------------------------------------------------------
+
+
+def compute_verdict(final: dict) -> str:
+    """Apply curator's verdict thresholds verbatim."""
+    eval_loss = final["eval_loss"]
+    joint_acc = final["joint_acc"]
+    min_head_acc = min(final["house_acc"], final["mode_acc"], final["signal_acc"])
+    if eval_loss < 0.05 and joint_acc > 0.90:
+        return "REPRESENTABLE"
+    if eval_loss > 0.5 and min_head_acc < 0.50:
+        return "ARCHITECTURE_MISMATCH"
+    return "INDUCTIVE_BIAS_GAP"
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Specialist BC-fit-only diagnostic (issue #272)"
+    )
+    parser.add_argument("--num-agents", type=int, default=4)
+    parser.add_argument("--scenario", type=str, default="minimal_specialization")
+    parser.add_argument(
+        "--num-steps",
+        type=int,
+        default=2500,
+        help="Env steps to roll; pairs = num_steps * num_agents (default 10k pairs).",
+    )
+    parser.add_argument("--epsilon", type=float, default=0.1)
+    parser.add_argument("--hidden-size", type=int, default=64)
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--train-frac", type=float, default=0.8)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--out",
+        type=str,
+        default="experiments/p3_specialization/bc_fit_only_result.json",
+    )
+    args = parser.parse_args()
+
+    t0 = time.time()
+    print(
+        f"[bc_fit_only] scenario={args.scenario} num_agents={args.num_agents} "
+        f"num_steps={args.num_steps} epsilon={args.epsilon} seed={args.seed}"
+    )
+    print("[bc_fit_only] generating demonstrations ...")
+    obs, labels, demo_info = generate_demonstrations(
+        num_steps=args.num_steps,
+        num_agents=args.num_agents,
+        scenario_name=args.scenario,
+        seed=args.seed,
+        epsilon=args.epsilon,
+    )
+    t_gen = time.time() - t0
+    print(
+        f"[bc_fit_only] generated {demo_info['num_pairs']} pairs in {t_gen:.1f}s "
+        f"(work_frac={demo_info['work_frac']:.3f}, "
+        f"episodes={demo_info['num_episodes_completed']})"
+    )
+
+    # Probe num_houses from the env so the action head matches the scenario.
+    scenario = get_scenario_by_name(args.scenario, args.num_agents)
+    num_houses = int(getattr(scenario, "num_houses", 10))
+
+    print(
+        f"[bc_fit_only] training PolicyNetwork(obs_dim={obs.shape[1]}, "
+        f"action_dims=[{num_houses},2,2], hidden_size={args.hidden_size})"
+    )
+    t1 = time.time()
+    result = train_bc(
+        obs=obs,
+        labels=labels,
+        num_houses=num_houses,
+        hidden_size=args.hidden_size,
+        lr=args.lr,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
+        train_frac=args.train_frac,
+        seed=args.seed,
+    )
+    t_train = time.time() - t1
+    print(f"[bc_fit_only] training done in {t_train:.1f}s")
+
+    final = result["final"]
+    verdict = compute_verdict(final)
+
+    print()
+    print("=" * 60)
+    print("FINAL SUMMARY")
+    print("=" * 60)
+    print(f"obs_dim:          {result['obs_dim']}")
+    print(f"n_params:         {result['n_params']}")
+    print(f"train/eval pairs: {result['n_train']} / {result['n_eval']}")
+    print(f"final eval_loss:  {final['eval_loss']:.4f}")
+    print("per-head accuracy (eval):")
+    print(f"  house  (10-way): {final['house_acc']:.3f}")
+    print(f"  mode   (2-way) : {final['mode_acc']:.3f}")
+    print(f"  signal (2-way) : {final['signal_acc']:.3f}")
+    print(f"joint accuracy   : {final['joint_acc']:.3f}")
+    print(
+        f"house acc | mode=WORK subset (n={result['eval_work_rows']}): "
+        f"{result['house_acc_on_work_subset']:.3f}"
+    )
+    print()
+    print(f"VERDICT: {verdict}")
+    print("=" * 60)
+
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_payload = {
+        "args": vars(args),
+        "demo_info": demo_info,
+        "result": result,
+        "verdict": verdict,
+        "timing": {"data_gen_sec": t_gen, "train_sec": t_train},
+    }
+    with open(out_path, "w") as f:
+        json.dump(out_payload, f, indent=2)
+    print(f"[bc_fit_only] wrote {out_path}")
+
+
+if __name__ == "__main__":
+    main()
