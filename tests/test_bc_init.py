@@ -24,8 +24,8 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "experiments" / "p3_specialization"))
 
-import bc_init  # type: ignore[import-not-found]
-from bucket_brigade.training.networks import PolicyNetwork
+import bc_init  # type: ignore[import-not-found]  # noqa: E402
+from bucket_brigade.training.networks import PolicyNetwork  # noqa: E402
 
 
 @pytest.fixture(scope="module")

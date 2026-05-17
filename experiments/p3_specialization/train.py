@@ -676,7 +676,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 raise FileNotFoundError(
                     f"BC checkpoint missing for agent {i}: expected {ckpt_path}"
                 )
-            sd = torch.load(ckpt_path, map_location=cfg.device)
+            sd = torch.load(ckpt_path, map_location=cfg.device, weights_only=True)
             # ``load_state_dict`` is strict by default; a shape mismatch (e.g.,
             # the BC fit used a different hidden_size) will raise here instead
             # of silently shifting the obs encoding mid-training.
