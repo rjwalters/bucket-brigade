@@ -101,6 +101,14 @@ class CellConfig:
     # can still run longer when fires remain active. See
     # ``bucket_brigade/envs/bucket_brigade_env.py::_check_termination``.
     curriculum: List[List[int]] = field(default_factory=list)
+    # Issue #261/#262: action-conditioned reward shaping knobs that are
+    # mutated onto the loaded ``Scenario`` instance in ``train_one_cell``.
+    # Defaults match ``Scenario.action_shaping_alpha`` / ``_beta`` (both
+    # 0.0), which keeps the env fast-path skip and bit-identical legacy
+    # behavior. The calibration sweep driver passes per-cell values via
+    # the ``--action-shaping-alpha`` / ``--action-shaping-beta`` flags.
+    action_shaping_alpha: float = 0.0
+    action_shaping_beta: float = 0.0
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -600,6 +608,16 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
 
     scenario = get_scenario_by_name(cfg.scenario, num_agents=cfg.num_agents)
 
+    # Issue #261/#262: mutate the loaded ``Scenario`` instance so the
+    # per-cell action-shaping knobs take effect inside ``_compute_rewards``.
+    # ``Scenario.__post_init__`` only validates the ownership-reward
+    # promotion and ``num_houses`` — it does not touch the shaping fields
+    # — so post-construction mutation is safe. Cells where both knobs are
+    # 0.0 (e.g., the in-sweep baseline) still hit the env's fast-path
+    # skip, preserving bit-identical pre-#259 behavior.
+    scenario.action_shaping_alpha = float(cfg.action_shaping_alpha)
+    scenario.action_shaping_beta = float(cfg.action_shaping_beta)
+
     def env_fn():
         env = BucketBrigadeEnv(scenario=scenario)
         return env
@@ -771,6 +789,28 @@ def main() -> None:
             "iterations (no env reconstruction, optimizer state preserved)."
         ),
     )
+    p.add_argument(
+        "--action-shaping-alpha",
+        type=float,
+        default=CellConfig.__dataclass_fields__["action_shaping_alpha"].default,
+        help=(
+            "Issue #261/#262: credit-shared extinguish bonus knob. Mutated "
+            "onto the loaded Scenario instance pre-rollout. Default 0.0 "
+            "keeps the env fast-path skip and bit-identical pre-#259 "
+            "behavior. Use 0.1/0.5/2.0 in the calibration sweep."
+        ),
+    )
+    p.add_argument(
+        "--action-shaping-beta",
+        type=float,
+        default=CellConfig.__dataclass_fields__["action_shaping_beta"].default,
+        help=(
+            "Issue #261/#262: flat preventive-presence bonus knob. Mutated "
+            "onto the loaded Scenario instance pre-rollout. Default 0.0 "
+            "keeps the env fast-path skip and bit-identical pre-#259 "
+            "behavior. Use 0.0/0.1/0.5 in the calibration sweep."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -786,11 +826,15 @@ def main() -> None:
         normalize_returns=args.normalize_returns,
         centralized_critic=args.centralized_critic,
         curriculum=args.curriculum,
+        action_shaping_alpha=args.action_shaping_alpha,
+        action_shaping_beta=args.action_shaping_beta,
         device=args.device,
     )
     print(
         f"== P3 cell: scenario={cfg.scenario} lambda_red={cfg.lambda_red} "
-        f"seed={cfg.seed} =="
+        f"seed={cfg.seed} "
+        f"action_shaping_alpha={cfg.action_shaping_alpha} "
+        f"action_shaping_beta={cfg.action_shaping_beta} =="
     )
     train_one_cell(cfg, args.output_dir)
 
