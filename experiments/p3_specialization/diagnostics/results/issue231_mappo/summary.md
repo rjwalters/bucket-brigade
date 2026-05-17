@@ -43,4 +43,3 @@ Pre-registered references (per-step mean team reward):
 **`INSUFFICIENT`**
 
 Tier counts: tier_1_succeeds=0, tier_2_partial=0, tier_3_insufficient=3.
-
