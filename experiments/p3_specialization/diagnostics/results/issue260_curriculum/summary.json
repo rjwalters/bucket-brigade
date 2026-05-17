@@ -1,0 +1,130 @@
+{
+  "results": {
+    "baseline": {
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_baseline/seed_0",
+          "trailing5_team_reward": -81.4087890625,
+          "final_iter": 49,
+          "final_team_reward": -77.46337890625,
+          "min_nights_floor_first": 12,
+          "min_nights_floor_last": 12,
+          "min_nights_floor_unique": [
+            12
+          ],
+          "seed": 0
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_baseline/seed_1",
+          "trailing5_team_reward": -101.2703125,
+          "final_iter": 49,
+          "final_team_reward": -102.9453125,
+          "min_nights_floor_first": -1,
+          "min_nights_floor_last": -1,
+          "min_nights_floor_unique": [
+            -1
+          ],
+          "seed": 1
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_baseline/seed_2",
+          "trailing5_team_reward": -80.166796875,
+          "final_iter": 49,
+          "final_team_reward": -89.3037109375,
+          "min_nights_floor_first": -1,
+          "min_nights_floor_last": -1,
+          "min_nights_floor_unique": [
+            -1
+          ],
+          "seed": 2
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -87.61529947916667,
+      "team_reward_std": 11.841882096938756,
+      "team_reward_per_seed": [
+        -81.4087890625,
+        -101.2703125,
+        -80.166796875
+      ],
+      "gap_closed_mean": 0.07489334296493291,
+      "gap_closed_per_seed": [
+        0.1624943897116561,
+        -0.11783870027033432,
+        0.18002433945347673
+      ]
+    },
+    "curriculum": {
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_curriculum/seed_0",
+          "trailing5_team_reward": -84.19755859375,
+          "final_iter": 49,
+          "final_team_reward": -91.1640625,
+          "min_nights_floor_first": 5,
+          "min_nights_floor_last": 12,
+          "min_nights_floor_unique": [
+            5,
+            8,
+            12
+          ],
+          "seed": 0
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_curriculum/seed_1",
+          "trailing5_team_reward": -95.79677734375,
+          "final_iter": 49,
+          "final_team_reward": -95.8681640625,
+          "min_nights_floor_first": 5,
+          "min_nights_floor_last": 12,
+          "min_nights_floor_unique": [
+            5,
+            8,
+            12
+          ],
+          "seed": 1
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue260_curriculum/seed_2",
+          "trailing5_team_reward": -83.38193359375,
+          "final_iter": 49,
+          "final_team_reward": -77.80712890625,
+          "min_nights_floor_first": 5,
+          "min_nights_floor_last": 12,
+          "min_nights_floor_unique": [
+            5,
+            8,
+            12
+          ],
+          "seed": 2
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -87.79208984375002,
+      "team_reward_std": 6.9442478004927475,
+      "team_reward_per_seed": [
+        -84.19755859375,
+        -95.79677734375,
+        -83.38193359375
+      ],
+      "gap_closed_mean": 0.07239805657168871,
+      "gap_closed_per_seed": [
+        0.1231326367019714,
+        -0.04058314490948326,
+        0.1346446779225788
+      ]
+    }
+  },
+  "verdict": {
+    "gap_baseline": 0.07489334296493291,
+    "gap_curriculum": 0.07239805657168871,
+    "delta": -0.0024952863932442004,
+    "tier": "tier_3_curriculum_unhelpful"
+  },
+  "baselines": {
+    "scenario": "minimal_specialization",
+    "random": -92.92147252747253,
+    "specialist": -22.07174358974359,
+    "spec_rand_gap": 70.84972893772894
+  }
+}
