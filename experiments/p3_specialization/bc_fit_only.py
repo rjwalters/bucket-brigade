@@ -86,9 +86,7 @@ def generate_demonstrations(
             obs_buf[cursor] = flatten_dict_obs(
                 obs, agent_id=agent_id, num_agents=num_agents
             )
-            label_buf[cursor] = specialist_action(
-                obs, agent_id, num_agents, num_houses
-            )
+            label_buf[cursor] = specialist_action(obs, agent_id, num_agents, num_houses)
             cursor += 1
 
         # Behaviour policy: specialist + epsilon-greedy noise. Joint action
@@ -192,9 +190,7 @@ def train_bc(
         net.eval()
         with torch.no_grad():
             logits, _ = net(x_eval)
-            eval_loss = sum(
-                F.cross_entropy(logits[k], y_eval[:, k]) for k in range(3)
-            )
+            eval_loss = sum(F.cross_entropy(logits[k], y_eval[:, k]) for k in range(3))
             preds = [logits[k].argmax(dim=-1) for k in range(3)]
             head_acc = [
                 float((preds[k] == y_eval[:, k]).float().mean()) for k in range(3)
@@ -355,7 +351,7 @@ def main() -> None:
     print(f"n_params:         {result['n_params']}")
     print(f"train/eval pairs: {result['n_train']} / {result['n_eval']}")
     print(f"final eval_loss:  {final['eval_loss']:.4f}")
-    print(f"per-head accuracy (eval):")
+    print("per-head accuracy (eval):")
     print(f"  house  (10-way): {final['house_acc']:.3f}")
     print(f"  mode   (2-way) : {final['mode_acc']:.3f}")
     print(f"  signal (2-way) : {final['signal_acc']:.3f}")
