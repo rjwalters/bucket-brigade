@@ -30,4 +30,3 @@ Pre-registered references (per-step mean team reward) on `minimal_specialization
 - `gap_curriculum = +0.072`
 - `delta = -0.002`
 - **Tier: `tier_3_curriculum_unhelpful`**
-
