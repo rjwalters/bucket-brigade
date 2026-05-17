@@ -108,13 +108,13 @@ def load_cell(cell: Path) -> Optional[dict]:
         "cell": str(cell),
         "trailing5_team_reward": _trailing_team(metrics),
         "final_iter": len(metrics) - 1,
-        "mean_action_entropy_final": float(last.get("action_entropy/mean", float("nan"))),
+        "mean_action_entropy_final": float(
+            last.get("action_entropy/mean", float("nan"))
+        ),
     }
 
 
-def aggregate_cell(
-    root: Path, alpha: float, beta: float
-) -> Dict[str, object]:
+def aggregate_cell(root: Path, alpha: float, beta: float) -> Dict[str, object]:
     seeds_data: List[Dict] = []
     for s in SEEDS:
         cell = _cell_dir(root, alpha, beta, s)
@@ -167,8 +167,7 @@ def compute_verdict(
         (
             c
             for c in cells
-            if c.get("alpha") == BASELINE_ALPHA
-            and c.get("beta") == BASELINE_BETA
+            if c.get("alpha") == BASELINE_ALPHA and c.get("beta") == BASELINE_BETA
         ),
         None,
     )
@@ -248,13 +247,11 @@ def compute_verdict(
     }
 
 
-def render_markdown(
-    cells: List[Dict[str, object]], verdict: Dict[str, object]
-) -> str:
+def render_markdown(cells: List[Dict[str, object]], verdict: Dict[str, object]) -> str:
     lines = [
         "# Issue #261/#262 — Action-shaping calibration sweep",
         "",
-        f"Scenario: ``minimal_specialization``  ",
+        "Scenario: ``minimal_specialization``  ",
         f"References (per-step mean team reward): "
         f"random={MINSPEC_RANDOM:+.2f}, specialist={MINSPEC_SPECIALIST:+.2f} "
         f"(denominator={MINSPEC_SPECIALIST - MINSPEC_RANDOM:+.2f}).",
@@ -270,9 +267,7 @@ def render_markdown(
         beta = c.get("beta")
         n = c.get("n_seeds", 0)
         if n == 0:
-            lines.append(
-                f"| {alpha} | {beta} | 0 | missing | — | — | — |"
-            )
+            lines.append(f"| {alpha} | {beta} | 0 | missing | — | — | — |")
             continue
         team_mean = c["team_reward_mean"]
         team_std = c["team_reward_std"]
@@ -342,14 +337,14 @@ def _discover_cells(root: Path) -> List[Tuple[float, float]]:
         if not alpha_dir.is_dir() or not alpha_dir.name.startswith("alpha_"):
             continue
         try:
-            alpha = float(alpha_dir.name[len("alpha_"):])
+            alpha = float(alpha_dir.name[len("alpha_") :])
         except ValueError:
             continue
         for beta_dir in sorted(alpha_dir.iterdir()):
             if not beta_dir.is_dir() or not beta_dir.name.startswith("beta_"):
                 continue
             try:
-                beta = float(beta_dir.name[len("beta_"):])
+                beta = float(beta_dir.name[len("beta_") :])
             except ValueError:
                 continue
             pairs.append((alpha, beta))
