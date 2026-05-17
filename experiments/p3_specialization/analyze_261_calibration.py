@@ -68,12 +68,18 @@ OVER_SHAPING_ENTROPY_MULTIPLE = 100.0
 
 
 def _fmt_alpha(alpha: float) -> str:
-    """Match the run-dir naming used by ``run_issue262_sweep.sh``."""
-    return f"{alpha:g}"
+    """Match the run-dir naming used by ``run_issue262_sweep.sh``.
+
+    The sweep script writes literal bash strings ``0.0``, ``0.1``, ``0.5``,
+    ``2.0`` into the path, so we must preserve the trailing ``.0``. Using
+    ``:g`` drops it (``0.0`` → ``0``, ``2.0`` → ``2``), which breaks
+    aggregation of the baseline (alpha=0) and large-alpha (alpha=2) cells.
+    """
+    return f"{alpha:.1f}"
 
 
 def _fmt_beta(beta: float) -> str:
-    return f"{beta:g}"
+    return f"{beta:.1f}"
 
 
 def _cell_dir(root: Path, alpha: float, beta: float, seed: int) -> Path:

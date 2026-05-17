@@ -1,0 +1,545 @@
+{
+  "cells": [
+    {
+      "alpha": 0.0,
+      "beta": 0.0,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.0/seed_42",
+          "trailing5_team_reward": -74.866015625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 1.1065943054996277,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.0/seed_43",
+          "trailing5_team_reward": -79.40693359375,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.8693445398013607,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.0/seed_44",
+          "trailing5_team_reward": -86.67060546875,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.769735602882343,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -80.31451822916667,
+      "team_reward_std": 5.95439902489115,
+      "team_reward_per_seed": [
+        -74.866015625,
+        -79.40693359375,
+        -86.67060546875
+      ],
+      "mean_entropy_final_mean": 0.9152248160611105,
+      "gap_closed_mean": 0.11280246414064482,
+      "gap_closed_per_seed": [
+        0.19579564927646603,
+        0.12662705873952781,
+        0.015984684405940617
+      ],
+      "entropy_collapse_multiple": 1.0
+    },
+    {
+      "alpha": 0.0,
+      "beta": 0.1,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.1/seed_42",
+          "trailing5_team_reward": -76.42732391357421,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.43841958086486227,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.1/seed_43",
+          "trailing5_team_reward": -77.54248962402343,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.7896652482449467,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.1/seed_44",
+          "trailing5_team_reward": -86.86358184814453,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.632465853025232,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -80.27779846191406,
+      "team_reward_std": 5.730646189410269,
+      "team_reward_per_seed": [
+        -76.42732391357421,
+        -77.54248962402343,
+        -86.86358184814453
+      ],
+      "mean_entropy_final_mean": 0.6201835607116802,
+      "gap_closed_mean": 0.11336179037450021,
+      "gap_closed_per_seed": [
+        0.1720133448046578,
+        0.15502681456171463,
+        0.013045211757128175
+      ],
+      "entropy_collapse_multiple": 1.4757321445458198
+    },
+    {
+      "alpha": 0.0,
+      "beta": 0.5,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.5/seed_42",
+          "trailing5_team_reward": -73.5494140625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5199763082559827,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.5/seed_43",
+          "trailing5_team_reward": -76.92470703125,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.3700499544898985,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.0/beta_0.5/seed_44",
+          "trailing5_team_reward": -83.463037109375,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.6010290852652235,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -77.979052734375,
+      "team_reward_std": 5.040209730274758,
+      "team_reward_per_seed": [
+        -73.5494140625,
+        -76.92470703125,
+        -83.463037109375
+      ],
+      "mean_entropy_final_mean": 0.4970184493370349,
+      "gap_closed_mean": 0.1483769575875856,
+      "gap_closed_per_seed": [
+        0.215850509329779,
+        0.16443705969154612,
+        0.06484330374143189
+      ],
+      "entropy_collapse_multiple": 1.8414302673913103
+    },
+    {
+      "alpha": 0.1,
+      "beta": 0.0,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.0/seed_42",
+          "trailing5_team_reward": -76.58468933105469,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.7422268502793558,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.0/seed_43",
+          "trailing5_team_reward": -72.1117950439453,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.6474673203632565,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.0/seed_44",
+          "trailing5_team_reward": -82.23033142089844,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.865719479088697,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -76.97560526529948,
+      "team_reward_std": 5.070582417599166,
+      "team_reward_per_seed": [
+        -76.58468933105469,
+        -72.1117950439453,
+        -82.23033142089844
+      ],
+      "mean_entropy_final_mean": 0.7518045499104363,
+      "gap_closed_mean": 0.16366176290480608,
+      "gap_closed_per_seed": [
+        0.16961630874250277,
+        0.23774874266648424,
+        0.08362023730543124
+      ],
+      "entropy_collapse_multiple": 1.2173706798796877
+    },
+    {
+      "alpha": 0.1,
+      "beta": 0.1,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.1/seed_42",
+          "trailing5_team_reward": -74.25939178466797,
+          "final_iter": 49,
+          "mean_action_entropy_final": 1.1187843421579247,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.1/seed_43",
+          "trailing5_team_reward": -78.84423828125,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.4241953604184282,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.1/seed_44",
+          "trailing5_team_reward": -92.38620147705078,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.14704310868815773,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -81.82994384765625,
+      "team_reward_std": 9.425027092954043,
+      "team_reward_per_seed": [
+        -74.25939178466797,
+        -78.84423828125,
+        -92.38620147705078
+      ],
+      "mean_entropy_final_mean": 0.5633409370881702,
+      "gap_closed_mean": 0.08971905791841196,
+      "gap_closed_per_seed": [
+        0.20503592102562115,
+        0.13519819830540744,
+        -0.07107694557579249
+      ],
+      "entropy_collapse_multiple": 1.624637507779531
+    },
+    {
+      "alpha": 0.1,
+      "beta": 0.5,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.5/seed_42",
+          "trailing5_team_reward": -78.69723510742188,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.6419300192482104,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.5/seed_43",
+          "trailing5_team_reward": -77.24384460449218,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.24290114212765188,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.1/beta_0.5/seed_44",
+          "trailing5_team_reward": -83.97728576660157,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5918550548160361,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -79.97278849283855,
+      "team_reward_std": 3.543315509545148,
+      "team_reward_per_seed": [
+        -78.69723510742188,
+        -77.24384460449218,
+        -83.97728576660157
+      ],
+      "mean_entropy_final_mean": 0.4922287387306328,
+      "gap_closed_mean": 0.11800779142667862,
+      "gap_closed_per_seed": [
+        0.1374373936417079,
+        0.1595758628409416,
+        0.0570101177973866
+      ],
+      "entropy_collapse_multiple": 1.859348599639482
+    },
+    {
+      "alpha": 0.5,
+      "beta": 0.0,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.0/seed_42",
+          "trailing5_team_reward": -74.3765625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5887307008573569,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.0/seed_43",
+          "trailing5_team_reward": -79.11298828125,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5225814082730916,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.0/seed_44",
+          "trailing5_team_reward": -87.42744140625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5376899586640242,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -80.3056640625,
+      "team_reward_std": 6.606679702829967,
+      "team_reward_per_seed": [
+        -74.3765625,
+        -79.11298828125,
+        -87.42744140625
+      ],
+      "mean_entropy_final_mean": 0.549667355931491,
+      "gap_closed_mean": 0.11293733339680119,
+      "gap_closed_per_seed": [
+        0.20325114242193437,
+        0.1311045197067784,
+        0.00445633806169081
+      ],
+      "entropy_collapse_multiple": 1.665052155971914
+    },
+    {
+      "alpha": 0.5,
+      "beta": 0.1,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.1/seed_42",
+          "trailing5_team_reward": -73.8551025390625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5544220686577789,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.1/seed_43",
+          "trailing5_team_reward": -76.30135650634766,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.6098260103876614,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.1/seed_44",
+          "trailing5_team_reward": -91.18952178955078,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.32358740085746956,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -80.4486602783203,
+      "team_reward_std": 9.381930458103419,
+      "team_reward_per_seed": [
+        -73.8551025390625,
+        -76.30135650634766,
+        -91.18952178955078
+      ],
+      "mean_entropy_final_mean": 0.49594515996763655,
+      "gap_closed_mean": 0.11075917321675087,
+      "gap_closed_per_seed": [
+        0.21119417305312257,
+        0.1739321171919625,
+        -0.052848770594832936
+      ],
+      "entropy_collapse_multiple": 1.8454153602806296
+    },
+    {
+      "alpha": 0.5,
+      "beta": 0.5,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.5/seed_42",
+          "trailing5_team_reward": -74.262548828125,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.3918061181826785,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.5/seed_43",
+          "trailing5_team_reward": -75.888525390625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.37245909622201234,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_0.5/beta_0.5/seed_44",
+          "trailing5_team_reward": -82.91201171875,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.8904640785309756,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -77.6876953125,
+      "team_reward_std": 4.5968534216254335,
+      "team_reward_per_seed": [
+        -74.262548828125,
+        -75.888525390625,
+        -82.91201171875
+      ],
+      "mean_entropy_final_mean": 0.5515764309785555,
+      "gap_closed_mean": 0.15281499904798174,
+      "gap_closed_per_seed": [
+        0.2049878320163746,
+        0.18022048148324435,
+        0.07323668364432603
+      ],
+      "entropy_collapse_multiple": 1.6592892021100394
+    },
+    {
+      "alpha": 2.0,
+      "beta": 0.0,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.0/seed_42",
+          "trailing5_team_reward": -73.69482421875,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.3077995493944097,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.0/seed_43",
+          "trailing5_team_reward": -77.038671875,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.2561583560314964,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.0/seed_44",
+          "trailing5_team_reward": -87.38515625,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.2468863380009475,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -79.37288411458333,
+      "team_reward_std": 7.137416049666213,
+      "team_reward_per_seed": [
+        -73.69482421875,
+        -77.038671875,
+        -87.38515625
+      ],
+      "mean_entropy_final_mean": 0.2702814144756179,
+      "gap_closed_mean": 0.1271457103643057,
+      "gap_closed_per_seed": [
+        0.21363557930312257,
+        0.16270111386138603,
+        0.005100437928408294
+      ],
+      "entropy_collapse_multiple": 3.3861921946678026
+    },
+    {
+      "alpha": 2.0,
+      "beta": 0.1,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.1/seed_42",
+          "trailing5_team_reward": -78.37764434814453,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.9468240761961135,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.1/seed_43",
+          "trailing5_team_reward": -74.5107307434082,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.6082023871285994,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.1/seed_44",
+          "trailing5_team_reward": -89.56576995849609,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.8224269113458902,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -80.81804835001628,
+      "team_reward_std": 7.818582365827085,
+      "team_reward_per_seed": [
+        -78.37764434814453,
+        -74.5107307434082,
+        -89.56576995849609
+      ],
+      "mean_entropy_final_mean": 0.7924844582235343,
+      "gap_closed_mean": 0.10513254607743663,
+      "gap_closed_per_seed": [
+        0.14230549355453875,
+        0.2012074524994942,
+        -0.028115307821722647
+      ],
+      "entropy_collapse_multiple": 1.1548804605111322
+    },
+    {
+      "alpha": 2.0,
+      "beta": 0.5,
+      "seeds": [
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.5/seed_42",
+          "trailing5_team_reward": -74.50224609375,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.7577202960630647,
+          "seed": 42
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.5/seed_43",
+          "trailing5_team_reward": -79.401708984375,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.14037778394057818,
+          "seed": 43
+        },
+        {
+          "cell": "experiments/p3_specialization/runs/issue261_calibration/alpha_2.0/beta_0.5/seed_44",
+          "trailing5_team_reward": -81.549658203125,
+          "final_iter": 49,
+          "mean_action_entropy_final": 0.5980089382988052,
+          "seed": 44
+        }
+      ],
+      "n_seeds": 3,
+      "team_reward_mean": -78.48453776041667,
+      "team_reward_std": 3.6121194125311358,
+      "team_reward_per_seed": [
+        -74.50224609375,
+        -79.401708984375,
+        -81.549658203125
+      ],
+      "mean_entropy_final_mean": 0.4987023394341494,
+      "gap_closed_mean": 0.1406772618367605,
+      "gap_closed_per_seed": [
+        0.20133669316450867,
+        0.126706641517517,
+        0.09398845082825578
+      ],
+      "entropy_collapse_multiple": 1.8352125981593883
+    }
+  ],
+  "verdict": {
+    "best_cell": {
+      "alpha": 0.1,
+      "beta": 0.0,
+      "gap_closed_mean": 0.16366176290480608,
+      "team_reward_mean": -76.97560526529948,
+      "mean_entropy_final_mean": 0.7518045499104363,
+      "entropy_collapse_multiple": 1.2173706798796877,
+      "n_seeds": 3
+    },
+    "tier": "tier_3_insufficient",
+    "headline": "ACTION_SHAPING_INSUFFICIENT",
+    "baseline_entropy": 0.9152248160611105,
+    "over_shaping_flagged": []
+  },
+  "baselines": {
+    "random": -87.72,
+    "specialist": -22.07,
+    "denominator": 65.65
+  },
+  "thresholds": {
+    "tier_1": 0.5,
+    "tier_2": 0.25,
+    "over_shaping_entropy_multiple": 100.0
+  }
+}
