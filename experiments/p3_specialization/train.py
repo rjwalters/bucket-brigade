@@ -90,6 +90,17 @@ class CellConfig:
     # Pre-#235 was [10, 2]; the third entry (signal alphabet) makes the
     # broadcast channel a learned action dimension.
     action_dims: List[int] = field(default_factory=lambda: [10, 2, 2])
+    # Issue #260: optional episode-length curriculum. Each entry is
+    # ``[start_iteration, min_nights]``. Empty list disables the
+    # curriculum (default) and preserves bit-identical behavior with
+    # pre-#260 runs. Phases are applied in iteration order; the floor
+    # in effect at iteration ``i`` is the latest phase whose
+    # ``start_iteration <= i``. The env exposes ``min_nights`` (the
+    # *minimum* forced episode length), not ``max_nights``; shorter
+    # floors increase termination density per env-step but episodes
+    # can still run longer when fires remain active. See
+    # ``bucket_brigade/envs/bucket_brigade_env.py::_check_termination``.
+    curriculum: List[List[int]] = field(default_factory=list)
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -481,6 +492,109 @@ def _measure_information(
     return out
 
 
+def _validate_curriculum(curriculum: List[List[int]]) -> List[List[int]]:
+    """Validate and normalize a curriculum schedule (issue #260).
+
+    Each entry must be ``[start_iteration, min_nights]`` with non-negative
+    integer ``start_iteration`` and strictly-positive integer ``min_nights``.
+    The returned list is sorted by ``start_iteration`` ascending. Duplicate
+    ``start_iteration`` values are rejected (ambiguous resolution).
+
+    Raises:
+        ValueError: on any malformed entry. No silent fallback.
+    """
+    if not curriculum:
+        return []
+    normalized: List[List[int]] = []
+    seen_starts: set[int] = set()
+    for idx, entry in enumerate(curriculum):
+        if len(entry) != 2:
+            raise ValueError(
+                f"curriculum[{idx}] must be a 2-element [iter, min_nights] "
+                f"pair, got {entry!r}"
+            )
+        start_it, floor = entry
+        if not isinstance(start_it, int) or not isinstance(floor, int):
+            raise ValueError(
+                f"curriculum[{idx}] entries must be ints, got "
+                f"({type(start_it).__name__}, {type(floor).__name__})"
+            )
+        if start_it < 0:
+            raise ValueError(
+                f"curriculum[{idx}] start_iteration must be >= 0, got {start_it}"
+            )
+        if floor <= 0:
+            raise ValueError(
+                f"curriculum[{idx}] min_nights floor must be > 0, got {floor}"
+            )
+        if start_it in seen_starts:
+            raise ValueError(
+                f"curriculum has duplicate start_iteration={start_it}; "
+                f"each iteration boundary must be unique"
+            )
+        seen_starts.add(start_it)
+        normalized.append([int(start_it), int(floor)])
+    normalized.sort(key=lambda x: x[0])
+    return normalized
+
+
+def _curriculum_floor_for(
+    curriculum: List[List[int]], iteration: int, default_floor: int
+) -> int:
+    """Return the ``min_nights`` floor in effect at ``iteration`` (issue #260).
+
+    The active floor is the latest phase whose ``start_iteration <= iteration``.
+    If no phase has started yet (``iteration < curriculum[0][0]``), the
+    scenario's native ``default_floor`` is returned, preserving pre-curriculum
+    behavior for early iterations.
+    """
+    if not curriculum:
+        return default_floor
+    active = default_floor
+    for start_it, floor in curriculum:
+        if start_it <= iteration:
+            active = floor
+        else:
+            break
+    return active
+
+
+def _parse_curriculum_arg(value: str) -> List[List[int]]:
+    """Parse the ``--curriculum`` CLI flag (issue #260).
+
+    Format: ``'iter:min_nights,iter:min_nights,...'`` (e.g. ``'0:5,17:8,34:12'``).
+    Empty string returns ``[]`` (curriculum disabled). Whitespace around
+    tokens is tolerated. Malformed input raises ``argparse.ArgumentTypeError``
+    so the CLI exits non-zero with a clear message.
+    """
+    if value is None or value.strip() == "":
+        return []
+    phases: List[List[int]] = []
+    for token in value.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if ":" not in token:
+            raise argparse.ArgumentTypeError(
+                f"Curriculum phase {token!r} missing ':' separator. "
+                f"Expected 'iter:min_nights', e.g. '0:5'."
+            )
+        left, _, right = token.partition(":")
+        try:
+            start_it = int(left.strip())
+            floor = int(right.strip())
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(
+                f"Curriculum phase {token!r} has non-integer field: {exc}"
+            ) from None
+        phases.append([start_it, floor])
+    # _validate_curriculum surfaces the same errors with clearer messages.
+    try:
+        return _validate_curriculum(phases)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
 def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -526,8 +640,25 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     # Unit-norm columns make the projected values comparable across runs.
     projection /= np.linalg.norm(projection, axis=0, keepdims=True) + 1e-8
 
+    # Issue #260: episode-length curriculum. Validated once up-front so a
+    # malformed schedule fails before we burn any rollout budget. The
+    # scenario's native ``min_nights`` is the default floor before the
+    # first curriculum phase begins.
+    curriculum = _validate_curriculum(cfg.curriculum)
+    native_min_nights = int(scenario.min_nights)
+
     metrics_log: List[Dict[str, float]] = []
     for it in range(cfg.num_iterations):
+        # Apply curriculum: mutate ``scenario.min_nights`` in place. The
+        # trainer holds a single env via ``env_fn()`` and reads
+        # ``scenario.min_nights`` on every ``_check_termination()`` call,
+        # so the new floor takes effect on the next episode boundary
+        # without reconstructing the env (preserves optimizer state).
+        new_floor = _curriculum_floor_for(curriculum, it, native_min_nights)
+        if trainer.env.scenario.min_nights != new_floor:
+            trainer.env.scenario.min_nights = new_floor
+        current_floor = int(trainer.env.scenario.min_nights)
+
         rollout = trainer.collect_rollout(cfg.rollout_steps)
         stats = trainer.update(rollout)
 
@@ -545,6 +676,10 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         record = {
             "iteration": it,
             "mean_step_reward_team": mean_reward,
+            # Issue #260: record the curriculum floor in effect at this
+            # iteration so the analysis pass can verify the schedule
+            # applied and overlay it on the reward trajectory.
+            "min_nights_floor": current_floor,
             **stats,
             **info_stats,
         }
@@ -622,6 +757,20 @@ def main() -> None:
             "Incompatible with --lambda-red > 0."
         ),
     )
+    p.add_argument(
+        "--curriculum",
+        type=_parse_curriculum_arg,
+        default=[],
+        help=(
+            "Issue #260: optional episode-length curriculum. Format: "
+            "'iter:min_nights,iter:min_nights,...' e.g. '0:5,17:8,34:12'. "
+            "Empty (default) disables curriculum and preserves bit-identical "
+            "behavior. Phases apply at their start iteration; the floor at "
+            "iteration i is the latest phase whose start_iteration <= i. "
+            "Mutates trainer.env.scenario.min_nights in place between "
+            "iterations (no env reconstruction, optimizer state preserved)."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -636,6 +785,7 @@ def main() -> None:
         entropy_coef=args.entropy_coef,
         normalize_returns=args.normalize_returns,
         centralized_critic=args.centralized_critic,
+        curriculum=args.curriculum,
         device=args.device,
     )
     print(
