@@ -196,7 +196,9 @@ def evaluate_policies(
     return {
         "n_episodes": int(per_step.size),
         "mean_step_reward_team": float(per_step.mean()) if per_step.size > 0 else 0.0,
-        "std_step_reward_team": float(per_step.std(ddof=1)) if per_step.size > 1 else 0.0,
+        "std_step_reward_team": float(per_step.std(ddof=1))
+        if per_step.size > 1
+        else 0.0,
         "mean_episode_length": float(np.mean(ep_lengths)) if ep_lengths else 0.0,
         "gap_closed": float(gc),
         "minspec_random_ref": MINSPEC_RANDOM,
@@ -256,7 +258,9 @@ def main() -> None:
     )
 
     # ----- Phase 1: gather demos -----
-    print(f"[1/3] Gathering specialist demos (target={args.num_pairs_per_agent}/agent)...")
+    print(
+        f"[1/3] Gathering specialist demos (target={args.num_pairs_per_agent}/agent)..."
+    )
     obs_per_agent, act_per_agent = gather_demos(
         scenario_name=args.scenario,
         num_agents=args.num_agents,
@@ -264,7 +268,9 @@ def main() -> None:
         seed=args.seed,
     )
     obs_dim = int(obs_per_agent[0].shape[1])
-    print(f"  collected per-agent obs shape: {obs_per_agent[0].shape}, obs_dim={obs_dim}")
+    print(
+        f"  collected per-agent obs shape: {obs_per_agent[0].shape}, obs_dim={obs_dim}"
+    )
 
     # Sanity: at least some non-trivial action distribution. Specialist WORK
     # fraction should be > 0 on minimal_specialization (fires do ignite).
@@ -295,9 +301,7 @@ def main() -> None:
         policies.append(policy)
         per_agent_loss_history.append(losses)
         print(
-            f"  agent {i}: epoch_losses=["
-            + ", ".join(f"{x:.4f}" for x in losses)
-            + "]"
+            f"  agent {i}: epoch_losses=[" + ", ".join(f"{x:.4f}" for x in losses) + "]"
         )
 
     # ----- Phase 3: save + eval gate -----
@@ -347,7 +351,9 @@ def main() -> None:
             f"< {args.min_gap_closed}). PPO continuation should NOT be launched."
         )
         raise SystemExit(2)
-    print(f"OK: BC took (gap_closed={eval_stats['gap_closed']:.3f}). Safe for PPO continuation.")
+    print(
+        f"OK: BC took (gap_closed={eval_stats['gap_closed']:.3f}). Safe for PPO continuation."
+    )
 
 
 if __name__ == "__main__":

@@ -75,7 +75,9 @@ def aggregate_arm(cells: List[Path], label: str) -> Dict:
                 "iter0_team": float(traj[0]),
                 "iter0_gap_closed": float(gap_closed(float(traj[0]))),
                 "trailing5_team": float(traj[-TRAILING_N:].mean()),
-                "trailing5_gap_closed": float(gap_closed(float(traj[-TRAILING_N:].mean()))),
+                "trailing5_gap_closed": float(
+                    gap_closed(float(traj[-TRAILING_N:].mean()))
+                ),
                 "min_iter_team": float(traj.min()),
             }
         )
@@ -149,20 +151,26 @@ def main() -> None:
     p.add_argument(
         "--bc-runs-root",
         type=Path,
-        default=Path("experiments/p3_specialization/runs/issue270_bc_continuation/minimal_specialization/lambda_0e0"),
+        default=Path(
+            "experiments/p3_specialization/runs/issue270_bc_continuation/minimal_specialization/lambda_0e0"
+        ),
         help="Root containing seed_{42,43,44} cells from the BC-init PPO continuation.",
     )
     p.add_argument(
         "--baseline-runs-root",
         type=Path,
-        default=Path("experiments/p3_specialization/runs/issue231/ippo/minimal_specialization"),
+        default=Path(
+            "experiments/p3_specialization/runs/issue231/ippo/minimal_specialization"
+        ),
         help="Root containing seed_{42,43,44} cells from the random-init IPPO baseline.",
     )
     p.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])
     p.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("experiments/p3_specialization/diagnostics/results/issue270_bc_continuation"),
+        default=Path(
+            "experiments/p3_specialization/diagnostics/results/issue270_bc_continuation"
+        ),
     )
     args = p.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)

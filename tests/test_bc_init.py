@@ -68,7 +68,12 @@ def small_bc_run(tmp_path_factory):
         policies.append(p)
         torch.save(p.state_dict(), out / f"agent_{i}.pt")
 
-    return {"out": out, "obs_dim": obs_dim, "policies": policies, "num_agents": num_agents}
+    return {
+        "out": out,
+        "obs_dim": obs_dim,
+        "policies": policies,
+        "num_agents": num_agents,
+    }
 
 
 def test_demos_have_correct_identity_one_hot():
