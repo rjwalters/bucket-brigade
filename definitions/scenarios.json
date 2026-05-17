@@ -200,6 +200,21 @@
       "distance_cost_alpha": 0.1,
       "distance_metric": "ring_arc",
       "description": "Issue #203 option A: spatial cost asymmetry on the 10-ring. Same reward magnitudes as `default`, but per-agent work cost is base_cost + alpha * ring_dist(home, target). With home positions [0,3,5,8] and alpha=0.1 the cheapest action for each agent is to defend its own neighborhood, creating a per-agent gradient that doesn't rely on reward magnitude differences. When distance_cost_alpha=0 (the implicit default for every other scenario) behavior is bit-exactly identical to today's env."
+    },
+    "v2_minimal": {
+      "num_houses": 2,
+      "prob_fire_spreads_to_neighbor": 0.25,
+      "prob_solo_agent_extinguishes_fire": 0.5,
+      "prob_house_catches_fire": 0.05,
+      "team_reward_house_survives": 10.0,
+      "team_penalty_house_burns": 10.0,
+      "cost_to_work_one_night": 0.5,
+      "min_nights": 8,
+      "reward_own_house_survives": [50.0, 50.0, 50.0, 50.0],
+      "reward_other_house_survives": [0.0, 0.0, 0.0, 0.0],
+      "penalty_own_house_burns": [100.0, 100.0, 100.0, 100.0],
+      "penalty_other_house_burns": [0.0, 0.0, 0.0, 0.0],
+      "description": "Issue #254 / option E of architect proposal #234: 2-house x 4-agent PPO learnability diagnostic. Joint action space shrinks to 4 * (2 * 2 * 2) = 32 per-agent moves vs default 4 * (10 * 2 * 2) = 1600, so PPO has a tractable exploration problem. Reward shape mirrors minimal_specialization (per-agent ownership dominates 10 team reward). Ignition rate bumped 0.02->0.05 because at 0.02 a 2-house ring has too many fire-free episodes. Python/Rust only - WASM frontend (web/) is fixed at 10 houses; non-10 scenarios panic in wasm.rs."
     }
   }
 }

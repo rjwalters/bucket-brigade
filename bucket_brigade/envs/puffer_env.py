@@ -59,6 +59,10 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
             scenario = default_scenario(num_opponents + 1)  # +1 for trained agent
         self.scenario = scenario
 
+        # Issue #254: derive ring size from scenario (defaults to 10 for
+        # every pre-#254 scenario; v2_minimal uses 2).
+        self.num_houses: int = int(getattr(scenario, "num_houses", 10))
+
         # Initialize underlying environment
         self.env = BucketBrigadeEnv(scenario)
 
@@ -66,18 +70,21 @@ class PufferBucketBrigade(pufferlib.PufferEnv):
         self.opponent_agents: List[Any] = []
 
         # PufferLib single observation/action spaces (for one agent)
-        # Observation: [houses(10), agent_signals(N), agent_locations(N), last_actions(N,2), scenario_info(10)]
+        # Observation: [houses(num_houses), agent_signals(N), agent_locations(N), last_actions(N,2), scenario_info(10)]
         total_agents = num_opponents + 1
-        obs_size = 10 + total_agents + total_agents + (total_agents * 2) + 10
+        obs_size = (
+            self.num_houses + total_agents + total_agents + (total_agents * 2) + 10
+        )
         self.single_observation_space = gym_spaces.Box(
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
 
         # Action: [house_index, mode, signal] (issue #235) where
-        # house_index in [0,9], mode in {0=REST, 1=WORK}, signal in
-        # {0=REST, 1=WORK}. The signal is broadcast independently of the
+        # house_index in [0, num_houses-1], mode in {0=REST, 1=WORK}, signal
+        # in {0=REST, 1=WORK}. The signal is broadcast independently of the
         # mode; honest agents emit ``signal == mode``.
-        self.single_action_space = gym_spaces.MultiDiscrete([10, 2, 2])
+        # Issue #254: house dim scales with the scenario.
+        self.single_action_space = gym_spaces.MultiDiscrete([self.num_houses, 2, 2])
 
         # Initialize PufferEnv (sets up buffers and joint spaces)
         # PufferLib's __init__ will call set_buffers() which assigns directly to attributes
@@ -246,14 +253,22 @@ class PufferBucketBrigadeVectorized(PufferBucketBrigade):
         super().__init__(**kwargs)
         self.num_envs = num_envs
 
-        # Vectorized observation space
-        obs_size = 10 + self.num_agents + self.num_agents + (self.num_agents * 2) + 10
+        # Vectorized observation space (issue #254: houses channel scales
+        # with num_houses).
+        obs_size = (
+            self.num_houses
+            + self.num_agents
+            + self.num_agents
+            + (self.num_agents * 2)
+            + 10
+        )
         self.observation_space = gym_spaces.Box(
             low=-np.inf, high=np.inf, shape=(num_envs, obs_size), dtype=np.float32
         )
 
         # Issue #235: 3-element [house, mode, signal] action.
-        self.action_space = gym_spaces.MultiDiscrete([num_envs, 10, 2, 2])
+        # Issue #254: house dim scales with num_houses.
+        self.action_space = gym_spaces.MultiDiscrete([num_envs, self.num_houses, 2, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None

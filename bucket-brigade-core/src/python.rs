@@ -36,7 +36,11 @@ impl PyBucketBrigade {
             .map(|a| match a.len() {
                 2 => [a[0], a[1], a[1]],
                 3 => [a[0], a[1], a[2]],
-                _ => [a[0], a.get(1).copied().unwrap_or(0), a.get(2).copied().unwrap_or(0)],
+                _ => [
+                    a[0],
+                    a.get(1).copied().unwrap_or(0),
+                    a.get(2).copied().unwrap_or(0),
+                ],
             })
             .collect();
 
@@ -148,6 +152,12 @@ impl PyScenario {
             agent_home_positions: Vec::new(),
             distance_cost_alpha: 0.0,
             distance_metric: "ring_arc".to_string(),
+            // Issue #254: PyScenario constructor defaults to the 10-house
+            // ring (every pre-#254 scenario). Non-10-house scenarios like
+            // `v2_minimal` are accessed by name through
+            // ``bucket_brigade_core.SCENARIOS["v2_minimal"]`` which routes
+            // through the JSON path that preserves all fields.
+            num_houses: 10,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -231,6 +241,16 @@ impl PyScenario {
     #[getter]
     fn distance_metric(&self) -> String {
         self.inner.distance_metric.clone()
+    }
+
+    /// Issue #254: number of houses on the ring. Defaults to 10 for every
+    /// pre-#254 scenario. New scenarios like ``v2_minimal`` use a smaller
+    /// ring. Python env wrappers read this via ``scenario.num_houses`` to
+    /// size their action spaces (``MultiDiscrete([num_houses, 2, 2])``)
+    /// and observation tensors.
+    #[getter]
+    fn num_houses(&self) -> u8 {
+        self.inner.num_houses
     }
 }
 
@@ -453,7 +473,11 @@ impl PyVectorEnv {
                 ));
             }
 
-            let signal = if action.len() == 3 { action[2] } else { action[1] };
+            let signal = if action.len() == 3 {
+                action[2]
+            } else {
+                action[1]
+            };
             let rust_action = [action[0], action[1], signal];
             let result = env.step(&[rust_action]);
 

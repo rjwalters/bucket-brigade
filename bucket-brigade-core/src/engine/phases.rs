@@ -3,7 +3,8 @@ use crate::Action;
 
 impl BucketBrigade {
     pub(super) fn extinguish_fires(&mut self, actions: &[Action]) {
-        for house_idx in 0..10 {
+        let num_houses = self.scenario.num_houses as usize;
+        for house_idx in 0..num_houses {
             if self.houses[house_idx] != 1 {
                 continue;
             }
@@ -25,17 +26,25 @@ impl BucketBrigade {
     }
 
     pub(super) fn spread_fires(&mut self) {
+        // Issue #254: ring length is now `scenario.num_houses` rather than a
+        // hardcoded 10. The neighbor wraparound modulo also tracks the
+        // scenario value so 2-house and other small-ring topologies wrap
+        // correctly. Note that on a 2-house ring the (i-1) and (i+1)
+        // neighbors are the same house, so spread is single-step but the
+        // probability roll still happens twice — matching the way the
+        // 10-ring case handled it for the trivial wrap edge.
+        let num_houses = self.scenario.num_houses as usize;
         let mut new_houses = self.houses.clone();
 
-        for house_idx in 0..10 {
+        for house_idx in 0..num_houses {
             if self.houses[house_idx] != 1 {
                 continue;
             }
 
-            // Check neighbors
+            // Check neighbors (wrap modulo num_houses).
             let neighbors = [
-                (house_idx + 9) % 10, // (i-1) mod 10
-                (house_idx + 1) % 10, // (i+1) mod 10
+                (house_idx + num_houses - 1) % num_houses,
+                (house_idx + 1) % num_houses,
             ];
 
             for &neighbor in &neighbors {
@@ -59,7 +68,8 @@ impl BucketBrigade {
     }
 
     pub(super) fn spontaneous_ignition(&mut self) {
-        for house_idx in 0..10 {
+        let num_houses = self.scenario.num_houses as usize;
+        for house_idx in 0..num_houses {
             if self.houses[house_idx] == 0
                 && self.rng.random() < self.scenario.prob_house_catches_fire
             {

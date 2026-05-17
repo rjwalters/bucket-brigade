@@ -29,13 +29,20 @@ def _heuristic_action(
     is the opponent-agent fast-path and defaults to honest signaling
     (``signal == mode``); the full Python ``HeuristicAgent.act`` is what
     drives the Liar archetype's deceptive behavior.
+
+    Issue #254: ring size is inferred from ``len(obs_dict['houses'])``
+    rather than hardcoding 10. With v2_minimal (2 houses) the owned-house
+    derivation wraps modulo the ring size, matching the engine's
+    round-robin ``house_owners`` assignment.
     """
     work_tendency = theta[1]
     own_house_priority = theta[3]
     rest_reward_bias = theta[8]
 
+    num_houses = len(obs_dict["houses"])
+
     if rng.random() < work_tendency * (1 - rest_reward_bias):
-        owned_house = agent_id % 10
+        owned_house = agent_id % num_houses
         if obs_dict["houses"][owned_house] == 1 and rng.random() < own_house_priority:
             house = owned_house
         else:
@@ -46,7 +53,7 @@ def _heuristic_action(
                 house = owned_house
         mode = 1  # WORK
     else:
-        house = agent_id % 10
+        house = agent_id % num_houses
         mode = 0  # REST
 
     # Honest signal: broadcast matches actual mode.
@@ -98,6 +105,12 @@ class RustPufferBucketBrigade(gym.Env):
         self.rust_scenario = core.SCENARIOS[scenario_name]
         self.scenario_name = scenario_name
 
+        # Issue #254: derive ring size from the scenario rather than
+        # hardcoding 10. Pre-#254 scenarios keep num_houses=10 (Rust
+        # default), so action/observation shapes are bit-exact for them.
+        # New scenarios like v2_minimal use a smaller ring (2 houses).
+        self.num_houses: int = int(getattr(self.rust_scenario, "num_houses", 10))
+
         # Initialize Rust environment
         self.env: Optional[core.BucketBrigade] = None  # Will be created in reset()
 
@@ -116,8 +129,11 @@ class RustPufferBucketBrigade(gym.Env):
         # are distinct. This wrapper only exposes the trained agent's view
         # (always ``agent_id=0``), but the dim must include the identity
         # tail so downstream policy networks size their input layer correctly.
+        # Issue #254: `houses` and scenario_info dimensions now scale with
+        # num_houses for the houses channel (scenario_info stays at 10
+        # elements — it's a fixed feature vector, not a per-house tensor).
         obs_size = (
-            10
+            self.num_houses
             + self.num_agents
             + self.num_agents
             + (self.num_agents * 2)
@@ -129,10 +145,11 @@ class RustPufferBucketBrigade(gym.Env):
         )
 
         # Action: [house_index, mode, signal] (issue #235) where
-        # house_index in [0,9], mode in {0=REST, 1=WORK}, signal in
-        # {0=REST, 1=WORK}. The signal is broadcast independently of the
+        # house_index in [0, num_houses-1], mode in {0=REST, 1=WORK}, signal
+        # in {0=REST, 1=WORK}. The signal is broadcast independently of the
         # mode; honest agents emit ``signal == mode``, liars don't.
-        self.action_space = spaces.MultiDiscrete([10, 2, 2])
+        # Issue #254: house_index range now scales with the scenario.
+        self.action_space = spaces.MultiDiscrete([self.num_houses, 2, 2])
 
         # Track episode statistics
         self.episode_rewards: List[float] = []
@@ -323,8 +340,9 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
         self.num_envs = num_envs
 
         # Vectorized observation space (issue #204 — include identity one-hot tail).
+        # Issue #254: houses channel scales with num_houses; rest unchanged.
         obs_size = (
-            10
+            self.num_houses
             + self.num_agents
             + self.num_agents
             + (self.num_agents * 2)
@@ -336,7 +354,8 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
         )
 
         # Issue #235: 3-element action [house, mode, signal] per env.
-        self.action_space = spaces.MultiDiscrete([num_envs, 10, 2, 2])
+        # Issue #254: house dim scales with num_houses.
+        self.action_space = spaces.MultiDiscrete([num_envs, self.num_houses, 2, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None

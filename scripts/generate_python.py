@@ -37,9 +37,7 @@ def _format_with_ruff(path: Path) -> None:
         except FileNotFoundError:
             continue
         except subprocess.CalledProcessError as exc:
-            print(
-                f"⚠ ruff format failed on {path}: {exc}", file=sys.stderr
-            )
+            print(f"⚠ ruff format failed on {path}: {exc}", file=sys.stderr)
             return
     print(
         f"⚠ ruff not found; skipping format of {path}. "
@@ -53,7 +51,7 @@ def generate_archetypes(json_path: Path, output_path: Path):
     with open(json_path) as f:
         data = json.load(f)
 
-    archetypes = data['archetypes']
+    archetypes = data["archetypes"]
 
     # Generate Python code
     code = dedent('''\
@@ -76,7 +74,7 @@ def generate_archetypes(json_path: Path, output_path: Path):
         constant_name = f"{name.upper()}_PARAMS"
         code += f"# {spec['description']}\n"
         code += f"{constant_name} = np.array([\n"
-        for param in spec['params']:
+        for param in spec["params"]:
             code += f"    {param},\n"
         code += "], dtype=np.float32)\n\n"
 
@@ -90,7 +88,7 @@ def generate_archetypes(json_path: Path, output_path: Path):
 
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         f.write(code)
 
     # Re-format with ruff so the next CI run stays green (issue #188).
@@ -104,7 +102,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
     with open(json_path) as f:
         data = json.load(f)
 
-    scenarios = data['scenarios']
+    scenarios = data["scenarios"]
 
     # Generate Python code
     code = dedent('''\
@@ -179,6 +177,14 @@ def generate_scenarios(json_path: Path, output_path: Path):
         distance_cost_alpha: float = 0.0
         distance_metric: str = "ring_arc"
 
+        # Topology (issue #254). Number of houses on the ring. Defaults to
+        # 10 so all 14 pre-#254 scenarios (and any external JSON without the
+        # field) remain bit-exact. New scenarios like ``v2_minimal`` set
+        # this to a smaller value (2 in the v2 case). The Python env
+        # wrappers read ``scenario.num_houses`` to size their action space
+        # (``MultiDiscrete([num_houses, 2, 2])``) and observation arrays.
+        num_houses: int = 10
+
         def __post_init__(self) -> None:
             """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -209,6 +215,16 @@ def generate_scenarios(json_path: Path, output_path: Path):
                         )
                     setattr(self, fname, promoted)
 
+            # Issue #254 num_houses validation. Must be at least 2 for the
+            # spread phase ring math to have distinct neighbors. Kept tight
+            # to surface configuration mistakes early rather than blowing
+            # up deep in a rollout.
+            if self.num_houses < 2:
+                raise ValueError(
+                    f"Scenario.num_houses={self.num_houses} is too small; "
+                    "must be at least 2."
+                )
+
             # Issue #203 spatial-field validation.
             if self.agent_home_positions:
                 positions = [int(p) for p in self.agent_home_positions]
@@ -219,10 +235,13 @@ def generate_scenarios(json_path: Path, output_path: Path):
                         "Per-agent home position vectors must match num_agents."
                     )
                 for i, p in enumerate(positions):
-                    if not (0 <= p < 10):
+                    # Issue #254: range bound is now `num_houses`, not the
+                    # hardcoded 10. Pre-#254 scenarios are unchanged because
+                    # `num_houses` defaults to 10.
+                    if not (0 <= p < self.num_houses):
                         raise ValueError(
                             f"Scenario.agent_home_positions[{i}]={p} "
-                            "is out of range [0, 10)."
+                            f"is out of range [0, {self.num_houses})."
                         )
                 self.agent_home_positions = positions
             # Keep in sync with the Rust allowlist in
@@ -281,32 +300,40 @@ def generate_scenarios(json_path: Path, output_path: Path):
 
     for name, spec in scenarios.items():
         function_name = f"{name}_scenario"
-        code += f'def {function_name}(num_agents: int) -> Scenario:\n'
+        code += f"def {function_name}(num_agents: int) -> Scenario:\n"
         code += f'    """{spec["description"]}"""\n'
-        code += f'    return Scenario(\n'
-        code += f'        prob_fire_spreads_to_neighbor={spec["prob_fire_spreads_to_neighbor"]},\n'
-        code += f'        prob_solo_agent_extinguishes_fire={spec["prob_solo_agent_extinguishes_fire"]},\n'
-        code += f'        prob_house_catches_fire={spec["prob_house_catches_fire"]},\n'
-        code += f'        team_reward_house_survives={spec["team_reward_house_survives"]},\n'
-        code += f'        team_penalty_house_burns={spec["team_penalty_house_burns"]},\n'
-        code += f'        reward_own_house_survives={_emit_value(spec["reward_own_house_survives"])},\n'
-        code += f'        reward_other_house_survives={_emit_value(spec["reward_other_house_survives"])},\n'
-        code += f'        penalty_own_house_burns={_emit_value(spec["penalty_own_house_burns"])},\n'
-        code += f'        penalty_other_house_burns={_emit_value(spec["penalty_other_house_burns"])},\n'
-        code += f'        cost_to_work_one_night={spec["cost_to_work_one_night"]},\n'
-        code += f'        min_nights={spec["min_nights"]},\n'
-        code += f'        num_agents=num_agents,\n'
+        code += f"    return Scenario(\n"
+        code += f"        prob_fire_spreads_to_neighbor={spec['prob_fire_spreads_to_neighbor']},\n"
+        code += f"        prob_solo_agent_extinguishes_fire={spec['prob_solo_agent_extinguishes_fire']},\n"
+        code += f"        prob_house_catches_fire={spec['prob_house_catches_fire']},\n"
+        code += f"        team_reward_house_survives={spec['team_reward_house_survives']},\n"
+        code += (
+            f"        team_penalty_house_burns={spec['team_penalty_house_burns']},\n"
+        )
+        code += f"        reward_own_house_survives={_emit_value(spec['reward_own_house_survives'])},\n"
+        code += f"        reward_other_house_survives={_emit_value(spec['reward_other_house_survives'])},\n"
+        code += f"        penalty_own_house_burns={_emit_value(spec['penalty_own_house_burns'])},\n"
+        code += f"        penalty_other_house_burns={_emit_value(spec['penalty_other_house_burns'])},\n"
+        code += f"        cost_to_work_one_night={spec['cost_to_work_one_night']},\n"
+        code += f"        min_nights={spec['min_nights']},\n"
+        code += f"        num_agents=num_agents,\n"
         # Issue #203 optional spatial-cost fields. Emit only when set in JSON
         # (every other scenario keeps the dataclass defaults: empty list,
         # alpha=0.0, metric="ring_arc") so behavior is byte-identical to
         # pre-#203 codegen output for those scenarios.
         if "agent_home_positions" in spec:
-            code += f'        agent_home_positions={list(spec["agent_home_positions"])!r},\n'
+            code += f"        agent_home_positions={list(spec['agent_home_positions'])!r},\n"
         if "distance_cost_alpha" in spec:
-            code += f'        distance_cost_alpha={spec["distance_cost_alpha"]},\n'
+            code += f"        distance_cost_alpha={spec['distance_cost_alpha']},\n"
         if "distance_metric" in spec:
-            code += f'        distance_metric={spec["distance_metric"]!r},\n'
-        code += f'    )\n\n\n'
+            code += f"        distance_metric={spec['distance_metric']!r},\n"
+        # Issue #254 optional num_houses field. Emit only when explicitly
+        # set in JSON so every pre-#254 scenario factory is byte-identical
+        # to pre-#254 codegen output (they all keep the dataclass default
+        # of 10).
+        if "num_houses" in spec:
+            code += f"        num_houses={spec['num_houses']},\n"
+        code += f"    )\n\n\n"
 
     # Generate SCENARIO_REGISTRY
     code += "\n# Registry of all scenarios\n"
@@ -359,7 +386,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
 
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         f.write(code)
 
     # Re-format with ruff so the next CI run stays green (issue #188).
@@ -375,12 +402,12 @@ def main():
 
     generate_archetypes(
         definitions_dir / "archetypes.json",
-        root / "bucket_brigade" / "agents" / "archetypes_generated.py"
+        root / "bucket_brigade" / "agents" / "archetypes_generated.py",
     )
 
     generate_scenarios(
         definitions_dir / "scenarios.json",
-        root / "bucket_brigade" / "envs" / "scenarios_generated.py"
+        root / "bucket_brigade" / "envs" / "scenarios_generated.py",
     )
 
     print("\n✓ Python code generation complete!")
