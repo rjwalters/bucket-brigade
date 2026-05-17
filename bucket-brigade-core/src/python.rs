@@ -158,6 +158,11 @@ impl PyScenario {
             // ``bucket_brigade_core.SCENARIOS["v2_minimal"]`` which routes
             // through the JSON path that preserves all fields.
             num_houses: 10,
+            // Issue #259: action-conditioned shaping defaults to off
+            // (both knobs zero -> engine takes the fast-path skip and
+            // existing PyScenario callers see byte-identical rewards).
+            action_shaping_alpha: 0.0,
+            action_shaping_beta: 0.0,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -251,6 +256,24 @@ impl PyScenario {
     #[getter]
     fn num_houses(&self) -> u8 {
         self.inner.num_houses
+    }
+
+    /// Issue #259: action-conditioned reward shaping knobs. Both default
+    /// to ``0.0`` so existing scenarios behave bit-exactly. When non-zero
+    /// they enable per-step per-agent bonuses tied to extinguish events
+    /// (alpha) and preventive presence (beta) — see
+    /// ``bucket-brigade-core/src/engine/rewards.rs`` for the semantics.
+    /// To use these knobs from Python, prefer pulling the scenario out of
+    /// ``bucket_brigade_core.SCENARIOS[...]`` (the JSON path preserves all
+    /// fields) or construct via the Python ``Scenario`` dataclass.
+    #[getter]
+    fn action_shaping_alpha(&self) -> f32 {
+        self.inner.action_shaping_alpha
+    }
+
+    #[getter]
+    fn action_shaping_beta(&self) -> f32 {
+        self.inner.action_shaping_beta
     }
 }
 

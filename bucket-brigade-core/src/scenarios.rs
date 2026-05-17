@@ -63,6 +63,24 @@ fn default_distance_cost_alpha() -> f32 {
     0.0
 }
 
+/// Default for `Scenario::action_shaping_alpha`. Zero preserves bit-exact
+/// backward compatibility with pre-#259 behavior (no action-conditioned
+/// reward shaping). When non-zero, each worker that participates in
+/// extinguishing a fire receives a credit-shared bonus of
+/// `alpha * (1 / workers_at_house_this_step)` (issue #259).
+fn default_action_shaping_alpha() -> f32 {
+    0.0
+}
+
+/// Default for `Scenario::action_shaping_beta`. Zero preserves bit-exact
+/// backward compatibility with pre-#259 behavior. When non-zero, each
+/// agent working at a house that started the step SAFE and is still SAFE
+/// at end-of-step receives a flat `beta` bonus for preventive presence
+/// (issue #259).
+fn default_action_shaping_beta() -> f32 {
+    0.0
+}
+
 /// Allowed values for `Scenario::distance_metric`.
 ///
 /// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
@@ -167,6 +185,31 @@ pub struct Scenario {
         deserialize_with = "deserialize_distance_metric"
     )]
     pub distance_metric: String,
+
+    // Action-conditioned reward shaping (issue #259, optional, additive).
+    //
+    // Both default to `0.0` so every pre-#259 scenario is bit-exactly
+    // preserved (the engine takes a fast-path skip when both are zero;
+    // see `engine/rewards.rs`).
+    //
+    // `action_shaping_alpha` rewards workers who participated in
+    // extinguishing a fire this step. Credit is split among co-extinguishers:
+    // each worker at house `h` (where `h` transitioned BURNING -> SAFE this
+    // step) receives `alpha * (1 / workers_at_h)`. Strict BURNING(1) -> SAFE(0)
+    // transition only — stricter than the save-event check in the existing
+    // per-house ownership loop, which fires on any non-SAFE -> SAFE
+    // transition (RUINED -> SAFE is impossible in current dynamics but
+    // type-wise covered).
+    //
+    // `action_shaping_beta` rewards agents working at houses that were
+    // SAFE at start-of-step and are still SAFE at end-of-step — preventive
+    // presence. Flat per-agent bonus; not credit-shared.
+    //
+    // REST actions (`action[1] == 0`) never receive either bonus.
+    #[serde(default = "default_action_shaping_alpha")]
+    pub action_shaping_alpha: f32,
+    #[serde(default = "default_action_shaping_beta")]
+    pub action_shaping_beta: f32,
 }
 
 impl Scenario {
@@ -237,6 +280,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -258,6 +303,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -279,6 +326,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -301,6 +350,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -322,6 +373,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -343,6 +396,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -364,6 +419,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -385,6 +442,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -406,6 +465,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -427,6 +488,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -448,6 +511,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -469,6 +534,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -497,6 +564,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -524,6 +593,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: 0.1,
             distance_metric: "ring_arc".to_string(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -554,6 +625,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: default_distance_metric(),
             num_houses: 2,
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         },
     );
 
@@ -1124,6 +1197,8 @@ mod tests {
             distance_cost_alpha: default_distance_cost_alpha(),
             distance_metric: "bogus".to_string(),
             num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
         };
         let err = scenario
             .validate()

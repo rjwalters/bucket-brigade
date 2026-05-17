@@ -85,6 +85,20 @@ class Scenario:
     # (``MultiDiscrete([num_houses, 2, 2])``) and observation arrays.
     num_houses: int = 10
 
+    # Action-conditioned reward shaping (issue #259, optional, additive).
+    # Both default to ``0.0`` so every pre-#259 scenario is bit-exactly
+    # preserved (the env takes a fast-path skip when both knobs are zero).
+    # ``action_shaping_alpha`` rewards workers who participated in
+    # extinguishing a fire (BURNING -> SAFE this step), credit-shared
+    # as ``alpha / workers_at_house``. ``action_shaping_beta`` is a flat
+    # per-agent bonus for working at a SAFE house that stays SAFE
+    # (preventive presence). REST actions never receive either bonus.
+    # See ``bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards``
+    # and ``bucket-brigade-core/src/engine/rewards.rs`` for the canonical
+    # implementation.
+    action_shaping_alpha: float = 0.0
+    action_shaping_beta: float = 0.0
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
