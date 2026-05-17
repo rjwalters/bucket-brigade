@@ -386,6 +386,63 @@ class BucketBrigadeEnv:
             # Team reward component (full public goods incentive)
             individual_rewards[agent_idx] += team_reward
 
+        # Action-conditioned reward shaping (issue #259).
+        #
+        # When both alpha and beta are zero (the default for every pre-#259
+        # scenario) this loop is skipped entirely so per-step rewards are
+        # byte-identical to pre-#259 behavior. Mirrors the Rust
+        # implementation in ``bucket-brigade-core/src/engine/rewards.rs``.
+        #
+        # alpha: credit-shared bonus for each worker that participated in
+        # extinguishing a fire (BURNING -> SAFE transition this step). Each
+        # worker at house ``h`` receives ``alpha / workers_at_h``. Note
+        # this uses the *strict* BURNING(1) -> SAFE(0) check, which is
+        # stricter than the save-event detection in the per-house ownership
+        # loop above (that loop fires on any non-SAFE -> SAFE).
+        #
+        # beta: flat bonus for each agent working at a house that was SAFE
+        # at start-of-step AND still SAFE at end-of-step (preventive
+        # presence). Not credit-shared.
+        #
+        # REST actions (action[1] == 0) never receive either bonus.
+        action_alpha = float(getattr(self.scenario, "action_shaping_alpha", 0.0))
+        action_beta = float(getattr(self.scenario, "action_shaping_beta", 0.0))
+        if action_alpha != 0.0 or action_beta != 0.0:
+            # Pre-count workers per house (mirrors the vectorized count in
+            # `_extinguish_fires`).
+            workers_per_house = np.zeros(self.num_houses, dtype=np.int32)
+            work_mask = actions[:, 1] == self.WORK
+            for agent_idx in np.nonzero(work_mask)[0]:
+                h = int(actions[agent_idx, 0])
+                if 0 <= h < self.num_houses:
+                    workers_per_house[h] += 1
+
+            for agent_idx in range(self.num_agents):
+                if actions[agent_idx, 1] != self.WORK:
+                    continue  # REST receives no shaping bonus.
+                h = int(actions[agent_idx, 0])
+                if not (0 <= h < self.num_houses):
+                    continue
+                workers_h = int(workers_per_house[h])
+                if workers_h == 0:
+                    continue  # Defensive; should be >= 1 (this agent).
+
+                # alpha: extinguish credit share. Strict BURNING -> SAFE.
+                if (
+                    action_alpha != 0.0
+                    and prev_houses[h] == self.BURNING
+                    and self.houses[h] == self.SAFE
+                ):
+                    individual_rewards[agent_idx] += action_alpha / float(workers_h)
+
+                # beta: preventive presence. SAFE start AND SAFE end.
+                if (
+                    action_beta != 0.0
+                    and prev_houses[h] == self.SAFE
+                    and self.houses[h] == self.SAFE
+                ):
+                    individual_rewards[agent_idx] += action_beta
+
         return individual_rewards
 
     def _check_termination(self) -> bool:

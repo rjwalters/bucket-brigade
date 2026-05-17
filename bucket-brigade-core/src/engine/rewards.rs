@@ -95,6 +95,65 @@ impl BucketBrigade {
             rewards[agent_idx] += team_reward;
         }
 
+        // 5. Action-conditioned reward shaping (issue #259).
+        //
+        // When both alpha and beta are zero (the default for every
+        // pre-#259 scenario) we skip this loop entirely so the per-step
+        // reward stream is byte-identical to pre-#259 behavior.
+        //
+        // alpha: credit-shared bonus for each worker that participates in
+        // extinguishing a fire (BURNING -> SAFE transition). Each worker at
+        // house h receives `alpha * (1 / workers_at_h)`. Note this uses the
+        // *strict* BURNING(1) -> SAFE(0) check, which is a stricter form of
+        // the save-event detection in the per-house ownership loop above
+        // (that loop fires on any non-SAFE -> SAFE, which type-wise includes
+        // the impossible RUINED -> SAFE transition).
+        //
+        // beta: flat bonus for each agent working at a house that was SAFE
+        // at start-of-step AND still SAFE at end-of-step (preventive presence).
+        // Not credit-shared; the prevention is per-agent.
+        //
+        // REST actions (action[1] == 0) never receive either bonus.
+        let alpha = self.scenario.action_shaping_alpha;
+        let beta = self.scenario.action_shaping_beta;
+        if alpha != 0.0 || beta != 0.0 {
+            // Pre-count workers per house in one pass, mirroring the
+            // counting pattern in `engine/phases.rs::extinguish_fires`.
+            let mut workers_per_house: Vec<usize> = vec![0; num_houses];
+            for action in actions.iter() {
+                if action[1] == 1 {
+                    let h = action[0] as usize;
+                    if h < num_houses {
+                        workers_per_house[h] += 1;
+                    }
+                }
+            }
+
+            for agent_idx in 0..self.num_agents {
+                if actions[agent_idx][1] != 1 {
+                    continue; // REST receives no shaping bonus.
+                }
+                let h = actions[agent_idx][0] as usize;
+                if h >= num_houses {
+                    continue;
+                }
+                let workers_h = workers_per_house[h];
+                if workers_h == 0 {
+                    continue; // Defensive; should be at least 1 (this agent).
+                }
+
+                // alpha: extinguish credit share. Strict BURNING(1) -> SAFE(0).
+                if alpha != 0.0 && prev_houses[h] == 1 && self.houses[h] == 0 {
+                    rewards[agent_idx] += alpha / (workers_h as f32);
+                }
+
+                // beta: preventive presence. SAFE(0) start AND SAFE(0) end.
+                if beta != 0.0 && prev_houses[h] == 0 && self.houses[h] == 0 {
+                    rewards[agent_idx] += beta;
+                }
+            }
+        }
+
         rewards
     }
 }

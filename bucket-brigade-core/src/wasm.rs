@@ -164,6 +164,14 @@ impl WasmScenario {
             // here so the rest of the constructor path can't accidentally
             // produce a non-10 scenario via the WASM surface.
             num_houses: 10,
+            // Issue #259: action-conditioned shaping defaults to off so
+            // existing JS/TS callers see byte-identical rewards. The
+            // browser UI doesn't expose these knobs yet; to consume a
+            // scenario with shaping enabled, route through the JSON path
+            // (``Scenario::to_json`` / ``from_json``) which preserves all
+            // fields.
+            action_shaping_alpha: 0.0,
+            action_shaping_beta: 0.0,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent

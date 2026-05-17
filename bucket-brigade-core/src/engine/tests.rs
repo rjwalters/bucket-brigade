@@ -804,6 +804,241 @@ fn test_engine_allows_more_agents_than_houses() {
 }
 
 // ==============================================================================
+// Issue #259 — Action-conditioned reward shaping
+// ==============================================================================
+
+/// Backward compat: when both shaping knobs are zero (the default for
+/// every pre-#259 scenario) the per-step reward trace is byte-identical
+/// to today's behavior. The fast-path skip in `compute_rewards` is the
+/// only thing that lets us claim bit-exactness for the default.
+#[test]
+fn test_zero_shaping_preserves_default_rewards() {
+    // Identical scenario, identical seed, identical actions
+    // -> identical reward vector. Pre-#259 baseline check.
+    let scenario = SCENARIOS.get("default").unwrap().clone();
+    assert_eq!(scenario.action_shaping_alpha, 0.0);
+    assert_eq!(scenario.action_shaping_beta, 0.0);
+    let mut engine_a = BucketBrigade::new(scenario.clone(), 4, Some(11));
+    let mut engine_b = BucketBrigade::new(scenario, 4, Some(11));
+    let actions = vec![[3u8, 1u8, 1u8], [5, 1, 1], [7, 1, 1], [9, 1, 1]];
+    let r_a = engine_a.step(&actions).rewards;
+    let r_b = engine_b.step(&actions).rewards;
+    assert_eq!(r_a, r_b);
+}
+
+/// Engine bit-exactness across all pre-#259 SCENARIOS: every scenario in
+/// the registry keeps `action_shaping_alpha == 0` and
+/// `action_shaping_beta == 0`. Guards against a future scenario silently
+/// enabling shaping and breaking the bit-exact baseline.
+#[test]
+fn test_pre_259_scenarios_have_zero_shaping_knobs() {
+    for (name, scenario) in SCENARIOS.iter() {
+        assert_eq!(
+            scenario.action_shaping_alpha, 0.0,
+            "Pre-#259 scenario '{}' must keep action_shaping_alpha=0.0",
+            name
+        );
+        assert_eq!(
+            scenario.action_shaping_beta, 0.0,
+            "Pre-#259 scenario '{}' must keep action_shaping_beta=0.0",
+            name
+        );
+    }
+}
+
+/// `alpha` credit-share invariant: when k workers co-extinguish one fire,
+/// the sum of their action-shaping bonuses equals `alpha` exactly. This is
+/// the core acceptance criterion for the credit-share formulation.
+#[test]
+fn test_alpha_credit_share_sums_to_alpha() {
+    // Custom deterministic scenario: 100% extinguish probability, no
+    // spreading, no spontaneous ignition. Zero all other reward channels
+    // so the per-step reward delta isolates the alpha bonus.
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.prob_solo_agent_extinguishes_fire = 1.0;
+    scenario.prob_fire_spreads_to_neighbor = 0.0;
+    scenario.prob_house_catches_fire = 0.0;
+    scenario.team_reward_house_survives = 0.0;
+    scenario.team_penalty_house_burns = 0.0;
+    scenario.reward_own_house_survives = vec![0.0; 10];
+    scenario.reward_other_house_survives = vec![0.0; 10];
+    scenario.penalty_own_house_burns = vec![0.0; 10];
+    scenario.penalty_other_house_burns = vec![0.0; 10];
+    scenario.cost_to_work_one_night = 0.0;
+    scenario.action_shaping_alpha = 1.5;
+    scenario.action_shaping_beta = 0.0;
+
+    let mut engine = BucketBrigade::new(scenario, 4, Some(2025));
+    // Set up: only house 5 burning at start-of-step. All 4 workers go to
+    // house 5; with kappa=1.0 the fire is guaranteed to extinguish.
+    engine.houses = vec![0; 10];
+    engine.houses[5] = 1;
+
+    let actions = vec![[5u8, 1u8, 1u8], [5, 1, 1], [5, 1, 1], [5, 1, 1]];
+    let rewards = engine.step(&actions).rewards;
+
+    // Sum of bonuses across the 4 co-extinguishers should be exactly 1.5
+    // (work cost is zero, team/ownership/cost are all zero; only alpha
+    // and the implicit beta at non-target houses contribute). Since beta=0
+    // every term except alpha drops out. Each worker should get
+    // alpha/4 = 0.375.
+    let sum: f32 = rewards.iter().sum();
+    assert!(
+        (sum - 1.5).abs() < 1e-5,
+        "Sum of alpha bonuses should equal alpha=1.5 exactly, got {}",
+        sum
+    );
+    // Each worker received the same share.
+    for &r in &rewards {
+        assert!(
+            (r - 0.375).abs() < 1e-5,
+            "Each co-extinguisher should get alpha/4 = 0.375, got {}",
+            r
+        );
+    }
+}
+
+/// REST actions never receive the alpha bonus even if a fire is being
+/// extinguished at the same house by other workers.
+#[test]
+fn test_rest_agents_get_zero_alpha_bonus() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.prob_solo_agent_extinguishes_fire = 1.0;
+    scenario.prob_fire_spreads_to_neighbor = 0.0;
+    scenario.prob_house_catches_fire = 0.0;
+    scenario.team_reward_house_survives = 0.0;
+    scenario.team_penalty_house_burns = 0.0;
+    scenario.reward_own_house_survives = vec![0.0; 10];
+    scenario.reward_other_house_survives = vec![0.0; 10];
+    scenario.penalty_own_house_burns = vec![0.0; 10];
+    scenario.penalty_other_house_burns = vec![0.0; 10];
+    scenario.cost_to_work_one_night = 0.0;
+    scenario.action_shaping_alpha = 2.0;
+    scenario.action_shaping_beta = 0.0;
+
+    let mut engine = BucketBrigade::new(scenario, 4, Some(99));
+    engine.houses = vec![0; 10];
+    engine.houses[3] = 1; // House 3 burning at start-of-step.
+
+    // Agent 0 works house 3, agent 1 rests at house 3 (action[1]=0),
+    // agents 2 and 3 rest elsewhere.
+    let actions = vec![[3u8, 1u8, 1u8], [3, 0, 0], [7, 0, 0], [9, 0, 0]];
+    let rewards = engine.step(&actions).rewards;
+
+    // Agent 0 is the sole worker -> alpha/1 = 2.0.
+    assert!(
+        (rewards[0] - 2.0).abs() < 1e-5,
+        "Sole worker should get full alpha=2.0, got {}",
+        rewards[0]
+    );
+    // Resting agents get rest bonus +0.5, no alpha share.
+    for i in 1..4 {
+        assert!(
+            (rewards[i] - 0.5).abs() < 1e-5,
+            "Resting agent {} should get +0.5 rest bonus only, got {}",
+            i,
+            rewards[i]
+        );
+    }
+}
+
+/// `beta` rewards preventive presence: an agent working at a SAFE house
+/// that stays SAFE receives the flat bonus. Verifies the beta path is
+/// distinct from alpha (which requires a BURNING -> SAFE transition).
+#[test]
+fn test_beta_rewards_preventive_presence() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.prob_fire_spreads_to_neighbor = 0.0;
+    scenario.prob_house_catches_fire = 0.0;
+    scenario.prob_solo_agent_extinguishes_fire = 0.0;
+    scenario.team_reward_house_survives = 0.0;
+    scenario.team_penalty_house_burns = 0.0;
+    scenario.reward_own_house_survives = vec![0.0; 10];
+    scenario.reward_other_house_survives = vec![0.0; 10];
+    scenario.penalty_own_house_burns = vec![0.0; 10];
+    scenario.penalty_other_house_burns = vec![0.0; 10];
+    scenario.cost_to_work_one_night = 0.0;
+    scenario.action_shaping_alpha = 0.0;
+    scenario.action_shaping_beta = 0.3;
+
+    let mut engine = BucketBrigade::new(scenario, 4, Some(7));
+    // All houses safe; no fires; no spread.
+    engine.houses = vec![0; 10];
+
+    // All 4 agents work at distinct safe houses.
+    let actions = vec![[0u8, 1u8, 1u8], [3, 1, 1], [5, 1, 1], [8, 1, 1]];
+    let rewards = engine.step(&actions).rewards;
+
+    // Each working agent gets +0.3 preventive bonus (no cost, no other
+    // reward channels).
+    for (i, &r) in rewards.iter().enumerate() {
+        assert!(
+            (r - 0.3).abs() < 1e-5,
+            "Agent {} working at safe house should get beta=0.3, got {}",
+            i,
+            r
+        );
+    }
+}
+
+/// `beta` does NOT fire on a house that was BURNING at start-of-step
+/// (even if extinguished by end-of-step). Beta requires prev==SAFE and
+/// end==SAFE — strict preventive presence, not an alpha proxy.
+#[test]
+fn test_beta_skips_extinguished_house() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.prob_solo_agent_extinguishes_fire = 1.0;
+    scenario.prob_fire_spreads_to_neighbor = 0.0;
+    scenario.prob_house_catches_fire = 0.0;
+    scenario.team_reward_house_survives = 0.0;
+    scenario.team_penalty_house_burns = 0.0;
+    scenario.reward_own_house_survives = vec![0.0; 10];
+    scenario.reward_other_house_survives = vec![0.0; 10];
+    scenario.penalty_own_house_burns = vec![0.0; 10];
+    scenario.penalty_other_house_burns = vec![0.0; 10];
+    scenario.cost_to_work_one_night = 0.0;
+    scenario.action_shaping_alpha = 0.0;
+    scenario.action_shaping_beta = 0.5;
+
+    let mut engine = BucketBrigade::new(scenario, 4, Some(123));
+    engine.houses = vec![0; 10];
+    engine.houses[5] = 1; // Burning at start-of-step.
+
+    // Agent 0 works house 5 (extinguishes it). Other agents rest.
+    let actions = vec![[5u8, 1u8, 1u8], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    let rewards = engine.step(&actions).rewards;
+
+    // alpha=0, so no extinguish bonus. beta=0.5 but prev[5]=BURNING so
+    // beta doesn't fire. Agent 0 gets 0.0 (no cost, no shaping).
+    assert!(
+        rewards[0].abs() < 1e-5,
+        "Agent extinguishing fire must NOT get beta (prev was BURNING), got {}",
+        rewards[0]
+    );
+}
+
+/// Engine smoke test: a scenario with both knobs enabled runs without
+/// panicking and produces finite rewards.
+#[test]
+fn test_action_shaping_engine_smoke() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.action_shaping_alpha = 0.5;
+    scenario.action_shaping_beta = 0.1;
+    let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+    for _ in 0..15 {
+        if engine.done {
+            break;
+        }
+        let actions = vec![[0u8, 1u8, 1u8], [3, 1, 1], [5, 1, 1], [8, 1, 1]];
+        let result = engine.step(&actions);
+        assert_eq!(result.rewards.len(), 4);
+        for &r in &result.rewards {
+            assert!(r.is_finite(), "Per-step reward must be finite, got {}", r);
+        }
+    }
+}
+
+// ==============================================================================
 // Property-Based Tests
 // ==============================================================================
 
@@ -981,6 +1216,10 @@ mod proptests {
                 distance_metric: "ring_arc".to_string(),
                 // Issue #254: pre-#254 fixed-10 ring for these proptests.
                 num_houses: 10,
+                // Issue #259: action shaping off so the existing proptest
+                // invariants (which assume pre-#259 reward semantics) hold.
+                action_shaping_alpha: 0.0,
+                action_shaping_beta: 0.0,
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));

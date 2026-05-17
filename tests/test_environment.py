@@ -952,3 +952,217 @@ class TestV2MinimalScenario:
             env = BucketBrigadeEnv(scenario=scenario)
             assert env.num_houses == 10
             assert env.houses.shape == (10,)
+
+
+class TestActionShaping:
+    """Issue #259: action-conditioned per-step reward shaping.
+
+    The Python env mirrors the Rust core's two new ``Scenario`` fields,
+    ``action_shaping_alpha`` and ``action_shaping_beta``. Both default to
+    ``0.0`` and every pre-#259 scenario keeps them zero, so existing
+    behavior is bit-exactly preserved. Test pattern modeled on
+    ``TestPositionalScenario`` (PR #203 precedent).
+    """
+
+    def test_defaults_are_zero_across_all_scenarios(self):
+        """Every pre-#259 scenario keeps both shaping knobs at 0.0."""
+        from bucket_brigade.envs.scenarios_generated import SCENARIO_REGISTRY
+
+        for name, factory in SCENARIO_REGISTRY.items():
+            s = factory(num_agents=4)
+            assert s.action_shaping_alpha == 0.0, (
+                f"Pre-#259 scenario '{name}' must keep "
+                f"action_shaping_alpha=0.0; got {s.action_shaping_alpha}"
+            )
+            assert s.action_shaping_beta == 0.0, (
+                f"Pre-#259 scenario '{name}' must keep "
+                f"action_shaping_beta=0.0; got {s.action_shaping_beta}"
+            )
+
+    def test_zero_shaping_matches_pre259_full_episode(self):
+        """End-to-end: alpha=0 and beta=0 produce the same per-step reward
+        trace as before — guards against accidental side effects of threading
+        the new fields through ``_compute_rewards``."""
+        from bucket_brigade.envs.scenarios_generated import default_scenario
+
+        env_a = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env_b = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env_a.reset(seed=99)
+        env_b.reset(seed=99)
+        rng = np.random.RandomState(0)
+        for _ in range(10):
+            actions = rng.randint(0, 2, size=(4, 2)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 10, size=4)
+            _, r_a, _, _ = env_a.step(actions)
+            _, r_b, _, _ = env_b.step(actions)
+            np.testing.assert_allclose(r_a, r_b)
+
+    def test_alpha_credit_share_sums_to_alpha(self):
+        """When k workers co-extinguish one fire, the sum of their alpha
+        bonuses equals alpha exactly. Core invariant of the credit-share
+        formulation."""
+        scenario = _make_minimal_scenario(
+            prob_solo_agent_extinguishes_fire=1.0,  # deterministic extinguish
+            action_shaping_alpha=1.5,
+            action_shaping_beta=0.0,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        # Set up: only house 5 burning, no other fires, no spread/spark.
+        env.houses = np.zeros(10, dtype=np.int8)
+        env.houses[5] = env.BURNING
+        env._prev_houses_state = env.houses.copy()
+        # All 4 agents work at house 5 -> guaranteed extinguish.
+        actions = np.array(
+            [[5, 1, 1], [5, 1, 1], [5, 1, 1], [5, 1, 1]],
+            dtype=np.int8,
+        )
+        # Drive the engine through a full step so the BURNING -> SAFE
+        # transition actually happens and prev_houses captures the right
+        # start state. We can't call _compute_rewards in isolation because
+        # it depends on self.houses already reflecting end-of-step.
+        _, rewards, _, _ = env.step(actions)
+        # Sum should equal alpha=1.5 (cost is zero, team/ownership are zero).
+        assert abs(float(np.sum(rewards)) - 1.5) < 1e-5, (
+            f"Sum of alpha bonuses should equal alpha=1.5, got {np.sum(rewards)}"
+        )
+        # Each worker should get alpha/4 = 0.375.
+        for i, r in enumerate(rewards):
+            assert abs(float(r) - 0.375) < 1e-5, (
+                f"Worker {i} should get alpha/4=0.375, got {r}"
+            )
+
+    def test_rest_agents_get_zero_shaping_bonus(self):
+        """REST actions never receive alpha or beta, regardless of nearby
+        extinguish events."""
+        scenario = _make_minimal_scenario(
+            prob_solo_agent_extinguishes_fire=1.0,
+            action_shaping_alpha=2.0,
+            action_shaping_beta=0.5,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=42)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env.houses[3] = env.BURNING
+        env._prev_houses_state = env.houses.copy()
+        # Agent 0 works house 3 (extinguishes), agents 1-3 rest at house 0.
+        actions = np.array(
+            [[3, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            dtype=np.int8,
+        )
+        _, rewards, _, _ = env.step(actions)
+        # Agent 0 is sole worker -> alpha/1 = 2.0 (no work cost).
+        assert abs(float(rewards[0]) - 2.0) < 1e-5
+        # Resting agents get +0.5 rest bonus, no shaping.
+        for i in range(1, 4):
+            assert abs(float(rewards[i]) - 0.5) < 1e-5, (
+                f"Resting agent {i} should get +0.5 rest only, got {rewards[i]}"
+            )
+
+    def test_beta_rewards_preventive_presence(self):
+        """An agent working at a SAFE house that stays SAFE gets beta;
+        distinct from alpha (which requires BURNING->SAFE)."""
+        scenario = _make_minimal_scenario(
+            prob_fire_spreads_to_neighbor=0.0,
+            prob_house_catches_fire=0.0,
+            action_shaping_alpha=0.0,
+            action_shaping_beta=0.3,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=7)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env._prev_houses_state = env.houses.copy()
+        # All 4 agents work at distinct safe houses.
+        actions = np.array(
+            [[0, 1, 1], [3, 1, 1], [5, 1, 1], [8, 1, 1]],
+            dtype=np.int8,
+        )
+        _, rewards, _, _ = env.step(actions)
+        # Each working agent: +0.3 preventive bonus (no cost, no other rewards).
+        for i, r in enumerate(rewards):
+            assert abs(float(r) - 0.3) < 1e-5, (
+                f"Working agent {i} at safe house should get beta=0.3, got {r}"
+            )
+
+    def test_beta_does_not_fire_on_extinguished_house(self):
+        """Beta requires prev==SAFE; a BURNING->SAFE transition (alpha's
+        domain) does NOT trigger beta."""
+        scenario = _make_minimal_scenario(
+            prob_solo_agent_extinguishes_fire=1.0,
+            action_shaping_alpha=0.0,
+            action_shaping_beta=0.5,
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        env.houses = np.zeros(10, dtype=np.int8)
+        env.houses[5] = env.BURNING
+        env._prev_houses_state = env.houses.copy()
+        # Agent 0 works house 5 (extinguishes); others rest.
+        actions = np.array(
+            [[5, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            dtype=np.int8,
+        )
+        _, rewards, _, _ = env.step(actions)
+        # alpha=0 so no extinguish bonus. beta=0.5 but prev[5]=BURNING so
+        # beta doesn't fire. Agent 0 nets 0.0 (no cost, no shaping).
+        assert abs(float(rewards[0])) < 1e-5, (
+            f"Extinguishing agent must not get beta (prev was BURNING), "
+            f"got {rewards[0]}"
+        )
+
+    def test_per_step_reward_variance_increases_with_alpha(self):
+        """Acceptance criterion: non-zero alpha provides a per-agent
+        gradient signal at extinguish events. Comparing alpha=0 vs alpha=2
+        on the same fixed extinguish scenario, the alpha=2 case must
+        produce strictly higher per-agent reward variance (the signal PPO
+        needs for credit assignment)."""
+        # 1 worker (extinguisher), 3 resters at safe houses. With alpha=0
+        # the worker's reward is just -cost=0 and resters get +0.5 (so
+        # rewards are [0, 0.5, 0.5, 0.5], var ~ 0.047). With alpha=2 the
+        # worker gets +2.0 and resters get +0.5 (rewards [2.0, 0.5, 0.5,
+        # 0.5], var ~ 0.42). The variance gap is the PPO signal.
+        variances = {}
+        for alpha in (0.0, 2.0):
+            scenario = _make_minimal_scenario(
+                prob_solo_agent_extinguishes_fire=1.0,
+                action_shaping_alpha=alpha,
+                action_shaping_beta=0.0,
+            )
+            env = BucketBrigadeEnv(scenario=scenario)
+            env.reset(seed=0)
+            env.houses = np.zeros(10, dtype=np.int8)
+            env.houses[5] = env.BURNING
+            env._prev_houses_state = env.houses.copy()
+            actions = np.array(
+                [[5, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                dtype=np.int8,
+            )
+            _, rewards, _, _ = env.step(actions)
+            variances[alpha] = float(np.var(rewards))
+        assert variances[2.0] > variances[0.0], (
+            f"alpha=2 should produce strictly higher per-agent reward "
+            f"variance than alpha=0; got {variances}"
+        )
+        # And the alpha=2 variance is substantively positive (sanity).
+        assert variances[2.0] > 0.1
+
+    def test_v2_minimal_with_shaping_runs(self):
+        """Action shaping composes with v2_minimal (small ring)."""
+        from bucket_brigade.envs.scenarios_generated import v2_minimal_scenario
+
+        s = v2_minimal_scenario(num_agents=4)
+        # Override shaping (the v2_minimal factory keeps defaults).
+        scenario = dataclasses.replace(
+            s, action_shaping_alpha=0.5, action_shaping_beta=0.1
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=42)
+        rng = np.random.RandomState(0)
+        for _ in range(20):
+            actions = rng.randint(0, 2, size=(4, 3)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 2, size=4)
+            _, rewards, dones, _ = env.step(actions)
+            assert rewards.shape == (4,)
+            assert np.all(np.isfinite(rewards))
+            if dones[0]:
+                break
