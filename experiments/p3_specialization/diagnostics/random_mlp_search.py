@@ -81,16 +81,13 @@ import multiprocessing as mp
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 
 # These imports are also used by the worker, but workers re-import them under
 # the ``spawn`` context (fresh interpreter). Keep them top-level for the
 # orchestrator process.
-from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
-from bucket_brigade.training.joint_trainer import flatten_dict_obs
 
 # ----------------------------------------------------------------------------
 # Constants — kept in sync with random_baseline.py:71-75
@@ -165,7 +162,9 @@ def _evaluate_seed_worker(args: Tuple[int, int, str, int]) -> Dict[str, object]:
         np.random.seed(seed)
         for _ in range(NUM_AGENTS):
             policies.append(
-                _Policy(obs_dim=obs_dim, action_dims=ACTION_DIMS, hidden_size=HIDDEN_SIZE)
+                _Policy(
+                    obs_dim=obs_dim, action_dims=ACTION_DIMS, hidden_size=HIDDEN_SIZE
+                )
             )
     elif protocol == "independent":
         # Distinct seed per agent (seed * 4 + agent_id) → independent init draws.
@@ -174,7 +173,9 @@ def _evaluate_seed_worker(args: Tuple[int, int, str, int]) -> Dict[str, object]:
             torch.manual_seed(agent_seed)
             np.random.seed(agent_seed)
             policies.append(
-                _Policy(obs_dim=obs_dim, action_dims=ACTION_DIMS, hidden_size=HIDDEN_SIZE)
+                _Policy(
+                    obs_dim=obs_dim, action_dims=ACTION_DIMS, hidden_size=HIDDEN_SIZE
+                )
             )
     else:
         raise ValueError(f"Unknown protocol: {protocol!r}")
@@ -193,7 +194,10 @@ def _evaluate_seed_worker(args: Tuple[int, int, str, int]) -> Dict[str, object]:
         ep_seed = episode_seed_base + seed * 100_000 + ep
         obs_dict = env.reset(seed=ep_seed)
         obs_rows = np.stack(
-            [_flatten(obs_dict, agent_id=i, num_agents=NUM_AGENTS) for i in range(NUM_AGENTS)],
+            [
+                _flatten(obs_dict, agent_id=i, num_agents=NUM_AGENTS)
+                for i in range(NUM_AGENTS)
+            ],
             axis=0,
         )
         total_reward = 0.0
@@ -212,7 +216,10 @@ def _evaluate_seed_worker(args: Tuple[int, int, str, int]) -> Dict[str, object]:
             first_step = False
             if not env.done:
                 obs_rows = np.stack(
-                    [_flatten(next_obs_dict, agent_id=i, num_agents=NUM_AGENTS) for i in range(NUM_AGENTS)],
+                    [
+                        _flatten(next_obs_dict, agent_id=i, num_agents=NUM_AGENTS)
+                        for i in range(NUM_AGENTS)
+                    ],
                     axis=0,
                 )
         nights = int(env.night)
@@ -225,7 +232,9 @@ def _evaluate_seed_worker(args: Tuple[int, int, str, int]) -> Dict[str, object]:
         "protocol": protocol,
         "per_episode": [float(x) for x in per_step_arr],
         "mean_per_step": float(per_step_arr.mean()),
-        "std_per_step": float(per_step_arr.std(ddof=1)) if len(per_step_arr) > 1 else 0.0,
+        "std_per_step": float(per_step_arr.std(ddof=1))
+        if len(per_step_arr) > 1
+        else 0.0,
         "lengths": lengths,
         "entropy": float(np.mean(entropy_samples)) if entropy_samples else float("nan"),
     }
@@ -283,7 +292,9 @@ def _run_protocol(
     with ctx.Pool(processes=n_workers) as pool:
         phase1_results: List[Dict[str, object]] = []
         last_progress = 0
-        for idx, res in enumerate(pool.imap_unordered(_evaluate_seed_worker, phase1_args), 1):
+        for idx, res in enumerate(
+            pool.imap_unordered(_evaluate_seed_worker, phase1_args), 1
+        ):
             phase1_results.append(res)
             # Print a progress dot every ~5% of total work.
             progress_pct = int(100 * idx / len(seeds))
@@ -300,8 +311,12 @@ def _run_protocol(
     n_top = max(1, int(round(top_frac * len(phase1_results))))
     top = phase1_results[:n_top]
 
-    print(f"Phase 1 complete. Population mean={means.mean():.2f}, std={means.std():.2f}")
-    print(f"Top-{int(top_frac*100)}% threshold: {top[-1]['mean_per_step']:.2f}, n_top={n_top}")
+    print(
+        f"Phase 1 complete. Population mean={means.mean():.2f}, std={means.std():.2f}"
+    )
+    print(
+        f"Top-{int(top_frac * 100)}% threshold: {top[-1]['mean_per_step']:.2f}, n_top={n_top}"
+    )
     print(f"Best phase-1 seed: {top[0]['seed']} mean={top[0]['mean_per_step']:.2f}")
 
     # Phase 2: noise-stability re-eval over top-k seeds with K episodes each.
@@ -312,13 +327,14 @@ def _run_protocol(
     # Use a disjoint episode_seed_base so the restability draws are independent
     # of phase-1 draws (no shared per-episode env seeds).
     phase2_args = [
-        (int(r["seed"]), restability_episodes, protocol, 7_000_000)
-        for r in top
+        (int(r["seed"]), restability_episodes, protocol, 7_000_000) for r in top
     ]
     with ctx.Pool(processes=n_workers) as pool:
         phase2_results: List[Dict[str, object]] = []
         last_progress = 0
-        for idx, res in enumerate(pool.imap_unordered(_evaluate_seed_worker, phase2_args), 1):
+        for idx, res in enumerate(
+            pool.imap_unordered(_evaluate_seed_worker, phase2_args), 1
+        ):
             phase2_results.append(res)
             progress_pct = int(100 * idx / max(1, len(phase2_args)))
             if progress_pct >= last_progress + 20:
@@ -409,9 +425,7 @@ def _run_protocol(
         "best_phase2_seed": int(best_p2["seed"]),
         "best_phase2_mean": float(best_p2["mean_per_step"]),
         "best_phase2_ci": (float(best_p2["ci95_lo"]), float(best_p2["ci95_hi"])),
-        "mean_entropy": float(
-            np.nanmean([r["entropy"] for r in phase1_results])
-        ),
+        "mean_entropy": float(np.nanmean([r["entropy"] for r in phase1_results])),
     }
 
 
@@ -436,10 +450,20 @@ def _plot_distribution(
     ax.hist(population_means, bins=40, color="steelblue", alpha=0.7, edgecolor="white")
 
     # Reference lines.
-    ax.axvline(REF_RANDOM, color="grey", linestyle="--", label=f"random ({REF_RANDOM:.2f})")
-    ax.axvline(REF_PPO_BEST, color="orange", linestyle="--", label=f"PPO best (~{REF_PPO_BEST:.0f})")
     ax.axvline(
-        REF_SPECIALIST, color="green", linestyle="--", label=f"specialist ({REF_SPECIALIST:.2f})"
+        REF_RANDOM, color="grey", linestyle="--", label=f"random ({REF_RANDOM:.2f})"
+    )
+    ax.axvline(
+        REF_PPO_BEST,
+        color="orange",
+        linestyle="--",
+        label=f"PPO best (~{REF_PPO_BEST:.0f})",
+    )
+    ax.axvline(
+        REF_SPECIALIST,
+        color="green",
+        linestyle="--",
+        label=f"specialist ({REF_SPECIALIST:.2f})",
     )
 
     top_p1_mean = float(np.mean([r["mean_per_step"] for r in top_phase1]))
@@ -508,7 +532,9 @@ def _write_summary(
 ) -> None:
     """Combined summary.md with both protocols + verdict block."""
     lines: List[str] = []
-    lines.append("# Issue #271 — Random-init MLP best-of-N on `minimal_specialization`\n")
+    lines.append(
+        "# Issue #271 — Random-init MLP best-of-N on `minimal_specialization`\n"
+    )
     lines.append(
         "Question: does naive best-of-N random search over policy networks beat "
         "trained PPO? If yes, the gradient is actively misleading → active "
@@ -555,7 +581,7 @@ def _write_summary(
             f"- Phase-1 → phase-2 drift (mean): "
             f"{s['top_p2_mean'] - s['top_p1_mean']:+.2f}\n"
             f"- Mean iter-0 action-distribution entropy: {s['mean_entropy']:.3f} nats "
-            f"(uniform 10×2×2 ≈ {np.log(10) + 2*np.log(2):.3f} nats)\n"
+            f"(uniform 10×2×2 ≈ {np.log(10) + 2 * np.log(2):.3f} nats)\n"
         )
         lines.append(f"\n### Verdict — `{protocol}`: `{tier}`\n\n{interp}\n")
 
