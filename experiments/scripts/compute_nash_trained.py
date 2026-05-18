@@ -123,7 +123,8 @@ def _make_agent(spec: Dict[str, Any], slot_id: int, num_agents: int) -> Any:
 
     ``spec`` shapes:
       * ``{"kind": "heuristic", "theta": np.ndarray(10,), "name": str}``
-      * ``{"kind": "trained", "path": Path, "name": str, "deterministic": bool}``
+      * ``{"kind": "trained", "path": Path, "name": str, "deterministic": bool,
+          "allow_legacy_2head": bool}``
     """
     kind = spec["kind"]
     if kind == "heuristic":
@@ -139,6 +140,7 @@ def _make_agent(spec: Dict[str, Any], slot_id: int, num_agents: int) -> Any:
             num_agents=num_agents,
             deterministic=spec.get("deterministic", True),
             name=f"{spec['name']}-{slot_id}",
+            allow_legacy_2head=spec.get("allow_legacy_2head", False),
         )
     raise ValueError(f"Unknown strategy kind: {kind!r}")
 
@@ -235,6 +237,7 @@ def screen_trained_checkpoints(
     margin: float,
     seed: int,
     verbose: bool = True,
+    allow_legacy_2head: bool = False,
 ) -> Tuple[List[Path], Dict[str, float]]:
     """Filter checkpoint dirs to those whose self-play team reward beats random.
 
@@ -259,6 +262,7 @@ def screen_trained_checkpoints(
                     num_agents=num_agents,
                     deterministic=True,
                     name=f"{ckpt_dir.parent.name}",
+                    allow_legacy_2head=allow_legacy_2head,
                 )
                 for i in range(num_agents)
             ]
@@ -403,6 +407,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--quiet", action="store_true", help="Suppress per-cell progress lines."
     )
+    parser.add_argument(
+        "--allow-legacy-2head",
+        action="store_true",
+        help=(
+            "Opt in to loading legacy pre-#236 PPO checkpoints that have only "
+            "2 action heads (house, mode). With this flag the missing signal "
+            "channel is synthesized as `signal := mode` at act time, and a "
+            "UserWarning is emitted per checkpoint. WITHOUT this flag, "
+            "TrainedPolicyArchetype refuses to load 2-head checkpoints because "
+            "the silent backfill would fabricate a signal output the original "
+            "policy never produced (issue #325). NOTE: as of 2026-05-18 all "
+            "244 existing checkpoints under experiments/p3_specialization/ "
+            "are 2-head, so this flag is currently required to include any "
+            "of them in the Nash pool."
+        ),
+    )
 
     args = parser.parse_args(argv)
     verbose = not args.quiet
@@ -429,6 +449,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"  filter-margin:    {args.filter_margin}")
     print(f"  seed:             {args.seed}")
     print(f"  output:           {output_dir}")
+    print(f"  allow-legacy-2head: {args.allow_legacy_2head}")
+    if args.allow_legacy_2head:
+        print(
+            "  WARNING: legacy 2-head checkpoints will be loaded with "
+            "`signal := mode` synthesis (#325)."
+        )
     print()
 
     # ---- Pool construction --------------------------------------------------
@@ -459,6 +485,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 margin=args.filter_margin,
                 seed=args.seed,
                 verbose=verbose,
+                allow_legacy_2head=args.allow_legacy_2head,
             )
             excluded = [d.parent.name for d in discovered if d not in kept]
         else:
@@ -480,6 +507,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     "kind": "trained",
                     "name": f"ppo_{ckpt_dir.parent.name}",
                     "path": ckpt_dir / "agent_0.pt",
+                    "allow_legacy_2head": args.allow_legacy_2head,
                 }
             )
 
@@ -499,6 +527,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "random_baseline": random_baseline,
             "filter_enabled": not args.no_filter,
             "filter_margin": args.filter_margin,
+            "allow_legacy_2head": args.allow_legacy_2head,
             "dry_run": True,
         }
         out_json = output_dir / "equilibrium_partial.json"
@@ -565,6 +594,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "random_baseline": random_baseline,
         "filter_enabled": not args.no_filter,
         "filter_margin": args.filter_margin,
+        "allow_legacy_2head": args.allow_legacy_2head,
         "num_simulations": args.simulations,
         "seed": args.seed,
         "elapsed_payoff_sec": elapsed_payoff,
@@ -587,6 +617,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         f"- random baseline: {random_baseline:.2f}",
         f"- seed: {args.seed}",
         f"- simulations/cell: {args.simulations}",
+    ]
+    if args.allow_legacy_2head:
+        md_lines.append(
+            "- **legacy-2head**: ON — trained checkpoints had only 2 action "
+            "heads; signal channel synthesized as `signal := mode` (#325)."
+        )
+    md_lines += [
         "",
         "## Equilibrium support",
         "",

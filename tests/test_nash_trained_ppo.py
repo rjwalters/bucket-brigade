@@ -159,6 +159,168 @@ def test_trained_policy_archetype_missing_file_raises(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Legacy 2-head checkpoint: refuse by default, opt-in synthesis (#325)
+# ---------------------------------------------------------------------------
+
+
+def test_legacy_2head_checkpoint_refused_by_default(tmp_path):
+    """A 2-head state_dict must raise ValueError mentioning the opt-in flag."""
+    num_agents = 4
+    obs = _make_dummy_obs(num_agents=num_agents)
+    obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=num_agents).shape[0]
+    # Save a legacy 2-head policy (no signal channel).
+    path = _save_random_policy(tmp_path, obs_dim=obs_dim, action_dims=[10, 2])
+
+    with pytest.raises(ValueError) as excinfo:
+        TrainedPolicyArchetype(
+            state_dict_path=path,
+            agent_id=0,
+            num_agents=num_agents,
+        )
+    msg = str(excinfo.value)
+    # Documented error must name the flag and reference the issue.
+    assert "allow_legacy_2head" in msg
+    assert "2 action heads" in msg
+    assert "signal" in msg
+
+
+def test_legacy_2head_checkpoint_opt_in_warns_and_synthesizes(tmp_path):
+    """With `allow_legacy_2head=True`, a 2-head checkpoint loads with a
+    UserWarning and ``act()`` returns a 3-d action where ``out[2] == out[1]``
+    (i.e. signal := mode synthesis)."""
+    num_agents = 4
+    obs = _make_dummy_obs(num_agents=num_agents)
+    obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=num_agents).shape[0]
+    path = _save_random_policy(tmp_path, obs_dim=obs_dim, action_dims=[10, 2])
+
+    with pytest.warns(UserWarning, match="legacy 2-head"):
+        archetype = TrainedPolicyArchetype(
+            state_dict_path=path,
+            agent_id=0,
+            num_agents=num_agents,
+            allow_legacy_2head=True,
+        )
+    assert archetype.action_dims == [10, 2]
+    action = archetype.act(obs)
+    assert action.shape == (3,)
+    # Signal is synthesized to match mode.
+    assert int(action[2]) == int(action[1])
+
+
+def test_modern_3head_checkpoint_loads_without_warning_or_error(tmp_path):
+    """Modern 3-head checkpoints must load cleanly: no warning, no error,
+    and the legacy gate must not trip."""
+    num_agents = 4
+    obs = _make_dummy_obs(num_agents=num_agents)
+    obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=num_agents).shape[0]
+    path = _save_random_policy(tmp_path, obs_dim=obs_dim, action_dims=[10, 2, 2])
+
+    # `pytest.warns` doesn't have a "no warning" assertion; use the standard
+    # `warnings.catch_warnings` recorder and assert nothing was raised.
+    import warnings as _warnings
+
+    with _warnings.catch_warnings(record=True) as recorded:
+        _warnings.simplefilter("always")
+        archetype = TrainedPolicyArchetype(
+            state_dict_path=path,
+            agent_id=0,
+            num_agents=num_agents,
+        )
+    legacy_warnings = [w for w in recorded if "legacy 2-head" in str(w.message)]
+    assert legacy_warnings == [], (
+        f"Modern 3-head checkpoint should not trigger the legacy warning; "
+        f"got {legacy_warnings}"
+    )
+    assert archetype.action_dims == [10, 2, 2]
+    # Sanity check act() produces a 3-d action (not via synthesis).
+    action = archetype.act(obs)
+    assert action.shape == (3,)
+
+
+def test_legacy_2head_cli_flag_plumbs_through(tmp_path, script_module):
+    """The CLI flag ``--allow-legacy-2head`` must reach the underlying
+    archetype constructor. Use a stub trained checkpoint and verify the
+    flag is propagated through the strategy spec into ``_make_agent``."""
+    num_agents = 4
+    obs = _make_dummy_obs(num_agents=num_agents)
+    obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=num_agents).shape[0]
+
+    # The CLI dry-run path is where pool construction happens.
+    # We verify two things:
+    #   1) Without the flag, a 2-head trained checkpoint causes
+    #      `screen_trained_checkpoints` to SKIP it (constructor raises).
+    #   2) With the flag, the constructor succeeds (warning emitted).
+    # We exercise the constructor path directly via _make_agent, which is
+    # the production code that consumes the flag from the spec.
+    path = _save_random_policy(tmp_path, obs_dim=obs_dim, action_dims=[10, 2])
+
+    # Without opt-in: _make_agent must raise.
+    spec_strict = {
+        "kind": "trained",
+        "name": "ppo_legacy",
+        "path": path,
+        "allow_legacy_2head": False,
+    }
+    with pytest.raises(ValueError, match="allow_legacy_2head"):
+        script_module._make_agent(spec_strict, slot_id=0, num_agents=num_agents)
+
+    # With opt-in: _make_agent must succeed (and warn).
+    spec_optin = {
+        "kind": "trained",
+        "name": "ppo_legacy",
+        "path": path,
+        "allow_legacy_2head": True,
+    }
+    with pytest.warns(UserWarning, match="legacy 2-head"):
+        agent = script_module._make_agent(spec_optin, slot_id=0, num_agents=num_agents)
+    assert isinstance(agent, TrainedPolicyArchetype)
+    assert agent.allow_legacy_2head is True
+
+
+def test_legacy_2head_cli_arg_smokes_through_main(tmp_path, script_module):
+    """End-to-end smoke: ``--allow-legacy-2head`` parses, defaults to False,
+    and is reflected in the dry-run equilibrium_partial.json output."""
+    import json
+
+    out = tmp_path / "nash_out"
+    # Default (no flag) -> allow_legacy_2head: False
+    rc = script_module.main(
+        [
+            "--scenario",
+            "default",
+            "--simulations",
+            "1",
+            "--output-dir",
+            str(out),
+            "--dry-run",
+            "--quiet",
+        ]
+    )
+    assert rc == 0
+    partial = json.loads((out / "default" / "equilibrium_partial.json").read_text())
+    assert partial["allow_legacy_2head"] is False
+
+    # With the flag set -> allow_legacy_2head: True
+    out2 = tmp_path / "nash_out_optin"
+    rc = script_module.main(
+        [
+            "--scenario",
+            "default",
+            "--simulations",
+            "1",
+            "--output-dir",
+            str(out2),
+            "--dry-run",
+            "--quiet",
+            "--allow-legacy-2head",
+        ]
+    )
+    assert rc == 0
+    partial2 = json.loads((out2 / "default" / "equilibrium_partial.json").read_text())
+    assert partial2["allow_legacy_2head"] is True
+
+
+# ---------------------------------------------------------------------------
 # Above-random filter logic
 # ---------------------------------------------------------------------------
 
