@@ -42,7 +42,7 @@ All performance-critical modules now use **Rust-backed implementations** via PyO
 | Single step | ~0.005s | 0.00005s | **~100x** |
 | 1000 steps | ~5s | 0.05s | **~100x** |
 
-**Test scenario**: PufferLib wrapper with 3 opponents
+**Test scenario**: `JointPPOTrainer` rollout against 3 opponents (direct Rust `BucketBrigadeEnv`)
 
 ## Module-by-Module Breakdown
 
@@ -75,9 +75,9 @@ All performance-critical modules now use **Rust-backed implementations** via PyO
 - Enables larger population sizes
 - Faster convergence in evolution
 
-### 3. envs/puffer_env_rust.py
+### 3. envs/bucket_brigade_env.py (Rust-backed)
 
-**Purpose**: Gymnasium-compatible RL training environment
+**Purpose**: RL training environment driven directly by `JointPPOTrainer`
 
 **Key optimizations**:
 - Rust game engine
@@ -137,7 +137,7 @@ All changes maintain full backward compatibility:
 # Automatically uses Rust versions
 from bucket_brigade.equilibrium import PayoffEvaluator
 from bucket_brigade.evolution import FitnessEvaluator
-from bucket_brigade.envs import PufferBucketBrigade
+from bucket_brigade.envs import BucketBrigadeEnv  # Rust-backed via PyO3
 ```
 
 ### Explicit Python Fallback (if needed)
@@ -146,7 +146,6 @@ from bucket_brigade.envs import PufferBucketBrigade
 # Use Python version explicitly
 from bucket_brigade.equilibrium.payoff_evaluator import PayoffEvaluator
 from bucket_brigade.evolution.fitness import FitnessEvaluator
-from bucket_brigade.envs.puffer_env import PufferBucketBrigade
 ```
 
 ## Testing
@@ -173,8 +172,8 @@ print(PayoffEvaluator.__name__)  # Should print "RustPayoffEvaluator"
 from bucket_brigade.evolution import FitnessEvaluator
 print(FitnessEvaluator.__name__)  # Should print "RustFitnessEvaluator"
 
-from bucket_brigade.envs import PufferBucketBrigade
-print(PufferBucketBrigade.__name__)  # Should print "RustPufferBucketBrigade"
+from bucket_brigade.envs import BucketBrigadeEnv
+print(BucketBrigadeEnv)  # Rust-backed via bucket_brigade_core
 ```
 
 ## Performance Considerations

@@ -1,7 +1,6 @@
 """Tests for the training module.
 
-This module tests the PolicyNetwork and CurriculumTrainer classes to ensure
-they work correctly after refactoring from the monolithic train_curriculum.py script.
+This module tests the PolicyNetwork class.
 """
 
 import pytest

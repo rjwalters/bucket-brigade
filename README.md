@@ -51,11 +51,10 @@ uv run python scripts/run_batch.py --num-games 50 --num-agents 6
 uv run python scripts/analyze_nash_equilibrium.py --scenario greedy_neighbor
 ```
 
-Train an RL policy:
+Train an RL policy (Rust-backed `JointPPOTrainer`):
 
 ```bash
-uv run python scripts/train_simple.py --scenario hard --num-steps 100000
-uv run python scripts/train_puffer_gpu.py --scenario hard --num-steps 5000000   # GPU
+uv run python -m experiments.p3_specialization.train --num-iterations 100 --rollout-steps 256
 ```
 
 See [docs/TRAINING_GUIDE.md](docs/TRAINING_GUIDE.md) for the full training workflow.

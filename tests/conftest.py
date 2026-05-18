@@ -332,13 +332,6 @@ def pytest_report_header(config):
     except ImportError:
         headers.append("torch (RL): Not installed")
 
-    try:
-        import pufferlib
-
-        headers.append(f"pufferlib: {pufferlib.__version__}")
-    except ImportError:
-        headers.append("pufferlib: Not installed")
-
     return headers
 
 

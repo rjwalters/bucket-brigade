@@ -368,7 +368,7 @@ WASM    → bucket-brigade-wasm (browser)
 ```
 
 **Same game logic, three platforms**:
-- Python: Research, RL training (PufferLib integration)
+- Python: Research, RL training via `JointPPOTrainer` (Rust-backed)
 - Rust: High-performance tournaments (100x speedup)
 - WASM: Browser-based visualization and play
 
@@ -425,11 +425,12 @@ equilibrium = solver.solve()
 
 ### 5. Reinforcement Learning
 ```python
-# Train neural network policy
-from pufferlib import PufferEnv
+# Train neural network policy (Rust-backed BucketBrigadeEnv driven directly)
+from bucket_brigade.envs import BucketBrigadeEnv
+from bucket_brigade.training.joint_trainer import JointPPOTrainer
 
-env = PufferEnv(BucketBrigadeEnv(scenario))
-policy = train_ppo(env, total_timesteps=1_000_000)
+trainer = JointPPOTrainer(env_fn=lambda: BucketBrigadeEnv(scenario))
+policy = trainer.train(num_iterations=1000, rollout_steps=256)
 
 # Compare to heuristics
 ```
@@ -547,7 +548,7 @@ tournament_config = {
 - ✅ Ported to Rust in <1 week (100x speedup)
 - ✅ WASM version in <3 days (browser support)
 - ✅ First tournament in <1 day (simple heuristics)
-- ✅ RL training works out-of-the-box (PufferLib integration)
+- ✅ RL training works out-of-the-box (`JointPPOTrainer` on Rust env)
 
 **Result**: Achieved goal of "small, understandable, tournament-ready"
 

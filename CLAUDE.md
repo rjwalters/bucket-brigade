@@ -670,9 +670,9 @@ git pull  # Get latest code
 uv sync --extra rl  # Update dependencies
 
 # Run training (logs to file)
-uv run python scripts/train_puffer_gpu.py \
-  --scenario easy \
-  --total-timesteps 1000000 \
+uv run python -m experiments.p3_specialization.train \
+  --num-iterations 1000 \
+  --rollout-steps 256 \
   2>&1 | tee logs/training_$(date +%Y%m%d_%H%M%S).log
 
 # Detach: Ctrl+B, D
@@ -973,7 +973,7 @@ ssh my-gpu-server "cd bucket-brigade && rm -rf .venv && uv venv && uv sync"
 ### See Also
 
 - **Remote Execution Guide**: `experiments/REMOTE_EXECUTION.md` - Detailed guide for running research experiments
-- **Training Guide**: `docs/TRAINING_GUIDE.md` - PPO training with PufferLib
+- **Training Guide**: `docs/TRAINING_GUIDE.md` - PPO training with `JointPPOTrainer`
 - **Hyperparameter Tuning**: `docs/HYPERPARAMETER_TUNING.md` - Optuna-based tuning guide
 
 ## Resources

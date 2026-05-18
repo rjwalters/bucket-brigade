@@ -30,7 +30,7 @@ This documentation directory contains detailed guides, specifications, and resea
 - **[library/](library/)** - Research paper summaries and references
 
 ### 💻 Development & Implementation
-- **[TRAINING_GUIDE.md](TRAINING_GUIDE.md)** - PPO training with PufferLib
+- **[TRAINING_GUIDE.md](TRAINING_GUIDE.md)** - PPO training with `JointPPOTrainer`
 - **[POPULATION_TRAINING.md](POPULATION_TRAINING.md)** - Population-based multi-agent training
 - **[IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)** - Development checklist
 - **[PERFORMANCE.md](PERFORMANCE.md)** - Performance analysis and benchmarks

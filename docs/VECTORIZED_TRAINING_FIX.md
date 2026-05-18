@@ -4,6 +4,13 @@
 **Context**: Phase 1 → Phase 2 transition, optimizing GPU utilization for MARL training
 **Status**: ✅ Fixed
 
+> **Historical note (2026-05, issue #335)**: This document predates the
+> removal of the PufferLib training path. References below to PufferLib
+> describe the inspiration for the vectorization design, not an active
+> dependency. The Rust `VectorEnv` and `JointPPOTrainer` carry the
+> vectorization story forward — no PufferLib is used in any active
+> training path.
+
 ---
 
 ## Problem Statement
