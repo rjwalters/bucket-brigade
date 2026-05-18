@@ -46,6 +46,7 @@ from bucket_brigade.analysis.info_theory import (
     quantize_uniform,
 )
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+from bucket_brigade.envs.macro_action_env import MacroActionEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.training.joint_trainer import (
     JointPPOTrainer,
@@ -147,6 +148,14 @@ class CellConfig:
     # misalignment source — see
     # ``research_notebook/2026-05-17_thesis_misaligned_gradients.md``).
     gae_lambda: float = 0.95
+    # Issue #286: macro-action wrapper. When ``macro_actions=True`` the
+    # env_fn returns a :class:`MacroActionEnv` instead of a raw
+    # :class:`BucketBrigadeEnv`, the action space collapses to a single
+    # ``Discrete(num_options)`` head, and the trainer is constructed with
+    # ``action_dims=[num_options]`` instead of ``[10, 2, 2]``. Default
+    # ``False`` preserves bit-identical pre-#286 behavior.
+    macro_actions: bool = False
+    commit_steps: int = 3
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -279,12 +288,16 @@ def _other_agent_action_codes(rollout, agent_j: int, lag: int = 1) -> np.ndarray
         packed = (
             a[:, 0] * _ACTION_PACK_BASE + a[:, 1] * _ACTION_PACK_BASE_SIGNAL + a[:, 2]
         ).astype(np.int64)
-    else:
+    elif a.shape[-1] == 2:
         # Legacy 2-element actions (pre-#235): pretend the agent was honest
         # (signal == mode) so the packed code remains well-defined.
         packed = (
             a[:, 0] * _ACTION_PACK_BASE + a[:, 1] * _ACTION_PACK_BASE_SIGNAL + a[:, 1]
         ).astype(np.int64)
+    else:
+        # Issue #286: single-column macro-action — option index is already a
+        # well-defined scalar label. Use it directly as the packed code.
+        packed = a[:, 0].astype(np.int64)
     T = packed.shape[0]
     codes = np.full(T, _ACTION_NO_PRIOR_SENTINEL, dtype=np.int64)
     if T > lag:
@@ -524,12 +537,16 @@ def _measure_information(
                 + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
                 + a[:, 2]
             )
-        else:
+        elif a.shape[-1] == 2:
             packed = (
                 a[:, 0] * _ACTION_PACK_BASE
                 + a[:, 1] * _ACTION_PACK_BASE_SIGNAL
                 + a[:, 1]
             )
+        else:
+            # Issue #286: single-column macro-action — option index serves
+            # as the packed action code directly.
+            packed = a[:, 0].astype(np.int64)
         out[f"action_entropy/agent_{i}"] = entropy_discrete(packed)
     out["action_entropy/mean"] = float(
         np.mean([out[f"action_entropy/agent_{i}"] for i in range(n)])
@@ -670,9 +687,20 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     scenario.team_welfare_gamma = float(cfg.team_welfare_gamma)
     scenario.team_welfare_kind = str(cfg.team_welfare_kind)
 
-    def env_fn():
-        env = BucketBrigadeEnv(scenario=scenario)
-        return env
+    # Issue #286: when macro_actions is on, wrap the base env in
+    # ``MacroActionEnv``. The wrapper preserves the dict-obs / numpy-action
+    # contract so it is a drop-in for ``JointPPOTrainer.env_fn``; only
+    # ``action_dims`` changes (collapses to ``[num_options]``).
+    if cfg.macro_actions:
+
+        def env_fn():
+            base = BucketBrigadeEnv(scenario=scenario)
+            return MacroActionEnv(base, commit_steps=cfg.commit_steps)
+    else:
+
+        def env_fn():
+            env = BucketBrigadeEnv(scenario=scenario)
+            return env
 
     # Probe obs_dim from a single reset. Issue #204: include the per-agent
     # identity one-hot tail so obs_dim matches what JointPPOTrainer actually
@@ -683,11 +711,22 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         0
     ]
 
+    # Issue #286: action_dims comes from the wrapper when macro-actions are
+    # on (single Discrete head with num_options values); otherwise use the
+    # configured ``cfg.action_dims`` (default ``[num_houses, 2, 2]``).
+    # Mutate ``cfg.action_dims`` to the runtime value so the on-disk
+    # ``config.json`` reflects what the trainer actually saw.
+    if cfg.macro_actions:
+        action_dims = [int(probe.num_options)]
+        cfg.action_dims = action_dims
+    else:
+        action_dims = cfg.action_dims
+
     trainer = JointPPOTrainer(
         env_fn=env_fn,
         num_agents=cfg.num_agents,
         obs_dim=obs_dim,
-        action_dims=cfg.action_dims,
+        action_dims=action_dims,
         hidden_size=cfg.hidden_size,
         lr=cfg.lr,
         gae_lambda=cfg.gae_lambda,
@@ -996,6 +1035,28 @@ def main() -> None:
             "bootstrap)."
         ),
     )
+    p.add_argument(
+        "--macro-actions",
+        action="store_true",
+        help=(
+            "Issue #286: wrap the env in MacroActionEnv. Action space "
+            "becomes a single Discrete head over 3+(num_agents-1) options "
+            "(PATROL, DEFEND_OWN, REST_UNTIL_FIRE, FOLLOW_j). Each option "
+            "commits the agent for --commit-steps base steps (or until "
+            "env-done). Default off preserves bit-identical pre-#286 "
+            "behavior."
+        ),
+    )
+    p.add_argument(
+        "--commit-steps",
+        type=int,
+        default=CellConfig.__dataclass_fields__["commit_steps"].default,
+        help=(
+            "Issue #286: number of base-env steps each macro-action commits "
+            "to (subject to early termination on env-done). Only used when "
+            "--macro-actions is set. Default 3. Sweep grid is {3, 5, 8}."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -1021,6 +1082,8 @@ def main() -> None:
         team_welfare_kind=args.team_welfare_kind,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         gae_lambda=args.gae_lambda,
+        macro_actions=args.macro_actions,
+        commit_steps=args.commit_steps,
         device=args.device,
     )
     print(
@@ -1031,7 +1094,8 @@ def main() -> None:
         f"action_shaping_beta={cfg.action_shaping_beta} "
         f"progress_shaping_coef={cfg.progress_shaping_coef} "
         f"team_welfare_lambda={cfg.team_welfare_lambda} "
-        f"team_welfare_kind={cfg.team_welfare_kind} =="
+        f"team_welfare_kind={cfg.team_welfare_kind} "
+        f"macro_actions={cfg.macro_actions} commit_steps={cfg.commit_steps} =="
     )
     train_one_cell(cfg, args.output_dir)
 

@@ -5,6 +5,13 @@ Environment implementations for Bucket Brigade.
 from typing import TYPE_CHECKING, Optional, Type, Callable, Any
 
 from .bucket_brigade_env import BucketBrigadeEnv
+from .macro_action_env import (
+    MacroActionEnv,
+    OPT_DEFEND_OWN,
+    OPT_FOLLOW_BASE,
+    OPT_PATROL,
+    OPT_REST_UNTIL_FIRE,
+)
 
 # Optional PufferLib imports (only available if gymnasium is installed)
 if TYPE_CHECKING:
@@ -48,6 +55,11 @@ from .scenarios_random import random_scenario
 
 __all__ = [
     "BucketBrigadeEnv",
+    "MacroActionEnv",
+    "OPT_PATROL",
+    "OPT_DEFEND_OWN",
+    "OPT_REST_UNTIL_FIRE",
+    "OPT_FOLLOW_BASE",
     "PufferBucketBrigade",
     "PufferBucketBrigadeVectorized",
     "make_env",
