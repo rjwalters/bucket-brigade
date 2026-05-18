@@ -23,6 +23,16 @@ export class WasmBucketBrigade {
     throw new Error('WASM module not available');
   }
 
+  // Issue #252 / #331: two-phase signaling step. Stubbed identically to
+  // `step` — the JS fallback (browserEngine) does not support two-phase,
+  // so a build without the Rust WASM module cannot exercise this path.
+  step_two_phase(
+    _round1SignalsJson: string,
+    _round2ActionsJson: string,
+  ): string {
+    throw new Error('WASM module not available');
+  }
+
   get_observation(_agentId: number): string {
     throw new Error('WASM module not available');
   }

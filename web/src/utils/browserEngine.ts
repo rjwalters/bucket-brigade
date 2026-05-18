@@ -36,6 +36,17 @@ export interface Scenario {
 
   // Game setup
   num_agents: number; // Number of agents
+
+  // Issue #252 / #331: within-night commitment mode. Optional for
+  // backward compatibility. ``"simultaneous"`` (the default for every
+  // pre-#252 scenario) runs the single-phase fast path. ``"two_phase"``
+  // requires the engine's ``step_two_phase`` plumbing, which the JS
+  // fallback (`BrowserBucketBrigade`) does not implement — only the WASM
+  // engine supports it. Loading a two-phase scenario into the JS engine
+  // throws at construction time with a clear error message; callers must
+  // route through `wasmEngine.ts` instead. The full Rust core, PyO3
+  // surface, and Python envs all support two-phase.
+  commitment_mode?: string;
 }
 
 /**
@@ -123,6 +134,21 @@ export class BrowserBucketBrigade {
   private trajectory!: GameNight[];
 
   constructor(scenario: Scenario, seed?: number) {
+    // Issue #252 / #331: the JS fallback engine does not implement
+    // two-phase commitment semantics (no round-1 signal channel, no
+    // step_two_phase pipeline). Fail loudly at construction so callers
+    // know to route through the WASM engine instead of running with
+    // silently-wrong simultaneous semantics. The Rust core/WASM binding
+    // does support this mode via WasmGameEngine.step_two_phase.
+    if (scenario.commitment_mode === 'two_phase') {
+      throw new Error(
+        'BrowserBucketBrigade does not support commitment_mode="two_phase" ' +
+          '(issue #252). Two-phase scenarios require the WASM engine; the ' +
+          'pure-JS fallback engine has no round-1 signal channel. Initialize ' +
+          'with createGameEngine(scenario) (which prefers WASM) or call ' +
+          'WasmGameEngine.step_two_phase directly.',
+      );
+    }
     this.scenario = scenario;
     this.rng = new BrowserRNG(seed);
     this.reset();
