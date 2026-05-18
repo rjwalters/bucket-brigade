@@ -378,7 +378,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
         function_name = f"{name}_scenario"
         code += f"def {function_name}(num_agents: int) -> Scenario:\n"
         code += f'    """{spec["description"]}"""\n'
-        code += f"    return Scenario(\n"
+        code += "    return Scenario(\n"
         code += f"        prob_fire_spreads_to_neighbor={spec['prob_fire_spreads_to_neighbor']},\n"
         code += f"        prob_solo_agent_extinguishes_fire={spec['prob_solo_agent_extinguishes_fire']},\n"
         code += f"        prob_house_catches_fire={spec['prob_house_catches_fire']},\n"
@@ -392,7 +392,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f"        penalty_other_house_burns={_emit_value(spec['penalty_other_house_burns'])},\n"
         code += f"        cost_to_work_one_night={spec['cost_to_work_one_night']},\n"
         code += f"        min_nights={spec['min_nights']},\n"
-        code += f"        num_agents=num_agents,\n"
+        code += "        num_agents=num_agents,\n"
         # Issue #203 optional spatial-cost fields. Emit only when set in JSON
         # (every other scenario keeps the dataclass defaults: empty list,
         # alpha=0.0, metric="ring_arc") so behavior is byte-identical to
@@ -414,37 +414,25 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # pre-#259 codegen output (they all keep the dataclass defaults
         # of 0.0).
         if "action_shaping_alpha" in spec:
-            code += (
-                f"        action_shaping_alpha={spec['action_shaping_alpha']},\n"
-            )
+            code += f"        action_shaping_alpha={spec['action_shaping_alpha']},\n"
         if "action_shaping_beta" in spec:
-            code += (
-                f"        action_shaping_beta={spec['action_shaping_beta']},\n"
-            )
+            code += f"        action_shaping_beta={spec['action_shaping_beta']},\n"
         # Issue #265 optional dense progress shaping field. Emit only when set
         # in JSON so every pre-#265 scenario factory is byte-identical to
         # pre-#265 codegen output (they all keep the dataclass default of 0.0).
         if "progress_shaping_coef" in spec:
-            code += (
-                f"        progress_shaping_coef={spec['progress_shaping_coef']},\n"
-            )
+            code += f"        progress_shaping_coef={spec['progress_shaping_coef']},\n"
         # Issue #283 optional potential-based shaping fields. Emit only when
         # set in JSON so every pre-#283 scenario factory is byte-identical
         # to pre-#283 codegen output (they keep the dataclass defaults:
         # lambda=0.0, gamma=1.0, kind="none").
         if "team_welfare_lambda" in spec:
-            code += (
-                f"        team_welfare_lambda={spec['team_welfare_lambda']},\n"
-            )
+            code += f"        team_welfare_lambda={spec['team_welfare_lambda']},\n"
         if "team_welfare_gamma" in spec:
-            code += (
-                f"        team_welfare_gamma={spec['team_welfare_gamma']},\n"
-            )
+            code += f"        team_welfare_gamma={spec['team_welfare_gamma']},\n"
         if "team_welfare_kind" in spec:
-            code += (
-                f"        team_welfare_kind={spec['team_welfare_kind']!r},\n"
-            )
-        code += f"    )\n\n\n"
+            code += f"        team_welfare_kind={spec['team_welfare_kind']!r},\n"
+        code += "    )\n\n\n"
 
     # Generate SCENARIO_REGISTRY
     code += "\n# Registry of all scenarios\n"
