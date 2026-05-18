@@ -7,6 +7,8 @@ encoder, and that the redundancy penalty does what it claims.
 
 from __future__ import annotations
 
+from typing import Tuple
+
 import numpy as np
 import pytest
 import torch
@@ -1011,3 +1013,241 @@ class TestHCA:
         assert Z[1] == pytest.approx(2.0)
         assert Z[2] == pytest.approx(3.0 + gamma * 4.0)
         assert Z[3] == pytest.approx(4.0)
+
+
+class TestSocialInfluence:
+    """Issue #290: Jaques-2019 social-influence intrinsic motivation.
+
+    The trainer optionally adds ``alpha * sum_{j != i} KL(real || cf_marg)``
+    to each agent's environmental reward before the advantage estimator
+    (works with GAE, HCA, and COMA), where the KL is between agent ``j``'s
+    next-step policy under the real ``last_actions[i]`` and the
+    counterfactual marginal averaged over MC samples of ``a'_i ~ pi_i``.
+    ``alpha = 0`` (default) is the IPPO control and must preserve
+    bit-identical pre-#290 behavior; this is the critical regression test
+    (``test_influence_coef_zero_bit_identical``).
+    """
+
+    def test_influence_coef_zero_bit_identical(self):
+        """Critical regression test: with ``influence_coef = 0``, ``update()``
+        must produce *exactly* the same stats as a fresh trainer that
+        knows nothing about the influence path.
+
+        Strategy: run the baseline trainer (no influence kwargs, so default
+        ``influence_coef = 0``) from a fixed seed, then re-seed and run an
+        explicit ``influence_coef = 0`` trainer. Because the env and policy
+        sampling consume torch + numpy global RNG state during rollout,
+        we must re-seed both globals just before each ``collect_rollout``
+        and again before each ``update`` so the comparison is apples-to-apples.
+
+        With identical RNG state, identical policy init, and identical
+        env reset state, both paths must produce bit-identical stats.
+        The influence-zero path additionally must NOT emit any
+        ``influence_reward/*`` diagnostic keys (the no-op branch is fully
+        skipped, including the diagnostic block).
+        """
+
+        def _run_one(influence_coef: float) -> Tuple[dict, list]:
+            # Re-seed both global RNGs to a known state before constructing the
+            # trainer. The trainer's __init__ also seeds, so this just makes
+            # the construction order's effect on globals deterministic.
+            torch.manual_seed(2026)
+            np.random.seed(2026)
+            env = _env_fn()
+            obs = env.reset(seed=0)
+            obs_dim = flatten_dict_obs(
+                obs, agent_id=0, num_agents=NUM_AGENTS
+            ).shape[0]
+            trainer = JointPPOTrainer(
+                env_fn=_env_fn,
+                num_agents=NUM_AGENTS,
+                obs_dim=obs_dim,
+                action_dims=ACTION_DIMS,
+                hidden_size=16,
+                minibatch_size=32,
+                ppo_epochs=2,
+                redundancy_coef=0.0,
+                influence_coef=influence_coef,
+                seed=2026,
+            )
+            # Re-seed before rollout so action/env sampling matches between
+            # the two runs regardless of any side-effects in __init__ that
+            # may differ when ``influence_coef`` is set (today there are
+            # none — but be defensive).
+            torch.manual_seed(7777)
+            np.random.seed(7777)
+            rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+            torch.manual_seed(8888)
+            np.random.seed(8888)
+            stats = trainer.update(rollout)
+            policy_params = [
+                [p.detach().clone() for p in pol.parameters()]
+                for pol in trainer.policies
+            ]
+            return stats, policy_params
+
+        stats_a, params_a = _run_one(influence_coef=0.0)  # baseline default
+        stats_b, params_b = _run_one(influence_coef=0.0)  # explicit zero
+
+        # Diagnostic keys must NOT appear in the alpha=0 path.
+        for key in stats_b:
+            assert not key.startswith("influence_reward/"), (
+                f"influence_coef=0 path leaked diagnostic key {key!r}"
+            )
+
+        # Bit-identical stats.
+        for key in stats_a:
+            assert key in stats_b, f"missing key in influence-path: {key}"
+            assert stats_a[key] == pytest.approx(stats_b[key], rel=1e-6, abs=1e-9), (
+                f"alpha=0 path diverged from baseline at {key!r}: "
+                f"{stats_a[key]} vs {stats_b[key]}"
+            )
+        # And no extra keys either (alpha=0 emits exactly the baseline schema).
+        for key in stats_b:
+            assert key in stats_a, f"alpha=0 path emitted extra key: {key!r}"
+
+        # Post-update policy parameters must match.
+        for i in range(NUM_AGENTS):
+            for p_a, p_b in zip(params_a[i], params_b[i]):
+                assert torch.allclose(p_a, p_b, rtol=1e-6, atol=1e-8), (
+                    f"agent {i}: alpha=0 path diverged in post-update params"
+                )
+
+    def test_influence_reward_shape_and_finite(self):
+        """``_compute_influence_reward()`` returns ``{i: Tensor[T]}`` with
+        no NaN/Inf for a typical rollout."""
+        trainer = _make_trainer()
+        trainer.influence_coef = 0.5  # force the path on for direct inspection
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        intrinsic = trainer._compute_influence_reward(rollout)
+        assert set(intrinsic.keys()) == set(range(NUM_AGENTS))
+        for i in range(NUM_AGENTS):
+            r = intrinsic[i]
+            assert r.shape == (ROLLOUT_STEPS,), (
+                f"agent {i}: intrinsic reward shape {tuple(r.shape)} "
+                f"!= expected ({ROLLOUT_STEPS},)"
+            )
+            assert torch.isfinite(r).all(), (
+                f"agent {i}: non-finite influence reward (NaN or Inf present)"
+            )
+            assert (r >= 0).all(), (
+                f"agent {i}: KL-based influence reward must be non-negative"
+            )
+
+    def test_influence_reward_zero_when_partner_policy_ignores_last_actions(self):
+        """Zero-influence sanity check: if teammate policies do NOT depend on
+        agent ``i``'s slot in ``last_actions``, the counterfactual marginal
+        equals the real distribution and KL → 0.
+
+        Implementation: zero out the columns of every partner policy's first
+        linear layer that read the ``last_actions[i]`` slot from the input.
+        This severs the only mechanism by which a counterfactual ``a'_i``
+        can change ``pi_j``'s output distribution.
+        """
+        trainer = _make_trainer()
+        trainer.influence_coef = 1.0
+
+        # The shared trunk's first linear layer is `policy.shared[0]`. Zero
+        # out its weight columns for every agent ``i``'s last_actions slot,
+        # for every j != i. To keep the test simple and exhaustive, zero
+        # out *all* last_actions block columns in every policy (this also
+        # zeroes the agent's own slot, which is unused for influence).
+        la_start = trainer._influence_la_block_start
+        la_width = trainer._influence_la_slot_width
+        la_end = la_start + NUM_AGENTS * la_width
+        with torch.no_grad():
+            for policy in trainer.policies:
+                w = policy.shared[0].weight
+                # ``w`` shape is [hidden_size, obs_dim]; zero out the
+                # columns in [la_start, la_end).
+                w[:, la_start:la_end] = 0.0
+
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        intrinsic = trainer._compute_influence_reward(rollout)
+        # Every per-step intrinsic reward should be (numerically) zero.
+        for i in range(NUM_AGENTS):
+            r = intrinsic[i]
+            max_abs = float(r.abs().max().item())
+            assert max_abs < 1e-5, (
+                f"agent {i}: expected ~0 influence when partner policies "
+                f"ignore last_actions, got max |r|={max_abs:.3e}"
+            )
+
+    def test_influence_reward_single_agent_is_zero(self):
+        """No other agents to influence → influence reward is exactly 0."""
+        env = BucketBrigadeEnv(num_agents=1)
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=1).shape[0]
+        trainer = JointPPOTrainer(
+            env_fn=lambda: BucketBrigadeEnv(num_agents=1),
+            num_agents=1,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            influence_coef=1.0,
+            seed=0,
+        )
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        intrinsic = trainer._compute_influence_reward(rollout)
+        assert set(intrinsic.keys()) == {0}
+        assert torch.equal(intrinsic[0], torch.zeros(ROLLOUT_STEPS))
+
+    def test_influence_update_records_diagnostics(self):
+        """When ``influence_coef > 0``, ``update()`` must emit
+        ``influence_reward/*`` diagnostic keys in the returned stats dict."""
+        trainer = _make_trainer()
+        trainer.influence_coef = 0.5
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        # Required diagnostic keys.
+        assert "influence_reward/mean" in stats
+        for i in range(NUM_AGENTS):
+            assert f"influence_reward/agent_{i}_mean" in stats
+            assert f"influence_reward/agent_{i}_max" in stats
+            assert np.isfinite(stats[f"influence_reward/agent_{i}_mean"])
+            assert stats[f"influence_reward/agent_{i}_mean"] >= 0.0
+
+    def test_influence_reproducibility_at_fixed_seed(self):
+        """The influence reward is deterministic for the same trainer state +
+        same rollout + same torch RNG state.
+
+        Two invocations of ``_compute_influence_reward`` on the same rollout
+        with the same intervening ``torch.manual_seed`` call must produce
+        bit-identical outputs (the only stochastic component is the MC
+        sampling of counterfactual actions, which is fully RNG-driven).
+        """
+        trainer = _make_trainer()
+        trainer.influence_coef = 0.5
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        torch.manual_seed(123)
+        intrinsic_a = trainer._compute_influence_reward(rollout)
+        torch.manual_seed(123)
+        intrinsic_b = trainer._compute_influence_reward(rollout)
+        for i in range(NUM_AGENTS):
+            assert torch.equal(intrinsic_a[i], intrinsic_b[i]), (
+                f"agent {i}: influence reward not bit-identical across "
+                "two calls with the same RNG seed"
+            )
+
+    def test_influence_coef_validation(self):
+        """Constructor rejects negative ``influence_coef`` and
+        non-positive ``influence_mc_samples``."""
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        common = dict(
+            env_fn=_env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            seed=0,
+        )
+        with pytest.raises(ValueError):
+            JointPPOTrainer(influence_coef=-0.1, **common)
+        with pytest.raises(ValueError):
+            JointPPOTrainer(influence_mc_samples=0, **common)

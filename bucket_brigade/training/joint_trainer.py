@@ -62,6 +62,26 @@ from bucket_brigade.training.normalizers import RunningMeanStd
 __all__ = ["JointPPOTrainer", "RolloutBuffer", "flatten_dict_obs"]
 
 
+# Issue #290 — Social influence as intrinsic motivation (Jaques et al. 2019).
+# The bucket-brigade env exposes other agents' previous-step actions to each
+# agent through the ``last_actions`` field of the observation dict
+# (``bucket_brigade/envs/bucket_brigade_env.py:469``). ``flatten_dict_obs``
+# packs ``last_actions`` as a length-2N float block starting after
+# ``houses(num_houses)``, ``signals(N)``, ``locations(N)``. The slot for
+# agent ``i``'s last action lives at
+# ``[num_houses + 2N + 2*i, num_houses + 2N + 2*i + 2)``.
+#
+# Influence shaping computes, for each step ``t`` and ordered pair
+# ``(i, j)`` with ``i != j``, the KL between agent ``j``'s next-step
+# policy conditional on agent ``i``'s real action ``a_i^t`` and the
+# counterfactual marginal averaged over a Monte-Carlo sample of
+# ``a'_i ~ pi_i(. | obs_i^t)``. The counterfactual is constructed by
+# overwriting the agent-``i`` slot in agent ``j``'s next-step
+# ``last_actions`` block. Agent ``i`` collects the sum of KLs across
+# ``j != i`` as its intrinsic reward at step ``t``.
+_LAST_ACTIONS_WIDTH_PER_AGENT = 2  # [house, mode] — issue #235
+
+
 def flatten_dict_obs(
     obs: Dict[str, np.ndarray],
     agent_id: Optional[int] = None,
@@ -231,6 +251,21 @@ class JointPPOTrainer:
             bucket encoding. Default 8.
         hindsight_ratio_clip: Symmetric clip on the ``pi/h`` hindsight ratio.
             Default 10.0.
+        influence_coef: alpha for Jaques et al. 2019 *Social Influence as
+            Intrinsic Motivation* (issue #290). When ``> 0`` each agent
+            ``i`` receives an intrinsic reward
+            ``alpha * sum_{j != i} KL(pi_j(. | obs_j^{t+1}_real)
+            || E_{a'_i ~ pi_i(. | obs_i^t)} [pi_j(. | obs_j^{t+1}_cf(a'_i))])``
+            added to its environmental reward before advantage computation
+            in :meth:`update` (applies to all three advantage estimators:
+            GAE, HCA, and COMA). The counterfactual obs is constructed by
+            overwriting agent ``i``'s slot in agent ``j``'s next-step
+            ``last_actions`` block. ``0.0`` (default) preserves bit-identical
+            IPPO behavior.
+        influence_mc_samples: K, number of Monte-Carlo samples used to
+            estimate the counterfactual marginal
+            ``E_{a'_i ~ pi_i} [pi_j(. | obs_j_cf(a'_i))]``. Default 4
+            matches the Jaques paper. Ignored when ``influence_coef == 0``.
     """
 
     def __init__(
@@ -260,6 +295,8 @@ class JointPPOTrainer:
         hindsight_lr: Optional[float] = None,
         hindsight_num_return_buckets: int = 8,
         hindsight_ratio_clip: float = 10.0,
+        influence_coef: float = 0.0,
+        influence_mc_samples: int = 4,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
@@ -277,6 +314,23 @@ class JointPPOTrainer:
         self.redundancy_coef = redundancy_coef
         self.ppo_epochs = ppo_epochs
         self.minibatch_size = minibatch_size
+
+        # Issue #290: Jaques et al. 2019 social-influence intrinsic
+        # motivation. ``influence_coef = 0`` (default) preserves bit-identical
+        # IPPO behavior (the augmented-reward path is fully skipped, including
+        # the storage of action logits). Validation deferred to the env-probe
+        # below so we can compute and stash the ``last_actions`` slot offsets
+        # in a single place.
+        if influence_coef < 0:
+            raise ValueError(
+                f"influence_coef must be >= 0, got {influence_coef!r}"
+            )
+        if influence_mc_samples < 1:
+            raise ValueError(
+                f"influence_mc_samples must be >= 1, got {influence_mc_samples!r}"
+            )
+        self.influence_coef = float(influence_coef)
+        self.influence_mc_samples = int(influence_mc_samples)
 
         # Issue #208: MAPPO / centralized-critic flag. Stored before the env
         # reset and policy construction so downstream wiring (advantage
@@ -452,6 +506,25 @@ class JointPPOTrainer:
             self.hindsight_lr = float(lr if hindsight_lr is None else hindsight_lr)
 
         self._reset_env(seed=seed)
+
+        # Issue #290: compute the per-agent ``last_actions`` slot offsets
+        # from a probe observation. We rely on ``flatten_dict_obs``'s layout:
+        # ``[houses(num_houses), signals(N), locations(N),
+        #    last_actions(2N), scenario_info(scenario_len), identity(N)]``.
+        # Probe the env's last_actions block to recover ``num_houses``.
+        # This block is required for the influence reward; computing it
+        # here means downstream code can index into the flattened obs
+        # tensor without re-reading the env.
+        probe_dict = self.env._get_observation()  # type: ignore[attr-defined]
+        num_houses_probe = int(np.asarray(probe_dict["houses"]).shape[0])
+        last_actions_block_start = (
+            num_houses_probe + self.num_agents + self.num_agents
+        )
+        # Each agent occupies a length-``_LAST_ACTIONS_WIDTH_PER_AGENT``
+        # slot inside the block; per-slot stride is also that width.
+        self._influence_num_houses = num_houses_probe
+        self._influence_la_block_start = last_actions_block_start
+        self._influence_la_slot_width = _LAST_ACTIONS_WIDTH_PER_AGENT
 
     # ------------------------------------------------------------------
     # Rollout collection
@@ -712,6 +785,197 @@ class JointPPOTrainer:
         return total / (num_pairs * d * d)
 
     # ------------------------------------------------------------------
+    # Social influence intrinsic reward (issue #290)
+    # ------------------------------------------------------------------
+
+    @torch.no_grad()
+    def _policy_categorical_probs(
+        self, policy: PolicyNetwork, obs: torch.Tensor
+    ) -> List[torch.Tensor]:
+        """Return per-action-dim softmax probability tensors for ``policy(obs)``.
+
+        Args:
+            obs: Tensor of shape ``[B, obs_dim]``.
+
+        Returns:
+            List of ``len(action_dims)`` tensors each of shape ``[B, A_k]``
+            (one per action dimension), already softmax-normalized.
+        """
+        action_logits, _ = policy.forward(obs)
+        return [F.softmax(logits, dim=-1) for logits in action_logits]
+
+    @torch.no_grad()
+    def _compute_influence_reward(
+        self, rollout: RolloutBuffer
+    ) -> Dict[int, torch.Tensor]:
+        """Per-step Jaques-2019 social-influence intrinsic reward per agent.
+
+        For each step ``t in [0, T-2]`` and agent ``i``, the intrinsic
+        reward is::
+
+            r_inf_i(t) = sum_{j != i}
+                KL( pi_j(. | obs_j^{t+1})
+                    || E_{a'_i ~ pi_i(. | obs_i^t)}
+                       [ pi_j(. | obs_j^{t+1, cf}(a'_i)) ] )
+
+        where ``obs_j^{t+1, cf}(a'_i)`` is the actual stored next-step obs
+        of agent ``j`` with agent ``i``'s slot in the ``last_actions``
+        block overwritten by the counterfactual sampled action ``a'_i``.
+        ``last_actions`` width per agent is
+        ``_LAST_ACTIONS_WIDTH_PER_AGENT`` ``[house, mode]`` (issue #235).
+        The counterfactual marginal is estimated by ``K`` Monte-Carlo
+        samples ``a'_i ~ pi_i`` (``K = self.influence_mc_samples``).
+
+        The KL is summed across the three action heads, treating the heads
+        as independent — consistent with how ``PolicyNetwork`` constructs
+        the joint policy as a product of per-dim categoricals. This is the
+        same independence assumption used in entropy/log-prob calls
+        elsewhere in this trainer.
+
+        Step ``t = T - 1`` has no observed ``obs^{t+1}``; its influence
+        reward is set to 0 to keep the shape consistent. All steps
+        whose ``rollout.dones[t]`` flag is True also yield 0 (the env
+        auto-reset would invalidate the counterfactual mapping).
+
+        Returns:
+            Dict ``{i: Tensor[T]}`` of per-agent intrinsic rewards (not
+            yet multiplied by ``alpha``).
+        """
+        T = rollout.observations.shape[0]
+        N = self.num_agents
+        device = self.device
+
+        # Per-agent reward buffer (one [T] tensor each).
+        intrinsic = {
+            i: torch.zeros(T, dtype=torch.float32, device=device) for i in range(N)
+        }
+
+        # If the rollout is one-step or fully terminal, there's nothing to do.
+        if T < 2:
+            return intrinsic
+
+        # Mask of "valid" t — has a next step that belongs to the same
+        # episode. ``dones[t] == 1`` means the env auto-reset at the boundary
+        # between t and t+1, so the next-step obs is from a fresh episode and
+        # the counterfactual no longer corresponds to agent i's action.
+        dones_np = rollout.dones.cpu().numpy().astype(bool)
+        valid_t = np.zeros(T - 1, dtype=bool)
+        valid_t[:] = ~dones_np[: T - 1]
+
+        # All per-step "current" obs (for sampling counterfactual a'_i) and
+        # "next" obs (for evaluating pi_j on counterfactuals) as torch tensors.
+        # [T, N, obs_dim] — agent i reads its own row [t, i, :].
+        obs_all = rollout.observations  # [T, N, obs_dim] on device
+
+        la_start = self._influence_la_block_start
+        la_width = self._influence_la_slot_width
+
+        # We iterate per agent i (the influencer). For each step t with
+        # valid_t[t] = True, sample K counterfactual actions a'_i from
+        # pi_i(. | obs_i^t), then for each j != i:
+        #   - real_p_j   = pi_j(. | obs_j^{t+1})  (3 per-dim cat probs)
+        #   - cf_marg_j  = (1/K) sum_k pi_j(. | obs_j^{t+1, cf}(a'_i_k))
+        #   - KL(real_p_j || cf_marg_j) summed across the 3 action dims.
+        # Vectorize over t so K MC samples + N-1 partners each form a single
+        # batched forward pass.
+        K = self.influence_mc_samples
+        action_dims = self.action_dims
+
+        # Pre-compute "current" obs per agent i across all valid t once.
+        # Shape: [T_valid, obs_dim]. We then sample K counterfactuals from
+        # pi_i for all valid t at once.
+        valid_idx = np.nonzero(valid_t)[0]
+        if valid_idx.size == 0:
+            return intrinsic
+        valid_idx_t = torch.from_numpy(valid_idx).to(device=device, dtype=torch.long)
+        T_valid = valid_idx_t.shape[0]
+
+        for i in range(N):
+            # Agent i's "current" obs at every valid t. [T_valid, obs_dim].
+            obs_i_t = obs_all.index_select(0, valid_idx_t)[:, i, :]
+
+            # Sample K counterfactual actions a'_i ~ pi_i(. | obs_i^t).
+            probs_i = self._policy_categorical_probs(self.policies[i], obs_i_t)
+            # For each action dim k, sample K from [T_valid, A_k]:
+            # categorical sampling is independent across dims (the per-dim
+            # heads of PolicyNetwork are independent in distribution).
+            sampled_cols: List[torch.Tensor] = []
+            for k_dim, probs_k in enumerate(probs_i):
+                # ``Categorical.sample`` over batched probs returns one sample
+                # per row. We need K samples per row → expand and reshape.
+                dist = torch.distributions.Categorical(probs=probs_k)
+                # [K, T_valid] then transpose → [T_valid, K]
+                samples = dist.sample(sample_shape=(K,)).T  # [T_valid, K]
+                sampled_cols.append(samples)
+            # cf_actions[t, k, dim] — store as [T_valid, K, A]: a stack of
+            # length-A integer action vectors. We only need the first two
+            # entries (house, mode) to overwrite last_actions, but keep all
+            # three for clarity / future use.
+            cf_actions = torch.stack(sampled_cols, dim=-1)  # [T_valid, K, A]
+            cf_actions = cf_actions.to(dtype=torch.float32)
+
+            # For each j != i:
+            for j in range(N):
+                if j == i:
+                    continue
+                # Real next-step obs of agent j at every valid t.
+                obs_j_next_real = obs_all.index_select(0, valid_idx_t + 1)[
+                    :, j, :
+                ]  # [T_valid, obs_dim]
+
+                # Real per-dim probs pi_j(. | obs_j^{t+1}).
+                real_probs_j = self._policy_categorical_probs(
+                    self.policies[j], obs_j_next_real
+                )  # list of [T_valid, A_k]
+
+                # Construct K counterfactual obs by overwriting agent i's
+                # last_actions slot in obs_j_next_real with cf_actions[..., :la_width].
+                # Build a tiled tensor of shape [T_valid, K, obs_dim], then
+                # overwrite the slot.
+                obs_j_next_cf = obs_j_next_real.unsqueeze(1).expand(
+                    T_valid, K, -1
+                ).contiguous()
+                # Slot location: la_start + i * la_width .. + la_width.
+                slot_lo = la_start + i * la_width
+                slot_hi = slot_lo + la_width
+                # cf_actions[..., :la_width] gives [T_valid, K, la_width].
+                obs_j_next_cf[:, :, slot_lo:slot_hi] = cf_actions[
+                    :, :, :la_width
+                ]
+                # Flatten to [T_valid * K, obs_dim] for one batched forward.
+                obs_j_next_cf_flat = obs_j_next_cf.view(T_valid * K, -1)
+                cf_probs_j_flat = self._policy_categorical_probs(
+                    self.policies[j], obs_j_next_cf_flat
+                )  # list of [T_valid * K, A_k]
+                # Average over K to get the counterfactual marginal per t.
+                cf_marg_j: List[torch.Tensor] = []
+                for probs_flat in cf_probs_j_flat:
+                    probs_resh = probs_flat.view(T_valid, K, -1)
+                    cf_marg_j.append(probs_resh.mean(dim=1))  # [T_valid, A_k]
+
+                # KL(real || cf_marg) summed across action dims; clamp to avoid
+                # log(0). Per-dim KL: sum_a p log(p / q).
+                eps = 1e-8
+                kl_per_t = torch.zeros(T_valid, dtype=torch.float32, device=device)
+                for k_dim in range(len(action_dims)):
+                    p = real_probs_j[k_dim].clamp_min(eps)
+                    q = cf_marg_j[k_dim].clamp_min(eps)
+                    kl_k = (p * (p.log() - q.log())).sum(dim=-1)
+                    kl_per_t = kl_per_t + kl_k
+
+                # Numerical floor: KL ≥ 0 in theory; clamp to discard any
+                # tiny negative noise from float32.
+                kl_per_t = kl_per_t.clamp_min(0.0)
+
+                # Credit agent i (the influencer) with its KL contribution at
+                # the original step t (not t+1) — the action being credited is
+                # agent i's ``a_i^t`` even though the response is observed at
+                # t+1 through the env's ``last_actions`` channel.
+                intrinsic[i].index_add_(0, valid_idx_t, kl_per_t)
+
+        return intrinsic
+
+    # ------------------------------------------------------------------
     # PPO update
     # ------------------------------------------------------------------
 
@@ -789,7 +1053,11 @@ class JointPPOTrainer:
         # Returns target for the value head is the Monte-Carlo Z_t.
         return adv, returns
 
-    def _update_hindsight_nets(self, rollout: "RolloutBuffer") -> Dict[int, float]:
+    def _update_hindsight_nets(
+        self,
+        rollout: "RolloutBuffer",
+        rewards_override: Optional[Dict[int, torch.Tensor]] = None,
+    ) -> Dict[int, float]:
         """One supervised-learning step per agent's hindsight network.
 
         Issue #289: trains each per-agent :class:`HindsightNetwork` by maximum
@@ -802,6 +1070,16 @@ class JointPPOTrainer:
         that the hindsight ratio used inside the advantage computation
         reflects the most recent hindsight fit.
 
+        Args:
+            rollout: the rollout buffer.
+            rewards_override: Optional per-agent reward tensors to use in
+                place of ``rollout.rewards[i]`` when computing the
+                Monte-Carlo return targets. Issue #290 sets this to the
+                influence-augmented rewards so the HCA hindsight fit sees
+                the same signal that the advantage estimator does. When
+                ``None`` (default) ``rollout.rewards`` is used as before
+                (bit-identical pre-#290 behavior).
+
         Returns:
             Per-agent cross-entropy loss values keyed by agent id.
         """
@@ -813,11 +1091,12 @@ class JointPPOTrainer:
         assert self.advantage_estimator == "hca"
         assert self.hindsight_nets is not None
         assert self.hindsight_optimizers is not None
+        rewards_src = rewards_override if rewards_override is not None else rollout.rewards
         losses: Dict[int, float] = {}
         for i in range(self.num_agents):
             obs_i = rollout.observations[:, i, :]  # [T, obs_dim]
             actions_i = rollout.actions[i]  # [T, A]
-            rewards_i = rollout.rewards[i].cpu().tolist()
+            rewards_i = rewards_src[i].cpu().tolist()
             dones_i = rollout.dones.cpu().tolist()
             Z_i = torch.tensor(
                 compute_returns_to_go(rewards_i, dones_i, gamma=self.gamma),
@@ -1029,6 +1308,48 @@ class JointPPOTrainer:
         """
         t_total = rollout.observations.shape[0]
 
+        # Issue #290: optionally augment per-agent rewards with the
+        # Jaques-2019 social-influence intrinsic reward before advantage
+        # computation. Runs BEFORE the HCA hindsight-net update and BEFORE
+        # GAE/HCA/COMA so the influence channel flows into all three
+        # advantage estimators. The ``influence_coef == 0`` path is a strict
+        # no-op — no extra forwards, no buffer mutation — so the rest of
+        # the trainer stays bit-identical with the pre-#290 baseline
+        # (verified by ``test_influence_coef_zero_bit_identical``).
+        influence_stats: Dict[str, float] = {}
+        if self.influence_coef > 0:
+            intrinsic = self._compute_influence_reward(rollout)
+            # Aggregate diagnostics: per-agent and team means + maxes. These
+            # appear in the returned ``stats`` dict so the analyzer can chart
+            # whether the influence channel is actually firing.
+            with torch.no_grad():
+                all_means: List[float] = []
+                for i in range(self.num_agents):
+                    r_i = intrinsic[i]
+                    influence_stats[f"influence_reward/agent_{i}_mean"] = float(
+                        r_i.mean().item()
+                    )
+                    influence_stats[f"influence_reward/agent_{i}_max"] = float(
+                        r_i.max().item()
+                    )
+                    all_means.append(float(r_i.mean().item()))
+                influence_stats["influence_reward/mean"] = float(
+                    np.mean(all_means) if all_means else 0.0
+                )
+            # Inject augmented reward (scaled by alpha) into the per-agent
+            # reward tensors fed to the advantage estimator. The original
+            # buffer is not mutated — we copy here so callers re-using the
+            # rollout (e.g. tests) don't see a side-effect.
+            augmented_rewards: Dict[int, torch.Tensor] = {
+                i: rollout.rewards[i] + self.influence_coef * intrinsic[i]
+                for i in range(self.num_agents)
+            }
+        else:
+            # Bit-identical path: alias the original buffer. ``augmented_rewards``
+            # is indexed exactly like ``rollout.rewards`` so downstream code
+            # is unchanged.
+            augmented_rewards = rollout.rewards
+
         # Issue #289: HCA path trains the per-agent hindsight nets once per
         # ``update()`` call, *before* the advantages are computed, so the
         # ratio used inside the advantage formula reflects the most recent
@@ -1036,15 +1357,26 @@ class JointPPOTrainer:
         # from the PPO optimizer (separate Adam state).
         hindsight_losses: Dict[int, float] = {}
         if self.advantage_estimator == "hca":
-            hindsight_losses = self._update_hindsight_nets(rollout)
+            # Pass augmented rewards into the hindsight-net fit when influence
+            # is active so the return buckets used for both training and the
+            # advantage-time ratio share a coherent reward signal. When
+            # ``influence_coef == 0``, ``augmented_rewards is rollout.rewards``,
+            # so this call is bit-identical to the pre-#290 invocation.
+            hindsight_losses = self._update_hindsight_nets(
+                rollout,
+                rewards_override=augmented_rewards if self.influence_coef > 0 else None,
+            )
 
-        # Per-agent advantages and returns from GAE or HCA.
+        # Per-agent advantages and returns from GAE or HCA. When
+        # ``influence_coef > 0`` the augmented per-agent rewards (env +
+        # alpha * intrinsic) drive the advantage estimator. When 0, the
+        # alias above passes ``rollout.rewards`` unchanged for bit-identity.
         advantages: Dict[int, torch.Tensor] = {}
         returns: Dict[int, torch.Tensor] = {}
         for i in range(self.num_agents):
             if self.advantage_estimator == "hca":
                 adv, ret = self._compute_advantages(
-                    rollout.rewards[i],
+                    augmented_rewards[i],
                     rollout.values[i],
                     rollout.dones,
                     agent_id=i,
@@ -1054,7 +1386,7 @@ class JointPPOTrainer:
                 )
             else:
                 adv, ret = self._compute_advantages(
-                    rollout.rewards[i], rollout.values[i], rollout.dones
+                    augmented_rewards[i], rollout.values[i], rollout.dones
                 )
             advantages[i] = (adv - adv.mean()) / (adv.std() + 1e-8)
             returns[i] = ret
@@ -1140,9 +1472,13 @@ class JointPPOTrainer:
                 ],
                 dim=1,
             )
-            # Per-agent rewards as [T, N].
+            # Per-agent rewards as [T, N]. Issue #290: route the
+            # influence-augmented rewards into the COMA TD targets so the
+            # intrinsic motivation flows into the Q-critic regression
+            # (mirrors the GAE/HCA path above). When
+            # ``influence_coef == 0`` this aliases ``rollout.rewards``.
             rewards_TN = torch.stack(
-                [rollout.rewards[i] for i in range(self.num_agents)], dim=1
+                [augmented_rewards[i] for i in range(self.num_agents)], dim=1
             )
             # 1-step TD targets for the Q-critic regression.
             coma_td_targets = self._coma_compute_td_targets(
@@ -1310,6 +1646,9 @@ class JointPPOTrainer:
                 ):
                     self.q_critic_target.load_state_dict(self.q_critic.state_dict())
 
+        # Issue #290: merge social-influence diagnostics into the returned
+        # stats dict. Empty when ``influence_coef == 0`` (no-op path).
+        stats.update(influence_stats)
         return stats
 
     # ------------------------------------------------------------------
