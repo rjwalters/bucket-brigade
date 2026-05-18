@@ -4,21 +4,21 @@ BUCKET BRIGADE — CLASS DESIGN AND IO SPECIFICATION
 PURPOSE
 --------
 This document describes the class structure for the Bucket Brigade simulator,
-including all data inputs and outputs. It is designed for forward compatibility
-with the PufferLib reinforcement-learning framework while retaining full
-support for heuristic scripted agents and ranking experiments.
+including all data inputs and outputs. It supports heuristic scripted agents,
+ranking experiments, and reinforcement learning via the `JointPPOTrainer`
+which operates directly against the raw Rust `BucketBrigadeEnv`.
 
 CLASS OVERVIEW
 --------------
 bucket_brigade.envs.bucket_brigade_env
-    A multi-agent environment implementing the standard Gym / PufferLib API.
+    A multi-agent environment implementing a Gym-style multi-agent API.
 
 bucket_brigade.envs.scenarios
     Defines parameter distributions and generators for randomized game setups.
 
 bucket_brigade.agents.AgentBase
     Common base class for all agents. Provides a unified interface compatible
-    with both scripted heuristics and learned PufferLib policies.
+    with both scripted heuristics and learned policies.
 
 bucket_brigade.orchestration.orchestrator
     Runs batches of games, stores results, and feeds data into the ranking model.
@@ -29,7 +29,7 @@ CLASS DESIGN
    ----------------
    Responsibilities:
      - Manage environment state (houses, agents, fires, nights).
-     - Implement reset() and step() following Gym/PufferLib conventions.
+     - Implement reset() and step() following Gym multi-agent conventions.
      - Generate initial scenario and randomize parameters.
      - Record full trajectories for replay.
 
@@ -114,7 +114,8 @@ CLASS DESIGN
    Derived classes:
      - HeuristicAgent: scripted decision logic for initial experiments.
      - RandomAgent: baseline random actor.
-     - PufferPolicyAdapter: wraps PufferLib Actor-Critic models.
+     - Learned policies are trained via `JointPPOTrainer` against the raw
+       Rust `BucketBrigadeEnv` (no policy-adapter shim required).
 
 4. Observation and Action Structures
    ---------------------------------
@@ -154,14 +155,17 @@ IO FLOW
    - Summary CSV or SQLite entry for ranking:
        episode_id, scenario_id, team, team_reward, agent_rewards, replay_path
 
-PUFFERLIB COMPATIBILITY
+RL TRAINING INTEGRATION
 -----------------------
-The environment is fully compliant with the PufferLib multi-agent interface:
+Reinforcement-learning training is provided by `JointPPOTrainer`
+(`bucket_brigade.training.joint_trainer`), which operates directly against the
+raw Rust `BucketBrigadeEnv` without an intermediate framework adapter:
 
-  - reset() and step() signatures match pe.MultiAgentEnv expectations.
-  - obs_space and act_space defined as pe.spaces.Dict and pe.spaces.MultiDiscrete.
+  - reset() and step() expose per-agent observation/reward/done arrays.
+  - obs_space and act_space are plain dict / MultiDiscrete descriptions.
   - vectorized per-agent rewards and dones.
-  - supports parallelization via pufferlib.vector wrappers.
+  - parallelization is handled inside `JointPPOTrainer` via its own
+    rollout workers (no external vectorization wrapper).
   - deterministic RNG seeding for reproducible batches.
 
 GAME SCENARIO GENERATION
@@ -204,7 +208,7 @@ This class design has been fully implemented:
 - `BucketBrigadeEnv` class in `bucket_brigade/envs/bucket_brigade_env.py`
 - `Scenario` class and generation functions in `bucket_brigade/envs/scenarios.py`
 - `AgentBase` and `HeuristicAgent` classes in `bucket_brigade/agents/`
-- PufferLib-compatible API with observation/action spaces
+- Multi-agent observation/action spaces consumed directly by `JointPPOTrainer`
 - JSON replay export functionality
 - Batch orchestration system
 
@@ -212,7 +216,7 @@ SUMMARY
 -------
 This class design provides:
   - Full reproducibility and structured state updates.
-  - A clean API compatible with PufferLib and Gym.
+  - A clean multi-agent Gym-style API consumed directly by `JointPPOTrainer`.
   - Probabilistic scenario generation with agent-visible parameters.
   - Simple extensibility for heuristic or learned agents.
   - Clear input/output data structures for downstream ranking and visualization.
