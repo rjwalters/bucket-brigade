@@ -21,8 +21,10 @@ The wrapper is deliberately minimal:
   diagnostic rollouts.
 * Honest signal — the network outputs a third action head (signal) when
   ``action_dims = [10, 2, 2]``; we pass it through. For two-head legacy
-  checkpoints we synthesize ``signal := mode`` (honest), matching the
-  pre-#235 BucketBrigade contract.
+  checkpoints (pre-#236) loading is **refused by default**: synthesizing
+  ``signal := mode`` would fabricate an output the original policy never
+  produced. Pass ``allow_legacy_2head=True`` to opt in to the synthesis
+  (with a runtime warning). See issue #325 for the audit trail.
 
 The wrapper does *not* try to fit a 10-d θ vector to clone a network — see
 the Curator notes on issue #275: that approach (Option A) is lossy because
@@ -33,6 +35,7 @@ the heuristic family is low-capacity. The mixed payoff evaluator in
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -76,6 +79,15 @@ class TrainedPolicyArchetype(AgentBase):
         CPU-bound (#198 small env) so GPU launch overhead dominates.
     name
         Optional human-readable name (e.g. ``"ippo_seed42_agent0"``).
+    allow_legacy_2head
+        If ``False`` (default), refuse to load checkpoints with only 2
+        action heads (legacy pre-#236 policies) by raising ``ValueError``.
+        If ``True``, accept the legacy checkpoint and synthesize the
+        missing signal channel as ``signal := mode`` at act time, emitting
+        a ``UserWarning``. See issue #325 — all 244 existing checkpoints
+        under ``experiments/p3_specialization/`` on 2026-05-18 were 2-head,
+        so this gate is the difference between an honest "no signal" verdict
+        and a silently-fabricated one.
     """
 
     def __init__(
@@ -89,12 +101,14 @@ class TrainedPolicyArchetype(AgentBase):
         deterministic: bool = True,
         device: str = "cpu",
         name: Optional[str] = None,
+        allow_legacy_2head: bool = False,
     ) -> None:
         super().__init__(agent_id, name or f"trained-{Path(state_dict_path).stem}")
         self.state_dict_path = Path(state_dict_path)
         self.num_agents = int(num_agents)
         self.deterministic = bool(deterministic)
         self.device = torch.device(device)
+        self.allow_legacy_2head = bool(allow_legacy_2head)
 
         if not self.state_dict_path.exists():
             raise FileNotFoundError(
@@ -129,6 +143,30 @@ class TrainedPolicyArchetype(AgentBase):
                 inferred = [10, 2, 2]
             self.action_dims = inferred
 
+        # Gate legacy 2-head (pre-#236) checkpoints (#325). The PolicyNetwork
+        # only knows about the heads it was constructed with, so a 2-head
+        # checkpoint loaded as a 2-head network produces a 2-d action. The
+        # downstream env expects 3-d (house, mode, signal); the historical
+        # behavior was to silently append ``signal := mode`` at act time,
+        # which fabricates a signal output the original policy never produced.
+        # Refuse by default; opt in to the synthesis with a warning.
+        if len(self.action_dims) == 2:
+            if not self.allow_legacy_2head:
+                raise ValueError(
+                    f"TrainedPolicyArchetype: checkpoint {self.state_dict_path} "
+                    f"has 2 action heads (legacy pre-#236). Loading would "
+                    f"silently set `signal := mode`, fabricating a signal "
+                    f"output the original policy never produced. Pass "
+                    f"`allow_legacy_2head=True` to opt in to the backfill "
+                    f"(see issue #325)."
+                )
+            warnings.warn(
+                f"Loading legacy 2-head checkpoint {self.state_dict_path}; "
+                f"signal := mode backfill active (see issue #325).",
+                UserWarning,
+                stacklevel=2,
+            )
+
         self.policy = PolicyNetwork(
             obs_dim=self.obs_dim,
             action_dims=self.action_dims,
@@ -158,6 +196,8 @@ class TrainedPolicyArchetype(AgentBase):
         out = [int(a[0].item()) for a in actions]
 
         # Backfill signal for legacy two-head checkpoints (signal := mode).
+        # Only reachable when the caller opted into ``allow_legacy_2head=True``
+        # at construction time; otherwise ``__init__`` raised (#325).
         if len(out) == 2:
             out.append(out[1])
 
