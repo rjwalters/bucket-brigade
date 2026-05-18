@@ -25,11 +25,11 @@ Five metrics per cell, per the issue #220 curator protocol:
    → KL > 0 iff agents specialize.
 5. **Gap closed** — for ``minimal_specialization``:
    ``(ppo_trailing5 − random) / (specialist − random)`` with the
-   post-#236 re-derived references from issue #238 (random = −96.07,
-   specialist = −22.07; pre-#216 reference was 18.1%). The post-#236
-   eval reproduces the pre-#236 values exactly because specialist
-   policies signal honestly and random samples uniformly over the new
-   3-element action space. Pass bar: treatment ≥ 50%.
+   canonical references imported from
+   :mod:`bucket_brigade.baselines` (random = −87.72, specialist =
+   −22.07; pre-#216 reference was 18.1%). The constants were unified
+   under issue #293 — historically this analyzer used the
+   pre-#246-sampler value −96.07. Pass bar: treatment ≥ 50%.
 
 Usage::
 
@@ -44,6 +44,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
 
 ARMS = ["baseline", "treatment"]
 SCENARIOS = ["default", "minimal_specialization"]
@@ -52,12 +54,11 @@ LAMBDA_DIR = "lambda_0e0"
 NUM_AGENTS = 4
 TRAILING_N = 5
 
-# Post-#236 references re-derived under issue #238 (2026-05-16).
-# Source: diagnostics/results/issue238_post236_minspec/baselines.json.
-# Identical to the 2026-05-15 pre-#236 values to <0.01 per-step (specialists
-# signal honestly; random samples uniformly over the new 3-element action).
-MINSPEC_RANDOM = -96.07
-MINSPEC_SPECIALIST = -22.07
+# Canonical per-step (random, specialist) team-reward references for
+# ``minimal_specialization``. Imported from ``bucket_brigade.baselines`` so
+# all analyzers stay in sync (issue #293). See the module docstring of
+# ``bucket_brigade.baselines`` for derivation provenance (n=1000 × 5 seeds,
+# post-#246 3-dim sampler; PR #244 for random, PR #243 for specialist).
 
 
 def _cell_dir(root: Path, arm: str, scenario: str, seed: int) -> Path:

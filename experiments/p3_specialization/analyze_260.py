@@ -35,6 +35,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
 ARMS = ["baseline", "curriculum"]
 SEEDS = [0, 1, 2]
 NUM_AGENTS = 4
@@ -42,13 +44,13 @@ TRAILING_N = 5
 SCENARIO = "minimal_specialization"
 
 # Per-step (random, specialist) team-reward references for
-# ``minimal_specialization`` (issue199_minspec baselines, the canonical
-# 4-agent specialist policy with honest signaling, seed=42, n=50 episodes).
-# Sourced from
-# ``experiments/p3_specialization/diagnostics/results/issue199_minspec/baselines.json``.
-RANDOM_REF = -92.92147252747253
-SPECIALIST_REF = -22.07174358974359
-SPEC_RAND_GAP = SPECIALIST_REF - RANDOM_REF  # ≈ +70.85
+# ``minimal_specialization``. Imported from ``bucket_brigade.baselines`` so
+# all analyzers stay in sync (issue #293; previously this module used the
+# intermediate n=50 corrected-sampler value -92.92147252747253). See the
+# ``bucket_brigade.baselines`` docstring for derivation provenance.
+RANDOM_REF = MINSPEC_RANDOM
+SPECIALIST_REF = MINSPEC_SPECIALIST
+SPEC_RAND_GAP = SPECIALIST_REF - RANDOM_REF  # ≈ +65.65
 
 
 def _cell_dir(root: Path, arm: str, seed: int) -> Path:

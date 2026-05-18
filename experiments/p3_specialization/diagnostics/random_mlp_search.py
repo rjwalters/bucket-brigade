@@ -39,8 +39,10 @@ Output (under ``--out-dir``, default
   fresh episodes (different episode seeds than the initial pass) plus a
   bootstrap 95% CI.
 - ``distribution_<protocol>.png``: histogram of all per-seed means, with
-  vertical lines for uniform-random (-87.72), PPO best (~-75), specialist
-  (-22.07), and the stability-confirmed top-1% mean.
+  vertical lines for uniform-random (``MINSPEC_RANDOM``), PPO best (~-75),
+  specialist (``MINSPEC_SPECIALIST``), and the stability-confirmed top-1%
+  mean. See :mod:`bucket_brigade.baselines` for the canonical reference
+  values.
 - ``summary.md``: combined verdict block covering both protocols; reports
   gap_closed at top-1% (stability-confirmed) and applies the verdict table
   from the issue body.
@@ -51,11 +53,12 @@ Reference values (per-step team reward on ``minimal_specialization``,
 
 | Policy class | per-step team reward |
 | --- | --- |
-| Uniform-random action sampling | -87.72 |
+| Uniform-random action sampling | ``MINSPEC_RANDOM`` |
 | Trained IPPO (best of 5 interventions) | ~-75 (gap_closed ≈ 0.18) |
-| Specialist | -22.07 |
+| Specialist | ``MINSPEC_SPECIALIST`` |
 
-Denominator: ``specialist - random = 65.65``.
+Denominator: ``specialist - random ≈ 65.65``. Numeric values come from
+``bucket_brigade.baselines`` (issue #293).
 
 Usage
 -----
@@ -85,6 +88,8 @@ from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
 # These imports are also used by the worker, but workers re-import them under
 # the ``spawn`` context (fresh interpreter). Keep them top-level for the
 # orchestrator process.
@@ -98,12 +103,13 @@ ACTION_DIMS = [10, 2, 2]  # [house, mode, signal] (issue #235)
 SCENARIO_NAME = "minimal_specialization"
 
 # Reference values for verdict (per-step team reward on minimal_specialization).
-# Sources: random_baseline.SCENARIO_CITED_VALUES['minimal_specialization'] for
-# random; experiments/p3_specialization/analyze_261_calibration.py:53-54 for
-# specialist and denominator; PPO best ≈ -75 across the 5 tier-3 interventions.
-REF_RANDOM = -87.72
+# Imported from ``bucket_brigade.baselines`` (issue #293 single source of
+# truth; see that module's docstring for derivation provenance — random is
+# n=1000 × 5 seeds post-#246, PR #244; specialist is n=50 post-#236, PR #243).
+# PPO best ≈ -75 across the 5 tier-3 interventions is the only local literal.
+REF_RANDOM = MINSPEC_RANDOM
 REF_PPO_BEST = -75.0  # approximate PPO ceiling across the 5 interventions
-REF_SPECIALIST = -22.07
+REF_SPECIALIST = MINSPEC_SPECIALIST
 REF_DENOMINATOR = REF_SPECIALIST - REF_RANDOM  # 65.65
 
 

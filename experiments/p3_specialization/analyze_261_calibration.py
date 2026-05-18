@@ -10,8 +10,8 @@ For each ``(alpha, beta)`` cell aggregated over seeds, computes:
 * ``trailing5_team_reward`` — mean of last-5 ``mean_step_reward_team`` rows
   (matches ``analyze_231._trailing_team``).
 * ``gap_closed`` — ``(trailing5 - random) / (specialist - random)`` using the
-  ``minimal_specialization`` references from ``analyze_231``
-  (random=-87.72, specialist=-22.07; denominator=65.65).
+  canonical ``minimal_specialization`` references from
+  :mod:`bucket_brigade.baselines` (denominator ≈ 65.65).
 * ``mean_action_entropy_final`` — from ``metrics[-1]['action_entropy/mean']``
   (already logged by ``train.py``).
 * ``entropy_collapse_multiple`` — ``baseline_entropy / cell_entropy`` where
@@ -44,14 +44,14 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
 
-# Pre-registered references (per-step mean team reward) from
-# ``analyze_231.BASELINES['minimal_specialization']``. Sources:
-#   random:     PR #244 (issue #237 post-#236 re-derivation)
-#   specialist: PR #243 (issue #238 post-#236 re-derivation)
-# Denominator: specialist - random = 65.65
-MINSPEC_RANDOM = -87.72
-MINSPEC_SPECIALIST = -22.07
+
+# Pre-registered references (per-step mean team reward) imported from the
+# canonical ``bucket_brigade.baselines`` constants (issue #293). See that
+# module's docstring for derivation provenance (random from PR #244 / issue
+# #237 post-#236; specialist from PR #243 / issue #238 post-#236).
+# Denominator: ``MINSPEC_SPECIALIST - MINSPEC_RANDOM ≈ 65.65``.
 
 SEEDS = [42, 43, 44]
 TRAILING_N = 5

@@ -35,9 +35,10 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-# Hardcoded references (mirror analyze_220.py:59-60).
-MINSPEC_RANDOM = -96.07
-MINSPEC_SPECIALIST = -22.07
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
+# Canonical per-step references imported from ``bucket_brigade.baselines``
+# (issue #293). See that module's docstring for derivation provenance.
 TRAILING_N = 5
 
 
