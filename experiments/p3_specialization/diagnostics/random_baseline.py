@@ -92,6 +92,12 @@ DEFAULT_SCENARIO_NAME = "default"
 # All 14 named scenarios from ``bucket-brigade-core/src/scenarios.rs`` are
 # present post-#237; the verdict comparison should never be suppressed for a
 # named scenario.
+#
+# Cross-reference (issue #323): a value-only mirror of the ``random`` column
+# below lives in :data:`bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES`
+# for non-torch consumers (this module transitively imports torch via the
+# training package). ``tests/test_baselines_constants.py`` asserts the two
+# stay in sync.
 SCENARIO_CITED_VALUES: dict[str, dict[str, float | str | None]] = {
     "default": {
         "random": 251.23,
