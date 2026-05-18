@@ -116,6 +116,14 @@ class CellConfig:
     # state dicts are loaded into ``trainer.policies[i]`` immediately after
     # trainer construction, before the first PPO iteration.
     bc_init_checkpoint_dir: Optional[str] = None
+    # Issue #282: GAE lambda for advantage estimation. Default 0.95 matches
+    # ``JointPPOTrainer.__init__`` and preserves bit-identical pre-#282
+    # behavior. Raised toward 1.0 in the issue #282 sweep to test whether
+    # bootstrap bias is the source of PPO's plateau on
+    # ``minimal_specialization`` (thesis: GAE bootstrap bias as the
+    # misalignment source — see
+    # ``research_notebook/2026-05-17_thesis_misaligned_gradients.md``).
+    gae_lambda: float = 0.95
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -645,6 +653,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         action_dims=cfg.action_dims,
         hidden_size=cfg.hidden_size,
         lr=cfg.lr,
+        gae_lambda=cfg.gae_lambda,
         ppo_epochs=cfg.ppo_epochs,
         minibatch_size=cfg.minibatch_size,
         value_coef=cfg.value_coef,
@@ -861,6 +870,21 @@ def main() -> None:
             "preserves bit-identical pre-#270 random-init behavior."
         ),
     )
+    p.add_argument(
+        "--gae-lambda",
+        type=float,
+        default=CellConfig.__dataclass_fields__["gae_lambda"].default,
+        help=(
+            "Issue #282: GAE lambda for advantage estimation. Default 0.95 "
+            "matches JointPPOTrainer's existing default and preserves "
+            "bit-identical pre-#282 behavior. The issue #282 sweep raises "
+            "this to {0.99, 0.999, 1.0} to test whether GAE bootstrap bias "
+            "is the source of PPO's plateau on minimal_specialization "
+            "(thesis: gradient locality / bootstrap bias as the "
+            "misalignment source). lambda=1.0 is pure Monte Carlo (no "
+            "bootstrap)."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -879,11 +903,13 @@ def main() -> None:
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
+        gae_lambda=args.gae_lambda,
         device=args.device,
     )
     print(
         f"== P3 cell: scenario={cfg.scenario} lambda_red={cfg.lambda_red} "
         f"seed={cfg.seed} "
+        f"gae_lambda={cfg.gae_lambda} "
         f"action_shaping_alpha={cfg.action_shaping_alpha} "
         f"action_shaping_beta={cfg.action_shaping_beta} =="
     )
