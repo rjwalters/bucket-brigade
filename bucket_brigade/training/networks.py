@@ -6,6 +6,7 @@ spaces, commonly used in reinforcement learning scenarios.
 
 from typing import List, Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -425,6 +426,288 @@ def compute_gae(
         advantages.insert(0, gae)
 
     return advantages
+
+
+def compute_returns_to_go(
+    rewards: List[float],
+    dones: List[bool],
+    gamma: float = 0.99,
+) -> List[float]:
+    """Compute discounted Monte-Carlo returns-to-go ``Z_t``.
+
+    Used as the outcome target ``Z_t`` in HCA advantage estimation (issue #289).
+    Unlike GAE, this is a pure Monte-Carlo target that does not bootstrap on
+    learned value estimates. Episode boundaries (``dones[t] == 1``) reset the
+    backward accumulator so credit does not leak across episodes.
+
+    Args:
+        rewards: Per-timestep rewards.
+        dones: Per-timestep episode-termination flags. A ``True`` at index ``t``
+            means step ``t`` was the last step of its episode.
+        gamma: Discount factor.
+
+    Returns:
+        List of returns-to-go, same length as ``rewards``.
+
+    Example:
+        >>> # 1-step episodes (dones=True everywhere) -> Z_t == r_t.
+        >>> rewards = [1.0, 2.0, 3.0]
+        >>> dones = [True, True, True]
+        >>> compute_returns_to_go(rewards, dones)
+        [1.0, 2.0, 3.0]
+    """
+    returns: List[float] = [0.0] * len(rewards)
+    running = 0.0
+    for t in reversed(range(len(rewards))):
+        if dones[t]:
+            running = 0.0
+        running = float(rewards[t]) + gamma * running
+        returns[t] = running
+    return returns
+
+
+class HindsightNetwork(nn.Module):
+    """State-conditional hindsight classifier ``h(a | s, X)`` (issue #289).
+
+    Implements the hindsight posterior over actions used by HCA (Harutyunyan
+    et al., NeurIPS 2019, Eq. 9). Given the state ``s_t`` and a future
+    statistic ``X_t`` (e.g., a discrete return-bucket or final-observation
+    summary), the network produces a categorical posterior over the action
+    that *was* taken at ``t`` — i.e., the retrospective question "given we
+    ended up in ``X``, what was the action most likely to have been chosen?"
+
+    Architecture mirrors :class:`PolicyNetwork`'s actor head: a small shared
+    MLP trunk over ``(s, X)`` followed by one categorical head per action
+    dimension. Returns logits — callers turn them into probabilities via
+    softmax. The trainer wires a separate Adam optimizer for this network
+    and trains it by maximum-likelihood (cross-entropy) on rollout
+    ``(s_t, X_t) -> a_t`` triples.
+
+    Args:
+        obs_dim: Dimension of the observation ``s_t``.
+        x_dim: Dimension of the future-statistic embedding ``X_t``. The
+            P3 cell currently uses a discrete return bucket encoded as a
+            one-hot of length ``num_return_buckets`` (default 8).
+        action_dims: Per-dimension action sizes, matching the actor's
+            ``action_dims`` (e.g., ``[10, 2, 2]`` post-#235).
+        hidden_size: Size of the hidden layers (default: 64, matching
+            :class:`PolicyNetwork`'s default).
+    """
+
+    def __init__(
+        self,
+        obs_dim: int,
+        x_dim: int,
+        action_dims: List[int],
+        hidden_size: int = 64,
+    ) -> None:
+        super().__init__()
+        self.obs_dim = obs_dim
+        self.x_dim = x_dim
+        self.action_dims = list(action_dims)
+        self.hidden_size = hidden_size
+
+        self.shared = nn.Sequential(
+            nn.Linear(obs_dim + x_dim, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+        )
+        self.action_heads = nn.ModuleList(
+            [nn.Linear(hidden_size, dim) for dim in action_dims]
+        )
+
+    def forward(self, obs: torch.Tensor, x: torch.Tensor) -> List[torch.Tensor]:
+        """Forward pass producing per-action-dim hindsight logits.
+
+        Args:
+            obs: Observation tensor ``[batch, obs_dim]``.
+            x: Future-statistic tensor ``[batch, x_dim]``.
+
+        Returns:
+            List of logits tensors, one per action dimension, each shaped
+            ``[batch, action_dims[k]]``.
+        """
+        if obs.dim() != 2 or x.dim() != 2:
+            raise ValueError(
+                f"HindsightNetwork.forward expects 2D inputs, got "
+                f"obs.shape={tuple(obs.shape)} x.shape={tuple(x.shape)}"
+            )
+        features = self.shared(torch.cat([obs, x], dim=-1))
+        return [head(features) for head in self.action_heads]
+
+    def log_prob(
+        self, obs: torch.Tensor, x: torch.Tensor, actions: torch.Tensor
+    ) -> torch.Tensor:
+        """Per-sample log-probability of the joint multi-discrete action.
+
+        Args:
+            obs: ``[batch, obs_dim]``.
+            x: ``[batch, x_dim]``.
+            actions: ``[batch, num_action_dims]`` integer-coded actions.
+
+        Returns:
+            ``[batch]`` tensor of ``sum_k log h(a_k | s, X)``.
+        """
+        logits_list = self.forward(obs, x)
+        log_probs = []
+        for k, logits in enumerate(logits_list):
+            log_p = torch.log_softmax(logits, dim=-1)
+            log_probs.append(log_p.gather(1, actions[:, k : k + 1]).squeeze(-1))
+        return torch.stack(log_probs, dim=1).sum(dim=1)
+
+
+def encode_return_bucket(
+    returns: torch.Tensor, num_buckets: int = 8
+) -> torch.Tensor:
+    """Quantize per-step Monte-Carlo returns into a one-hot bucket encoding.
+
+    Used as the future-statistic ``X_t`` consumed by :class:`HindsightNetwork`
+    in the state-conditional HCA estimator (issue #289). The encoding is
+    deterministic and pure-tensor: bucket boundaries are computed as
+    equally-spaced quantiles of the input batch, with degenerate cases
+    (all-equal returns) collapsing to bucket 0.
+
+    Args:
+        returns: ``[T]`` Monte-Carlo returns ``Z_t``.
+        num_buckets: Alphabet size of the future statistic. Default 8 follows
+            the curator's recommended starting value.
+
+    Returns:
+        ``[T, num_buckets]`` float32 one-hot tensor.
+    """
+    if returns.dim() != 1:
+        raise ValueError(
+            f"encode_return_bucket expects 1D returns, got shape "
+            f"{tuple(returns.shape)}"
+        )
+    T = returns.shape[0]
+    # Use quantile boundaries for an empirically-balanced bucket assignment.
+    # In the degenerate constant-returns case this collapses to all-zero
+    # bucket indices, which is well-defined (and the hindsight ratio
+    # gracefully degenerates to 1 for that timestep).
+    if T == 0:
+        return torch.zeros((0, num_buckets), dtype=torch.float32, device=returns.device)
+    sorted_returns = torch.sort(returns).values
+    # Compute internal boundaries (num_buckets - 1 cutpoints).
+    if num_buckets < 2:
+        return torch.zeros((T, num_buckets), dtype=torch.float32, device=returns.device)
+    edges = torch.tensor(
+        [
+            sorted_returns[
+                min(int((k + 1) * T / num_buckets), T - 1)
+            ].item()
+            for k in range(num_buckets - 1)
+        ],
+        device=returns.device,
+    )
+    # bucketize: bucket index = number of edges strictly less than returns
+    bucket_idx = torch.bucketize(returns, edges)
+    bucket_idx = torch.clamp(bucket_idx, 0, num_buckets - 1)
+    one_hot = torch.zeros(
+        (T, num_buckets), dtype=torch.float32, device=returns.device
+    )
+    one_hot.scatter_(1, bucket_idx.unsqueeze(1), 1.0)
+    return one_hot
+
+
+def compute_hca_advantages(
+    rewards: List[float],
+    values: List[float],
+    dones: List[bool],
+    actions: torch.Tensor,
+    observations: torch.Tensor,
+    policy_log_probs: torch.Tensor,
+    hindsight_net: HindsightNetwork,
+    gamma: float = 0.99,
+    num_return_buckets: int = 8,
+    ratio_clip: float = 10.0,
+) -> Tuple[torch.Tensor, torch.Tensor, dict]:
+    """Compute state-conditional Hindsight Credit Assignment advantages.
+
+    Implements Eq. 9 of Harutyunyan et al. 2019:
+
+        A_t^HCA = (1 - pi(a_t | s_t) / h(a_t | s_t, X_t)) * (Z_t - V(s_t))
+
+    where:
+        - ``Z_t``  = Monte-Carlo return-to-go (no bootstrap),
+        - ``X_t``  = future statistic — here, a quantile-bucketed encoding of
+          ``Z_t`` (the curator's recommended starting value),
+        - ``h(a | s, X)`` = the learned :class:`HindsightNetwork` posterior,
+        - ``pi(a | s)`` = the rollout-time actor policy, captured via the
+          stored per-step ``policy_log_probs``.
+
+    The hindsight ratio ``pi/h`` is clipped to ``[1/ratio_clip, ratio_clip]``
+    for numerical stability (mirrors PPO's own ratio-clip philosophy). A
+    diagnostic dict reports the fraction of steps that hit the clip and the
+    Monte-Carlo return baseline so downstream loggers can detect when the
+    hindsight signal is degenerate.
+
+    Args:
+        rewards: Per-timestep rewards, length ``T``.
+        values: Per-timestep critic values, length ``T``.
+        dones: Per-timestep episode-termination flags, length ``T``.
+        actions: ``[T, A]`` integer-coded actions actually taken.
+        observations: ``[T, obs_dim]`` per-step observation rows (one
+            agent's view).
+        policy_log_probs: ``[T]`` log-probability under the rollout policy
+            ``pi(a_t | s_t)`` — already captured by the trainer for PPO's
+            ratio. Re-used here to avoid a second actor forward.
+        hindsight_net: :class:`HindsightNetwork` instance for this agent.
+        gamma: Discount factor for ``Z_t``.
+        num_return_buckets: Alphabet size for the return-bucket future
+            statistic. Must match ``hindsight_net.x_dim``.
+        ratio_clip: Symmetric clip on the ``pi/h`` ratio. Default 10.0.
+
+    Returns:
+        Tuple of:
+            - ``advantages``: ``[T]`` float32 tensor (per-step HCA advantage).
+            - ``returns``: ``[T]`` Monte-Carlo returns ``Z_t``.
+            - ``info``: dict with diagnostic scalars — ``clip_frac``
+              (fraction of steps where the ratio hit either bound),
+              ``hindsight_log_prob_mean`` (mean log h, for tracking
+              hindsight-net fit), ``ratio_mean`` (mean unclipped ratio).
+    """
+    device = observations.device
+    T = len(rewards)
+
+    # Monte-Carlo return-to-go Z_t.
+    Z_list = compute_returns_to_go(rewards, dones, gamma=gamma)
+    Z = torch.tensor(Z_list, dtype=torch.float32, device=device)
+    V = torch.tensor(values, dtype=torch.float32, device=device)
+
+    # Future-statistic encoding X_t. Detached so gradients into the bucket
+    # boundaries do not propagate (the bucketization is a hard discrete
+    # operation).
+    X = encode_return_bucket(Z.detach(), num_buckets=num_return_buckets)
+
+    # Hindsight log-prob of the actually-taken action. The hindsight network
+    # is in eval-style here — we want the forward log-prob, gradient flow into
+    # the hindsight net is handled separately in the trainer's
+    # ``_update_hindsight_nets`` step (it has its own optimizer + loss).
+    with torch.no_grad():
+        log_h = hindsight_net.log_prob(observations, X, actions)
+
+    # log(pi/h) clipped; convert to ratio in safe range.
+    log_ratio = policy_log_probs.detach() - log_h
+    log_ratio_clamped = torch.clamp(
+        log_ratio,
+        min=float(np.log(1.0 / ratio_clip)),
+        max=float(np.log(ratio_clip)),
+    )
+    clip_frac = (log_ratio_clamped != log_ratio).float().mean().item()
+    ratio = torch.exp(log_ratio_clamped)
+
+    # HCA advantage: A_t = (1 - pi/h) * (Z_t - V_t).
+    advantages = (1.0 - ratio) * (Z - V)
+
+    info = {
+        "clip_frac": float(clip_frac),
+        "hindsight_log_prob_mean": float(log_h.mean().item()),
+        "ratio_mean": float(torch.exp(log_ratio).mean().item()),
+        "Z_mean": float(Z.mean().item()),
+    }
+    return advantages, Z, info
 
 
 class TransformerPolicyNetwork(nn.Module):

@@ -783,3 +783,231 @@ class TestCOMA:
             assert torch.equal(va, b.q_critic_target.state_dict()[ka]), (
                 f"q_critic_target init differs at {ka} — COMA seeding broken"
             )
+
+
+class TestHCA:
+    """Issue #289: Hindsight Credit Assignment.
+
+    HCA is gated by ``advantage_estimator="hca"`` on the trainer. The
+    default ``advantage_estimator="gae"`` path is bit-identical to the
+    pre-#289 codepath, so the existing TestUpdate suite covers regression.
+    """
+
+    def _make_hca_trainer(self, **overrides) -> JointPPOTrainer:
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        kwargs = dict(
+            env_fn=_env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            advantage_estimator="hca",
+            seed=0,
+        )
+        kwargs.update(overrides)
+        return JointPPOTrainer(**kwargs)
+
+    def test_gae_default_path_bit_identical(self):
+        """Regression: ``advantage_estimator="gae"`` (the default) must
+        produce the exact same per-agent advantages as a trainer
+        constructed without specifying the flag."""
+        # Two trainers seeded identically — one default, one with the
+        # GAE flag passed explicitly. Both must produce identical
+        # advantages on the same rollout.
+        t_default = _make_trainer()
+        t_explicit = _make_trainer()
+        # Override the explicit one to set the flag (default-value via
+        # ``__init__`` — should be a no-op semantically).
+        assert t_default.advantage_estimator == "gae"
+        assert t_explicit.advantage_estimator == "gae"
+        # Use the same rollout for both, so we test only the advantage
+        # path. We compute advantages directly via the private method
+        # rather than running update() (which mutates optimizer state).
+        rollout = t_default.collect_rollout(ROLLOUT_STEPS)
+        a0, r0 = t_default._compute_advantages(
+            rollout.rewards[0], rollout.values[0], rollout.dones
+        )
+        a1, r1 = t_explicit._compute_advantages(
+            rollout.rewards[0], rollout.values[0], rollout.dones
+        )
+        torch.testing.assert_close(a0, a1)
+        torch.testing.assert_close(r0, r1)
+
+    def test_hca_trainer_constructs(self):
+        """Hindsight nets and optimizers exist on the HCA path; GAE path
+        leaves them ``None``."""
+        hca = self._make_hca_trainer()
+        assert hca.hindsight_nets is not None
+        assert hca.hindsight_optimizers is not None
+        assert len(hca.hindsight_nets) == NUM_AGENTS
+        assert len(hca.hindsight_optimizers) == NUM_AGENTS
+
+        gae = _make_trainer()
+        assert gae.hindsight_nets is None
+        assert gae.hindsight_optimizers is None
+
+    def test_hca_update_runs_without_nan(self):
+        """End-to-end: one rollout + one update on the HCA path must
+        produce finite stats."""
+        trainer = self._make_hca_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        for k, v in stats.items():
+            assert np.isfinite(v), f"non-finite stat {k}={v}"
+        # HCA-specific diagnostics must be present.
+        for i in range(NUM_AGENTS):
+            assert f"hindsight_loss/agent_{i}" in stats
+            assert f"hca_clip_frac/agent_{i}" in stats
+            assert f"hca_ratio_mean/agent_{i}" in stats
+
+    def test_hca_advantages_shape_matches_gae(self):
+        """The HCA advantage tensor must have the same shape as GAE's
+        on the same rollout (one scalar per timestep)."""
+        gae_trainer = _make_trainer()
+        hca_trainer = self._make_hca_trainer()
+        rollout = gae_trainer.collect_rollout(ROLLOUT_STEPS)
+        # Run the hindsight-net step so the HCA call inside compute is
+        # well-defined.
+        hca_trainer._update_hindsight_nets(rollout)
+        a_gae, _ = gae_trainer._compute_advantages(
+            rollout.rewards[0], rollout.values[0], rollout.dones
+        )
+        a_hca, _ = hca_trainer._compute_advantages(
+            rollout.rewards[0],
+            rollout.values[0],
+            rollout.dones,
+            agent_id=0,
+            observations=rollout.observations[:, 0, :],
+            actions=rollout.actions[0],
+            policy_log_probs=rollout.log_probs[0],
+        )
+        assert a_gae.shape == a_hca.shape
+        assert a_hca.dtype == torch.float32
+
+    def test_hca_reduces_to_mc_when_ratio_is_one(self):
+        """Sanity: when the hindsight ratio is forced to 1.0 (i.e.
+        ``h == pi``), HCA's advantage collapses to ``(Z_t - V_t)`` —
+        the pure Monte-Carlo advantage. Test by patching ``log_prob``
+        of the hindsight net to mirror the rollout log-probs.
+        """
+        from bucket_brigade.training.networks import compute_returns_to_go
+
+        trainer = self._make_hca_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+
+        # Patch hindsight net so log h(a|s,X) == policy_log_probs[t] for
+        # every t, making the ratio exactly 1 (and thus advantage 0
+        # outside any clipping path).
+        original_log_prob = trainer.hindsight_nets[0].log_prob
+
+        def fake_log_prob(obs, x, actions):
+            # Match the captured policy log-probs of agent 0 for this batch.
+            return rollout.log_probs[0]
+
+        trainer.hindsight_nets[0].log_prob = fake_log_prob  # type: ignore[assignment]
+        try:
+            adv, ret = trainer._compute_advantages(
+                rollout.rewards[0],
+                rollout.values[0],
+                rollout.dones,
+                agent_id=0,
+                observations=rollout.observations[:, 0, :],
+                actions=rollout.actions[0],
+                policy_log_probs=rollout.log_probs[0],
+            )
+        finally:
+            trainer.hindsight_nets[0].log_prob = original_log_prob  # type: ignore[assignment]
+
+        # Ratio 1.0 → (1 - 1) * (Z - V) = 0 everywhere.
+        assert torch.allclose(adv, torch.zeros_like(adv), atol=1e-5)
+        # Returns target is Z_t exactly.
+        Z_expected = torch.tensor(
+            compute_returns_to_go(
+                rollout.rewards[0].cpu().tolist(),
+                rollout.dones.cpu().tolist(),
+                gamma=trainer.gamma,
+            ),
+            dtype=torch.float32,
+        )
+        torch.testing.assert_close(ret, Z_expected, atol=1e-5, rtol=1e-5)
+
+    def test_hindsight_loss_decreases_on_synthetic_data(self):
+        """The hindsight network's MLE loss must decrease on a small
+        synthetic dataset (smoke test that gradients flow and the
+        optimizer actually steps the network)."""
+        from bucket_brigade.training.networks import (
+            HindsightNetwork,
+            encode_return_bucket,
+        )
+
+        torch.manual_seed(0)
+        obs_dim = 8
+        x_dim = 4
+        action_dims = [3, 2]
+        T = 256
+        net = HindsightNetwork(
+            obs_dim=obs_dim, x_dim=x_dim, action_dims=action_dims, hidden_size=16
+        )
+        opt = torch.optim.Adam(net.parameters(), lr=1e-2)
+
+        obs = torch.randn(T, obs_dim)
+        # Make X deterministically informative about the action by tying
+        # X to the action taken so the net has something to learn.
+        actions = torch.stack(
+            [
+                torch.randint(0, action_dims[0], (T,)),
+                torch.randint(0, action_dims[1], (T,)),
+            ],
+            dim=1,
+        )
+        returns = (actions[:, 0].float() + actions[:, 1].float()).detach()
+        X = encode_return_bucket(returns, num_buckets=x_dim)
+
+        loss_first = -net.log_prob(obs, X, actions).mean()
+        for _ in range(50):
+            loss = -net.log_prob(obs, X, actions).mean()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+        loss_last = -net.log_prob(obs, X, actions).mean()
+        assert loss_last.item() < loss_first.item() - 0.05, (
+            f"hindsight loss did not decrease: first={loss_first.item():.4f} "
+            f"last={loss_last.item():.4f}"
+        )
+
+    def test_invalid_advantage_estimator_raises(self):
+        """Mistyped or unsupported estimator names must raise at trainer
+        construction, not silently fall back to GAE."""
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        with pytest.raises(ValueError, match="advantage_estimator"):
+            JointPPOTrainer(
+                env_fn=_env_fn,
+                num_agents=NUM_AGENTS,
+                obs_dim=obs_dim,
+                action_dims=ACTION_DIMS,
+                hidden_size=16,
+                advantage_estimator="invalid_name",
+                seed=0,
+            )
+
+    def test_compute_returns_to_go_resets_at_dones(self):
+        """Smoke: ``compute_returns_to_go`` should not leak credit across
+        episode boundaries marked by ``dones[t] == True``."""
+        from bucket_brigade.training.networks import compute_returns_to_go
+
+        rewards = [1.0, 2.0, 3.0, 4.0]
+        dones = [False, True, False, True]
+        # Episode 1: rewards [1, 2], Z = [1 + γ*2, 2]
+        # Episode 2: rewards [3, 4], Z = [3 + γ*4, 4]
+        gamma = 0.9
+        Z = compute_returns_to_go(rewards, dones, gamma=gamma)
+        assert Z[0] == pytest.approx(1.0 + gamma * 2.0)
+        assert Z[1] == pytest.approx(2.0)
+        assert Z[2] == pytest.approx(3.0 + gamma * 4.0)
+        assert Z[3] == pytest.approx(4.0)

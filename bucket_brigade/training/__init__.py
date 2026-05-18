@@ -5,7 +5,15 @@ RL algorithms and curriculum learning strategies.
 """
 
 from .curriculum import CurriculumStage, CurriculumTrainer
-from .networks import PolicyNetwork, TransformerPolicyNetwork, compute_gae
+from .networks import (
+    HindsightNetwork,
+    PolicyNetwork,
+    TransformerPolicyNetwork,
+    compute_gae,
+    compute_hca_advantages,
+    compute_returns_to_go,
+    encode_return_bucket,
+)
 from .game_simulator import GameSimulator, Matchmaker
 from .policy_learner import PolicyLearner, learner_process
 from .population_trainer import PopulationTrainer
@@ -18,9 +26,13 @@ from .observation_utils import (
 __all__ = [
     "PolicyNetwork",
     "TransformerPolicyNetwork",
+    "HindsightNetwork",
     "CurriculumTrainer",
     "CurriculumStage",
     "compute_gae",
+    "compute_hca_advantages",
+    "compute_returns_to_go",
+    "encode_return_bucket",
     "GameSimulator",
     "Matchmaker",
     "PolicyLearner",
