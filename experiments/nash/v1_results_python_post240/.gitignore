@@ -1,0 +1,2 @@
+# Verbose nash-solver logs — multi-MB each, retained on remote host only.
+*.log

@@ -1,0 +1,101 @@
+{
+  "scenario": "hard",
+  "parameters": {
+    "beta": 0.4,
+    "kappa": 0.3,
+    "c": 0.5,
+    "A": 100.0,
+    "L": 100.0,
+    "num_agents": 4
+  },
+  "algorithm": {
+    "method": "double_oracle",
+    "num_simulations": 200,
+    "max_iterations": 50,
+    "epsilon": 0.01,
+    "seed": 42
+  },
+  "equilibrium": {
+    "type": "mixed",
+    "support_size": 2,
+    "expected_payoff": -2396.5554066411028,
+    "distribution": {
+      "1": 0.034782816228362365,
+      "3": 0.9652171837716377
+    },
+    "strategy_pool": [
+      {
+        "index": 3,
+        "probability": 0.9652171837716377,
+        "classification": "Coordinator",
+        "closest_archetype": "Coordinator",
+        "archetype_distance": 0.0,
+        "parameters": {
+          "honesty": 0.9,
+          "work_tendency": 0.6,
+          "neighbor_help": 0.7,
+          "own_priority": 0.6,
+          "risk_aversion": 0.8,
+          "coordination": 1.0,
+          "exploration": 0.05,
+          "fatigue_memory": 0.0,
+          "rest_bias": 0.2,
+          "altruism": 0.6
+        },
+        "genome": [
+          0.9,
+          0.6,
+          0.7,
+          0.6,
+          0.8,
+          1.0,
+          0.05,
+          0.0,
+          0.2,
+          0.6
+        ]
+      },
+      {
+        "index": 1,
+        "probability": 0.034782816228362365,
+        "classification": "Free Rider",
+        "closest_archetype": "Free Rider",
+        "archetype_distance": 0.0,
+        "parameters": {
+          "honesty": 0.7,
+          "work_tendency": 0.2,
+          "neighbor_help": 0.0,
+          "own_priority": 0.9,
+          "risk_aversion": 0.0,
+          "coordination": 0.0,
+          "exploration": 0.1,
+          "fatigue_memory": 0.0,
+          "rest_bias": 0.9,
+          "altruism": 0.0
+        },
+        "genome": [
+          0.7,
+          0.2,
+          0.0,
+          0.9,
+          0.0,
+          0.0,
+          0.1,
+          0.0,
+          0.9,
+          0.0
+        ]
+      }
+    ]
+  },
+  "convergence": {
+    "converged": true,
+    "iterations": 1,
+    "elapsed_time": 5479.0513651371
+  },
+  "interpretation": {
+    "equilibrium_type": "mixed",
+    "cooperation_rate": 0.9652171837716377,
+    "free_riding_rate": 0.034782816228362365
+  }
+}

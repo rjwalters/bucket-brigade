@@ -1,14 +1,19 @@
-# Nash V1 Results — Post-#240 Re-Derivation (in progress)
+# Nash V1 Results — Post-#240 Re-Derivation
 
-This directory will hold the canonical Nash equilibrium results for the 12
+This directory holds the canonical Nash equilibrium results for the 12
 V1 scenarios computed **after** the `honesty_bias` signal-channel bug fix
 landed in PR #245 (issue #240).
 
-## Status
+## Status — 2026-05-18
 
-**Re-derivation in progress** on `COMPUTE_HOST_PRIMARY` (Mac Studio,
-M-series; ~16 performance cores). Launched in tmux session `nash256` as
-part of issue #256.
+**11 of 12 scenarios complete.** The `rest_trap` cell failed at the
+`equilibrium.json` write step on 2026-05-16, almost certainly the
+ENOSPC-on-write incident documented in #269 (now fixed by the
+`df`-precheck in PR #315). Re-running `rest_trap` alone is cheap and is
+left as a follow-up.
+
+Sweep was launched in tmux session `nash256` on `COMPUTE_HOST_PRIMARY`
+(Mac Studio, M-series; ~16 performance cores) as part of issue #256.
 
 Wall-clock estimate: ~5 hours with `xargs -P 2` (2 scenarios in parallel,
 each scenario internally parallelizes its `differential_evolution` worker
