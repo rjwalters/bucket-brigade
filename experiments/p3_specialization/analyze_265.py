@@ -210,9 +210,7 @@ def render_markdown(
         lines.append(f"- **best coef**: `{verdict['best_coef']}`")
         lines.append(f"- **best gap_closed**: `{verdict['best_gap_closed']:+.3f}`")
         if verdict.get("delta_vs_baseline") is not None:
-            lines.append(
-                f"- `delta vs baseline = {verdict['delta_vs_baseline']:+.3f}`"
-            )
+            lines.append(f"- `delta vs baseline = {verdict['delta_vs_baseline']:+.3f}`")
         lines.append(f"- **Tier: `{verdict['tier']}`**")
     lines.append("")
 
