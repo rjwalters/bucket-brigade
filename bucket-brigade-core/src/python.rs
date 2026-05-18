@@ -171,6 +171,14 @@ impl PyScenario {
             // to the pre-#265 path. Non-zero values flow through to the
             // engine's progress-shaping block in ``engine/rewards.rs``.
             progress_shaping_coef,
+            // Issue #283: potential-based team-welfare shaping defaults
+            // to off (lambda=0 and kind="none" -> engine fast-path skip).
+            // PyScenario callers that need shaping should access scenarios
+            // through ``bucket_brigade_core.SCENARIOS[...]`` or the JSON
+            // path which preserves all fields.
+            team_welfare_lambda: 0.0,
+            team_welfare_gamma: 1.0,
+            team_welfare_kind: "none".to_string(),
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the

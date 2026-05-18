@@ -213,6 +213,42 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # the cheap mechanical test of the dense-team-signal hypothesis.
         progress_shaping_coef: float = 0.0
 
+        # Potential-based team-welfare shaping (issue #283, Ng-Harada-Russell 1999).
+        # Default ``team_welfare_lambda == 0.0`` preserves bit-exact pre-#283
+        # behavior (the env takes a fast-path skip when lambda is zero).
+        #
+        # When non-zero, an aligned per-step bonus ``F(s, a, s') = lambda * (
+        # gamma * Phi(s') - Phi(s))`` is added to every agent's reward, shared
+        # equally across the team. ``Phi(terminal) = 0`` is enforced exactly so
+        # the telescoping sum identity holds:
+        #     sum_t gamma^t F_t = lambda * (gamma^T Phi(s_T) - Phi(s_0))
+        # which collapses to a constant ``-lambda * Phi(s_0)`` per episode when
+        # ``Phi(s_T) == 0`` is enforced. NHR (ICML 1999) guarantees the optimal
+        # policy set is preserved under this shaping for any potential ``Phi``.
+        #
+        # ``team_welfare_kind`` selects the potential function:
+        #   - ``"none"``: shaping disabled (also implied when lambda == 0.0)
+        #   - ``"team_welfare_closed_form"`` (option B from the issue):
+        #         Phi(s) = team_reward * (safe/N) - team_penalty * (ruined/N)
+        #                 - 0.5 * team_penalty * (burning/N)
+        #     A cheap, debuggable closed-form proxy for team value. Coefficients
+        #     are tied to the scenario's team-reward weights so the shaping
+        #     signal stays on the same scale as the base reward.
+        #
+        # ``team_welfare_gamma`` is the NHR discount factor. It is **separate from**
+        # the trainer's PPO discount (which is set in JointPPOTrainer) — the
+        # theorem holds for *any* gamma applied in ``gamma * Phi(s') - Phi(s)``,
+        # but invariance is strongest when this matches the trainer's gamma.
+        # Default 1.0 keeps the shaping signal a simple delta when lambda is
+        # turned on without a matching trainer discount setting.
+        #
+        # See ``bucket_brigade/envs/bucket_brigade_env.py::_compute_team_welfare_phi``
+        # and ``bucket-brigade-core/src/engine/rewards.rs::team_welfare_phi`` for
+        # the canonical implementations (kept in byte-parity).
+        team_welfare_lambda: float = 0.0
+        team_welfare_gamma: float = 1.0
+        team_welfare_kind: str = "none"
+
         def __post_init__(self) -> None:
             """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -282,6 +318,18 @@ def generate_scenarios(json_path: Path, output_path: Path):
                 raise ValueError(
                     f"Scenario.distance_metric={self.distance_metric!r} "
                     "is not supported; only 'ring_arc' is implemented today."
+                )
+
+            # Issue #283: potential-based team-welfare shaping allowlist.
+            # Keep in sync with the Rust validator in
+            # ``bucket-brigade-core/src/scenarios.rs::ALLOWED_TEAM_WELFARE_KINDS``.
+            # ``"none"`` is the default and means shaping is disabled even if
+            # lambda is non-zero (the env shortcuts on kind="none").
+            allowed_team_welfare_kinds = ("none", "team_welfare_closed_form")
+            if self.team_welfare_kind not in allowed_team_welfare_kinds:
+                raise ValueError(
+                    f"Scenario.team_welfare_kind={self.team_welfare_kind!r} "
+                    f"is not supported; allowed values: {allowed_team_welfare_kinds!r}."
                 )
 
         def to_feature_vector(self) -> np.ndarray:
@@ -379,6 +427,22 @@ def generate_scenarios(json_path: Path, output_path: Path):
         if "progress_shaping_coef" in spec:
             code += (
                 f"        progress_shaping_coef={spec['progress_shaping_coef']},\n"
+            )
+        # Issue #283 optional potential-based shaping fields. Emit only when
+        # set in JSON so every pre-#283 scenario factory is byte-identical
+        # to pre-#283 codegen output (they keep the dataclass defaults:
+        # lambda=0.0, gamma=1.0, kind="none").
+        if "team_welfare_lambda" in spec:
+            code += (
+                f"        team_welfare_lambda={spec['team_welfare_lambda']},\n"
+            )
+        if "team_welfare_gamma" in spec:
+            code += (
+                f"        team_welfare_gamma={spec['team_welfare_gamma']},\n"
+            )
+        if "team_welfare_kind" in spec:
+            code += (
+                f"        team_welfare_kind={spec['team_welfare_kind']!r},\n"
             )
         code += f"    )\n\n\n"
 

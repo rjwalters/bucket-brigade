@@ -1166,3 +1166,426 @@ class TestActionShaping:
             assert np.all(np.isfinite(rewards))
             if dones[0]:
                 break
+
+
+class TestPotentialBasedShaping:
+    """Issue #283: potential-based team-welfare shaping (Ng-Harada-Russell 1999).
+
+    Adds an aligned per-step bonus ``F(s, a, s') = lambda * (
+    gamma * Phi(s') - Phi(s))`` shared across all agents. The
+    closed-form team-welfare potential (option B):
+        Phi(s) = team_reward * (safe/N)
+                 - team_penalty * (ruined/N)
+                 - 0.5 * team_penalty * (burning/N)
+    NHR (ICML 1999) guarantees the optimal-policy set is preserved under
+    this shaping for any potential function Phi.
+
+    The critical correctness test is the telescoping-identity check: if
+    Phi(s_T) = 0 is enforced at terminal states, the discounted sum of
+    shaping terms across a trajectory must equal a policy-independent
+    constant. A buggy implementation (e.g., forgetting to zero out the
+    terminal-state potential, or off-by-one in s vs s') breaks this
+    identity, and the test catches it.
+    """
+
+    def test_defaults_are_zero_across_all_scenarios(self):
+        """Every pre-#283 scenario keeps team_welfare_lambda=0.0 and
+        kind='none' so existing scenarios are bit-exactly unchanged."""
+        from bucket_brigade.envs.scenarios_generated import SCENARIO_REGISTRY
+
+        for name, factory in SCENARIO_REGISTRY.items():
+            s = factory(num_agents=4)
+            assert s.team_welfare_lambda == 0.0, (
+                f"Pre-#283 scenario '{name}' must keep "
+                f"team_welfare_lambda=0.0; got {s.team_welfare_lambda}"
+            )
+            assert s.team_welfare_kind == "none", (
+                f"Pre-#283 scenario '{name}' must keep "
+                f"team_welfare_kind='none'; got {s.team_welfare_kind!r}"
+            )
+            assert s.team_welfare_gamma == 1.0, (
+                f"Pre-#283 scenario '{name}' must keep "
+                f"team_welfare_gamma=1.0; got {s.team_welfare_gamma}"
+            )
+
+    def test_zero_lambda_matches_pre283_full_episode(self):
+        """Byte-identity regression guard: lambda=0 (any kind) produces the
+        same per-step reward trace as before — guards against accidental
+        side effects of threading the new fields through ``_compute_rewards``."""
+        env_a = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        # Same dynamics but with the new fields set explicitly to the
+        # disabled-shaping defaults — must produce identical rewards.
+        scenario_b = dataclasses.replace(
+            default_scenario(num_agents=4),
+            team_welfare_lambda=0.0,
+            team_welfare_gamma=1.0,
+            team_welfare_kind="none",
+        )
+        env_b = BucketBrigadeEnv(scenario=scenario_b)
+        env_a.reset(seed=99)
+        env_b.reset(seed=99)
+        rng = np.random.RandomState(0)
+        for _ in range(20):
+            actions = rng.randint(0, 2, size=(4, 3)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 10, size=4)
+            _, r_a, dones_a, _ = env_a.step(actions)
+            _, r_b, dones_b, _ = env_b.step(actions)
+            np.testing.assert_array_equal(r_a, r_b)
+            if bool(dones_a[0]):
+                break
+
+    def test_zero_lambda_with_kind_set_is_still_byte_identical(self):
+        """A scenario with kind=team_welfare_closed_form but lambda=0
+        must still produce byte-identical rewards (the env fast-path skips
+        shaping when lambda is zero, regardless of kind)."""
+        env_a = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        scenario_b = dataclasses.replace(
+            default_scenario(num_agents=4),
+            team_welfare_lambda=0.0,
+            team_welfare_gamma=0.99,  # different gamma — must still be inert
+            team_welfare_kind="team_welfare_closed_form",
+        )
+        env_b = BucketBrigadeEnv(scenario=scenario_b)
+        env_a.reset(seed=7)
+        env_b.reset(seed=7)
+        rng = np.random.RandomState(1)
+        for _ in range(15):
+            actions = rng.randint(0, 2, size=(4, 3)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 10, size=4)
+            _, r_a, dones_a, _ = env_a.step(actions)
+            _, r_b, dones_b, _ = env_b.step(actions)
+            np.testing.assert_array_equal(r_a, r_b)
+            if bool(dones_a[0]):
+                break
+
+    def test_phi_terminal_convention(self):
+        """At a truncated last step, the env must treat Phi(s') = 0 so the
+        shaping term at terminal becomes lambda * (-Phi(s)). This is the
+        NHR boundary condition that makes the telescoping identity exact.
+
+        We zero out every base-reward component (work cost, ownership,
+        team) so the per-agent reward equals the shaping term exactly,
+        making the terminal-state Phi(s')=0 convention directly testable.
+        """
+        # Compare two configurations: one where the step is terminal (and
+        # thus Phi(next) should be zeroed) and one where it's not (because
+        # the test setup forces a non-terminal next state). The per-agent
+        # reward must equal the shaping term in both cases.
+        scenario_terminal = _make_minimal_scenario(
+            # All base reward components zeroed so reward == shaping term.
+            team_reward_house_survives=0.0,
+            team_penalty_house_burns=0.0,
+            cost_to_work_one_night=0.0,
+            # min_nights=0 lets _check_termination fire on the first step.
+            # The env's `night` counter is 0 during the first step's
+            # termination check (it advances after) so `night >= min_nights`
+            # requires min_nights == 0 for first-step termination.
+            min_nights=0,
+            team_welfare_lambda=1.0,
+            team_welfare_gamma=0.99,
+            # Tie Phi to a separate non-zero scale so we can verify the
+            # terminal-zeroing without confounding with the base reward.
+            # Reusing Phi's coefficients from team_reward_* is the env's
+            # convention, but for this test we need both isolated.
+            # The closed-form Phi uses team_reward_house_survives and
+            # team_penalty_house_burns; both are 0 above, so Phi(s) = 0
+            # for ALL s, which makes the test vacuous.
+            #
+            # Solution: rest-reward component (+0.5 per REST agent) is
+            # hard-coded; instead, set BOTH team_reward and team_penalty
+            # to a non-zero scale -- the team reward is *added per agent*
+            # but the shaping is also per-agent so we just compute the
+            # expected total.
+            team_welfare_kind="team_welfare_closed_form",
+            prob_solo_agent_extinguishes_fire=1.0,  # deterministic save
+            prob_fire_spreads_to_neighbor=0.0,
+            prob_house_catches_fire=0.0,
+        )
+        # team_reward must be nonzero for Phi(s) to be nonzero, since Phi
+        # uses team_reward and team_penalty as coefficients. Reset them.
+        scenario_terminal = dataclasses.replace(
+            scenario_terminal,
+            team_reward_house_survives=10.0,
+            team_penalty_house_burns=10.0,
+        )
+        env = BucketBrigadeEnv(scenario=scenario_terminal)
+        env.reset(seed=0)
+        # Set up a single burning house at index 5; all 4 agents work it.
+        # After the step: house 5 is SAFE -> all houses SAFE -> terminate
+        # via _check_termination's `all_safe` branch.
+        env.houses = np.zeros(10, dtype=np.int8)
+        env.houses[5] = env.BURNING
+        env._prev_houses_state = env.houses.copy()
+        # Phi(s) before step: 1 burning, 9 safe, 0 ruined.
+        # = 10*(9/10) - 10*(0/10) - 0.5*10*(1/10) = 9 - 0 - 0.5 = 8.5
+        phi_prev_expected = 10.0 * 0.9 - 0.5 * 10.0 * 0.1
+        assert abs(phi_prev_expected - 8.5) < 1e-9
+        phi_prev = env._compute_team_welfare_phi(env._prev_houses_state)
+        assert abs(phi_prev - phi_prev_expected) < 1e-5
+
+        actions = np.array(
+            [[5, 1, 1], [5, 1, 1], [5, 1, 1], [5, 1, 1]],
+            dtype=np.int8,
+        )
+        _, rewards, dones, _ = env.step(actions)
+        assert bool(dones[0]), "Episode should have terminated this step"
+
+        # Decompose the expected reward:
+        #   - Work cost: 0 (cost_to_work_one_night = 0).
+        #   - Rest reward: 0 (all agents working).
+        #   - Ownership: 0 (own/other reward+penalty all zero).
+        #   - Team reward: team_reward_house_survives * 1.0 (all safe) = 10.0
+        #   - Shaping: lambda * (gamma * Phi(terminal) - Phi(prev))
+        #            = 1.0 * (0.99 * 0 - 8.5) = -8.5
+        # Total per agent: 10.0 + (-8.5) = 1.5
+        # Each agent receives the same total (team-shared shaping +
+        # team-shared team_reward).
+        expected_per_agent = 10.0 + (-phi_prev_expected)
+        for i, r in enumerate(rewards):
+            assert abs(float(r) - expected_per_agent) < 1e-4, (
+                f"Agent {i}: expected terminal-step reward "
+                f"team_reward + shaping = 10.0 + (-Phi(s_prev)) = "
+                f"{expected_per_agent}, got {float(r)}. Did the env "
+                f"forget the Phi(terminal)=0 convention? (Got value "
+                f"suggests Phi(s')=10.0 was used instead of 0.0.)"
+            )
+
+        # Negative control: if we'd used Phi(s') = Phi(actual all-safe) = 10
+        # instead of 0, each reward would have been 10 + (0.99*10 - 8.5) =
+        # 10 + 1.4 = 11.4 (not 1.5). Make sure the test would reject this.
+        wrong_shaping = 0.99 * 10.0 - 8.5
+        wrong_per_agent = 10.0 + wrong_shaping
+        assert abs(wrong_per_agent - 11.4) < 1e-4
+        assert abs(rewards[0] - wrong_per_agent) > 0.1, (
+            "Test sanity: if the terminal convention were broken, "
+            "rewards would be ~11.4, not the observed ~1.5. The test "
+            "must be sensitive to the difference."
+        )
+
+    def test_telescoping_identity_under_random_policy(self):
+        """CRITICAL: NHR invariance test. Under potential-based shaping,
+        the discounted sum of shaped rewards along any trajectory equals
+        the base discounted return + lambda * (gamma^T * Phi(s_T) - Phi(s_0)).
+
+        With Phi(terminal) := 0, the bracketed correction collapses to
+        -lambda * Phi(s_0), a constant independent of the policy or
+        trajectory tail. This is what makes NHR shaping invariant.
+
+        We verify by running the SAME policy (fixed seed) under both
+        lambda=0 (base) and lambda=1 (shaped) with everything else
+        deterministic, then checking the discounted-sum equation.
+
+        A buggy implementation that:
+          - forgets the terminal-state convention,
+          - swaps s and s' in the bonus,
+          - or fails to apply the discount inside the shaping bonus,
+        will violate this identity and the test will fail.
+        """
+        gamma = 0.99
+        # Build two envs that differ ONLY in lambda. Use a deterministic-
+        # enough setup that the same actions sequence produces the same
+        # trajectory in both envs (which is required for the per-step
+        # comparison to be meaningful).
+        scenario_base = _make_minimal_scenario(
+            team_reward_house_survives=10.0,
+            team_penalty_house_burns=10.0,
+            min_nights=12,
+            cost_to_work_one_night=0.5,
+            team_welfare_lambda=0.0,
+            team_welfare_gamma=gamma,
+            team_welfare_kind="team_welfare_closed_form",
+        )
+        scenario_shaped = dataclasses.replace(
+            scenario_base, team_welfare_lambda=1.0
+        )
+        env_base = BucketBrigadeEnv(scenario=scenario_base)
+        env_shaped = BucketBrigadeEnv(scenario=scenario_shaped)
+        # Identical RNG seed -> identical fire dynamics under identical
+        # actions. We use the env-level seed for spread / spark / extinguish
+        # stochasticity.
+        env_base.reset(seed=12345)
+        env_shaped.reset(seed=12345)
+
+        # Snapshot s_0 for the constant correction term. Phi is computed
+        # from the env's `houses` after reset/initialization.
+        phi_s0_base = env_base._compute_team_welfare_phi(env_base.houses)
+        phi_s0_shaped = env_shaped._compute_team_welfare_phi(env_shaped.houses)
+        # Phi is a deterministic function of `houses` only; same seed ->
+        # same initial houses -> same Phi(s_0) in both envs.
+        assert phi_s0_base == phi_s0_shaped, (
+            f"Phi(s_0) must match across base/shaped envs with same seed; "
+            f"got base={phi_s0_base}, shaped={phi_s0_shaped}"
+        )
+        phi_s0 = phi_s0_base
+
+        rng = np.random.RandomState(2026)
+        # Track discounted sums per-agent. Both envs see the SAME actions.
+        discounted_base = np.zeros(4, dtype=np.float64)
+        discounted_shaped = np.zeros(4, dtype=np.float64)
+        t = 0
+        terminated_at = None
+        # Walk one full episode (or up to a long horizon if it doesn't
+        # terminate). We rely on min_nights=12 + nonzero ignition rate
+        # ensuring termination within a reasonable number of steps.
+        max_steps = 64
+        for _ in range(max_steps):
+            actions = rng.randint(0, 2, size=(4, 3)).astype(np.int8)
+            actions[:, 0] = rng.randint(0, 10, size=4)
+
+            _, r_base, dones_base, _ = env_base.step(actions)
+            _, r_shaped, dones_shaped, _ = env_shaped.step(actions)
+
+            # Same actions + same seed + same dynamics -> trajectories must
+            # match step-by-step. If this assertion fires, the test
+            # premise breaks and the comparison below is meaningless.
+            assert np.array_equal(env_base.houses, env_shaped.houses), (
+                f"Step {t}: house states diverged between base and "
+                f"shaped envs ({env_base.houses} vs {env_shaped.houses})."
+            )
+            assert bool(dones_base[0]) == bool(dones_shaped[0]), (
+                f"Step {t}: done flags diverged ({dones_base[0]} vs "
+                f"{dones_shaped[0]})."
+            )
+
+            discount = gamma**t
+            discounted_base += discount * r_base.astype(np.float64)
+            discounted_shaped += discount * r_shaped.astype(np.float64)
+            t += 1
+
+            if bool(dones_base[0]):
+                terminated_at = t
+                break
+
+        assert terminated_at is not None, (
+            f"Episode did not terminate within {max_steps} steps; "
+            "test premise broken."
+        )
+
+        # NHR identity: sum_t gamma^t F_t = lambda * (gamma^T Phi(s_T) - Phi(s_0)).
+        # With Phi(terminal) = 0 enforced, this collapses to -lambda * Phi(s_0).
+        # Lambda=1, so expected correction per agent = -Phi(s_0).
+        expected_correction = -1.0 * phi_s0
+        observed_correction = discounted_shaped - discounted_base
+        # All four agents share the team-wide shaping term, so the
+        # per-agent observed correction must be uniform (within float
+        # noise).
+        np.testing.assert_allclose(
+            observed_correction,
+            np.full(4, expected_correction),
+            rtol=0,
+            atol=1e-3,
+            err_msg=(
+                f"NHR telescoping identity violated. "
+                f"Expected per-agent correction = -Phi(s_0) = "
+                f"{expected_correction:.6f}; observed correction = "
+                f"{observed_correction}. "
+                f"This indicates a bug: either Phi(terminal) is not "
+                f"zeroed, or the per-step shaping term uses the wrong "
+                f"sign / state / discount."
+            ),
+        )
+
+    def test_phi_closed_form_values(self):
+        """Spot-check the closed-form Phi against hand-computed values
+        on a few small house states."""
+        scenario = _make_minimal_scenario(
+            team_reward_house_survives=10.0,
+            team_penalty_house_burns=10.0,
+            team_welfare_lambda=0.0,  # value computation does not require shaping enabled
+            team_welfare_gamma=1.0,
+            team_welfare_kind="team_welfare_closed_form",
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+
+        # All safe: Phi = 10*(10/10) - 10*0 - 0.5*10*0 = 10.0
+        houses_all_safe = np.full(10, env.SAFE, dtype=np.int8)
+        assert abs(env._compute_team_welfare_phi(houses_all_safe) - 10.0) < 1e-6
+
+        # All ruined: Phi = 0 - 10 - 0 = -10.0
+        houses_all_ruined = np.full(10, env.RUINED, dtype=np.int8)
+        assert abs(env._compute_team_welfare_phi(houses_all_ruined) - (-10.0)) < 1e-6
+
+        # All burning: Phi = 0 - 0 - 0.5*10 = -5.0
+        houses_all_burning = np.full(10, env.BURNING, dtype=np.int8)
+        assert abs(env._compute_team_welfare_phi(houses_all_burning) - (-5.0)) < 1e-6
+
+        # Mixed: 5 safe, 3 burning, 2 ruined.
+        # Phi = 10*(5/10) - 10*(2/10) - 0.5*10*(3/10) = 5 - 2 - 1.5 = 1.5
+        mixed = np.array(
+            [env.SAFE] * 5 + [env.BURNING] * 3 + [env.RUINED] * 2, dtype=np.int8
+        )
+        assert abs(env._compute_team_welfare_phi(mixed) - 1.5) < 1e-6
+
+    def test_phi_kind_none_returns_zero(self):
+        """When kind='none', Phi must be exactly 0 regardless of state.
+        Guards the env fast-path skip in _compute_rewards."""
+        scenario = _make_minimal_scenario(
+            team_reward_house_survives=100.0,
+            team_penalty_house_burns=100.0,
+            team_welfare_lambda=0.0,
+            team_welfare_gamma=1.0,
+            team_welfare_kind="none",
+        )
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        for state_code in (env.SAFE, env.BURNING, env.RUINED):
+            houses = np.full(10, state_code, dtype=np.int8)
+            assert env._compute_team_welfare_phi(houses) == 0.0, (
+                f"kind='none' must produce Phi=0; got "
+                f"{env._compute_team_welfare_phi(houses)} for state {state_code}"
+            )
+
+    def test_unknown_kind_rejected_at_construction(self):
+        """The Scenario allowlist must reject unknown team_welfare_kind
+        values at construction time."""
+        with pytest.raises(ValueError, match="team_welfare_kind"):
+            _make_minimal_scenario(team_welfare_kind="bogus")
+
+    def test_shaping_is_team_shared(self):
+        """The shaping term is added equally to every agent's reward, so
+        the per-agent reward differential under shaping equals the
+        per-agent reward differential without shaping. Confirms the
+        team-shared application (not per-agent decomposition)."""
+        # Scenario where shaping fires deterministically: solo extinguish
+        # of a burning house, no spread/spark, lambda=1.
+        scenario_no_shape = _make_minimal_scenario(
+            prob_solo_agent_extinguishes_fire=1.0,
+            prob_fire_spreads_to_neighbor=0.0,
+            prob_house_catches_fire=0.0,
+            team_reward_house_survives=10.0,
+            team_penalty_house_burns=10.0,
+        )
+        scenario_shaped = dataclasses.replace(
+            scenario_no_shape,
+            team_welfare_lambda=1.0,
+            team_welfare_gamma=0.99,
+            team_welfare_kind="team_welfare_closed_form",
+        )
+        env_a = BucketBrigadeEnv(scenario=scenario_no_shape)
+        env_b = BucketBrigadeEnv(scenario=scenario_shaped)
+        env_a.reset(seed=11)
+        env_b.reset(seed=11)
+        # Force identical start state.
+        env_a.houses = np.zeros(10, dtype=np.int8)
+        env_a.houses[3] = env_a.BURNING
+        env_a._prev_houses_state = env_a.houses.copy()
+        env_b.houses = env_a.houses.copy()
+        env_b._prev_houses_state = env_a.houses.copy()
+        actions = np.array(
+            [[3, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            dtype=np.int8,
+        )
+        _, r_a, _, _ = env_a.step(actions)
+        _, r_b, _, _ = env_b.step(actions)
+        # The pairwise differential (r_b - r_a) must be uniform across
+        # agents — shaping is team-shared, not per-agent.
+        diff = r_b - r_a
+        np.testing.assert_allclose(
+            diff, np.full(4, diff[0]), rtol=0, atol=1e-5,
+            err_msg=(
+                "Potential-based shaping must apply equally to every "
+                "agent (team-shared bonus). Per-agent differential is "
+                f"non-uniform: {diff}"
+            ),
+        )
