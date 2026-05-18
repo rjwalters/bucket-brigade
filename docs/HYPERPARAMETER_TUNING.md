@@ -1,5 +1,13 @@
 # Hyperparameter Tuning Guide
 
+> **Status (2026-05, issue #335)**: `scripts/tune_hyperparameters.py` was
+> removed along with the PufferLib training path. The Optuna search space and
+> ranges documented below are still a useful reference, but the orchestration
+> script no longer exists. If hyperparameter tuning becomes a priority again,
+> re-implement the harness against
+> `bucket_brigade.training.joint_trainer.JointPPOTrainer` and file a new
+> issue.
+
 This guide explains how to systematically tune PPO hyperparameters for Bucket Brigade training using Optuna.
 
 ## Overview

@@ -895,12 +895,10 @@ class BucketBrigadeEnv:
 
     @property
     def observation_space(self) -> Any:
-        """Gym/PufferLib compatible observation space."""
-        # This would need pufferlib import, simplified for now
+        """Gym-compatible observation space (placeholder)."""
         return None
 
     @property
     def action_space(self) -> Any:
-        """Gym/PufferLib compatible action space."""
-        # This would need pufferlib import, simplified for now
+        """Gym-compatible action space (placeholder)."""
         return None

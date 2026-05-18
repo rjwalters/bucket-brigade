@@ -16,9 +16,8 @@ Wrapper placement
 -----------------
 
 ``BucketBrigadeEnv`` is *not* a Gym/Gymnasium/PettingZoo env at the base
-layer — it exposes a custom dict-obs / numpy-action contract. There is a
-Gymnasium-style wrapper at :mod:`bucket_brigade.envs.puffer_env` for
-single-agent PufferLib training, but the joint multi-agent trainer
+layer — it exposes a custom dict-obs / numpy-action contract. The joint
+multi-agent trainer
 :class:`bucket_brigade.training.joint_trainer.JointPPOTrainer` drives
 ``BucketBrigadeEnv`` directly. The macro-action wrapper therefore sits at
 the ``BucketBrigadeEnv`` level (wrap, don't subclass), exposing the same

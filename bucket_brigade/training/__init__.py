@@ -4,7 +4,6 @@ This package provides modular components for training agents using various
 RL algorithms and curriculum learning strategies.
 """
 
-from .curriculum import CurriculumStage, CurriculumTrainer
 from .networks import (
     HindsightNetwork,
     PolicyNetwork,
@@ -27,8 +26,6 @@ __all__ = [
     "PolicyNetwork",
     "TransformerPolicyNetwork",
     "HindsightNetwork",
-    "CurriculumTrainer",
-    "CurriculumStage",
     "compute_gae",
     "compute_hca_advantages",
     "compute_returns_to_go",

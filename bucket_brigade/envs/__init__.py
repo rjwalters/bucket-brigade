@@ -2,8 +2,6 @@
 Environment implementations for Bucket Brigade.
 """
 
-from typing import TYPE_CHECKING, Optional, Type, Callable, Any
-
 from .bucket_brigade_env import BucketBrigadeEnv
 from .macro_action_env import (
     MacroActionEnv,
@@ -12,25 +10,6 @@ from .macro_action_env import (
     OPT_PATROL,
     OPT_REST_UNTIL_FIRE,
 )
-
-# Optional PufferLib imports (only available if gymnasium is installed)
-if TYPE_CHECKING:
-    pass
-
-try:
-    # Use Rust-backed PufferLib environment for 100x speedup
-    from .puffer_env_rust import (
-        RustPufferBucketBrigade as PufferBucketBrigade,
-        RustPufferBucketBrigadeVectorized as PufferBucketBrigadeVectorized,
-        make_rust_env as make_env,
-        make_rust_vectorized_env as make_vectorized_env,
-    )
-except ImportError:
-    # PufferLib not available, skip these imports
-    PufferBucketBrigade: Optional[Type[Any]] = None  # type: ignore[assignment, misc, no-redef]
-    PufferBucketBrigadeVectorized: Optional[Type[Any]] = None  # type: ignore[assignment, misc, no-redef]
-    make_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
-    make_vectorized_env: Optional[Callable[..., Any]] = None  # type: ignore[assignment, misc, no-redef]
 from .scenarios_generated import (
     Scenario,
     default_scenario,
@@ -60,10 +39,6 @@ __all__ = [
     "OPT_DEFEND_OWN",
     "OPT_REST_UNTIL_FIRE",
     "OPT_FOLLOW_BASE",
-    "PufferBucketBrigade",
-    "PufferBucketBrigadeVectorized",
-    "make_env",
-    "make_vectorized_env",
     "Scenario",
     "default_scenario",
     "easy_scenario",

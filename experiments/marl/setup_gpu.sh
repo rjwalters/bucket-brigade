@@ -52,7 +52,7 @@ echo "🐍 Creating Python environment..."
 uv venv
 source .venv/bin/activate
 
-# Install dependencies with RL extras (torch, pufferlib, etc.)
+# Install dependencies with RL extras (torch, gymnasium, optuna, etc.)
 echo "📚 Installing dependencies (this may take a few minutes)..."
 uv sync --extra rl
 
@@ -83,16 +83,15 @@ EOF
 # Check Rust environment
 .venv/bin/python << 'EOF'
 try:
-    from bucket_brigade.envs.puffer_env_rust import make_rust_env
+    from bucket_brigade.envs import BucketBrigadeEnv, trivial_cooperation_scenario
     import bucket_brigade_core as core
 
     print(f"✅ Rust core imported successfully")
     print(f"✅ Available scenarios: {len(core.SCENARIOS)}")
 
     # Test environment creation
-    env = make_rust_env('trivial_cooperation', num_opponents=3)
-    obs, _ = env.reset()
-    print(f"✅ Environment created successfully (obs shape: {obs.shape})")
+    env = BucketBrigadeEnv(trivial_cooperation_scenario())
+    print(f"✅ Environment created successfully")
 
 except Exception as e:
     print(f"❌ Error: {e}")
@@ -104,7 +103,7 @@ echo "🎉 Setup complete!"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Start training:"
-echo "     uv run python experiments/marl/train_gpu.py --steps 10000000 --scenario trivial_cooperation"
+echo "     uv run python -m experiments.p3_specialization.train --num-iterations 1000 --rollout-steps 256"
 echo ""
 echo "  2. Monitor with TensorBoard (in another terminal):"
 echo "     tensorboard --logdir experiments/marl/runs/"

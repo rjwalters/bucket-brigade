@@ -202,9 +202,9 @@ web/
 ```
 bucket_brigade/
 ├── envs/
-│   ├── bucket_brigade_env.py           # Core game logic
+│   ├── bucket_brigade_env.py           # Core game logic (Rust-backed, drives JointPPOTrainer)
 │   ├── scenarios.py                    # 10 test scenarios
-│   └── puffer_env.py                   # RL training wrapper
+│   └── macro_action_env.py             # Sutton-options wrapper
 │
 ├── agents/
 │   ├── agent_base.py                   # Base agent class
@@ -227,9 +227,10 @@ scripts/
 ├── test_team.py                        # Team testing
 ├── compare_teams.py                    # Statistical comparison
 ├── analyze_rankings.py                 # Analysis & visualization
-├── evolve_agents.py                    # GA optimization
-├── train_simple.py                     # RL training (PPO)
-└── evaluate_simple.py                  # RL evaluation
+└── evolve_agents.py                    # GA optimization
+
+# RL training lives under experiments/p3_specialization/train*.py
+# and uses bucket_brigade.training.joint_trainer.JointPPOTrainer.
 
 bucket-brigade-core/                    # Rust engine (optional, 10x faster)
 ├── src/
@@ -349,7 +350,7 @@ Researcher's Machine
   ├─→ Scripts for batch processing
   │    ├─→ run_batch.py (1000s of games)
   │    ├─→ evolve_agents.py (GA optimization)
-  │    └─→ train_simple.py (RL training)
+  │    └─→ experiments/p3_specialization/train*.py (RL training via JointPPOTrainer)
   │
   └─→ Results stored locally
        ├─→ results/summaries/*.json

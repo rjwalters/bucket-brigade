@@ -14,7 +14,7 @@ chmod +x experiments/marl/setup_gpu.sh
 ./experiments/marl/setup_gpu.sh
 
 # 2. Start training
-uv run python experiments/marl/train_gpu.py \
+uv run python -m experiments.p3_specialization.train \
     --steps 10000000 \
     --scenario trivial_cooperation \
     --run-name baseline_v1
@@ -45,12 +45,17 @@ open http://localhost:6006
 - Verifies CUDA and environment setup
 - Tests environment creation
 
-**`train_gpu.py`** - Main training script
-- Uses `RustPufferBucketBrigade` environment (100x faster!)
-- Implements PPO with proper checkpointing
-- Logs to TensorBoard and console
-- Saves checkpoints every 100K steps
-- Full configurability via CLI arguments
+**`train_population.py`** / **`train_rust_vectorized.py`** /
+**`train_vectorized_population.py`** - Active MARL trainers
+- Use the Rust-backed `BucketBrigadeEnv` directly via `JointPPOTrainer`
+  (100x faster than the legacy Python wrapper)
+- Implement PPO with proper checkpointing
+- Log to TensorBoard and console
+- Save checkpoints periodically
+
+> The legacy `train_gpu.py`, `train_gpu_vectorized.py`,
+> `train_puffer_hybrid.py`, and `train_pufferlib.py` trainers were removed in
+> issue #335 along with the PufferLib path.
 
 ### Local Scripts (Run on Your Machine)
 
@@ -70,7 +75,7 @@ open http://localhost:6006
 
 ### Basic Training (10M steps, ~2-3 hours on L4)
 ```bash
-uv run python experiments/marl/train_gpu.py \
+uv run python -m experiments.p3_specialization.train \
     --steps 10000000 \
     --scenario trivial_cooperation \
     --run-name baseline_trivial
@@ -78,7 +83,7 @@ uv run python experiments/marl/train_gpu.py \
 
 ### Quick Test (1M steps, ~15 minutes)
 ```bash
-uv run python experiments/marl/train_gpu.py \
+uv run python -m experiments.p3_specialization.train \
     --steps 1000000 \
     --scenario greedy_neighbor \
     --run-name quick_test
@@ -86,7 +91,7 @@ uv run python experiments/marl/train_gpu.py \
 
 ### Custom Configuration
 ```bash
-uv run python experiments/marl/train_gpu.py \
+uv run python -m experiments.p3_specialization.train \
     --steps 5000000 \
     --scenario chain_reaction \
     --opponents 5 \
@@ -97,7 +102,7 @@ uv run python experiments/marl/train_gpu.py \
 
 ### All Available Options
 ```bash
-uv run python experiments/marl/train_gpu.py --help
+uv run python -m experiments.p3_specialization.train --help
 ```
 
 Options:
@@ -181,10 +186,10 @@ start_step = checkpoint['step']
 
 ## 🎮 Environment Details
 
-### RustPufferBucketBrigade
+### Rust-backed `BucketBrigadeEnv`
 - **100x faster** than Python implementation
 - Rust core for simulation
-- PufferLib-compatible interface
+- Driven directly by `JointPPOTrainer` (no PufferLib wrapper)
 - GPU-ready (observations/actions on GPU)
 
 ### Observation Space
@@ -315,7 +320,7 @@ cargo clean
 ### Import Errors
 ```bash
 # Verify installation
-python -c "from bucket_brigade.envs.puffer_env_rust import make_rust_env; print('OK')"
+python -c "from bucket_brigade.envs import BucketBrigadeEnv; print('OK')"
 python -c "import bucket_brigade_core; print('OK')"
 ```
 
