@@ -40,7 +40,7 @@ import argparse
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 import torch
@@ -94,9 +94,7 @@ def _flatten_controller_obs(stacked: np.ndarray) -> np.ndarray:
     return stacked.reshape(-1).astype(np.float32, copy=False)
 
 
-def train_single_agent_cell(
-    cfg: SingleAgentCellConfig, output_dir: Path
-) -> None:
+def train_single_agent_cell(cfg: SingleAgentCellConfig, output_dir: Path) -> None:
     """Run one (scenario, seed) cell of single-controller joint-action PPO."""
     output_dir.mkdir(parents=True, exist_ok=True)
 

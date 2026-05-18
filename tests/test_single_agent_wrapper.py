@@ -54,7 +54,7 @@ class TestActionSpace:
         # 10 houses, 2 modes, 2 signals -> 40 per sub-agent.
         assert per_agent == 40
         # 4 sub-agents -> 40 ** 4 = 2_560_000.
-        assert wrapper.joint_action_size == 40 ** NUM_SUBAGENTS
+        assert wrapper.joint_action_size == 40**NUM_SUBAGENTS
 
     def test_joint_action_dims_is_concatenation(self):
         wrapper = _build_wrapper()
@@ -99,7 +99,9 @@ class TestSplitJointAction:
     def test_split_wrong_size_raises(self):
         wrapper = _build_wrapper()
         with pytest.raises(ValueError):
-            wrapper._split_joint_action(np.zeros(NUM_SUBAGENTS * ACTION_DIM_PER_AGENT + 1))
+            wrapper._split_joint_action(
+                np.zeros(NUM_SUBAGENTS * ACTION_DIM_PER_AGENT + 1)
+            )
         with pytest.raises(ValueError):
             wrapper._split_joint_action(
                 np.zeros((NUM_SUBAGENTS + 1, ACTION_DIM_PER_AGENT))
@@ -117,11 +119,6 @@ class TestStepSemantics:
         # A bunch of random actions; verify the aggregate every step.
         rng = np.random.default_rng(0)
         for _ in range(20):
-            joint = np.concatenate(
-                [
-                    [rng.integers(wrapper.action_dims_per_agent[0]) for _ in range(NUM_SUBAGENTS)],
-                ]
-            )
             # Build a fresh flat joint action with the right shape.
             flat = []
             for _i in range(NUM_SUBAGENTS):

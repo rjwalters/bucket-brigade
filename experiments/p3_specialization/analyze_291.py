@@ -180,7 +180,8 @@ def _enforce_k200_gate(joint_arm: Dict, allow_phase1_only: bool) -> Optional[str
     if allow_phase1_only:
         return None
     missing = [
-        s.get("cell", "?") for s in joint_arm.get("seeds", [])
+        s.get("cell", "?")
+        for s in joint_arm.get("seeds", [])
         if not s.get("missing", False) and "k200_gap_closed" not in s
     ]
     if missing:

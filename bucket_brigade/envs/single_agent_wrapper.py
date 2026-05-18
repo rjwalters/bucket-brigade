@@ -230,7 +230,5 @@ class SingleAgentJointWrapper:
                     f"expected ({self.num_agents}, {_ACTION_DIM_PER_AGENT})"
                 )
         else:
-            raise ValueError(
-                f"joint_action must be 1-D or 2-D, got ndim={arr.ndim}"
-            )
+            raise ValueError(f"joint_action must be 1-D or 2-D, got ndim={arr.ndim}")
         return arr.astype(np.int64, copy=False)
