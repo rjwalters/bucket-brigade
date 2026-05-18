@@ -54,6 +54,7 @@ from bucket_brigade.training.joint_trainer import (
 )
 from bucket_brigade.training.lola_trainer import LolaTrainer
 from bucket_brigade.training.obs_audit import ObsAuditor
+from bucket_brigade.training.reinforce_trainer import REINFORCETrainer
 
 
 @dataclass
@@ -212,6 +213,17 @@ class CellConfig:
     audit_obs: int = 0
     audit_obs_path: Optional[str] = None
     audit_obs_seed: int = 0
+    # Issue #273: off-PPO baseline (vanilla REINFORCE). Setting
+    # ``algorithm="reinforce"`` swaps the :class:`JointPPOTrainer` for the
+    # :class:`REINFORCETrainer` (Monte-Carlo policy gradient, no value
+    # baseline, no GAE, no clip, no multi-epoch update). The diagnostic
+    # discriminates "PPO clip pathology" from "policy-gradient RL general
+    # failure" on this env. Mutually exclusive with every other
+    # algorithmic/critic knob (centralized_critic, coma,
+    # advantage_estimator != "gae", influence_coef, lambda_red, lola_dice)
+    # — the diagnostic's interpretation depends on running clean vanilla
+    # PG. ``"ppo"`` (default) preserves bit-identical pre-#273 behavior.
+    algorithm: str = "ppo"
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -715,6 +727,67 @@ def _parse_curriculum_arg(value: str) -> List[List[int]]:
 
 
 def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
+    # Issue #273: REINFORCE algorithm-selector validation. The CLI value
+    # must be one of the two supported algorithms. We surface the error
+    # at cell-config validation time so a typo doesn't silently fall
+    # through to the PPO path.
+    if cfg.algorithm not in ("ppo", "reinforce"):
+        raise ValueError(
+            f"cfg.algorithm must be one of {{'ppo', 'reinforce'}}, got "
+            f"{cfg.algorithm!r}."
+        )
+
+    # Issue #273: REINFORCE mutual-exclusion validation. Mirrors the
+    # LOLA guard block below in structure and rationale: the off-PPO
+    # diagnostic only discriminates "PPO clip pathology" from
+    # "policy-gradient RL general failure" if REINFORCE runs as clean
+    # vanilla PG. Combining it with any of the architecture/critic/intrinsic
+    # knobs entangles two unrelated experiments.
+    if cfg.algorithm == "reinforce":
+        if cfg.lola_dice:
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with "
+                "cfg.lola_dice=True. REINFORCE is the no-opponent-awareness "
+                "control; LOLA-DiCE installs a second-order opponent-shaping "
+                "surrogate. Pick one."
+            )
+        if cfg.centralized_critic:
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with "
+                "cfg.centralized_critic=True. REINFORCE has no value "
+                "baseline by design; combining it with MAPPO's shared "
+                "value critic defeats the point of the diagnostic. Pick one."
+            )
+        if cfg.coma:
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with cfg.coma=True. "
+                "COMA replaces the per-agent advantage with a counterfactual "
+                "Q-value; REINFORCE uses raw Monte-Carlo returns. Pick one."
+            )
+        if cfg.lambda_red > 0:
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with "
+                "cfg.lambda_red > 0. The redundancy penalty couples the per-"
+                "agent actor trunks via a shared loss, while REINFORCE "
+                "assumes strictly independent per-agent updates. Pick one."
+            )
+        if cfg.advantage_estimator != "gae":
+            raise ValueError(
+                f"cfg.algorithm='reinforce' is incompatible with "
+                f"cfg.advantage_estimator={cfg.advantage_estimator!r}. "
+                "REINFORCE uses raw Monte-Carlo discounted returns; "
+                "installing any advantage estimator (HCA) defeats the "
+                "point of the diagnostic. Leave advantage_estimator at "
+                "its default ('gae' sentinel)."
+            )
+        if cfg.influence_coef > 0:
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with "
+                "cfg.influence_coef > 0. Social-influence intrinsic reward "
+                "modifies the per-step reward upstream of the return "
+                "computation, conflating with the REINFORCE estimate. Pick one."
+            )
+
     # Issue #287: LOLA mutual-exclusion validation. LOLA's second-order
     # opponent-shaping term is incompatible with the MAPPO/centralized-critic
     # arm and with the cross-agent redundancy penalty (both modify the
@@ -863,13 +936,37 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 "The audit hook lives in JointPPOTrainer.collect_rollout; "
                 "extend LolaTrainer separately if needed."
             )
+        if cfg.algorithm == "reinforce":
+            raise ValueError(
+                "cfg.audit_obs > 0 is not supported on the REINFORCE arm. "
+                "The audit hook lives in JointPPOTrainer.collect_rollout; "
+                "extend REINFORCETrainer separately if needed."
+            )
         obs_auditor = ObsAuditor(
             num_samples=int(cfg.audit_obs),
             total_steps=int(audit_total_steps),
             seed=int(cfg.audit_obs_seed),
         )
 
-    if cfg.lola_dice:
+    if cfg.algorithm == "reinforce":
+        # Issue #273: vanilla REINFORCE arm. The trainer mirrors
+        # JointPPOTrainer's collect_rollout / update / encoder_outputs_batch
+        # surface so the rest of the cell loop (info-theory hook, metric
+        # logging) is identical. The mutual-exclusion guard above ensures
+        # REINFORCE is not combined with any other algorithmic /
+        # critic / intrinsic knob.
+        trainer = REINFORCETrainer(
+            env_fn=env_fn,
+            num_agents=cfg.num_agents,
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            hidden_size=cfg.hidden_size,
+            lr=cfg.lr,
+            normalize_returns=cfg.normalize_returns,
+            device=cfg.device,
+            seed=cfg.seed,
+        )
+    elif cfg.lola_dice:
         # Issue #287: LOLA-DiCE arm. The trainer mirrors JointPPOTrainer's
         # collect_rollout / update / encoder_outputs_batch surface, so the
         # rest of the cell loop (rollout collection for info-theory hooks,
@@ -1376,6 +1473,22 @@ def main() -> None:
             "LOLA. Paper's main experiments use 1; 2 is the standard ablation."
         ),
     )
+    p.add_argument(
+        "--algorithm",
+        choices=("ppo", "reinforce"),
+        default=CellConfig.__dataclass_fields__["algorithm"].default,
+        help=(
+            "Issue #273: choose the policy-gradient algorithm. ``ppo`` "
+            "(default) preserves bit-identical pre-#273 behavior; "
+            "``reinforce`` swaps to vanilla Monte-Carlo policy gradient "
+            "(no value baseline, no GAE, no clip, no multi-epoch update). "
+            "The REINFORCE arm is the off-PPO diagnostic for whether the "
+            "minimal_specialization plateau is PPO-specific or RL-general. "
+            "Mutually exclusive with --centralized-critic, --coma, "
+            "--lambda-red > 0, --advantage-estimator hca, --influence-coef > 0, "
+            "--lola-dice."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     p.add_argument(
         "--audit-obs",
@@ -1453,13 +1566,15 @@ def main() -> None:
         lola_dice=args.lola_dice,
         lola_eta=args.lola_eta,
         lola_lookahead_steps=args.lola_lookahead_steps,
+        algorithm=args.algorithm,
         device=args.device,
         audit_obs=args.audit_obs,
         audit_obs_path=args.audit_obs_path,
         audit_obs_seed=args.audit_obs_seed,
     )
     print(
-        f"== P3 cell: scenario={cfg.scenario} lambda_red={cfg.lambda_red} "
+        f"== P3 cell: scenario={cfg.scenario} algorithm={cfg.algorithm} "
+        f"lambda_red={cfg.lambda_red} "
         f"seed={cfg.seed} "
         f"gae_lambda={cfg.gae_lambda} "
         f"action_shaping_alpha={cfg.action_shaping_alpha} "
