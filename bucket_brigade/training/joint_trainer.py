@@ -51,8 +51,10 @@ import torch.optim as optim
 from bucket_brigade.training.networks import (
     CentralizedCritic,
     CentralizedQCritic,
+    HindsightNetwork,
     PolicyNetwork,
     compute_gae,
+    compute_hca_advantages,
 )
 from bucket_brigade.training.normalizers import RunningMeanStd
 
@@ -212,6 +214,23 @@ class JointPPOTrainer:
         coma_target_update_every: How often (in PPO update steps) to hard-
             copy the Q-critic into the target network. Default 200 matches
             the Foerster 2018 paper. Only used when ``coma=True``.
+        advantage_estimator: Selector for the per-agent advantage path
+            (issue #289). One of:
+
+            - ``"gae"`` (default) — Generalized Advantage Estimation, the
+              pre-#289 path. Bit-identical to prior behavior.
+            - ``"hca"`` — Hindsight Credit Assignment (Harutyunyan et al.
+              2019, Eq. 9). Instantiates per-agent :class:`HindsightNetwork`
+              instances trained alongside the actors and computes
+              ``A_t = (1 - pi/h) * (Z_t - V_t)`` with a quantile-bucketed
+              return as the future statistic.
+        hindsight_lr: Adam learning rate for the per-agent hindsight nets.
+            Only used when ``advantage_estimator == "hca"``. Default matches
+            the actor ``lr``.
+        hindsight_num_return_buckets: Alphabet size of the future-statistic
+            bucket encoding. Default 8.
+        hindsight_ratio_clip: Symmetric clip on the ``pi/h`` hindsight ratio.
+            Default 10.0.
     """
 
     def __init__(
@@ -237,6 +256,10 @@ class JointPPOTrainer:
         centralized_critic: bool = False,
         coma: bool = False,
         coma_target_update_every: int = 200,
+        advantage_estimator: str = "gae",
+        hindsight_lr: Optional[float] = None,
+        hindsight_num_return_buckets: int = 8,
+        hindsight_ratio_clip: float = 10.0,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
@@ -386,6 +409,47 @@ class JointPPOTrainer:
             self.q_critic_target = None
             self.q_critic_optimizer = None
             self._coma_update_step = 0
+
+        # Issue #289: HCA advantage path. Validated and wired here so the
+        # default ``advantage_estimator="gae"`` path is bit-identical to
+        # pre-#289 behavior (no hindsight network is instantiated, no
+        # extra optimizer is added).
+        if advantage_estimator not in ("gae", "hca"):
+            raise ValueError(
+                f"advantage_estimator must be 'gae' or 'hca', got "
+                f"{advantage_estimator!r}"
+            )
+        if advantage_estimator == "hca" and coma:
+            raise ValueError(
+                "advantage_estimator='hca' is incompatible with coma=True: "
+                "COMA overrides per-agent advantages with counterfactual "
+                "values, which would silently negate the HCA computation. "
+                "Pick one."
+            )
+        self.advantage_estimator = advantage_estimator
+        self.hindsight_num_return_buckets = int(hindsight_num_return_buckets)
+        self.hindsight_ratio_clip = float(hindsight_ratio_clip)
+        self.hindsight_nets: Optional[nn.ModuleList] = None
+        self.hindsight_optimizers: Optional[List[optim.Optimizer]] = None
+        if self.advantage_estimator == "hca":
+            _h_lr = float(lr if hindsight_lr is None else hindsight_lr)
+            self.hindsight_lr = _h_lr
+            self.hindsight_nets = nn.ModuleList(
+                [
+                    HindsightNetwork(
+                        obs_dim=obs_dim,
+                        x_dim=self.hindsight_num_return_buckets,
+                        action_dims=action_dims,
+                        hidden_size=hidden_size,
+                    )
+                    for _ in range(num_agents)
+                ]
+            ).to(self.device)
+            self.hindsight_optimizers = [
+                optim.Adam(h.parameters(), lr=_h_lr) for h in self.hindsight_nets
+            ]
+        else:
+            self.hindsight_lr = float(lr if hindsight_lr is None else hindsight_lr)
 
         self._reset_env(seed=seed)
 
@@ -656,20 +720,124 @@ class JointPPOTrainer:
         rewards: torch.Tensor,
         values: torch.Tensor,
         dones: torch.Tensor,
+        agent_id: Optional[int] = None,
+        observations: Optional[torch.Tensor] = None,
+        actions: Optional[torch.Tensor] = None,
+        policy_log_probs: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        adv = torch.tensor(
-            compute_gae(
-                rewards.cpu().tolist(),
-                values.cpu().tolist(),
-                dones.cpu().tolist(),
-                self.gamma,
-                self.gae_lambda,
-            ),
-            dtype=torch.float32,
-            device=self.device,
+        """Compute per-agent advantages and value-regression targets.
+
+        Branches on :attr:`advantage_estimator`:
+
+        - ``"gae"`` (default) — Generalized Advantage Estimation. Bit-identical
+          to the pre-#289 path. The HCA-only kwargs are ignored.
+        - ``"hca"`` (issue #289) — Hindsight Credit Assignment. Requires
+          ``agent_id``, ``observations``, ``actions``, and ``policy_log_probs``
+          to evaluate ``h(a | s, X)`` and compute
+          ``A_t = (1 - pi/h)(Z_t - V_t)``. The return target ``Z_t`` (pure
+          Monte-Carlo) is used as the value-regression target — the value
+          head still learns a baseline, just without TD bootstrapping.
+
+        Diagnostic info from the HCA path (clip rate, mean ratio, etc.) is
+        stashed on ``self._last_hca_info[agent_id]`` for the trainer's stats
+        dict.
+        """
+        if self.advantage_estimator == "gae":
+            adv = torch.tensor(
+                compute_gae(
+                    rewards.cpu().tolist(),
+                    values.cpu().tolist(),
+                    dones.cpu().tolist(),
+                    self.gamma,
+                    self.gae_lambda,
+                ),
+                dtype=torch.float32,
+                device=self.device,
+            )
+            ret = adv + values
+            return adv, ret
+
+        # HCA path.
+        if (
+            agent_id is None
+            or observations is None
+            or actions is None
+            or policy_log_probs is None
+        ):
+            raise ValueError(
+                "advantage_estimator='hca' requires agent_id, observations, "
+                "actions, and policy_log_probs to be passed in."
+            )
+        assert self.hindsight_nets is not None
+        hindsight_net = self.hindsight_nets[agent_id]
+        adv, returns, info = compute_hca_advantages(
+            rewards=rewards.cpu().tolist(),
+            values=values.cpu().tolist(),
+            dones=dones.cpu().tolist(),
+            actions=actions,
+            observations=observations,
+            policy_log_probs=policy_log_probs,
+            hindsight_net=hindsight_net,
+            gamma=self.gamma,
+            num_return_buckets=self.hindsight_num_return_buckets,
+            ratio_clip=self.hindsight_ratio_clip,
         )
-        ret = adv + values
-        return adv, ret
+        # Stash diagnostics for the update() stats dict.
+        if not hasattr(self, "_last_hca_info"):
+            self._last_hca_info: Dict[int, Dict[str, float]] = {}
+        self._last_hca_info[agent_id] = info
+        # Returns target for the value head is the Monte-Carlo Z_t.
+        return adv, returns
+
+    def _update_hindsight_nets(self, rollout: "RolloutBuffer") -> Dict[int, float]:
+        """One supervised-learning step per agent's hindsight network.
+
+        Issue #289: trains each per-agent :class:`HindsightNetwork` by maximum
+        likelihood on the rollout's ``(s_t, X_t) -> a_t`` triples, where
+        ``X_t`` is the quantile-bucketed Monte-Carlo return. Uses the
+        per-agent hindsight optimizer (independent from the actor optimizers
+        and the centralized critic optimizer when one is active).
+
+        Called once per ``update()`` invocation, before the PPO epochs, so
+        that the hindsight ratio used inside the advantage computation
+        reflects the most recent hindsight fit.
+
+        Returns:
+            Per-agent cross-entropy loss values keyed by agent id.
+        """
+        from bucket_brigade.training.networks import (
+            compute_returns_to_go,
+            encode_return_bucket,
+        )
+
+        assert self.advantage_estimator == "hca"
+        assert self.hindsight_nets is not None
+        assert self.hindsight_optimizers is not None
+        losses: Dict[int, float] = {}
+        for i in range(self.num_agents):
+            obs_i = rollout.observations[:, i, :]  # [T, obs_dim]
+            actions_i = rollout.actions[i]  # [T, A]
+            rewards_i = rollout.rewards[i].cpu().tolist()
+            dones_i = rollout.dones.cpu().tolist()
+            Z_i = torch.tensor(
+                compute_returns_to_go(rewards_i, dones_i, gamma=self.gamma),
+                dtype=torch.float32,
+                device=self.device,
+            )
+            X_i = encode_return_bucket(
+                Z_i.detach(), num_buckets=self.hindsight_num_return_buckets
+            )
+            log_p = self.hindsight_nets[i].log_prob(obs_i, X_i, actions_i)
+            loss = -log_p.mean()
+            opt = self.hindsight_optimizers[i]
+            opt.zero_grad()
+            loss.backward()
+            nn.utils.clip_grad_norm_(
+                self.hindsight_nets[i].parameters(), self.max_grad_norm
+            )
+            opt.step()
+            losses[i] = float(loss.item())
+        return losses
 
     @staticmethod
     def coma_counterfactual_advantage(
@@ -861,13 +1029,33 @@ class JointPPOTrainer:
         """
         t_total = rollout.observations.shape[0]
 
-        # Per-agent advantages and returns from GAE.
+        # Issue #289: HCA path trains the per-agent hindsight nets once per
+        # ``update()`` call, *before* the advantages are computed, so the
+        # ratio used inside the advantage formula reflects the most recent
+        # hindsight fit. The supervised hindsight-net step is independent
+        # from the PPO optimizer (separate Adam state).
+        hindsight_losses: Dict[int, float] = {}
+        if self.advantage_estimator == "hca":
+            hindsight_losses = self._update_hindsight_nets(rollout)
+
+        # Per-agent advantages and returns from GAE or HCA.
         advantages: Dict[int, torch.Tensor] = {}
         returns: Dict[int, torch.Tensor] = {}
         for i in range(self.num_agents):
-            adv, ret = self._compute_advantages(
-                rollout.rewards[i], rollout.values[i], rollout.dones
-            )
+            if self.advantage_estimator == "hca":
+                adv, ret = self._compute_advantages(
+                    rollout.rewards[i],
+                    rollout.values[i],
+                    rollout.dones,
+                    agent_id=i,
+                    observations=rollout.observations[:, i, :],
+                    actions=rollout.actions[i],
+                    policy_log_probs=rollout.log_probs[i],
+                )
+            else:
+                adv, ret = self._compute_advantages(
+                    rollout.rewards[i], rollout.values[i], rollout.dones
+                )
             advantages[i] = (adv - adv.mean()) / (adv.std() + 1e-8)
             returns[i] = ret
 
@@ -897,6 +1085,30 @@ class JointPPOTrainer:
         stats.update({f"entropy/agent_{i}": 0.0 for i in range(self.num_agents)})
         stats["redundancy_loss"] = 0.0
         stats["total_loss"] = 0.0
+
+        # Issue #289: HCA-specific diagnostics. Reported per-agent so callers
+        # can see when individual hindsight nets are underfit or saturate
+        # the ratio clip. When ``advantage_estimator == "gae"`` these keys
+        # are omitted entirely to keep the GAE stats schema bit-identical.
+        if self.advantage_estimator == "hca":
+            for i in range(self.num_agents):
+                stats[f"hindsight_loss/agent_{i}"] = float(
+                    hindsight_losses.get(i, float("nan"))
+                )
+                info_i = (
+                    self._last_hca_info.get(i, {})
+                    if hasattr(self, "_last_hca_info")
+                    else {}
+                )
+                stats[f"hca_clip_frac/agent_{i}"] = float(
+                    info_i.get("clip_frac", float("nan"))
+                )
+                stats[f"hca_ratio_mean/agent_{i}"] = float(
+                    info_i.get("ratio_mean", float("nan"))
+                )
+                stats[f"hca_hindsight_log_prob_mean/agent_{i}"] = float(
+                    info_i.get("hindsight_log_prob_mean", float("nan"))
+                )
 
         mb_size = min(self.minibatch_size, t_total)
 

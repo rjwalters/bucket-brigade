@@ -156,6 +156,22 @@ class CellConfig:
     # ``False`` preserves bit-identical pre-#286 behavior.
     macro_actions: bool = False
     commit_steps: int = 3
+    # Issue #289: HCA advantage path selector. ``"gae"`` (default) preserves
+    # bit-identical pre-#289 behavior. ``"hca"`` swaps in the Hindsight
+    # Credit Assignment advantage estimator (Harutyunyan et al. 2019, Eq. 9)
+    # and trains per-agent hindsight networks alongside the actors.
+    advantage_estimator: str = "gae"
+    # Issue #289: Adam LR for the per-agent hindsight networks. None defers
+    # to ``lr`` (the actor LR) so the default sweep cell does not need to
+    # think about a second hyperparameter.
+    hindsight_lr: Optional[float] = None
+    # Issue #289: alphabet size of the quantile-bucketed return-to-go
+    # encoding used as the future statistic ``X_t``. Default 8 matches the
+    # curator's recommendation.
+    hindsight_num_return_buckets: int = 8
+    # Issue #289: symmetric clip on the ``pi/h`` hindsight ratio for
+    # numerical stability. Mirrors PPO's own clip philosophy.
+    hindsight_ratio_clip: float = 10.0
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -739,6 +755,10 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         centralized_critic=cfg.centralized_critic,
         coma=cfg.coma,
         coma_target_update_every=cfg.coma_target_update_every,
+        advantage_estimator=cfg.advantage_estimator,
+        hindsight_lr=cfg.hindsight_lr,
+        hindsight_num_return_buckets=cfg.hindsight_num_return_buckets,
+        hindsight_ratio_clip=cfg.hindsight_ratio_clip,
         device=cfg.device,
         seed=cfg.seed,
     )
@@ -1057,8 +1077,62 @@ def main() -> None:
             "--macro-actions is set. Default 3. Sweep grid is {3, 5, 8}."
         ),
     )
+    p.add_argument(
+        "--advantage-estimator",
+        type=str,
+        choices=["gae", "hca"],
+        default=CellConfig.__dataclass_fields__["advantage_estimator"].default,
+        help=(
+            "Issue #289: select the advantage estimator path. 'gae' "
+            "(default) preserves bit-identical pre-#289 behavior. 'hca' "
+            "swaps in Hindsight Credit Assignment (Harutyunyan et al. "
+            "2019, Eq. 9) and trains per-agent hindsight nets alongside "
+            "the actors."
+        ),
+    )
+    p.add_argument(
+        "--use-hca",
+        action="store_true",
+        help=(
+            "Issue #289: convenience alias for "
+            "'--advantage-estimator hca'. Mutually exclusive override of "
+            "the --advantage-estimator flag."
+        ),
+    )
+    p.add_argument(
+        "--hindsight-lr",
+        type=float,
+        default=None,
+        help=(
+            "Issue #289: Adam LR for the per-agent hindsight networks. "
+            "Default (None) defers to the actor --lr."
+        ),
+    )
+    p.add_argument(
+        "--hindsight-num-return-buckets",
+        type=int,
+        default=CellConfig.__dataclass_fields__["hindsight_num_return_buckets"].default,
+        help=(
+            "Issue #289: alphabet size of the quantile-bucketed return-to-"
+            "go encoding used as the HCA future statistic X_t. Default 8."
+        ),
+    )
+    p.add_argument(
+        "--hindsight-ratio-clip",
+        type=float,
+        default=CellConfig.__dataclass_fields__["hindsight_ratio_clip"].default,
+        help=(
+            "Issue #289: symmetric clip on the pi/h hindsight ratio for "
+            "numerical stability. Default 10.0."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
+
+    # Issue #289: ``--use-hca`` is a convenience alias for
+    # ``--advantage-estimator hca``. It overrides whatever was passed via
+    # ``--advantage-estimator`` so callers don't need to set both flags.
+    advantage_estimator = "hca" if args.use_hca else args.advantage_estimator
 
     cfg = CellConfig(
         scenario=args.scenario,
@@ -1084,6 +1158,10 @@ def main() -> None:
         gae_lambda=args.gae_lambda,
         macro_actions=args.macro_actions,
         commit_steps=args.commit_steps,
+        advantage_estimator=advantage_estimator,
+        hindsight_lr=args.hindsight_lr,
+        hindsight_num_return_buckets=args.hindsight_num_return_buckets,
+        hindsight_ratio_clip=args.hindsight_ratio_clip,
         device=args.device,
     )
     print(
