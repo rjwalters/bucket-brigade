@@ -129,6 +129,28 @@ def generate_demonstrations(
 # ---------------------------------------------------------------------------
 
 
+def _compute_class_weights(
+    labels_train: torch.Tensor, num_houses: int
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Compute per-head class weights using the canonical
+    ``N / (num_classes * bincount)`` formula.
+
+    Returns (house_w, mode_w, signal_w) tensors, each summing to ``num_classes``
+    in expectation when classes are balanced. Empty classes are floored to 1
+    count to avoid division-by-zero (the weight for an unseen class becomes
+    ``N / num_classes`` — large, but unused since no samples carry that label).
+    """
+    n = labels_train.shape[0]
+    house_counts = torch.bincount(labels_train[:, 0], minlength=num_houses).clamp(min=1)
+    mode_counts = torch.bincount(labels_train[:, 1], minlength=2).clamp(min=1)
+    signal_counts = torch.bincount(labels_train[:, 2], minlength=2).clamp(min=1)
+
+    house_w = n / (num_houses * house_counts.float())
+    mode_w = n / (2 * mode_counts.float())
+    signal_w = n / (2 * signal_counts.float())
+    return house_w, mode_w, signal_w
+
+
 def train_bc(
     obs: np.ndarray,
     labels: np.ndarray,
@@ -139,11 +161,25 @@ def train_bc(
     epochs: int,
     train_frac: float,
     seed: int,
+    class_balanced: bool = False,
 ) -> dict:
     """Train ``PolicyNetwork`` via sum-of-cross-entropy over its 3 heads.
 
     Returns a dict with per-epoch eval losses + per-head accuracies and the
     final-epoch summary for verdict thresholding.
+
+    When ``class_balanced=True`` (issue #279), enables BOTH:
+
+    - Weighted cross-entropy per head, using
+      ``class_weight = N / (num_classes * bincount)`` from the training labels.
+    - ``WeightedRandomSampler``-style minibatch oversampling weighted by the
+      inverse-frequency of the *mode* class (the primary imbalance lever:
+      19:1 REST:WORK in the canonical scenario). This lifts the gradient
+      signal on all 3 heads on WORK rows, which is where the headline
+      ``house_acc_on_work_subset`` metric lives.
+
+    When ``class_balanced=False`` (default), behaviour is bit-identical to
+    the pre-#279 path (no weighting, ``torch.randperm`` minibatches).
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -169,24 +205,75 @@ def train_bc(
 
     optim = torch.optim.Adam(net.parameters(), lr=lr)
 
+    # Class-balanced setup: build per-head CE weight tensors and per-row
+    # sampler weights once, outside the training loop.
+    if class_balanced:
+        house_w, mode_w, signal_w = _compute_class_weights(y_train, num_houses)
+        head_weights = [house_w, mode_w, signal_w]
+        # Per-row sampler weights = inverse of (mode) class frequency. Using
+        # only the mode head's frequency keeps the sampler interpretable
+        # ("oversample WORK rows by ~19x") while still amplifying signal on
+        # the house head (most of those WORK rows hit houses 4..N-1 which
+        # are the under-represented houses).
+        mode_counts = torch.bincount(y_train[:, 1], minlength=2).clamp(min=1)
+        row_inv_freq = 1.0 / mode_counts.float()
+        sample_weights = row_inv_freq[y_train[:, 1]]
+        print(
+            "[bc_fit_only] class-balanced ON: head class-weights:\n"
+            f"  house ({num_houses}-way) min={float(house_w.min()):.3f} "
+            f"max={float(house_w.max()):.3f}\n"
+            f"  mode  (2-way)   = [{float(mode_w[0]):.3f}, {float(mode_w[1]):.3f}]\n"
+            f"  signal(2-way)   = [{float(signal_w[0]):.3f}, {float(signal_w[1]):.3f}]\n"
+            f"  row sampler: mode_counts={mode_counts.tolist()} "
+            f"-> oversample-WORK factor ~ "
+            f"{float(mode_counts[0]) / float(mode_counts[1]):.1f}x"
+        )
+    else:
+        head_weights = [None, None, None]
+        sample_weights = None
+
     history = []
     for epoch in range(epochs):
         net.train()
-        idx = torch.randperm(n_train)
+        if class_balanced:
+            # WeightedRandomSampler with replacement: draw n_train indices per
+            # epoch with probability proportional to sample_weights. The
+            # generator is seeded per-epoch so two runs with the same seed
+            # produce identical index sequences.
+            gen = torch.Generator()
+            gen.manual_seed(seed * 10_000 + epoch)
+            sampler = torch.utils.data.WeightedRandomSampler(
+                weights=sample_weights,
+                num_samples=n_train,
+                replacement=True,
+                generator=gen,
+            )
+            idx = torch.tensor(list(sampler), dtype=torch.long)
+        else:
+            idx = torch.randperm(n_train)
         train_loss_sum = 0.0
+        train_work_seen = 0
         for start in range(0, n_train, batch_size):
             batch = idx[start : start + batch_size]
             xb = x_train[batch]
             yb = y_train[batch]
             logits, _ = net(xb)
-            loss = sum(F.cross_entropy(logits[k], yb[:, k]) for k in range(3))
+            loss = sum(
+                F.cross_entropy(logits[k], yb[:, k], weight=head_weights[k])
+                for k in range(3)
+            )
             optim.zero_grad()
             loss.backward()
             optim.step()
             train_loss_sum += float(loss.detach()) * xb.shape[0]
+            train_work_seen += int(yb[:, 1].sum())
         train_loss_avg = train_loss_sum / n_train
+        train_work_frac = train_work_seen / n_train
 
-        # Eval
+        # Eval: NOTE eval loss is always *unweighted* CE, so it remains
+        # comparable across class_balanced=True/False runs. Eval split
+        # composition is also unchanged by oversampling — sampling only
+        # affects the training minibatch path.
         net.eval()
         with torch.no_grad():
             logits, _ = net(x_eval)
@@ -202,24 +289,28 @@ def train_bc(
             )
             joint_acc = float(joint_correct.float().mean())
 
-        history.append(
-            {
-                "epoch": epoch + 1,
-                "train_loss": train_loss_avg,
-                "eval_loss": float(eval_loss),
-                "house_acc": head_acc[0],
-                "mode_acc": head_acc[1],
-                "signal_acc": head_acc[2],
-                "joint_acc": joint_acc,
-            }
-        )
-        print(
+        epoch_entry = {
+            "epoch": epoch + 1,
+            "train_loss": train_loss_avg,
+            "eval_loss": float(eval_loss),
+            "house_acc": head_acc[0],
+            "mode_acc": head_acc[1],
+            "signal_acc": head_acc[2],
+            "joint_acc": joint_acc,
+        }
+        if class_balanced:
+            epoch_entry["train_work_frac"] = train_work_frac
+        history.append(epoch_entry)
+        epoch_msg = (
             f"  epoch {epoch + 1:2d}/{epochs}  "
             f"train_loss={train_loss_avg:.4f}  "
             f"eval_loss={float(eval_loss):.4f}  "
             f"house={head_acc[0]:.3f}  mode={head_acc[1]:.3f}  "
             f"signal={head_acc[2]:.3f}  joint={joint_acc:.3f}"
         )
+        if class_balanced:
+            epoch_msg += f"  work_frac={train_work_frac:.3f}"
+        print(epoch_msg)
 
     # Confusion bookkeeping on the house head conditioned on mode==WORK,
     # since that's the only non-trivial case for the specialist policy.
@@ -255,7 +346,7 @@ def train_bc(
 
 
 def compute_verdict(final: dict) -> str:
-    """Apply curator's verdict thresholds verbatim."""
+    """Apply curator's verdict thresholds verbatim (issue #272)."""
     eval_loss = final["eval_loss"]
     joint_acc = final["joint_acc"]
     min_head_acc = min(final["house_acc"], final["mode_acc"], final["signal_acc"])
@@ -264,6 +355,24 @@ def compute_verdict(final: dict) -> str:
     if eval_loss > 0.5 and min_head_acc < 0.50:
         return "ARCHITECTURE_MISMATCH"
     return "INDUCTIVE_BIAS_GAP"
+
+
+def compute_verdict_279(house_acc_on_work_subset: float) -> str:
+    """Apply the #279 class-balanced verdict ladder verbatim.
+
+    | house_acc_on_work_subset | Verdict             | Implication                          |
+    |--------------------------|---------------------|--------------------------------------|
+    | >= 0.90                  | CLASS_IMBALANCE     | Architecture has capacity            |
+    | 0.50 .. 0.90             | PARTIAL             | Both effects contribute              |
+    | <= 0.50                  | CAPACITY            | Confirmed capacity gap               |
+    """
+    if house_acc_on_work_subset != house_acc_on_work_subset:  # NaN guard
+        return "INSUFFICIENT_DATA"
+    if house_acc_on_work_subset >= 0.90:
+        return "CLASS_IMBALANCE"
+    if house_acc_on_work_subset > 0.50:
+        return "PARTIAL"
+    return "CAPACITY"
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +399,17 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--train-frac", type=float, default=0.8)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--class-balanced",
+        action="store_true",
+        help=(
+            "Issue #279: enable weighted cross-entropy AND WeightedRandomSampler "
+            "minibatch oversampling to discriminate capacity gap from "
+            "class-imbalance underfitting. Eval split + eval loss remain "
+            "unweighted/unsampled so the headline house_acc_on_work_subset is "
+            "comparable across runs."
+        ),
+    )
     parser.add_argument(
         "--out",
         type=str,
@@ -336,12 +456,14 @@ def main() -> None:
         epochs=args.epochs,
         train_frac=args.train_frac,
         seed=args.seed,
+        class_balanced=args.class_balanced,
     )
     t_train = time.time() - t1
     print(f"[bc_fit_only] training done in {t_train:.1f}s")
 
     final = result["final"]
     verdict = compute_verdict(final)
+    verdict_279 = compute_verdict_279(result["house_acc_on_work_subset"])
 
     print()
     print("=" * 60)
@@ -362,6 +484,8 @@ def main() -> None:
     )
     print()
     print(f"VERDICT: {verdict}")
+    if args.class_balanced:
+        print(f"VERDICT_279 (class-balanced ladder): {verdict_279}")
     print("=" * 60)
 
     out_path = Path(args.out)
@@ -373,6 +497,8 @@ def main() -> None:
         "verdict": verdict,
         "timing": {"data_gen_sec": t_gen, "train_sec": t_train},
     }
+    if args.class_balanced:
+        out_payload["verdict_279"] = verdict_279
     with open(out_path, "w") as f:
         json.dump(out_payload, f, indent=2)
     print(f"[bc_fit_only] wrote {out_path}")
