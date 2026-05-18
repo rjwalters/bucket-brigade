@@ -47,6 +47,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
 
 ARMS = ["ippo", "mappo"]
 SCENARIOS = ["default", "minimal_specialization", "positional_default"]
@@ -74,9 +76,13 @@ TRAILING_N = 5
 #     uses a 2-dim sampler (issue #246), which masks any random-side shift
 #     in #238's own random measurements; that's why we cite random values
 #     from random_baseline.py instead.
+#
+# The ``minimal_specialization`` entry is sourced from the canonical
+# ``bucket_brigade.baselines`` constants (issue #293); the other two
+# scenarios remain hardcoded here (scope guard — see issue #293 curator).
 BASELINES: Dict[str, Tuple[float, float]] = {
     "default": (251.23, 320.94),
-    "minimal_specialization": (-87.72, -22.07),
+    "minimal_specialization": (MINSPEC_RANDOM, MINSPEC_SPECIALIST),
     "positional_default": (250.73, 320.89),
 }
 

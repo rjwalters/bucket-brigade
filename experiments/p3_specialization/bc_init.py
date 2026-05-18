@@ -18,9 +18,9 @@ This script does three things end-to-end:
 
 3. **Eval gate** — run ``--eval-episodes`` deterministic-argmax episodes and
    compute ``gap_closed = (mean_step_team − MINSPEC_RANDOM) / (MINSPEC_SPECIALIST
-   − MINSPEC_RANDOM)`` using the constants from
-   :mod:`experiments.p3_specialization.analyze_220`. The script exits non-zero
-   when ``gap_closed < --min-gap-closed`` so a bad BC fit blocks the PPO
+   − MINSPEC_RANDOM)`` using the canonical constants from
+   :mod:`bucket_brigade.baselines`. The script exits non-zero when
+   ``gap_closed < --min-gap-closed`` so a bad BC fit blocks the PPO
    continuation.
 
 Per-agent state dicts are saved to ``<output_dir>/agent_{i}.pt``, the exact
@@ -40,17 +40,20 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
-from bucket_brigade.baselines import specialist_action_joint
+from bucket_brigade.baselines import (
+    MINSPEC_RANDOM,
+    MINSPEC_SPECIALIST,
+    specialist_action_joint,
+)
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.training.joint_trainer import flatten_dict_obs
 from bucket_brigade.training.networks import PolicyNetwork
 
-# Verdict reference constants (post-#236 re-derived under #238, mirrored from
-# experiments/p3_specialization/analyze_220.py:59-60). Hardcoded rather than
-# imported because analyze_220.py is a script module, not a library.
-MINSPEC_RANDOM = -96.07
-MINSPEC_SPECIALIST = -22.07
+# Verdict reference constants imported from the canonical source
+# (``bucket_brigade.baselines``; issue #293 unified the three previously
+# scattered ``MINSPEC_RANDOM`` literals). See that module's docstring for
+# derivation provenance.
 
 
 def _gap_closed(mean_step_team: float) -> float:
