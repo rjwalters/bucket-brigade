@@ -322,9 +322,7 @@ class JointPPOTrainer:
         # below so we can compute and stash the ``last_actions`` slot offsets
         # in a single place.
         if influence_coef < 0:
-            raise ValueError(
-                f"influence_coef must be >= 0, got {influence_coef!r}"
-            )
+            raise ValueError(f"influence_coef must be >= 0, got {influence_coef!r}")
         if influence_mc_samples < 1:
             raise ValueError(
                 f"influence_mc_samples must be >= 1, got {influence_mc_samples!r}"
@@ -517,9 +515,7 @@ class JointPPOTrainer:
         # tensor without re-reading the env.
         probe_dict = self.env._get_observation()  # type: ignore[attr-defined]
         num_houses_probe = int(np.asarray(probe_dict["houses"]).shape[0])
-        last_actions_block_start = (
-            num_houses_probe + self.num_agents + self.num_agents
-        )
+        last_actions_block_start = num_houses_probe + self.num_agents + self.num_agents
         # Each agent occupies a length-``_LAST_ACTIONS_WIDTH_PER_AGENT``
         # slot inside the block; per-slot stride is also that width.
         self._influence_num_houses = num_houses_probe
@@ -932,16 +928,14 @@ class JointPPOTrainer:
                 # last_actions slot in obs_j_next_real with cf_actions[..., :la_width].
                 # Build a tiled tensor of shape [T_valid, K, obs_dim], then
                 # overwrite the slot.
-                obs_j_next_cf = obs_j_next_real.unsqueeze(1).expand(
-                    T_valid, K, -1
-                ).contiguous()
+                obs_j_next_cf = (
+                    obs_j_next_real.unsqueeze(1).expand(T_valid, K, -1).contiguous()
+                )
                 # Slot location: la_start + i * la_width .. + la_width.
                 slot_lo = la_start + i * la_width
                 slot_hi = slot_lo + la_width
                 # cf_actions[..., :la_width] gives [T_valid, K, la_width].
-                obs_j_next_cf[:, :, slot_lo:slot_hi] = cf_actions[
-                    :, :, :la_width
-                ]
+                obs_j_next_cf[:, :, slot_lo:slot_hi] = cf_actions[:, :, :la_width]
                 # Flatten to [T_valid * K, obs_dim] for one batched forward.
                 obs_j_next_cf_flat = obs_j_next_cf.view(T_valid * K, -1)
                 cf_probs_j_flat = self._policy_categorical_probs(

@@ -1055,9 +1055,7 @@ class TestSocialInfluence:
             np.random.seed(2026)
             env = _env_fn()
             obs = env.reset(seed=0)
-            obs_dim = flatten_dict_obs(
-                obs, agent_id=0, num_agents=NUM_AGENTS
-            ).shape[0]
+            obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
             trainer = JointPPOTrainer(
                 env_fn=_env_fn,
                 num_agents=NUM_AGENTS,
