@@ -1163,6 +1163,16 @@ def main() -> None:
             "--influence-coef == 0."
         ),
     )
+    p.add_argument(
+        "--lr",
+        type=float,
+        default=CellConfig.__dataclass_fields__["lr"].default,
+        help=(
+            "PPO Adam learning rate. Default matches CellConfig.lr (3e-4). "
+            "Exposed as CLI for issue #288 PBT mutation (Jaderberg-style "
+            "lr perturbation factor in {0.8, 1.25} applied between generations)."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -1178,6 +1188,7 @@ def main() -> None:
         num_iterations=args.num_iterations,
         rollout_steps=args.rollout_steps,
         num_agents=args.num_agents,
+        lr=args.lr,
         value_coef=args.value_coef,
         entropy_coef=args.entropy_coef,
         normalize_returns=args.normalize_returns,
