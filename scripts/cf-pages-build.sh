@@ -50,7 +50,13 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 echo "::group::build wasm"
-(cd bucket-brigade-core && wasm-pack build --target web)
+# `--features wasm` is required: the `wasm` module in
+# `bucket-brigade-core/src/lib.rs` is gated behind `#[cfg(feature = "wasm")]`.
+# Without it, wasm-pack still emits a `pkg/` directory, but the WASM binary
+# contains no `#[wasm_bindgen]`-exported symbols and the JS/TS shim is a thin
+# loader with no class bindings (see issue #338, canonical form documented in
+# `web/WASM.md`).
+(cd bucket-brigade-core && wasm-pack build --target web --features wasm)
 echo "::endgroup::"
 
 echo "::group::research content"
