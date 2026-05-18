@@ -236,8 +236,8 @@ out/
 .AppleDouble
 .LSOverride
 
-# Loom agents (generated at runtime)
-agents/
+# Community agent submissions (see .github/ISSUE_TEMPLATE/agent-submission.yml)
+/agents/
 
 # TensorBoard logs
 runs/
