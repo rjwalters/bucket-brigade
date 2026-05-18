@@ -69,7 +69,7 @@ class RustPufferBucketBrigade(gym.Env):
 
     def __init__(
         self,
-        scenario: Optional[str] = None,
+        scenario: Optional[Any] = None,
         num_opponents: int = 3,
         opponent_policies: Optional[List[str]] = None,
         max_steps: int = 50,
@@ -78,7 +78,11 @@ class RustPufferBucketBrigade(gym.Env):
         Initialize the Rust-backed PufferLib environment.
 
         Args:
-            scenario: Scenario name from core.SCENARIOS (uses "trivial_cooperation" if None)
+            scenario: Either a scenario name (``str``) from ``core.SCENARIOS``
+                (uses ``"trivial_cooperation"`` if ``None``) **or** a
+                pre-built ``PyScenario`` object. Passing the object lets
+                callers customize ``commitment_mode`` (issue #331) and other
+                mutable fields without depending on global SCENARIOS state.
             num_opponents: Number of opponent agents
             opponent_policies: List of opponent policy types
             max_steps: Maximum steps per episode
@@ -95,32 +99,54 @@ class RustPufferBucketBrigade(gym.Env):
             opponent_policies = ["random", "random", "firefighter", "coordinator"]
         self.opponent_policies = opponent_policies[:num_opponents]
 
-        # Get scenario from Rust core (single source of truth)
-        scenario_name = scenario or "trivial_cooperation"
-        if scenario_name not in core.SCENARIOS:
-            raise ValueError(
-                f"Unknown scenario '{scenario_name}'. "
-                f"Available: {list(core.SCENARIOS.keys())}"
-            )
-        self.rust_scenario = core.SCENARIOS[scenario_name]
-        self.scenario_name = scenario_name
+        # Get scenario from Rust core (single source of truth). Issue #331:
+        # also accept a pre-built ``PyScenario`` object so callers can
+        # opt into ``commitment_mode="two_phase"`` (or other field
+        # mutations) without polluting the global SCENARIOS dict.
+        if scenario is None or isinstance(scenario, str):
+            scenario_name = scenario or "trivial_cooperation"
+            if scenario_name not in core.SCENARIOS:
+                raise ValueError(
+                    f"Unknown scenario '{scenario_name}'. "
+                    f"Available: {list(core.SCENARIOS.keys())}"
+                )
+            self.rust_scenario = core.SCENARIOS[scenario_name]
+            self.scenario_name = scenario_name
+        else:
+            # Treat as a pre-built scenario object (PyScenario).
+            self.rust_scenario = scenario
+            self.scenario_name = getattr(scenario, "name", "<custom>")
 
-        # Issue #252: PufferLib's single-step API doesn't compose cleanly
-        # with two-phase nights for the v1 pilot — the puffer rollout
-        # loop expects one action per env.step() call, but two-phase
-        # requires two policy forward passes per night. Gate here with
-        # a clear error rather than silently producing wrong behavior.
-        # The JointPPOTrainer rollout path supports two-phase directly
-        # (see `joint_trainer.py::collect_rollout`); use that instead.
-        commitment_mode = getattr(self.rust_scenario, "commitment_mode", "simultaneous")
-        if commitment_mode == "two_phase":
-            raise NotImplementedError(
-                f"PufferBucketBrigade does not support commitment_mode="
-                f"{commitment_mode!r} (issue #252). The PufferLib single-step API "
-                f"doesn't compose with two-phase nights. Use the "
-                f"JointPPOTrainer rollout path (which has native two-phase "
-                f"support) instead."
-            )
+        # Issue #252/#331: within-night commitment mode. When the scenario
+        # opts into ``commitment_mode == "two_phase"`` the wrapper takes
+        # the **super-step** plumbing path (option (b) from issue #331):
+        # the two micro-rounds are flattened into a single
+        # ``env.step(action)`` from Puffer's perspective. The action
+        # vector is widened from ``[house, mode, signal_r2]`` (3 dims) to
+        # ``[house, mode, signal_r2, signal_r1]`` (4 dims). Internally we
+        # call ``self.env.step_two_phase(r1_signals, r2_actions)`` once
+        # per super-step, where ``r2_actions = [house, mode, signal_r2]``
+        # and ``r1_signals = [signal_r1]`` per agent.
+        #
+        # Why super-step (option b) and not 2-step-per-night (option a):
+        # Puffer's vectorized rollout assumes one action tensor per
+        # ``env.step()``; doubling the step count to expose round-1 as
+        # its own step would confuse the rollout buffer and require
+        # paired-transition handling upstream. The super-step path keeps
+        # the per-env step count identical to simultaneous mode at the
+        # cost of folding the round-1 signal head into the same forward
+        # pass as the round-2 action head. Trade-off: the round-1
+        # log-prob is not split out into a separate PPO update term, but
+        # the env-side mechanic (round-1 obs channel, deception
+        # opportunity) is preserved end-to-end.
+        #
+        # See ``JointPPOTrainer.collect_rollout`` for the alternative
+        # rollout-side path that splits round-1 and round-2 into two
+        # separate forward passes; the puffer path here is the
+        # vectorized-friendly variant.
+        self._commitment_mode: str = str(
+            getattr(self.rust_scenario, "commitment_mode", "simultaneous")
+        )
 
         # Issue #254: derive ring size from the scenario rather than
         # hardcoding 10. Pre-#254 scenarios keep num_houses=10 (Rust
@@ -161,12 +187,25 @@ class RustPufferBucketBrigade(gym.Env):
             low=-np.inf, high=np.inf, shape=(obs_size,), dtype=np.float32
         )
 
-        # Action: [house_index, mode, signal] (issue #235) where
-        # house_index in [0, num_houses-1], mode in {0=REST, 1=WORK}, signal
-        # in {0=REST, 1=WORK}. The signal is broadcast independently of the
-        # mode; honest agents emit ``signal == mode``, liars don't.
-        # Issue #254: house_index range now scales with the scenario.
-        self.action_space = spaces.MultiDiscrete([self.num_houses, 2, 2])
+        # Action layout:
+        # - ``simultaneous`` (default): ``[house_index, mode, signal]``
+        #   (issue #235). 3-element MultiDiscrete. ``house_index`` in
+        #   ``[0, num_houses-1]``, ``mode`` in ``{0=REST, 1=WORK}``,
+        #   ``signal`` in ``{0=REST, 1=WORK}``. The signal is broadcast
+        #   independently of the mode; honest agents emit
+        #   ``signal == mode``, liars don't.
+        # - ``two_phase`` (issue #252/#331): ``[house_index, mode,
+        #   signal_r2, signal_r1]``. 4-element MultiDiscrete. The extra
+        #   trailing dim is the round-1 non-binding commitment signal
+        #   (binary). ``signal_r2`` (column 2) is the round-2 broadcast
+        #   that overwrites ``self.signals``; ``signal_r1`` (column 3) is
+        #   written into ``round1_signals`` (visible to the round-2 obs).
+        #   Deception is preserved: ``signal_r1 != mode`` is allowed.
+        # Issue #254: ``house_index`` range scales with scenario num_houses.
+        if self._commitment_mode == "two_phase":
+            self.action_space = spaces.MultiDiscrete([self.num_houses, 2, 2, 2])
+        else:
+            self.action_space = spaces.MultiDiscrete([self.num_houses, 2, 2])
 
         # Track episode statistics
         self.episode_rewards: List[float] = []
@@ -226,17 +265,41 @@ class RustPufferBucketBrigade(gym.Env):
         return flat_obs, {}
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
-        """Take a step in the environment."""
+        """Take a step in the environment.
+
+        Issue #331: when the scenario has ``commitment_mode == "two_phase"``
+        the action layout is ``[house, mode, signal_r2, signal_r1]`` (4
+        dims). Internally this method calls
+        ``self.env.step_two_phase(r1_signals, r2_actions)`` once per
+        ``step()`` (the super-step plumbing). For simultaneous mode the
+        action layout and behavior are bit-identical to pre-#331.
+        """
         self.steps_taken += 1
 
-        # Convert action to [house, mode, signal] format (issue #235).
-        # If the caller provided a 2-element action (legacy), default the
-        # signal to the mode bit (honest).
-        if len(action) >= 3:
-            agent_action = [int(action[0]), int(action[1]), int(action[2])]
+        # Convert action to [house, mode, signal] format (issue #235),
+        # plus extract the round-1 signal in two-phase mode (issue #331).
+        # Legacy 2-element actions default ``signal := mode`` (honest).
+        trained_r1_signal: int
+        if self._commitment_mode == "two_phase":
+            # Expected 4-element action; tolerate length-3 by defaulting
+            # the round-1 signal to the round-2 signal (honest two-phase).
+            if len(action) >= 4:
+                agent_action = [int(action[0]), int(action[1]), int(action[2])]
+                trained_r1_signal = int(action[3])
+            elif len(action) == 3:
+                agent_action = [int(action[0]), int(action[1]), int(action[2])]
+                trained_r1_signal = int(action[2])
+            else:
+                mode = int(action[1])
+                agent_action = [int(action[0]), mode, mode]
+                trained_r1_signal = mode
         else:
-            mode = int(action[1])
-            agent_action = [int(action[0]), mode, mode]
+            if len(action) >= 3:
+                agent_action = [int(action[0]), int(action[1]), int(action[2])]
+            else:
+                mode = int(action[1])
+                agent_action = [int(action[0]), mode, mode]
+            trained_r1_signal = 0  # unused
 
         # Get actions from all agents
         all_actions = [agent_action]  # Trained agent first
@@ -248,7 +311,23 @@ class RustPufferBucketBrigade(gym.Env):
 
         # Step the Rust environment
         assert self.env is not None, "Environment not initialized"
-        rewards_list, done, info = self.env.step(all_actions)
+        if self._commitment_mode == "two_phase":
+            # Round-1 commitment signals: trained agent's r1_signal from
+            # the expanded action; opponents commit honestly (r1 ==
+            # round-2 signal). This matches the JointPPOTrainer
+            # convention for heuristic opponents: opponents are not
+            # asked to "lie" at the commitment phase by default. A
+            # follow-up could expose round-1 signaling to opponent
+            # policies if needed.
+            r1_signals: List[int] = [trained_r1_signal]
+            for opp_a in all_actions[1:]:
+                # opp_a is [house, mode, signal] (length 3) from the
+                # opponent policy. Use the broadcast signal as the
+                # round-1 commitment (honest two-phase signal).
+                r1_signals.append(int(opp_a[2]) if len(opp_a) >= 3 else int(opp_a[1]))
+            rewards_list, done, info = self.env.step_two_phase(r1_signals, all_actions)
+        else:
+            rewards_list, done, info = self.env.step(all_actions)
 
         # Get observations for all agents
         rust_obs = self.env.get_observation(0)
@@ -372,7 +451,14 @@ class RustPufferBucketBrigadeVectorized(RustPufferBucketBrigade):
 
         # Issue #235: 3-element action [house, mode, signal] per env.
         # Issue #254: house dim scales with num_houses.
-        self.action_space = spaces.MultiDiscrete([num_envs, self.num_houses, 2, 2])
+        # Issue #331: in two-phase mode, action gains a trailing
+        # ``signal_r1`` dim so the per-env shape is 4 not 3.
+        if self._commitment_mode == "two_phase":
+            self.action_space = spaces.MultiDiscrete(
+                [num_envs, self.num_houses, 2, 2, 2]
+            )
+        else:
+            self.action_space = spaces.MultiDiscrete([num_envs, self.num_houses, 2, 2])
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict] = None
