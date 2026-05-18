@@ -49,6 +49,12 @@ impl BucketBrigade {
             ],
             agent_id,
             night: self.night,
+            // Issue #252: round-1 commitment signals from the most recent
+            // signal phase. Zeros in simultaneous mode (no signal phase
+            // ever runs). In two-phase mode this carries the round-1
+            // signals between the signal-phase write and the next
+            // step_two_phase call.
+            round1_signals: self.round1_signals.clone(),
         }
     }
 

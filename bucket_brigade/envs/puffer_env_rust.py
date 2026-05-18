@@ -105,6 +105,23 @@ class RustPufferBucketBrigade(gym.Env):
         self.rust_scenario = core.SCENARIOS[scenario_name]
         self.scenario_name = scenario_name
 
+        # Issue #252: PufferLib's single-step API doesn't compose cleanly
+        # with two-phase nights for the v1 pilot — the puffer rollout
+        # loop expects one action per env.step() call, but two-phase
+        # requires two policy forward passes per night. Gate here with
+        # a clear error rather than silently producing wrong behavior.
+        # The JointPPOTrainer rollout path supports two-phase directly
+        # (see `joint_trainer.py::collect_rollout`); use that instead.
+        commitment_mode = getattr(self.rust_scenario, "commitment_mode", "simultaneous")
+        if commitment_mode == "two_phase":
+            raise NotImplementedError(
+                f"PufferBucketBrigade does not support commitment_mode="
+                f"{commitment_mode!r} (issue #252). The PufferLib single-step API "
+                f"doesn't compose with two-phase nights. Use the "
+                f"JointPPOTrainer rollout path (which has native two-phase "
+                f"support) instead."
+            )
+
         # Issue #254: derive ring size from the scenario rather than
         # hardcoding 10. Pre-#254 scenarios keep num_houses=10 (Rust
         # default), so action/observation shapes are bit-exact for them.

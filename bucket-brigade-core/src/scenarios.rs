@@ -214,6 +214,61 @@ fn default_suppression_per_worker() -> f32 {
 /// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
 pub const ALLOWED_DISTANCE_METRICS: &[&str] = &["ring_arc"];
 
+/// Allowed values for `Scenario::commitment_mode` (issue #252).
+///
+/// - `"simultaneous"` (default): pre-#252 behavior. Every agent emits its
+///   full `[house, mode, signal]` action in a single round per night, and
+///   only sees others' previous-night signals/actions in `last_actions`.
+///   Bit-exact backward compatibility.
+/// - `"two_phase"`: invokes the C1 "non-binding signaling" mechanic from
+///   architect proposal #234. Each night becomes two micro-rounds at the
+///   trainer surface:
+///     * Round 1 — signal phase: every agent emits a single signal value
+///       `signal ∈ {0, 1}` (length-K=2). The engine writes the round-1
+///       signals into a new observation channel `round1_signals` and the
+///       night does NOT advance — no movement, no work, no cost, no
+///       reward.
+///     * Round 2 — action phase: every agent observes round-1 signals
+///       (via `round1_signals`) and chooses a full `[house, mode, signal]`
+///       action. The engine runs phases 2–9 of the existing `step()`
+///       unchanged. The round-2 signal value overwrites `agent_signals`
+///       (matching today's semantics so v1-trained policies still parse
+///       the obs correctly).
+///
+/// The two-phase mode PRESERVES the deception channel: round-1 signals are
+/// non-binding and free, so policies can emit `signal=Work` in round 1 and
+/// then `mode=Rest` in round 2. See `tests::test_can_still_lie_two_phase`.
+///
+/// Keep in sync with the Python validator in
+/// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
+pub const ALLOWED_COMMITMENT_MODES: &[&str] = &["simultaneous", "two_phase"];
+
+/// Default for `Scenario::commitment_mode` (issue #252). `"simultaneous"`
+/// is the pre-#252 single-phase mechanic and preserves bit-exact behavior
+/// for every existing scenario that omits the field.
+fn default_commitment_mode() -> String {
+    "simultaneous".to_string()
+}
+
+/// Custom serde deserializer for `Scenario::commitment_mode` (issue #252)
+/// that enforces the `ALLOWED_COMMITMENT_MODES` allowlist. Mirrors the
+/// `action_validity_mode` deserializer's pattern — without this guard, an
+/// unrecognized mode would silently fall through to the simultaneous
+/// branch in the engine.
+fn deserialize_commitment_mode<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if !ALLOWED_COMMITMENT_MODES.contains(&s.as_str()) {
+        return Err(D::Error::custom(format!(
+            "Scenario.commitment_mode={s:?} is not supported; allowed values: {ALLOWED_COMMITMENT_MODES:?}"
+        )));
+    }
+    Ok(s)
+}
+
 /// Allowed values for `Scenario::action_validity_mode` (issue #251).
 ///
 /// - `"always_valid"` (default): every house index is a valid target for every
@@ -471,6 +526,39 @@ pub struct Scenario {
     pub extinguish_mode: String,
     #[serde(default = "default_suppression_per_worker")]
     pub suppression_per_worker: f32,
+
+    // Within-night commitment mode (issue #252, option C from #234).
+    //
+    // `commitment_mode` selects the per-night turn structure:
+    //   - `"simultaneous"` (default): pre-#252 behavior. Every agent emits
+    //     `[house, mode, signal]` in a single round per night and the
+    //     engine takes a fast-path that's bit-exactly identical to the
+    //     pre-#252 behavior for every existing scenario.
+    //   - `"two_phase"`: C1 non-binding signaling from architect proposal
+    //     #234. Each night becomes two micro-rounds: round-1 emits a
+    //     signal only (no movement, no cost, night does not advance);
+    //     round-2 observes everyone's round-1 signal in a new
+    //     `round1_signals` obs channel and emits a full `[house, mode,
+    //     signal]` action. Round-2 mode is unconstrained by the round-1
+    //     signal — policies can emit `signal=Work` in round-1 and
+    //     `mode=Rest` in round-2 (the deception channel survives).
+    //     Trainer-side: `BucketBrigade` exposes `step_two_phase(round1,
+    //     round2)` for the engine-internal fusion plumbing (option A in
+    //     the issue spec); the simultaneous-only `step()` panics on
+    //     two-phase scenarios so callers don't accidentally skip the
+    //     signal round.
+    //
+    // The two-phase variant is the highest-research-interest risk in
+    // option C because it competes with the deception research substrate.
+    // Mitigation: round-1 signals are *non-binding* — the engine does not
+    // constrain round-2 mode based on the round-1 signal. The
+    // `test_can_still_lie_two_phase` test in `engine/tests.rs` is the PR
+    // gate proving the channel survives the rule change.
+    #[serde(
+        default = "default_commitment_mode",
+        deserialize_with = "deserialize_commitment_mode"
+    )]
+    pub commitment_mode: String,
 }
 
 impl Scenario {
@@ -518,6 +606,16 @@ impl Scenario {
             return Err(format!(
                 "Scenario.extinguish_mode={:?} is not supported; allowed values: {:?}",
                 self.extinguish_mode, ALLOWED_EXTINGUISH_MODES
+            ));
+        }
+        // Issue #252: commitment_mode allowlist re-check for the
+        // programmatic-construction path. Without this, an unknown mode
+        // would silently fall through to the simultaneous branch in
+        // `engine/core.rs::step`.
+        if !ALLOWED_COMMITMENT_MODES.contains(&self.commitment_mode.as_str()) {
+            return Err(format!(
+                "Scenario.commitment_mode={:?} is not supported; allowed values: {:?}",
+                self.commitment_mode, ALLOWED_COMMITMENT_MODES
             ));
         }
         Ok(())
@@ -580,6 +678,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -610,6 +709,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -640,6 +740,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -671,6 +772,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -701,6 +803,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -731,6 +834,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -761,6 +865,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -791,6 +896,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -821,6 +927,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -851,6 +958,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -881,6 +989,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -911,6 +1020,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -948,6 +1058,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -984,6 +1095,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -1023,6 +1135,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -1069,6 +1182,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: "continuous".to_string(),
             suppression_per_worker: 0.5,
+            commitment_mode: default_commitment_mode(),
         },
     );
 
@@ -1651,6 +1765,7 @@ mod tests {
             action_validity_mode: default_action_validity_mode(),
             extinguish_mode: default_extinguish_mode(),
             suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
         };
         let err = scenario
             .validate()
@@ -2033,5 +2148,119 @@ mod tests {
         assert!(ALLOWED_EXTINGUISH_MODES.contains(&"bernoulli"));
         assert!(ALLOWED_EXTINGUISH_MODES.contains(&"continuous"));
         assert!(ALLOWED_EXTINGUISH_MODES.contains(&default_extinguish_mode().as_str()));
+    }
+
+    // ==========================================================================
+    // Issue #252: within-night commitment mode
+    // ==========================================================================
+
+    /// `commitment_mode` defaults to `"simultaneous"` so every pre-#252
+    /// scenario is bit-exact under the default turn structure.
+    #[test]
+    fn test_commitment_mode_defaults_to_simultaneous() {
+        for (name, scenario) in SCENARIOS.iter() {
+            assert_eq!(
+                scenario.commitment_mode, "simultaneous",
+                "Scenario '{}' must default to simultaneous commitment_mode",
+                name
+            );
+        }
+    }
+
+    /// Backward-compat: omitting the field in JSON yields the documented
+    /// default (`"simultaneous"`) so all pre-#252 scenarios remain bit-exact.
+    #[test]
+    fn test_commitment_mode_optional_in_json() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.commitment_mode, "simultaneous");
+    }
+
+    /// Explicit `"two_phase"` in JSON is preserved (not silently overridden
+    /// by the default).
+    #[test]
+    fn test_commitment_mode_explicit_two_phase_preserved() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "commitment_mode": "two_phase"
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.commitment_mode, "two_phase");
+    }
+
+    /// Unknown `commitment_mode` values must be rejected at deserialize
+    /// time. Without this guard, an unrecognized mode would silently fall
+    /// through to the simultaneous branch.
+    #[test]
+    fn test_unknown_commitment_mode_rejected_in_deserialize() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "commitment_mode": "stochastic_order"
+        }"#;
+        let err = serde_json::from_str::<Scenario>(json)
+            .expect_err("unknown commitment_mode should be rejected");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("commitment_mode") && msg.contains("stochastic_order"),
+            "Error should name field + value, got: {msg}"
+        );
+        assert!(
+            msg.contains("simultaneous") && msg.contains("two_phase"),
+            "Error should list allowed modes, got: {msg}"
+        );
+    }
+
+    /// Programmatic construction with an unknown mode must fail `validate()`.
+    #[test]
+    fn test_validate_rejects_unknown_commitment_mode() {
+        let mut scenario = SCENARIOS.get("default").unwrap().clone();
+        scenario.commitment_mode = "garbage".to_string();
+        let err = scenario
+            .validate()
+            .expect_err("bogus mode should fail validate()");
+        assert!(
+            err.contains("commitment_mode") && err.contains("garbage"),
+            "Error should name field + value, got: {err}"
+        );
+    }
+
+    /// Sanity: the allowlist contains both supported modes and the default.
+    #[test]
+    fn test_commitment_mode_allowlist_contents() {
+        assert!(ALLOWED_COMMITMENT_MODES.contains(&"simultaneous"));
+        assert!(ALLOWED_COMMITMENT_MODES.contains(&"two_phase"));
+        assert!(ALLOWED_COMMITMENT_MODES.contains(&default_commitment_mode().as_str()));
     }
 }

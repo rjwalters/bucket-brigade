@@ -32,6 +32,23 @@ impl WasmBucketBrigade {
             )));
         }
 
+        // Issue #252: the WASM frontend (browser UI in `web/`) does not yet
+        // render two-phase nights. The two-phase mechanic doubles policy
+        // forward passes per night and exposes round-1 commitment signals
+        // in the obs; both are out of scope for the pilot pending a
+        // dedicated UI rework follow-up. Reject here with a clear message
+        // rather than silently running the simultaneous fast path. The
+        // Rust core, PyO3 surface, and Python envs all support two-phase;
+        // two-phase scenarios are Python-only for now.
+        if scenario.commitment_mode == "two_phase" {
+            return Err(JsValue::from_str(
+                "WASM frontend does not support two-phase commitment yet \
+                 (issue #252). Two-phase scenarios are Python-only — use \
+                 bucket_brigade.envs.* from Python instead. The browser UI \
+                 will be wired up in a follow-up issue.",
+            ));
+        }
+
         Ok(Self {
             inner: BucketBrigade::new(scenario, num_agents, None),
         })

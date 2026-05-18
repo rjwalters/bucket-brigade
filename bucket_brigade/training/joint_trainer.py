@@ -87,6 +87,7 @@ def flatten_dict_obs(
     obs: Dict[str, np.ndarray],
     agent_id: Optional[int] = None,
     num_agents: Optional[int] = None,
+    include_round1_signals: bool = False,
 ) -> np.ndarray:
     """Flatten the dict observation returned by ``BucketBrigadeEnv`` into
     a 1-D float32 array suitable for ``PolicyNetwork``.
@@ -100,6 +101,14 @@ def flatten_dict_obs(
         ``[houses(10), signals(N), locations(N), last_actions(2N),
         scenario_info(10), identity_one_hot(num_agents)]``.
 
+    Layout when ``include_round1_signals=True`` (issue #252 — two-phase
+    commitment): the round-1 signal channel is appended *before* the
+    identity tail:
+        ``[..., scenario_info(10), round1_signals(N),
+        identity_one_hot(num_agents)]``.
+    Default ``False`` preserves bit-exact pre-#252 obs vector width on
+    every existing scenario.
+
     Args:
         obs: Dict observation from ``BucketBrigadeEnv._get_observation``.
         agent_id: If provided, append a one-hot identity slot of length
@@ -111,6 +120,11 @@ def flatten_dict_obs(
             agent.
         num_agents: Length of the identity one-hot. Required when
             ``agent_id`` is provided. Typically the env's ``num_agents``.
+        include_round1_signals: Issue #252. When ``True``, append the
+            ``round1_signals`` channel (length ``num_agents``) before
+            the identity tail. The trainer's two-phase path sets this
+            so the round-2 policy forward can condition on what was
+            just signaled in round 1.
 
     Raises:
         ValueError: If ``agent_id`` is given without ``num_agents``, or
@@ -123,6 +137,14 @@ def flatten_dict_obs(
         np.asarray(obs["last_actions"], dtype=np.float32).flatten(),
         np.asarray(obs["scenario_info"], dtype=np.float32),
     ]
+    if include_round1_signals:
+        # Defensive: simultaneous-mode obs dicts may not carry the
+        # field if produced by an old pre-#252 env build. Fall back to
+        # zeros so the call doesn't blow up.
+        r1 = obs.get("round1_signals")
+        if r1 is None:
+            r1 = np.zeros(num_agents or 0, dtype=np.float32)
+        base.append(np.asarray(r1, dtype=np.float32))
     if agent_id is None:
         return np.concatenate(base)
     if num_agents is None:
@@ -314,6 +336,49 @@ class JointPPOTrainer:
         self.obs_dim = obs_dim
         self.action_dims = action_dims
         self.hidden_size = hidden_size
+
+        # Issue #252: within-night commitment mode. Auto-detected from the
+        # env's scenario (which may be wrapped by MacroActionEnv, in which
+        # case we read through the wrapper's `scenario` property). When
+        # ``two_phase``, ``collect_rollout`` does two policy forward
+        # passes per night — one to emit the round-1 signal, one to emit
+        # the round-2 action — and feeds the env via
+        # ``env.step_two_phase``. Otherwise (``simultaneous``) the
+        # rollout loop is bit-identical to pre-#252.
+        scenario = getattr(self.env, "scenario", None)
+        self._commitment_mode = (
+            getattr(scenario, "commitment_mode", "simultaneous")
+            if scenario is not None
+            else "simultaneous"
+        )
+        if self._commitment_mode == "two_phase":
+            # MacroActionEnv (#298) does not yet support two-phase. We
+            # gate here rather than silently producing wrong behavior.
+            from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+
+            if not isinstance(self.env, BucketBrigadeEnv):
+                raise NotImplementedError(
+                    "commitment_mode='two_phase' is currently only supported "
+                    "with a raw BucketBrigadeEnv. Wrappers like MacroActionEnv "
+                    "(#298) require a follow-up to translate options into "
+                    "round-1 signal + round-2 action."
+                )
+            # Issue #252 + #274 mutex: obs-audit's "what did the policy see
+            # when it picked this action" invariant does not hold under
+            # two-phase rollouts (round-1 obs feeds the signal forward;
+            # round-2 obs feeds the action forward; the audit can only
+            # record one per (step, agent)). Surface the conflict at
+            # construction time rather than silently logging a misleading
+            # record. The audit + simultaneous path is unchanged.
+            if obs_auditor is not None and obs_auditor.enabled:
+                raise NotImplementedError(
+                    "commitment_mode='two_phase' is incompatible with "
+                    "obs_auditor: the audit invariant captures one obs "
+                    "per (step, agent), but two-phase produces two "
+                    "policy-facing obs per night (round-1 signal, "
+                    "round-2 action). Run them separately or extend the "
+                    "audit record to carry both phases."
+                )
 
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -541,9 +606,20 @@ class JointPPOTrainer:
 
         Fixes the latent bug in #204 — every agent now gets its own row with
         a distinct identity one-hot tail, instead of all sharing one global row.
+
+        Issue #252: in two-phase mode, the per-agent flat obs includes the
+        ``round1_signals`` channel so the round-2 policy forward can
+        condition on what was just signaled in round 1. In simultaneous
+        mode the flag is False and obs width is bit-exact pre-#252.
         """
+        include_r1 = self._commitment_mode == "two_phase"
         rows = [
-            flatten_dict_obs(obs_dict, agent_id=i, num_agents=self.num_agents)
+            flatten_dict_obs(
+                obs_dict,
+                agent_id=i,
+                num_agents=self.num_agents,
+                include_round1_signals=include_r1,
+            )
             for i in range(self.num_agents)
         ]
         return np.stack(rows, axis=0)
@@ -762,16 +838,70 @@ class JointPPOTrainer:
 
         for t in range(num_steps):
             obs_t = torch.from_numpy(self._last_obs).to(self.device)  # [N, obs_dim]
-            joint_action, lps, vs = self._act_all(obs_t)
 
             # Snapshot the pre-step env dict (the one that produced
-            # ``self._last_obs``) before ``env.step`` mutates it. Only
-            # taken when audit is enabled — otherwise this reference
-            # is never read.
+            # ``self._last_obs``) before any forward pass or env step
+            # mutates it. Only taken when audit is enabled — otherwise
+            # this reference is never read. (Issue #274; preserved across
+            # rebase with #252.)
             pre_step_obs_dict = self._last_obs_dict if audit_enabled else None
             pre_step_flat_obs = self._last_obs.copy() if audit_enabled else None
 
-            next_obs_dict, rew, done_arr, _ = self.env.step(joint_action)
+            # Issue #252: two-phase rollout path. We do TWO forward passes
+            # per env-step. The round-1 forward uses the round-1 obs
+            # (which carries last-night's state and zero round1_signals
+            # for the very first step of a fresh episode); we extract the
+            # signal head (action dim index 2) and ignore the house/mode
+            # heads — round 1 is signal-only by mechanic. The round-2
+            # forward uses the round-2 obs (which carries the just-emitted
+            # round1_signals) and produces the full [house, mode, signal]
+            # action that the env executes via step_two_phase. The
+            # rollout buffer stores the round-2 forward's log_prob/value
+            # — round 1 contributes a stored side-channel but is not
+            # currently used for PPO updates (its log-prob does not enter
+            # the advantage estimator; this is a deliberate simplification
+            # to keep the trainer interface unchanged at this stage).
+            # A follow-up could optionally incorporate round-1 log-probs
+            # into the loss for joint training of the signal head.
+            #
+            # Mutex with obs_audit (#274) is enforced upstream at
+            # ``train_one_cell`` validation: the audit snapshot above
+            # captures the round-1 obs and the recorded ``raw_action`` is
+            # the round-2 action, so the audit's "what did the policy see
+            # when it picked this action" invariant does not hold under
+            # two-phase. We surface this conflict at config-validation
+            # time rather than silently logging a misleading record.
+            if self._commitment_mode == "two_phase":
+                # Round 1: signal-only forward pass. Reuse _act_all but
+                # discard everything except the signal column.
+                _r1_joint, _r1_lps, _r1_vs = self._act_all(obs_t)
+                round1_signals = _r1_joint[:, 2].astype(np.uint8)
+                # Stash round-1 signals into the env so the round-2 obs
+                # carries them. We mutate the env's buffer directly
+                # rather than running env.step_two_phase twice — the env
+                # exposes `round1_signals` as a public attribute (#252).
+                self.env.round1_signals = round1_signals.astype(np.int8)
+                # Rebuild the per-agent flat obs with the now-populated
+                # round1_signals so the round-2 policy forward sees them.
+                round2_dict = {
+                    "signals": self.env.signals.copy(),
+                    "locations": self.env.locations.copy(),
+                    "houses": self.env.houses.copy(),
+                    "last_actions": self.env.last_actions.copy(),
+                    "scenario_info": self.env.scenario.to_feature_vector(),
+                    "round1_signals": self.env.round1_signals.copy(),
+                }
+                self._last_obs = self._flatten_per_agent(round2_dict)
+                obs_t = torch.from_numpy(self._last_obs).to(self.device)
+                # Round 2: full-action forward pass. This is the one we
+                # store for PPO updates.
+                joint_action, lps, vs = self._act_all(obs_t)
+                next_obs_dict, rew, done_arr, _ = self.env.step_two_phase(
+                    round1_signals, joint_action
+                )
+            else:
+                joint_action, lps, vs = self._act_all(obs_t)
+                next_obs_dict, rew, done_arr, _ = self.env.step(joint_action)
             done = bool(np.asarray(done_arr).any())
 
             observations[t] = self._last_obs

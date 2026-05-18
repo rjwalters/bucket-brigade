@@ -144,6 +144,15 @@ class CellConfig:
     # ``"adjacent_only"`` to constrain each agent to its home position or
     # a directly adjacent house (ring distance 1).
     action_validity_mode: str = "always_valid"
+    # Issue #252: within-night commitment mode. Mutated onto the loaded
+    # ``Scenario`` instance in ``train_one_cell`` next to the other
+    # scenario knobs. Default ``"simultaneous"`` matches the
+    # ``Scenario.commitment_mode`` default, preserves the single-phase
+    # rollout fast path, and is bit-identical to pre-#252 behavior. Set
+    # to ``"two_phase"`` to enable the C1 non-binding signaling
+    # mechanic; the trainer auto-detects this and does two policy
+    # forward passes per env-step.
+    commitment_mode: str = "simultaneous"
     # Issue #270: optional BC-pretrained init. Directory containing per-agent
     # ``agent_{i}.pt`` state dicts produced by
     # ``experiments/p3_specialization/bc_init.py``. ``None`` (default)
@@ -787,6 +796,21 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 "modifies the per-step reward upstream of the return "
                 "computation, conflating with the REINFORCE estimate. Pick one."
             )
+        # Issue #252 + #273 mutex: REINFORCETrainer.collect_rollout calls
+        # ``env.step`` directly and does not implement the two-phase
+        # signal-then-action protocol. Combining the two would silently
+        # collapse to the single-phase env path while leaving the
+        # round1_signals obs channel zero-fed, which is a misleading
+        # diagnostic. Surface the conflict at config validation time.
+        if str(cfg.commitment_mode) != "simultaneous":
+            raise ValueError(
+                "cfg.algorithm='reinforce' is incompatible with "
+                f"cfg.commitment_mode={cfg.commitment_mode!r}. REINFORCE's "
+                "rollout loop has no two-phase path; running it with "
+                "commitment_mode='two_phase' would silently drop the "
+                "round-1 signal forward pass. Run the two-phase arm "
+                "under PPO."
+            )
 
     # Issue #287: LOLA mutual-exclusion validation. LOLA's second-order
     # opponent-shaping term is incompatible with the MAPPO/centralized-critic
@@ -845,6 +869,34 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 "magic-box surrogate's behavior under temporally-extended actions "
                 "has not been validated. Pick one."
             )
+        # Issue #252 + #287 mutex: LolaTrainer.collect_rollout (and the
+        # inner lookahead path) call ``env.step`` directly and do not
+        # implement two-phase signal-then-action. Same rationale as the
+        # REINFORCE guard above — fail loud rather than silently drop the
+        # round-1 forward pass.
+        if str(cfg.commitment_mode) != "simultaneous":
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with "
+                f"cfg.commitment_mode={cfg.commitment_mode!r}. The LOLA-DiCE "
+                "rollout path has no two-phase support; the round-1 signal "
+                "forward pass would be silently skipped. Run the two-phase "
+                "arm under vanilla PPO."
+            )
+
+    # Issue #252 + #274 mutex: obs-audit on the two-phase rollout would
+    # capture the round-1 obs but record the round-2 action, breaking the
+    # audit's "what did the policy see when it picked this action"
+    # invariant. JointPPOTrainer guards this at construction; surface it
+    # here for a clearer config-level error.
+    if cfg.audit_obs > 0 and str(cfg.commitment_mode) != "simultaneous":
+        raise ValueError(
+            f"cfg.audit_obs > 0 is incompatible with "
+            f"cfg.commitment_mode={cfg.commitment_mode!r}. Two-phase "
+            "rollouts produce two policy-facing obs per night (round-1 "
+            "signal, round-2 action), but obs-audit records one obs per "
+            "(step, agent). Run the audit pass in simultaneous mode or "
+            "extend the audit schema."
+        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -884,6 +936,14 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     # directly by ``BucketBrigadeEnv._sanitize_actions`` without further
     # validation — only the engine path runs.
     scenario.action_validity_mode = str(cfg.action_validity_mode)
+
+    # Issue #252: within-night commitment mode. Mutate the same loaded
+    # ``Scenario`` instance. ``"simultaneous"`` (default) preserves
+    # bit-identical pre-#252 behavior; ``"two_phase"`` enables the C1
+    # non-binding signaling mechanic. The trainer auto-detects this via
+    # ``self.env.scenario.commitment_mode`` and switches its rollout
+    # loop to the two-phase path (two policy forward passes per night).
+    scenario.commitment_mode = str(cfg.commitment_mode)
 
     # Issue #286: when macro_actions is on, wrap the base env in
     # ``MacroActionEnv``. The wrapper preserves the dict-obs / numpy-action
@@ -1310,6 +1370,26 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--commitment-mode",
+        type=str,
+        default=CellConfig.__dataclass_fields__["commitment_mode"].default,
+        choices=("simultaneous", "two_phase"),
+        help=(
+            "Issue #252: within-night commitment mode. 'simultaneous' "
+            "(default) preserves bit-identical pre-#252 single-phase "
+            "behavior. 'two_phase' enables the C1 non-binding signaling "
+            "mechanic: round-1 emits a signal only (no movement, no cost, "
+            "night does not advance), round-2 observes everyone's round-1 "
+            "signal (via a new round1_signals obs channel) and emits a "
+            "full [house, mode, signal] action. Round-2 mode is "
+            "unconstrained by the round-1 signal — the deception channel "
+            "is preserved. The trainer auto-detects two_phase and does "
+            "two policy forward passes per env-step. **Architect-flagged "
+            "high-risk env change** — see issue body for the can-still-lie "
+            "PR gate."
+        ),
+    )
+    p.add_argument(
         "--bc-init-checkpoint-dir",
         type=str,
         default=None,
@@ -1553,6 +1633,7 @@ def main() -> None:
         team_welfare_gamma=args.team_welfare_gamma,
         team_welfare_kind=args.team_welfare_kind,
         action_validity_mode=args.action_validity_mode,
+        commitment_mode=args.commitment_mode,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         gae_lambda=args.gae_lambda,
         macro_actions=args.macro_actions,
@@ -1583,6 +1664,7 @@ def main() -> None:
         f"team_welfare_lambda={cfg.team_welfare_lambda} "
         f"team_welfare_kind={cfg.team_welfare_kind} "
         f"action_validity_mode={cfg.action_validity_mode} "
+        f"commitment_mode={cfg.commitment_mode} "
         f"macro_actions={cfg.macro_actions} commit_steps={cfg.commit_steps} "
         f"influence_coef={cfg.influence_coef} =="
     )

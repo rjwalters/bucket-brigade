@@ -110,6 +110,27 @@ class MacroActionEnv:
                 f"discount_gamma must be None or in (0, 1]; got {discount_gamma}"
             )
 
+        # Issue #252: MacroActionEnv x two-phase commitment is out of
+        # scope for the v1 pilot. The macro-option translation already
+        # emits primitive ``[house, mode, signal]`` actions per base
+        # step; under two-phase the wrapper would need to also emit a
+        # deterministic round-1 signal per base step (e.g. always
+        # Uncommitted) and feed it through ``base_env.step_two_phase``.
+        # This is documented as a follow-up in the issue body; for now
+        # we gate with a clear NotImplementedError.
+        base_commitment = getattr(
+            getattr(base_env, "scenario", None), "commitment_mode", "simultaneous"
+        )
+        if base_commitment == "two_phase":
+            raise NotImplementedError(
+                f"MacroActionEnv does not support commitment_mode="
+                f"{base_commitment!r} (issue #252). The macro-option "
+                f"translation needs to emit a round-1 signal per base "
+                f"step; this is deferred to a follow-up issue. Use the "
+                f"raw BucketBrigadeEnv with JointPPOTrainer's two-phase "
+                f"rollout path instead."
+            )
+
         self.base_env = base_env
         self.commit_steps = int(commit_steps)
         self.discount_gamma = discount_gamma

@@ -52,6 +52,17 @@ pub struct AgentObservation {
     pub scenario_info: Vec<f32>,
     pub agent_id: usize,
     pub night: u32,
+    /// Issue #252: round-1 non-binding commitment signals from the
+    /// `"two_phase"` commitment mode. Length matches `num_agents`. In
+    /// `"simultaneous"` mode (the default for every pre-#252 scenario) this
+    /// vector is all-zeros — there is no round-1 signal phase, so this
+    /// channel carries no information and the obs is byte-identical to
+    /// pre-#252 once the channel is excluded from the flat obs vector.
+    /// In `"two_phase"` mode, the engine writes round-1 signals here when
+    /// `step_two_phase` is called; downstream observers (round-2 policy
+    /// forward, info-theory hooks) consume them as a feature.
+    #[serde(default)]
+    pub round1_signals: Vec<u8>,
 }
 
 /// Generic agent trait
@@ -117,6 +128,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0, 0, 0, 0],
         };
 
         // Random agent should produce valid actions
@@ -145,6 +157,7 @@ mod tests {
             scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 4.0],
             agent_id: 2,
             night: 5,
+            round1_signals: vec![0, 0, 0, 0],
         };
 
         assert_eq!(obs.agent_id, 2);
@@ -165,6 +178,7 @@ mod tests {
             scenario_info: vec![0.15, 0.9, 100.0, 100.0, 0.5, 0.1, 12.0, 0.0, 12.0, 2.0],
             agent_id: 0,
             night: 1,
+            round1_signals: vec![0, 0],
         };
 
         let json = serde_json::to_string(&obs).unwrap();

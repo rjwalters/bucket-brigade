@@ -64,34 +64,34 @@ impl HeuristicAgent {
         let rest_reward_bias = self.params[8];
 
         // Decide whether to work or rest
-        let (house, mode): (u8, u8) =
-            if rng.gen::<f64>() < work_tendency * (1.0 - rest_reward_bias) {
-                // Work - choose which house
-                let owned_house = self.id % 10;
+        let (house, mode): (u8, u8) = if rng.gen::<f64>() < work_tendency * (1.0 - rest_reward_bias)
+        {
+            // Work - choose which house
+            let owned_house = self.id % 10;
 
-                // Check if owned house is burning and prioritize it
-                if obs.houses[owned_house] == 1 && rng.gen::<f64>() < own_house_priority {
-                    (owned_house as u8, 1)
-                } else {
-                    let burning: Vec<usize> = obs
-                        .houses
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, &state)| state == 1)
-                        .map(|(idx, _)| idx)
-                        .collect();
-                    let house = if !burning.is_empty() {
-                        burning[rng.gen_range(0..burning.len())]
-                    } else {
-                        owned_house
-                    };
-                    (house as u8, 1)
-                }
+            // Check if owned house is burning and prioritize it
+            if obs.houses[owned_house] == 1 && rng.gen::<f64>() < own_house_priority {
+                (owned_house as u8, 1)
             } else {
-                // Rest at owned house
-                let owned_house = self.id % 10;
-                (owned_house as u8, 0)
-            };
+                let burning: Vec<usize> = obs
+                    .houses
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, &state)| state == 1)
+                    .map(|(idx, _)| idx)
+                    .collect();
+                let house = if !burning.is_empty() {
+                    burning[rng.gen_range(0..burning.len())]
+                } else {
+                    owned_house
+                };
+                (house as u8, 1)
+            }
+        } else {
+            // Rest at owned house
+            let owned_house = self.id % 10;
+            (owned_house as u8, 0)
+        };
 
         // Issue #240: thread honesty_bias into the signal channel. With
         // probability `honesty_bias`, broadcast the true mode; otherwise
@@ -155,6 +155,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         // Same seed should give same action
@@ -184,6 +185,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(42);
@@ -211,6 +213,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(42);
@@ -240,6 +243,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(42);
@@ -269,6 +273,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 3,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(42);
@@ -295,6 +300,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(42);
@@ -333,6 +339,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(12345);
@@ -381,6 +388,7 @@ mod tests {
             scenario_info: vec![0.0; 10],
             agent_id: 0,
             night: 0,
+            round1_signals: vec![0; 4],
         };
 
         let mut rng = Pcg64::seed_from_u64(99);

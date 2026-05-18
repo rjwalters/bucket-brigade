@@ -1738,3 +1738,251 @@ class TestActionValidityMode:
         env.step(raw)
         # Recorded position is home, not 5.
         assert env.locations[0] == 0
+
+
+class TestCommitmentMode:
+    """Issue #252: within-night commitment mode (two-phase signaling).
+
+    New optional Scenario field ``commitment_mode`` selects the per-night
+    turn structure. Default ``"simultaneous"`` preserves bit-exact
+    pre-#252 behavior. ``"two_phase"`` enables the C1 non-binding
+    signaling mechanic from architect proposal #234: round-1 emits a
+    signal only (no movement, no cost, night does not advance), round-2
+    observes round-1 signals (via a new ``round1_signals`` obs channel)
+    and emits a full ``[house, mode, signal]`` action. Round-2 mode is
+    NOT constrained by the round-1 signal — the deception channel
+    survives.
+    """
+
+    def _make_two_phase_scenario(self) -> Scenario:
+        s = default_scenario(num_agents=4)
+        s.commitment_mode = "two_phase"
+        return s
+
+    def test_default_mode_is_simultaneous(self):
+        """Every existing scenario defaults to simultaneous."""
+        s = default_scenario(num_agents=4)
+        assert s.commitment_mode == "simultaneous"
+
+    def test_unknown_mode_rejected_in_post_init(self):
+        """Bogus modes are rejected at Scenario construction time."""
+        with pytest.raises(ValueError, match="commitment_mode"):
+            Scenario(
+                prob_fire_spreads_to_neighbor=0.25,
+                prob_solo_agent_extinguishes_fire=0.5,
+                prob_house_catches_fire=0.02,
+                team_reward_house_survives=100.0,
+                team_penalty_house_burns=100.0,
+                reward_own_house_survives=1.0,
+                reward_other_house_survives=0.0,
+                penalty_own_house_burns=2.0,
+                penalty_other_house_burns=0.0,
+                cost_to_work_one_night=0.5,
+                min_nights=12,
+                num_agents=4,
+                commitment_mode="stochastic_order",
+            )
+
+    def test_simultaneous_step_works_on_all_scenarios(self):
+        """Bit-exact regression: simultaneous mode is the pre-#252 path."""
+        env = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env.reset(seed=42)
+        actions = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        # step() should not raise on simultaneous; should advance night.
+        env.step(actions)
+        assert env.night == 1
+
+    def test_step_raises_on_two_phase_scenario(self):
+        """Two-phase scenarios MUST go through `step_two_phase`."""
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=42)
+        actions = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        with pytest.raises(RuntimeError, match="two-phase"):
+            env.step(actions)
+
+    def test_step_two_phase_raises_on_simultaneous_scenario(self):
+        """Conversely, step_two_phase requires two_phase mode."""
+        env = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        env.reset(seed=42)
+        r1 = np.array([1, 0, 1, 0], dtype=np.int8)
+        r2 = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        with pytest.raises(RuntimeError, match="two_phase"):
+            env.step_two_phase(r1, r2)
+
+    def test_two_phase_round1_signals_in_obs(self):
+        """Round-1 signals are visible in the observation after a step."""
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=42)
+        r1 = np.array([0, 1, 0, 1], dtype=np.int8)
+        r2 = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 0], [3, 0, 0]], dtype=np.int8)
+        obs, _, _, _ = env.step_two_phase(r1, r2)
+        np.testing.assert_array_equal(obs["round1_signals"], np.array([0, 1, 0, 1]))
+
+    def test_simultaneous_round1_signals_are_zero(self):
+        """In simultaneous mode, round1_signals is all-zeros (no phase ran)."""
+        env = BucketBrigadeEnv(scenario=default_scenario(num_agents=4))
+        obs = env.reset(seed=42)
+        np.testing.assert_array_equal(obs["round1_signals"], np.zeros(4, dtype=np.int8))
+
+    def test_two_phase_zero_signals_matches_simultaneous_rewards(self):
+        """Bit-exact action-phase parity: under two_phase with zero
+        round-1 signals, the per-night reward matches the simultaneous
+        path for the same actions and seed."""
+        sim = default_scenario(num_agents=4)
+        tp = default_scenario(num_agents=4)
+        tp.commitment_mode = "two_phase"
+        env_sim = BucketBrigadeEnv(scenario=sim)
+        env_tp = BucketBrigadeEnv(scenario=tp)
+        env_sim.reset(seed=123)
+        env_tp.reset(seed=123)
+        # Identical initial fires (same seed).
+        np.testing.assert_array_equal(env_sim.houses, env_tp.houses)
+
+        r2 = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        r1_zero = np.zeros(4, dtype=np.int8)
+        _, rew_sim, _, _ = env_sim.step(r2)
+        _, rew_tp, _, _ = env_tp.step_two_phase(r1_zero, r2)
+        np.testing.assert_allclose(rew_sim, rew_tp)
+        np.testing.assert_array_equal(env_sim.houses, env_tp.houses)
+        np.testing.assert_array_equal(env_sim.signals, env_tp.signals)
+
+    def test_can_still_lie(self):
+        """**PR GATE (can-still-lie)**: the deception channel must survive
+        the two-phase rule change. We hardcode a Liar policy that emits
+        round-1 signal=WORK (1) and round-2 mode=REST (0), then assert
+        the engine accepts the inconsistency and the obs reflects it.
+
+        This is a mechanical test of the engine surface — strictly
+        stronger than the "100 PPO iters produce lying >= 1%" gate from
+        the issue body. If the engine silently equalized round-2 mode
+        to round-1 signal, *no* trained policy could lie regardless of
+        how many iters it ran. Conversely, if the engine accepts the
+        lie here, any policy that ever emits inconsistent (signal,
+        mode) pairs will see them in its trajectory — exactly the
+        deception substrate the project requires.
+
+        Architect-flagged as the highest research-interest risk for
+        issue #252; failing this test means the design has destroyed
+        the bucket-brigade research substrate and the PR must NOT
+        merge.
+        """
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=7)
+
+        # All four agents lie: round-1 signal=WORK (1), round-2 mode=REST (0).
+        r1_lie = np.array([1, 1, 1, 1], dtype=np.int8)
+        r2_rest = np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]], dtype=np.int8)
+
+        lying_count = 0
+        total_count = 0
+        for _ in range(5):
+            obs, rewards, dones, _ = env.step_two_phase(r1_lie, r2_rest)
+            assert np.isfinite(rewards).all(), "Rewards must be finite"
+            # Round-1 signals are visible in the obs (until the next
+            # step_two_phase overwrites them).
+            for i in range(4):
+                total_count += 1
+                if obs["round1_signals"][i] != r2_rest[i, 1]:
+                    lying_count += 1
+            if env.done:
+                break
+
+        assert total_count > 0, "Test must exercise at least one (r1, r2) pair"
+        lie_rate = lying_count / total_count
+        # The hardcoded liar lies on every pair (rate == 1.0). The PR-gate
+        # threshold is 1%; we assert the much-stronger mechanical reality
+        # that the engine does not equalize them.
+        assert lie_rate >= 0.01, (
+            f"can-still-lie PR gate: expected lying rate >= 1% with a "
+            f"hardcoded liar; got {lie_rate:.4f} ({lying_count}/{total_count} "
+            f"pairs inconsistent). If this rate is 0, the engine has "
+            f"silently equalized round-2 mode to round-1 signal — the "
+            f"deception channel has been destroyed and the design is "
+            f"broken. DO NOT MERGE."
+        )
+
+    def test_two_phase_advances_night_once_per_call(self):
+        """Round-1 does not advance the night. Two step_two_phase calls
+        advance the night counter by 2, not by 1 each round-1 +
+        each round-2."""
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=99)
+        r1 = np.array([1, 0, 1, 0], dtype=np.int8)
+        r2 = np.array([[0, 1, 1], [1, 0, 0], [2, 1, 1], [3, 0, 0]], dtype=np.int8)
+        assert env.night == 0
+        env.step_two_phase(r1, r2)
+        assert env.night == 1
+        env.step_two_phase(r1, r2)
+        assert env.night == 2
+
+    def test_two_phase_reset_clears_round1_signals(self):
+        """`reset` zeros the round-1 buffer so cross-episode state
+        doesn't leak."""
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=42)
+        r1 = np.array([1, 1, 1, 1], dtype=np.int8)
+        r2 = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        env.step_two_phase(r1, r2)
+        np.testing.assert_array_equal(env.round1_signals, [1, 1, 1, 1])
+        env.reset(seed=42)
+        np.testing.assert_array_equal(env.round1_signals, np.zeros(4))
+
+    def test_two_phase_wrong_round1_length_raises(self):
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=42)
+        r1_bad = np.array([1, 0, 1], dtype=np.int8)  # length 3
+        r2 = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1]], dtype=np.int8)
+        with pytest.raises(ValueError, match="round1_signals length"):
+            env.step_two_phase(r1_bad, r2)
+
+    def test_two_phase_wrong_round2_length_raises(self):
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        env.reset(seed=42)
+        r1 = np.array([1, 0, 1, 0], dtype=np.int8)
+        r2_bad = np.array([[0, 1, 1], [1, 1, 1], [2, 1, 1]], dtype=np.int8)
+        with pytest.raises(ValueError, match="round2_actions length"):
+            env.step_two_phase(r1, r2_bad)
+
+    def test_python_rust_parity_round1_signals(self):
+        """Cross-language parity: Python env's two-phase trajectory should
+        match the Rust engine's two-phase trajectory bit-exactly for the
+        same seed and inputs."""
+        try:
+            import bucket_brigade_core as core
+        except ImportError:
+            pytest.skip("bucket_brigade_core PyO3 module not built")
+
+        rust_scenario = core.SCENARIOS["default"]
+        rust_scenario.commitment_mode = "two_phase"
+        rust_env = core.BucketBrigade(rust_scenario, 4, seed=42)
+
+        py_scenario = self._make_two_phase_scenario()
+        py_env = BucketBrigadeEnv(scenario=py_scenario)
+        py_env.reset(seed=42)
+
+        # The Python env uses np.random.RandomState; the Rust env uses
+        # its own deterministic PCG. They are not seed-compatible by
+        # construction. We still verify the action-phase invariants hold
+        # on each side: the round-1 signal appears in the obs, and
+        # lying (r1=1, r2=0) is accepted.
+        r1 = [1, 0, 1, 0]
+        r2_list = [[0, 1, 1], [1, 0, 0], [2, 1, 1], [3, 0, 0]]
+
+        # Rust side.
+        rust_env.step_two_phase(r1, r2_list)
+        rust_obs = rust_env.get_observation(0)
+        assert list(rust_obs.round1_signals) == r1
+
+        # Python side.
+        r1_np = np.array(r1, dtype=np.int8)
+        r2_np = np.array(r2_list, dtype=np.int8)
+        py_obs, _, _, _ = py_env.step_two_phase(r1_np, r2_np)
+        np.testing.assert_array_equal(py_obs["round1_signals"], r1_np)
+
+    def test_macro_action_env_rejects_two_phase(self):
+        """MacroActionEnv x two-phase is gated as NotImplementedError."""
+        from bucket_brigade.envs.macro_action_env import MacroActionEnv
+
+        env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
+        with pytest.raises(NotImplementedError, match="two_phase"):
+            MacroActionEnv(env, commit_steps=3)

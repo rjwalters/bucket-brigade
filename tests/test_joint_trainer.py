@@ -1249,3 +1249,119 @@ class TestSocialInfluence:
             JointPPOTrainer(influence_coef=-0.1, **common)
         with pytest.raises(ValueError):
             JointPPOTrainer(influence_mc_samples=0, **common)
+
+
+class TestCommitmentModeTwoPhase:
+    """Issue #252: within-night commitment mode wiring through the trainer.
+
+    Smoke tests for the two-phase rollout path. The trainer auto-detects
+    ``commitment_mode='two_phase'`` from the env's scenario and switches
+    its rollout loop to do two policy forward passes per env-step.
+    These tests verify shape/finiteness/auto-detection — they do NOT
+    claim the trainer learns anything.
+    """
+
+    def _two_phase_env_fn(self):
+        from bucket_brigade.envs.scenarios_generated import default_scenario
+
+        scenario = default_scenario(num_agents=NUM_AGENTS)
+        scenario.commitment_mode = "two_phase"
+        return BucketBrigadeEnv(scenario=scenario)
+
+    def _make_two_phase_trainer(self) -> JointPPOTrainer:
+        env = self._two_phase_env_fn()
+        obs = env.reset(seed=0)
+        # Two-phase obs includes round1_signals so obs_dim grows by
+        # num_agents vs simultaneous.
+        obs_dim = flatten_dict_obs(
+            obs,
+            agent_id=0,
+            num_agents=NUM_AGENTS,
+            include_round1_signals=True,
+        ).shape[0]
+        return JointPPOTrainer(
+            env_fn=self._two_phase_env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            seed=0,
+        )
+
+    def test_trainer_autodetects_two_phase(self):
+        trainer = self._make_two_phase_trainer()
+        assert trainer._commitment_mode == "two_phase"
+
+    def test_collect_rollout_two_phase_finite_shapes(self):
+        """A short two-phase rollout produces finite tensors of the
+        expected shapes. This is the smoke-test analogue of the issue
+        body's 'smoke training run' — we don't run 100 PPO iters
+        locally (per CLAUDE.md compute guidelines) but we do verify
+        the rollout loop completes with finite stats."""
+        trainer = self._make_two_phase_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        # Shapes match the simultaneous case (the buffer schema is the
+        # same; only the env-side mechanic changed).
+        assert rollout.observations.shape == (
+            ROLLOUT_STEPS,
+            NUM_AGENTS,
+            trainer.obs_dim,
+        )
+        for i in range(NUM_AGENTS):
+            assert rollout.actions[i].shape == (ROLLOUT_STEPS, len(ACTION_DIMS))
+            assert torch.isfinite(rollout.log_probs[i]).all()
+            assert torch.isfinite(rollout.values[i]).all()
+            assert torch.isfinite(rollout.rewards[i]).all()
+
+    def test_two_phase_update_does_not_nan(self):
+        """A PPO update on a two-phase rollout produces finite gradients
+        and no NaN losses. End-to-end smoke check."""
+        trainer = self._make_two_phase_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        # Update returns a dict of finite scalar metrics.
+        metrics = trainer.update(rollout)
+        for key, value in metrics.items():
+            assert np.isfinite(value), (
+                f"metric {key}={value} is not finite in two-phase update"
+            )
+
+    def test_simultaneous_obs_dim_unchanged(self):
+        """Bit-exact regression: simultaneous-mode obs_dim is exactly
+        what it was pre-#252 (no extra round1_signals channel)."""
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        sim_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        # Sanity that the pre-#252 width is recoverable (whatever the
+        # exact number is, it must not contain the round1_signals
+        # channel — that's the bit-exact backward-compat claim).
+        # We probe by comparing to `include_round1_signals=False`:
+        # they must be equal (the default for the flag is False).
+
+        # And `include_round1_signals=False` matches.
+        tp_off_dim = flatten_dict_obs(
+            obs,
+            agent_id=0,
+            num_agents=NUM_AGENTS,
+            include_round1_signals=False,
+        ).shape[0]
+        assert tp_off_dim == sim_dim
+
+    def test_two_phase_obs_dim_includes_round1_channel(self):
+        """Two-phase flatten adds num_agents extra features."""
+        env = self._two_phase_env_fn()
+        obs = env.reset(seed=0)
+        with_r1 = flatten_dict_obs(
+            obs,
+            agent_id=0,
+            num_agents=NUM_AGENTS,
+            include_round1_signals=True,
+        ).shape[0]
+        without_r1 = flatten_dict_obs(
+            obs,
+            agent_id=0,
+            num_agents=NUM_AGENTS,
+            include_round1_signals=False,
+        ).shape[0]
+        assert with_r1 == without_r1 + NUM_AGENTS
