@@ -195,9 +195,7 @@ def main() -> None:
     # cells with completed seeds. This is the strongest candidate for "high-λ
     # rescues the basin"; the verdict at this λ is the key cell of the 2×2.
     completed = {
-        lam: arm
-        for lam, arm in lambda_arms.items()
-        if arm.get("n_seeds", 0) > 0
+        lam: arm for lam, arm in lambda_arms.items() if arm.get("n_seeds", 0) > 0
     }
     if completed:
         best_lambda, best_arm = max(

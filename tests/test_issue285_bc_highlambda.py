@@ -150,16 +150,12 @@ def test_lambda_one_no_nan(tiny_bc_checkpoint, tmp_path):
     log contains finite floats end-to-end.
     """
     out = tmp_path / "lambda_1_0"
-    _train_one_smoke(
-        out_dir=out, bc_dir=tiny_bc_checkpoint, gae_lambda=1.0, seed=123
-    )
+    _train_one_smoke(out_dir=out, bc_dir=tiny_bc_checkpoint, gae_lambda=1.0, seed=123)
     metrics = _read_metrics(out)
     assert len(metrics) == 1, "Expected exactly one iteration of metrics."
     for key, value in metrics[0].items():
         if isinstance(value, float):
-            assert np.isfinite(value), (
-                f"Non-finite metric at λ=1.0: {key} = {value}"
-            )
+            assert np.isfinite(value), f"Non-finite metric at λ=1.0: {key} = {value}"
 
 
 def test_gae_variance_increases_with_lambda():
@@ -219,10 +215,7 @@ def test_analyze_285_roundtrip(tmp_path):
             # cells slightly upward so the "best λ" picker exercises the
             # `max` branch and produces a non-NaN best.
             base = -50.0 + 5.0 * (lam - 0.95)
-            traj = [
-                {"mean_step_reward_team": base + 0.1 * t}
-                for t in range(10)
-            ]
+            traj = [{"mean_step_reward_team": base + 0.1 * t} for t in range(10)]
             (cell / "metrics.json").write_text(json.dumps(traj))
 
     output_dir = tmp_path / "diagnostics"
