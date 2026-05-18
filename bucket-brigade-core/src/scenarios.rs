@@ -91,6 +91,66 @@ fn default_progress_shaping_coef() -> f32 {
     0.0
 }
 
+/// Default for `Scenario::team_welfare_lambda` (issue #283). Zero preserves
+/// bit-exact backward compatibility with pre-#283 behavior (the engine takes
+/// a fast-path skip when lambda is zero). When non-zero, each step's reward
+/// is augmented by `lambda * (gamma * Phi(s') - Phi(s))` where `Phi` is the
+/// potential function selected by `team_welfare_kind`. Per Ng-Harada-Russell
+/// (1999), this shaping leaves the optimal policy set invariant for any
+/// `Phi: S -> R`.
+fn default_team_welfare_lambda() -> f32 {
+    0.0
+}
+
+/// Default for `Scenario::team_welfare_gamma` (issue #283). 1.0 collapses the
+/// shaping term to `lambda * (Phi(s') - Phi(s))` — a simple delta — which is
+/// the right starting point when shaping is enabled without coordinating
+/// with the trainer's PPO discount. NHR invariance holds for any
+/// `gamma in [0, 1]`; matching the trainer's gamma maximizes the strength of
+/// the invariance argument.
+fn default_team_welfare_gamma() -> f32 {
+    1.0
+}
+
+/// Allowed values for `Scenario::team_welfare_kind` (issue #283). Keep in
+/// sync with the Python validator in
+/// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
+///
+/// - `"none"`: shaping disabled (also implied when `team_welfare_lambda` is
+///   zero — both paths take the fast-path skip in `engine/rewards.rs`).
+/// - `"team_welfare_closed_form"`: option B from issue #283. Closed-form
+///   team-welfare potential
+///   `Phi(s) = team_reward*(safe/N) - team_penalty*(ruined/N)
+///   - 0.5*team_penalty*(burning/N)`.
+///   Cheap, debuggable proxy for team value. No learning required.
+pub const ALLOWED_TEAM_WELFARE_KINDS: &[&str] = &["none", "team_welfare_closed_form"];
+
+/// Default for `Scenario::team_welfare_kind` (issue #283). `"none"` keeps the
+/// shaping disabled even if a stale `team_welfare_lambda` is non-zero in
+/// some external scenario JSON; both fields must be set for shaping to fire.
+fn default_team_welfare_kind() -> String {
+    "none".to_string()
+}
+
+/// Custom serde deserializer for `Scenario::team_welfare_kind` (issue #283)
+/// that enforces the `ALLOWED_TEAM_WELFARE_KINDS` allowlist. Mirrors the
+/// `distance_metric` deserializer's pattern — without this guard, an
+/// unrecognized kind would silently disable shaping at runtime.
+fn deserialize_team_welfare_kind<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if !ALLOWED_TEAM_WELFARE_KINDS.contains(&s.as_str()) {
+        return Err(D::Error::custom(format!(
+            "Scenario.team_welfare_kind={s:?} is not supported; allowed values: {ALLOWED_TEAM_WELFARE_KINDS:?}"
+        )));
+    }
+    Ok(s)
+}
+
+
 /// Allowed values for `Scenario::distance_metric`.
 ///
 /// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
@@ -239,6 +299,27 @@ pub struct Scenario {
     // the potential-based variant explicitly.
     #[serde(default = "default_progress_shaping_coef")]
     pub progress_shaping_coef: f32,
+
+    // Potential-based team-welfare shaping (issue #283, Ng-Harada-Russell 1999).
+    //
+    // Default `team_welfare_lambda == 0.0` preserves bit-exact pre-#283
+    // behavior. The engine takes a fast-path skip when lambda is zero or
+    // kind is `"none"` (see `engine/rewards.rs`).
+    //
+    // When enabled, each step's reward is augmented by
+    //     `lambda * (gamma * Phi(s') - Phi(s))`
+    // shared equally across all agents. `Phi(terminal) := 0` is enforced so
+    // the telescoping sum identity holds exactly, preserving the NHR
+    // optimal-policy-invariance theorem.
+    #[serde(default = "default_team_welfare_lambda")]
+    pub team_welfare_lambda: f32,
+    #[serde(default = "default_team_welfare_gamma")]
+    pub team_welfare_gamma: f32,
+    #[serde(
+        default = "default_team_welfare_kind",
+        deserialize_with = "deserialize_team_welfare_kind"
+    )]
+    pub team_welfare_kind: String,
 }
 
 impl Scenario {
@@ -256,6 +337,16 @@ impl Scenario {
             return Err(format!(
                 "Scenario.distance_metric={:?} is not supported; allowed values: {:?}",
                 self.distance_metric, ALLOWED_DISTANCE_METRICS
+            ));
+        }
+        // Issue #283: team_welfare_kind allowlist re-check for the
+        // programmatic-construction path (PyScenario kwargs, WASM
+        // construction, Rust literal builds). Mirrors the
+        // `distance_metric` re-check above.
+        if !ALLOWED_TEAM_WELFARE_KINDS.contains(&self.team_welfare_kind.as_str()) {
+            return Err(format!(
+                "Scenario.team_welfare_kind={:?} is not supported; allowed values: {:?}",
+                self.team_welfare_kind, ALLOWED_TEAM_WELFARE_KINDS
             ));
         }
         Ok(())
@@ -312,6 +403,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -336,6 +430,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -360,6 +457,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -385,6 +485,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -409,6 +512,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -433,6 +539,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -457,6 +566,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -481,6 +593,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -505,6 +620,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -529,6 +647,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -553,6 +674,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -577,6 +701,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -608,6 +735,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -638,6 +768,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -671,6 +804,9 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         },
     );
 
@@ -1244,6 +1380,9 @@ mod tests {
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
             progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
         };
         let err = scenario
             .validate()

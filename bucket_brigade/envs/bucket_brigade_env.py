@@ -291,6 +291,50 @@ class BucketBrigadeEnv:
             ):
                 self.houses[house_idx] = self.BURNING
 
+    def _compute_team_welfare_phi(self, houses: np.ndarray) -> float:
+        """Issue #283: closed-form team-welfare potential Phi(s).
+
+        Option B from the issue: a cheap, debuggable proxy for team value
+        that's tied to the scenario's team-reward weights so the shaping
+        signal stays on the same scale as the base team reward.
+
+            Phi(s) = team_reward * (safe/N)
+                     - team_penalty * (ruined/N)
+                     - 0.5 * team_penalty * (burning/N)
+
+        The 0.5x weight on burning houses captures "anticipated burnout
+        cost" — a burning house is partway between SAFE and RUINED in
+        expectation but is still recoverable, so we charge half the
+        ruined penalty.
+
+        IMPORTANT: This is a pure function of ``houses`` (the state-only
+        signature is what makes the NHR telescoping identity hold). Do
+        not let any policy-conditioned features leak in. Mirrors
+        ``bucket-brigade-core/src/engine/rewards.rs::team_welfare_phi``.
+        """
+        kind = getattr(self.scenario, "team_welfare_kind", "none")
+        if kind == "none":
+            return 0.0
+        if kind == "team_welfare_closed_form":
+            num_houses_f = float(self.num_houses)
+            num_safe = float(np.sum(houses == self.SAFE))
+            num_ruined = float(np.sum(houses == self.RUINED))
+            num_burning = float(np.sum(houses == self.BURNING))
+            w_safe = float(self.scenario.team_reward_house_survives)
+            w_penalty = float(self.scenario.team_penalty_house_burns)
+            return (
+                w_safe * (num_safe / num_houses_f)
+                - w_penalty * (num_ruined / num_houses_f)
+                - 0.5 * w_penalty * (num_burning / num_houses_f)
+            )
+        # Defensive — ``__post_init__`` already rejects unknown kinds, but
+        # keep this branch so future kinds added without env support
+        # surface a clear error rather than silently returning 0.
+        raise ValueError(
+            f"Unknown team_welfare_kind={kind!r}; supported: "
+            f"('none', 'team_welfare_closed_form')."
+        )
+
     def _compute_rewards(self, actions: np.ndarray) -> np.ndarray:
         """Compute rewards for all agents."""
         # Store previous house states to compute changes
@@ -456,6 +500,42 @@ class BucketBrigadeEnv:
                     and self.houses[h] == self.SAFE
                 ):
                     individual_rewards[agent_idx] += action_beta
+
+        # Potential-based team-welfare shaping (issue #283, NHR 1999).
+        #
+        # F(s, a, s') = lambda * (gamma * Phi(s') - Phi(s))
+        #
+        # Added to every agent's reward (team-shared bonus). At a terminal
+        # transition Phi(s') is forced to 0 so the telescoping sum collapses
+        # to a policy-independent constant `gamma^T * Phi(s_T) - Phi(s_0) =
+        # -Phi(s_0)`, exactly preserving the NHR invariance theorem.
+        #
+        # When ``team_welfare_lambda == 0.0`` (the default for every pre-#283
+        # scenario) this block is skipped entirely so per-step rewards are
+        # byte-identical to pre-#283 behavior. Mirrors the Rust
+        # implementation in ``bucket-brigade-core/src/engine/rewards.rs``.
+        team_welfare_lambda = float(getattr(self.scenario, "team_welfare_lambda", 0.0))
+        team_welfare_kind = getattr(self.scenario, "team_welfare_kind", "none")
+        if team_welfare_lambda != 0.0 and team_welfare_kind != "none":
+            gamma = float(getattr(self.scenario, "team_welfare_gamma", 1.0))
+            phi_prev = self._compute_team_welfare_phi(prev_houses)
+            # Determine whether s' is a terminal state. ``_check_termination``
+            # is a pure function of ``self.houses`` and ``self.night`` (which
+            # has not yet been advanced — see ``step()`` step order), so
+            # calling it here is safe and idempotent.
+            #
+            # Terminal-state convention (NHR): Phi(terminal) := 0 so the
+            # telescoping sum identity holds exactly. Without this, the
+            # final-step bonus would leak a Phi(s_T) term that depends on
+            # the policy's terminal state — breaking invariance.
+            is_terminal_next = self._check_termination()
+            phi_next = (
+                0.0 if is_terminal_next else self._compute_team_welfare_phi(self.houses)
+            )
+            shaping_term = team_welfare_lambda * (gamma * phi_next - phi_prev)
+            # Apply to every agent (team-shared bonus). Float32 to match
+            # the rest of the reward vector dtype.
+            individual_rewards += np.float32(shaping_term)
 
         return individual_rewards
 

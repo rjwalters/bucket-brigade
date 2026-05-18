@@ -123,6 +123,15 @@ class CellConfig:
     # skip, and preserves bit-identical pre-#265 behavior. The #265 sweep
     # driver passes per-cell values via ``--progress-shaping-coef``.
     progress_shaping_coef: float = 0.0
+    # Issue #283: potential-based team-welfare shaping knobs (Ng-Harada-Russell
+    # 1999). Mutated onto the loaded ``Scenario`` instance in ``train_one_cell``
+    # next to the action-shaping mutation. Defaults match
+    # ``Scenario.team_welfare_lambda`` / ``_gamma`` / ``_kind``:
+    # lambda=0.0 and kind="none" keep the env fast-path skip and
+    # bit-identical pre-#283 behavior.
+    team_welfare_lambda: float = 0.0
+    team_welfare_gamma: float = 1.0
+    team_welfare_kind: str = "none"
     # Issue #270: optional BC-pretrained init. Directory containing per-agent
     # ``agent_{i}.pt`` state dicts produced by
     # ``experiments/p3_specialization/bc_init.py``. ``None`` (default)
@@ -652,6 +661,15 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     # behavior; the #265 sweep driver passes per-cell values.
     scenario.progress_shaping_coef = float(cfg.progress_shaping_coef)
 
+    # Issue #283: potential-based team-welfare shaping (Ng-Harada-Russell 1999).
+    # Mutate the same loaded ``Scenario`` instance. When lambda=0.0 (default)
+    # the env takes the fast-path skip and per-step rewards are byte-identical
+    # to pre-#283 behavior, so the in-sweep baseline cell can share the same
+    # code path as treatment cells without distorting the comparison.
+    scenario.team_welfare_lambda = float(cfg.team_welfare_lambda)
+    scenario.team_welfare_gamma = float(cfg.team_welfare_gamma)
+    scenario.team_welfare_kind = str(cfg.team_welfare_kind)
+
     def env_fn():
         env = BucketBrigadeEnv(scenario=scenario)
         return env
@@ -914,6 +932,43 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--team-welfare-lambda",
+        type=float,
+        default=CellConfig.__dataclass_fields__["team_welfare_lambda"].default,
+        help=(
+            "Issue #283: potential-based team-welfare shaping multiplier "
+            "(Ng-Harada-Russell 1999). Mutated onto the loaded Scenario "
+            "instance pre-rollout. Default 0.0 keeps the env fast-path "
+            "skip and bit-identical pre-#283 behavior. Sweep cells: "
+            "{0.0, 0.1, 0.5, 1.0}."
+        ),
+    )
+    p.add_argument(
+        "--team-welfare-gamma",
+        type=float,
+        default=CellConfig.__dataclass_fields__["team_welfare_gamma"].default,
+        help=(
+            "Issue #283: NHR discount factor in `gamma*Phi(s') - Phi(s)`. "
+            "Default 1.0 collapses shaping to a simple delta. Should "
+            "match the trainer's PPO gamma for maximum invariance "
+            "strength, but NHR holds for any gamma in [0, 1]."
+        ),
+    )
+    p.add_argument(
+        "--team-welfare-kind",
+        type=str,
+        default=CellConfig.__dataclass_fields__["team_welfare_kind"].default,
+        choices=("none", "team_welfare_closed_form"),
+        help=(
+            "Issue #283: potential function selector. 'none' disables "
+            "shaping. 'team_welfare_closed_form' = option B (cheap, no "
+            "learning): Phi(s) = team_reward*safe/N - team_penalty*ruined/N "
+            "- 0.5*team_penalty*burning/N. Future kinds (e.g., "
+            "'specialist_mc_regressor' = option A) will be added when "
+            "the headline Phi regressor lands."
+        ),
+    )
+    p.add_argument(
         "--bc-init-checkpoint-dir",
         type=str,
         default=None,
@@ -961,6 +1016,9 @@ def main() -> None:
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,
         progress_shaping_coef=args.progress_shaping_coef,
+        team_welfare_lambda=args.team_welfare_lambda,
+        team_welfare_gamma=args.team_welfare_gamma,
+        team_welfare_kind=args.team_welfare_kind,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         gae_lambda=args.gae_lambda,
         device=args.device,
@@ -971,7 +1029,9 @@ def main() -> None:
         f"gae_lambda={cfg.gae_lambda} "
         f"action_shaping_alpha={cfg.action_shaping_alpha} "
         f"action_shaping_beta={cfg.action_shaping_beta} "
-        f"progress_shaping_coef={cfg.progress_shaping_coef} =="
+        f"progress_shaping_coef={cfg.progress_shaping_coef} "
+        f"team_welfare_lambda={cfg.team_welfare_lambda} "
+        f"team_welfare_kind={cfg.team_welfare_kind} =="
     )
     train_one_cell(cfg, args.output_dir)
 

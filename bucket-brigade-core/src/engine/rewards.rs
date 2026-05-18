@@ -2,6 +2,43 @@ use super::core::{ring_dist, BucketBrigade};
 use crate::{Action, HouseState};
 
 impl BucketBrigade {
+    /// Issue #283: closed-form team-welfare potential Phi(s) for
+    /// Ng-Harada-Russell potential-based shaping. Mirrors the Python
+    /// implementation in
+    /// `bucket_brigade/envs/bucket_brigade_env.py::_compute_team_welfare_phi`.
+    ///
+    /// Pure function of `houses` — no policy-conditioned features. This is
+    /// what makes the NHR telescoping identity hold.
+    ///
+    /// Returns 0.0 when shaping is disabled (`kind == "none"`) so callers
+    /// can use the value unconditionally without short-circuiting on every
+    /// step.
+    pub(super) fn team_welfare_phi(&self, houses: &[HouseState]) -> f32 {
+        let kind = self.scenario.team_welfare_kind.as_str();
+        if kind == "none" {
+            return 0.0;
+        }
+        if kind == "team_welfare_closed_form" {
+            let num_houses_f = self.scenario.num_houses as f32;
+            let num_safe = houses.iter().filter(|&&h| h == 0).count() as f32;
+            let num_ruined = houses.iter().filter(|&&h| h == 2).count() as f32;
+            let num_burning = houses.iter().filter(|&&h| h == 1).count() as f32;
+            let w_safe = self.scenario.team_reward_house_survives;
+            let w_penalty = self.scenario.team_penalty_house_burns;
+            return w_safe * (num_safe / num_houses_f)
+                - w_penalty * (num_ruined / num_houses_f)
+                - 0.5 * w_penalty * (num_burning / num_houses_f);
+        }
+        // Defensive — the serde and `validate()` allowlist catches unknown
+        // kinds at construction time, but if a future kind is added without
+        // engine support we surface a clear panic rather than silently
+        // returning 0.
+        panic!(
+            "Unknown team_welfare_kind={:?}; supported: ['none', 'team_welfare_closed_form']",
+            self.scenario.team_welfare_kind
+        );
+    }
+
     pub(super) fn compute_rewards(
         &mut self,
         actions: &[Action],
@@ -166,6 +203,45 @@ impl BucketBrigade {
                 if beta != 0.0 && prev_houses[h] == 0 && self.houses[h] == 0 {
                     rewards[agent_idx] += beta;
                 }
+            }
+        }
+
+        // 6. Potential-based team-welfare shaping (issue #283, NHR 1999).
+        //
+        // F(s, a, s') = lambda * (gamma * Phi(s') - Phi(s))
+        //
+        // Added to every agent's reward (team-shared bonus). At a terminal
+        // transition Phi(s') is forced to 0 so the telescoping sum
+        // identity holds exactly:
+        //     sum_t gamma^t F_t = lambda * (gamma^T Phi(s_T) - Phi(s_0))
+        //                       = -lambda * Phi(s_0)   when Phi(s_T)=0.
+        // NHR (ICML 1999) guarantees optimal-policy invariance under this
+        // shaping for any potential function Phi.
+        //
+        // When `team_welfare_lambda == 0.0` (the default for every pre-#283
+        // scenario) or `team_welfare_kind == "none"` we skip this block
+        // entirely so per-step rewards are byte-identical to pre-#283
+        // behavior. Mirrors the Python implementation in
+        // `bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards`.
+        let team_welfare_lambda = self.scenario.team_welfare_lambda;
+        if team_welfare_lambda != 0.0 && self.scenario.team_welfare_kind != "none" {
+            let gamma = self.scenario.team_welfare_gamma;
+            let phi_prev = self.team_welfare_phi(prev_houses);
+            // Determine whether s' is terminal. `check_termination` is a
+            // pure function of `self.houses` and `self.night` (which has
+            // not yet been advanced — see `engine/core.rs::step` order),
+            // so this is safe and idempotent. Terminal-state convention
+            // (NHR): Phi(terminal) := 0 so the telescoping identity holds.
+            let is_terminal_next = self.check_termination();
+            let phi_next = if is_terminal_next {
+                0.0
+            } else {
+                self.team_welfare_phi(&self.houses)
+            };
+            let shaping_term = team_welfare_lambda * (gamma * phi_next - phi_prev);
+            // Apply to every agent (team-shared bonus).
+            for r in rewards.iter_mut() {
+                *r += shaping_term;
             }
         }
 

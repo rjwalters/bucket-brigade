@@ -176,6 +176,13 @@ impl WasmScenario {
             // JS/TS callers see byte-identical rewards. Routed through the
             // JSON path (``Scenario::to_json`` / ``from_json``) when non-zero.
             progress_shaping_coef: 0.0,
+            // Issue #283: potential-based team-welfare shaping defaults to
+            // off so existing JS/TS callers see byte-identical rewards.
+            // The browser UI doesn't expose these knobs; to consume a
+            // scenario with shaping enabled, route through the JSON path.
+            team_welfare_lambda: 0.0,
+            team_welfare_gamma: 1.0,
+            team_welfare_kind: "none".to_string(),
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent

@@ -1039,6 +1039,146 @@ fn test_action_shaping_engine_smoke() {
 }
 
 // ==============================================================================
+// Issue #283: Potential-based team-welfare shaping (Ng-Harada-Russell 1999)
+// ==============================================================================
+
+/// Phi(s) is a pure function of `houses` for the closed-form kind. Spot-check
+/// hand-computed values to keep parity with the Python implementation in
+/// `bucket_brigade/envs/bucket_brigade_env.py::_compute_team_welfare_phi`.
+#[test]
+fn test_team_welfare_phi_closed_form_values() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.team_reward_house_survives = 10.0;
+    scenario.team_penalty_house_burns = 10.0;
+    scenario.team_welfare_kind = "team_welfare_closed_form".to_string();
+    let engine = BucketBrigade::new(scenario, 4, Some(0));
+
+    // All safe: Phi = 10*(10/10) - 0 - 0 = 10.0
+    let all_safe = vec![0u8; 10];
+    assert!((engine.team_welfare_phi(&all_safe) - 10.0).abs() < 1e-5);
+
+    // All ruined: Phi = 0 - 10 - 0 = -10.0
+    let all_ruined = vec![2u8; 10];
+    assert!((engine.team_welfare_phi(&all_ruined) - (-10.0)).abs() < 1e-5);
+
+    // All burning: Phi = 0 - 0 - 0.5*10 = -5.0
+    let all_burning = vec![1u8; 10];
+    assert!((engine.team_welfare_phi(&all_burning) - (-5.0)).abs() < 1e-5);
+
+    // Mixed: 5 safe, 3 burning, 2 ruined. Phi = 5 - 2 - 1.5 = 1.5.
+    let mut mixed = vec![0u8; 10];
+    for h in &mut mixed[5..8] {
+        *h = 1;
+    }
+    for h in &mut mixed[8..10] {
+        *h = 2;
+    }
+    assert!((engine.team_welfare_phi(&mixed) - 1.5).abs() < 1e-5);
+}
+
+/// Phi(s) = 0 unconditionally when kind = "none". Guards the engine
+/// fast-path skip in `compute_rewards`.
+#[test]
+fn test_team_welfare_phi_kind_none_returns_zero() {
+    let scenario = SCENARIOS.get("default").unwrap().clone();
+    // Defaults: team_welfare_kind == "none".
+    let engine = BucketBrigade::new(scenario, 4, Some(0));
+    for state_code in 0u8..=2 {
+        let houses = vec![state_code; 10];
+        assert_eq!(
+            engine.team_welfare_phi(&houses),
+            0.0,
+            "kind=\"none\" must produce Phi=0 for any houses state"
+        );
+    }
+}
+
+/// Issue #283: `team_welfare_kind` allowlist re-check via `validate()`.
+/// Mirrors the `distance_metric` invariant in
+/// `test_validate_rejects_unknown_distance_metric` (scenarios.rs).
+#[test]
+#[should_panic(expected = "team_welfare_kind")]
+fn test_engine_rejects_unknown_team_welfare_kind() {
+    let mut scenario = SCENARIOS.get("default").unwrap().clone();
+    scenario.team_welfare_kind = "bogus_kind".to_string();
+    // Must panic from BucketBrigade::new -> Scenario::validate.
+    let _ = BucketBrigade::new(scenario, 4, Some(42));
+}
+
+/// Byte-identity regression: `team_welfare_lambda == 0.0` (any kind) must
+/// produce identical rewards to a scenario without the new fields touched.
+/// Guards the engine fast-path skip in `compute_rewards`.
+#[test]
+fn test_zero_lambda_byte_identical_rewards() {
+    let scenario_a = SCENARIOS.get("default").unwrap().clone();
+    let mut scenario_b = scenario_a.clone();
+    // Treatment: kind set but lambda zero -> still inert.
+    scenario_b.team_welfare_kind = "team_welfare_closed_form".to_string();
+    scenario_b.team_welfare_lambda = 0.0;
+    scenario_b.team_welfare_gamma = 0.99;
+
+    let mut engine_a = BucketBrigade::new(scenario_a, 4, Some(123));
+    let mut engine_b = BucketBrigade::new(scenario_b, 4, Some(123));
+
+    let actions = vec![[0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 0, 0]];
+    for _ in 0..15 {
+        if engine_a.done {
+            break;
+        }
+        let r_a = engine_a.step(&actions).rewards;
+        let r_b = engine_b.step(&actions).rewards;
+        for (a, b) in r_a.iter().zip(r_b.iter()) {
+            assert_eq!(
+                a, b,
+                "lambda=0 must yield byte-identical rewards regardless of kind"
+            );
+        }
+    }
+}
+
+/// Shaping is team-shared: when lambda != 0, every agent receives the same
+/// shaping increment, so the cross-agent reward differential is unchanged
+/// vs the no-shaping case (rewards differ only by a uniform team-wide bonus).
+#[test]
+fn test_shaping_is_team_shared() {
+    // Two engines that differ only in lambda. Same RNG seed + same actions
+    // -> identical houses dynamics -> only difference in rewards is the
+    // shaping term.
+    let mut scenario_a = SCENARIOS.get("default").unwrap().clone();
+    scenario_a.team_welfare_kind = "team_welfare_closed_form".to_string();
+    scenario_a.team_welfare_lambda = 0.0;
+    scenario_a.team_welfare_gamma = 0.99;
+
+    let mut scenario_b = scenario_a.clone();
+    scenario_b.team_welfare_lambda = 1.5;
+
+    let mut engine_a = BucketBrigade::new(scenario_a, 4, Some(99));
+    let mut engine_b = BucketBrigade::new(scenario_b, 4, Some(99));
+
+    let actions = vec![[1, 1, 1], [2, 1, 1], [3, 0, 0], [4, 1, 1]];
+    for _ in 0..10 {
+        if engine_a.done {
+            break;
+        }
+        let r_a = engine_a.step(&actions).rewards;
+        let r_b = engine_b.step(&actions).rewards;
+        // Confirm trajectories aligned.
+        assert_eq!(engine_a.houses, engine_b.houses, "trajectories diverged");
+        // Per-agent differential under team-shared shaping must be uniform.
+        let diff0 = r_b[0] - r_a[0];
+        for i in 1..r_a.len() {
+            let diff_i = r_b[i] - r_a[i];
+            assert!(
+                (diff_i - diff0).abs() < 1e-4,
+                "Shaping must be team-shared; per-agent diff non-uniform: {} vs {}",
+                diff_i,
+                diff0
+            );
+        }
+    }
+}
+
+// ==============================================================================
 // Property-Based Tests
 // ==============================================================================
 
@@ -1223,6 +1363,11 @@ mod proptests {
                 // Issue #265: progress shaping off so the existing proptest
                 // invariants (which assume pre-#265 reward semantics) hold.
                 progress_shaping_coef: 0.0,
+                // Issue #283: potential-based shaping off so existing
+                // proptest invariants (assume pre-#283 reward semantics) hold.
+                team_welfare_lambda: 0.0,
+                team_welfare_gamma: 1.0,
+                team_welfare_kind: "none".to_string(),
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));
