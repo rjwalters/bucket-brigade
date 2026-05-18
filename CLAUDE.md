@@ -65,6 +65,11 @@ uv run python experiments/scripts/compute_nash_v2.py ...
   the venv: `uv pip install pip`.
 - Rust build env vars (see `bucket-brigade-core/build.sh`):
   `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1`, `RUSTC_WRAPPER=` (unset any sccache wrapper).
+- After a rebase that touches `bucket-brigade-core/src/`, `pytest` will fail
+  loudly via the `tests/conftest.py` staleness check if the installed `.so` is
+  older than the Rust sources. Fix: `bash bucket-brigade-core/build.sh`.
+  Escape hatch (CI / mtime-unreliable environments):
+  `BUCKET_BRIGADE_ALLOW_STALE_RUST=1`.
 
 **See `experiments/REMOTE_EXECUTION.md` for detailed remote workflow guide.**
 
