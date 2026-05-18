@@ -20,8 +20,12 @@ from typing import Optional, List
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Also expose this script's own directory so sibling helpers
+# (e.g. _disk_precheck) can be imported without needing a package.
+sys.path.insert(0, str(Path(__file__).parent))
 
 import numpy as np
+from _disk_precheck import DEFAULT_MIN_FREE_MIB, check_free_space
 from bucket_brigade.envs import get_scenario_by_name
 from bucket_brigade.equilibrium import (
     DoubleOracle,
@@ -390,6 +394,15 @@ def main():
         default=None,
         help="Output directory",
     )
+    parser.add_argument(
+        "--min-free-mib",
+        type=int,
+        default=DEFAULT_MIN_FREE_MIB,
+        help=(
+            "Minimum free space (MiB) required on the output filesystem; "
+            "abort before compute if free space is below this threshold."
+        ),
+    )
     parser.add_argument("--quiet", action="store_true", help="Reduce output verbosity")
 
     args = parser.parse_args()
@@ -397,6 +410,9 @@ def main():
     # Default output directory
     if args.output_dir is None:
         args.output_dir = Path(f"experiments/nash/v2_results/{args.scenario}")
+
+    # Disk-space precheck: fail fast on disk-full BEFORE any compute (issue #269).
+    check_free_space(args.output_dir, min_free_mib=args.min_free_mib)
 
     compute_nash_v2(
         args.scenario,
