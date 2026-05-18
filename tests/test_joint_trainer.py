@@ -16,7 +16,7 @@ from bucket_brigade.training.joint_trainer import (
     JointPPOTrainer,
     flatten_dict_obs,
 )
-from bucket_brigade.training.networks import CentralizedCritic
+from bucket_brigade.training.networks import CentralizedCritic, CentralizedQCritic
 
 
 NUM_AGENTS = 4
@@ -32,6 +32,8 @@ def _make_trainer(
     redundancy_coef: float = 0.0,
     hidden_size: int = 16,
     centralized_critic: bool = False,
+    coma: bool = False,
+    coma_target_update_every: int = 200,
 ) -> JointPPOTrainer:
     env = _env_fn()
     obs = env.reset(seed=0)
@@ -47,6 +49,8 @@ def _make_trainer(
         ppo_epochs=2,
         redundancy_coef=redundancy_coef,
         centralized_critic=centralized_critic,
+        coma=coma,
+        coma_target_update_every=coma_target_update_every,
         seed=0,
     )
 
@@ -470,3 +474,310 @@ class TestCentralizedCritic:
         stats = trainer.update(rollout)
         assert np.isfinite(stats["total_loss"])
         assert np.isfinite(stats["critic_value_loss"])
+
+
+class TestCOMA:
+    """Issue #284: COMA counterfactual multi-agent policy gradient.
+
+    The COMA path installs a :class:`CentralizedQCritic` whose per-agent
+    Q-vector feeds a counterfactual advantage
+
+    ::
+
+        A_i = Q(s, a)_i - sum_u  pi_i(u | s) * Q(s, (a_{-i}, u))_i
+
+    enumerated over the joint per-agent action space (``prod(action_dims) =
+    40`` for ``[10, 2, 2]``). The Q-critic is trained against 1-step TD
+    targets with a hard-copy target network.
+    """
+
+    def test_centralized_q_critic_forward_shape(self):
+        """``CentralizedQCritic`` accepts (global_obs, joint_action_oh,
+        agent_id_oh) and returns ``(batch, action_dim_total)``."""
+        critic = CentralizedQCritic(
+            global_obs_dim=42,
+            num_agents=NUM_AGENTS,
+            action_dim_total=40,
+            hidden_size=16,
+        )
+        x = torch.randn(8, 42)
+        joint_oh = torch.zeros(8, NUM_AGENTS * 40)
+        agent_id_oh = torch.zeros(8, NUM_AGENTS)
+        agent_id_oh[:, 0] = 1.0
+        q = critic(x, joint_oh, agent_id_oh)
+        assert q.shape == (8, 40)
+
+    def test_counterfactual_baseline_collapses_when_q_independent_of_action(
+        self,
+    ):
+        """If Q is constant in agent i's action (i.e. q_all is the same
+        value across all actions), the COMA baseline equals q_chosen, so
+        the advantage is exactly zero. This is the load-bearing structural
+        check that the baseline implements the counterfactual identity."""
+        batch = 16
+        action_dim_total = 40
+        # q_all constant across actions: every column = 7.5.
+        q_all = torch.full((batch, action_dim_total), 7.5)
+        q_chosen = torch.full((batch,), 7.5)
+        # Arbitrary probability distribution (must sum to 1 per row).
+        action_probs = torch.softmax(torch.randn(batch, action_dim_total), dim=-1)
+        adv = JointPPOTrainer.coma_counterfactual_advantage(
+            q_chosen=q_chosen,
+            q_all=q_all,
+            action_probs=action_probs,
+        )
+        assert torch.allclose(adv, torch.zeros_like(adv), atol=1e-6), (
+            f"COMA baseline failed to collapse when Q is action-independent; "
+            f"max |adv| = {adv.abs().max().item()}"
+        )
+
+    def test_counterfactual_baseline_matches_hand_computed_reference(self):
+        """Hand-computed reference on a tiny 2-action, 1-batch example.
+
+        Setup: action_dim_total=2, batch=1.
+        Q-values: q_all = [3.0, 5.0], q_chosen = 3.0 (action 0 taken).
+        Policy: pi = [0.25, 0.75].
+
+        Baseline: 0.25*3.0 + 0.75*5.0 = 0.75 + 3.75 = 4.5.
+        Advantage: 3.0 - 4.5 = -1.5.
+        """
+        q_all = torch.tensor([[3.0, 5.0]])
+        q_chosen = torch.tensor([3.0])
+        action_probs = torch.tensor([[0.25, 0.75]])
+        adv = JointPPOTrainer.coma_counterfactual_advantage(
+            q_chosen=q_chosen,
+            q_all=q_all,
+            action_probs=action_probs,
+        )
+        assert torch.allclose(adv, torch.tensor([-1.5]), atol=1e-6), (
+            f"Expected adv = -1.5, got {adv.item()}"
+        )
+
+    def test_init_q_critic_attributes(self):
+        """Trainer with ``coma=True`` exposes a q_critic, q_critic_target,
+        and q_critic_optimizer; default flag leaves them ``None``."""
+        trainer_off = _make_trainer(coma=False)
+        assert trainer_off.coma is False
+        assert trainer_off.q_critic is None
+        assert trainer_off.q_critic_target is None
+        assert trainer_off.q_critic_optimizer is None
+
+        trainer_on = _make_trainer(coma=True)
+        assert trainer_on.coma is True
+        assert isinstance(trainer_on.q_critic, CentralizedQCritic)
+        assert isinstance(trainer_on.q_critic_target, CentralizedQCritic)
+        # action_dim_total = prod([10, 2, 2]) = 40.
+        assert trainer_on.action_dim_total == 40
+        assert trainer_on.q_critic.global_obs_dim == trainer_on.obs_dim - NUM_AGENTS
+        assert trainer_on.q_critic_optimizer is not None
+
+    def test_coma_incompatible_with_centralized_critic(self):
+        """COMA and MAPPO are separate experiments — combining them
+        should raise."""
+        with pytest.raises(ValueError, match="coma"):
+            _make_trainer(coma=True, centralized_critic=True)
+
+    def test_coma_incompatible_with_redundancy_coef(self):
+        """COMA and the redundancy penalty couple unrelated experiments
+        — combining them should raise."""
+        with pytest.raises(ValueError, match="coma"):
+            _make_trainer(coma=True, redundancy_coef=0.1)
+
+    def test_default_flag_no_q_critic_constructed(self):
+        """Regression guard: with ``coma=False`` (default), no Q-critic
+        module or optimizer is constructed, and the new ``coma_q_loss``
+        stat is **not** present in the update output. This pins the
+        default code path to the pre-#284 IPPO contract.
+        """
+        trainer = _make_trainer(coma=False)
+        assert trainer.q_critic is None
+        assert trainer.q_critic_target is None
+        assert trainer.q_critic_optimizer is None
+
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        assert "coma_q_loss" not in stats
+
+    def test_use_coma_false_bit_identity_with_pre_change_path(self):
+        """Two trainers constructed with the same seed and ``coma=False``
+        produce identical initial weights (the canonical IPPO determinism
+        check)."""
+        trainer_a = _make_trainer(coma=False)
+        trainer_b = _make_trainer(coma=False)
+        for pa, pb in zip(trainer_a.policies, trainer_b.policies):
+            for ka, va in pa.state_dict().items():
+                assert torch.equal(va, pb.state_dict()[ka]), (
+                    f"initial weights differ at {ka} — coma=False seeding broken"
+                )
+
+    def test_pack_joint_action_roundtrip(self):
+        """``_pack_joint_action`` packs ``[10, 2, 2]`` into a flat code in
+        ``[0, 40)`` via row-major flattening."""
+        trainer = _make_trainer(coma=True)
+        # action_dims = [10, 2, 2]. Strides = [4, 2, 1].
+        # Action (3, 1, 0) → 3*4 + 1*2 + 0 = 14.
+        a = torch.tensor([[3, 1, 0], [0, 0, 0], [9, 1, 1]], dtype=torch.long)
+        packed = trainer._pack_joint_action(a)
+        assert packed.tolist() == [14, 0, 39]
+        # Bounds.
+        assert packed.min().item() >= 0
+        assert packed.max().item() < 40
+
+    def test_update_runs_without_nan_under_coma(self):
+        """End-to-end smoke: rollout + update completes with finite stats
+        and the new ``coma_q_loss`` key is present."""
+        trainer = _make_trainer(coma=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        for k, v in stats.items():
+            assert np.isfinite(v), f"non-finite stat {k}={v}"
+        assert "coma_q_loss" in stats
+        # Per-agent value_loss stats are recorded as 0.0 (the per-agent
+        # value heads are bypassed under COMA, exactly as under MAPPO).
+        for i in range(NUM_AGENTS):
+            assert stats[f"value_loss/agent_{i}"] == 0.0
+
+    def test_q_critic_receives_gradient_after_update(self):
+        """After one update, the live Q-critic's first linear layer must
+        have non-zero gradient (the TD regression actually drives the
+        Q-network)."""
+        trainer = _make_trainer(coma=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        trainer.update(rollout)
+        first_linear = trainer.q_critic.shared[0]
+        assert first_linear.weight.grad is not None, "q_critic: no grad"
+        assert first_linear.weight.grad.abs().sum().item() > 0.0, (
+            "q_critic: zero gradient after update"
+        )
+
+    def test_actors_still_receive_gradient_under_coma(self):
+        """After one update, every per-agent policy's first linear layer
+        must have non-zero gradient (COMA's counterfactual advantage
+        still drives the actors even without a per-agent value head)."""
+        trainer = _make_trainer(coma=True)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        trainer.update(rollout)
+        for i, policy in enumerate(trainer.policies):
+            first_linear = policy.shared[0]
+            assert first_linear.weight.grad is not None, f"agent {i}: no grad"
+            assert first_linear.weight.grad.abs().sum().item() > 0.0, (
+                f"agent {i}: zero gradient under COMA"
+            )
+
+    def test_q_target_network_does_not_receive_gradient(self):
+        """The target Q-network is a slow snapshot; its parameters must
+        not have ``requires_grad`` set, so they are never optimized."""
+        trainer = _make_trainer(coma=True)
+        for p in trainer.q_critic_target.parameters():
+            assert not p.requires_grad, "target Q-network parameters must be frozen"
+
+    def test_target_network_hard_copies_on_cadence(self):
+        """When the configured cadence is hit, the target network's
+        weights match the live Q-critic exactly."""
+        # Tiny cadence so we trigger the hard copy on the very first
+        # update step (ppo_epochs=2 ⇒ first step is index 1).
+        trainer = _make_trainer(coma=True, coma_target_update_every=1)
+        # Perturb the live Q-critic so the comparison after one update
+        # is non-trivial.
+        with torch.no_grad():
+            trainer.q_critic.shared[0].weight.add_(0.5)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        trainer.update(rollout)
+        for k, v in trainer.q_critic.state_dict().items():
+            assert torch.allclose(v, trainer.q_critic_target.state_dict()[k]), (
+                f"target Q-network out of sync at param {k} after hard-copy"
+            )
+
+    def test_td_target_one_step_sanity_in_scripted_setting(self):
+        """1-step TD target sanity. Construct a rollout where the next-step
+        Q is known (target network is the same as the live Q at init), and
+        verify the TD target matches the closed-form
+        ``r_t + gamma * (1 - done_t) * Q_target(s_{t+1}, a_{t+1})``.
+        """
+        trainer = _make_trainer(coma=True)
+        # Fresh trainer: target == live (we just copied state_dict in __init__).
+        T = 4
+        global_obs = torch.randn(T, trainer._global_obs_dim)
+        # Joint actions all zero (deterministic and easy to gather).
+        joint_action_packed = torch.zeros((T, NUM_AGENTS), dtype=torch.long)
+        rewards = torch.tensor(
+            [[1.0] * NUM_AGENTS,
+             [2.0] * NUM_AGENTS,
+             [3.0] * NUM_AGENTS,
+             [4.0] * NUM_AGENTS],
+        )
+        dones = torch.tensor([0.0, 0.0, 1.0, 0.0])  # episode ends at t=2
+
+        targets = trainer._coma_compute_td_targets(
+            global_obs=global_obs,
+            joint_action_packed=joint_action_packed,
+            rewards=rewards,
+            dones=dones,
+        )
+
+        # Hand-compute expected next_targets (zero at t=T-1).
+        joint_oh = trainer._coma_joint_action_one_hot(joint_action_packed)
+        expected_next = torch.zeros((T, NUM_AGENTS))
+        with torch.no_grad():
+            for i in range(NUM_AGENTS):
+                for t in range(T - 1):
+                    aid = global_obs.new_zeros((1, NUM_AGENTS))
+                    aid[0, i] = 1.0
+                    q_next = trainer.q_critic_target(
+                        global_obs[t + 1 : t + 2],
+                        joint_oh[t + 1 : t + 2],
+                        aid,
+                    )
+                    expected_next[t, i] = q_next[0, joint_action_packed[t + 1, i]]
+
+        done_mask = (1.0 - dones).unsqueeze(-1)
+        expected = rewards + trainer.gamma * done_mask * expected_next
+        assert torch.allclose(targets, expected, atol=1e-5), (
+            "1-step TD target mismatch vs closed-form reference"
+        )
+
+    def test_zero_advantage_when_policy_is_uniform_and_q_is_constant_per_action(
+        self,
+    ):
+        """End-to-end COMA-advantage check: in a state where Q is the same
+        for every action of agent i, the counterfactual baseline equals
+        Q(s, a)_i exactly, so A_i = 0 regardless of pi_i. This is the
+        spec's third test (see issue body)."""
+        trainer = _make_trainer(coma=True)
+        # Manually set the Q-critic's final head weights to zero (so all
+        # logits = bias, which is shared across all 40 actions).
+        with torch.no_grad():
+            trainer.q_critic.q_head.weight.zero_()
+            # Bias is a per-action scalar; setting all entries to the same
+            # constant keeps Q(s, ·) constant across actions for any (s, a).
+            trainer.q_critic.q_head.bias.fill_(2.0)
+        T = 8
+        global_obs = torch.randn(T, trainer._global_obs_dim)
+        joint_action_packed = torch.zeros((T, NUM_AGENTS), dtype=torch.long)
+        action_probs_per_agent = [
+            torch.softmax(torch.randn(T, trainer.action_dim_total), dim=-1)
+            for _ in range(NUM_AGENTS)
+        ]
+        advantages, _ = trainer._coma_compute_advantages(
+            global_obs=global_obs,
+            joint_action_packed=joint_action_packed,
+            action_probs_per_agent=action_probs_per_agent,
+        )
+        assert torch.allclose(advantages, torch.zeros_like(advantages), atol=1e-6), (
+            f"advantage failed to collapse to 0 when Q is action-independent; "
+            f"max |adv| = {advantages.abs().max().item()}"
+        )
+
+    def test_reproducibility_two_runs_same_seed(self):
+        """Two trainers seeded identically produce bit-identical Q-critic
+        weights at init, including the target network."""
+        a = _make_trainer(coma=True)
+        b = _make_trainer(coma=True)
+        for ka, va in a.q_critic.state_dict().items():
+            assert torch.equal(va, b.q_critic.state_dict()[ka]), (
+                f"q_critic init differs at {ka} — COMA seeding broken"
+            )
+        for ka, va in a.q_critic_target.state_dict().items():
+            assert torch.equal(va, b.q_critic_target.state_dict()[ka]), (
+                f"q_critic_target init differs at {ka} — COMA seeding broken"
+            )

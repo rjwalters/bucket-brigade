@@ -266,6 +266,112 @@ class CentralizedCritic(nn.Module):
         return self.value_head(self.shared(x))
 
 
+class CentralizedQCritic(nn.Module):
+    """Centralized action-value Q-critic for COMA (issue #284).
+
+    A separate Q-network used by :class:`JointPPOTrainer` when ``coma=True``.
+    Distinct from :class:`CentralizedCritic` (which is a V-function): COMA
+    needs ``Q(s, a)`` so the counterfactual baseline
+
+    ::
+
+        A_i(s, a) = Q(s, a)_i - sum_u  pi_i(u | s) * Q(s, (a_{-i}, u))_i
+
+    can be evaluated by enumerating over agent i's per-agent action space.
+
+    Architecture (mirrors :class:`CentralizedCritic` capacity):
+
+    - **Input**: concatenation of
+        - ``global_obs`` of length ``global_obs_dim`` (the per-agent obs
+          with the identity one-hot tail stripped — same convention as
+          ``CentralizedCritic``),
+        - ``joint_action_one_hot`` of length ``N * action_dim_total`` where
+          ``action_dim_total = prod(action_dims)`` is the joint-per-agent
+          action dim (recommended in the COMA spec: enumerate over the
+          ``[10, 2, 2]`` = 40 joint actions),
+        - ``agent_id_one_hot`` of length ``N``.
+    - **Trunk**: 2-layer MLP with ReLU, hidden size ``hidden_size``.
+    - **Output**: vector of length ``action_dim_total`` — the action-value
+      head returns Q for every possible per-agent action holding the other
+      agents' actions fixed. This lets the COMA baseline be evaluated by
+      a single forward pass per agent.
+
+    The "joint-per-agent" action representation collapses the multi-discrete
+    factorization ``[10, 2, 2]`` to a flat 40-way one-hot. This is option 2
+    from the curator's spec — exact (no factorization bias) and tractable
+    (40 entries × 4 agents × T steps is well within budget).
+
+    Args:
+        global_obs_dim: Dimension of the global observation (identity tail
+            stripped).
+        num_agents: Number of agents N.
+        action_dim_total: Joint per-agent action dim (e.g. ``prod([10,2,2]) = 40``).
+        hidden_size: Hidden layer size (default 64, matching the actor trunk).
+
+    Example:
+        >>> critic = CentralizedQCritic(
+        ...     global_obs_dim=42, num_agents=4, action_dim_total=40
+        ... )
+        >>> global_obs = torch.randn(8, 42)
+        >>> joint_action_oh = torch.zeros(8, 4 * 40)  # N=4 one-hot actions
+        >>> agent_id_oh = torch.zeros(8, 4); agent_id_oh[:, 0] = 1.0
+        >>> q = critic(global_obs, joint_action_oh, agent_id_oh)
+        >>> q.shape
+        torch.Size([8, 40])
+    """
+
+    def __init__(
+        self,
+        global_obs_dim: int,
+        num_agents: int,
+        action_dim_total: int,
+        hidden_size: int = 64,
+    ) -> None:
+        super().__init__()
+        self.global_obs_dim = global_obs_dim
+        self.num_agents = num_agents
+        self.action_dim_total = action_dim_total
+        self.hidden_size = hidden_size
+
+        input_dim = global_obs_dim + num_agents * action_dim_total + num_agents
+        self.shared = nn.Sequential(
+            nn.Linear(input_dim, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+        )
+        self.q_head = nn.Linear(hidden_size, action_dim_total)
+
+    def forward(
+        self,
+        global_obs: torch.Tensor,
+        joint_action_one_hot: torch.Tensor,
+        agent_id_one_hot: torch.Tensor,
+    ) -> torch.Tensor:
+        """Forward pass.
+
+        Args:
+            global_obs: ``(batch, global_obs_dim)`` — the global state input.
+            joint_action_one_hot: ``(batch, N * action_dim_total)`` — flat
+                one-hot encoding of the joint per-agent action. The slot
+                belonging to ``agent_id_one_hot`` is conventionally zeroed
+                by the caller (it does not matter for COMA because the
+                baseline averages over agent i's possible actions; the
+                gradient through it would be invalid since Q must not be
+                conditioned on the action we are evaluating against).
+            agent_id_one_hot: ``(batch, N)`` — one-hot agent identity. Lets
+                a single Q-network share parameters across agents while
+                still routing per-agent computation.
+
+        Returns:
+            ``(batch, action_dim_total)`` — vector of Q-values, one per
+            possible per-agent action for the indicated agent given the
+            other agents' actions.
+        """
+        x = torch.cat([global_obs, joint_action_one_hot, agent_id_one_hot], dim=-1)
+        return self.q_head(self.shared(x))
+
+
 def compute_gae(
     rewards: List[float],
     values: List[float],
