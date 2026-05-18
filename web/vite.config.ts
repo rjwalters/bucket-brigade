@@ -9,10 +9,17 @@ const hasWasm = existsSync(wasmPkgPath)
 
 console.log(`🦀 Rust WASM package: ${hasWasm ? '✅ Available' : '⚠️  Not found - using JS fallback'}`)
 
+// Base path resolution:
+//   - VITE_BASE_PATH overrides everything (set in CI for CF Pages, GH Pages, etc.)
+//   - Production default is /bucket-brigade/ (matches the GH Pages URL path)
+//   - Dev uses /
+const basePath =
+  process.env.VITE_BASE_PATH ??
+  (process.env.NODE_ENV === 'production' ? '/bucket-brigade/' : '/')
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  // Use /bucket-brigade/ for GitHub Pages, / for local dev
-  base: process.env.NODE_ENV === 'production' ? '/bucket-brigade/' : '/',
+  base: basePath,
   plugins: [react()],
   server: {
     port: 3000,
