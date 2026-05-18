@@ -161,6 +161,25 @@ class Scenario:
     # k-hop and continuous-reach variants are deferred to follow-up issues.
     action_validity_mode: str = "always_valid"
 
+    # Continuous extinguish dynamics (issue #253, option D from #234).
+    # ``extinguish_mode`` selects the per-step extinguish dynamics:
+    #   - ``"bernoulli"`` (default): pre-#253 per-step coin flip with
+    #     ``P(extinguish) = 1 - (1-kappa)^k``. Fires that fail their roll
+    #     burn out at end-of-step. Bit-exactly preserved for every
+    #     pre-#253 scenario.
+    #   - ``"continuous"``: damage-accumulation model. Each work step at
+    #     a burning house adds ``suppression_per_worker * workers_here``
+    #     to a per-house accumulator; fire transitions BURNING -> SAFE
+    #     deterministically at threshold 1.0. Fires do NOT auto-burn-out
+    #     in this mode (they persist across steps so the accumulator
+    #     integrates suppression credit). The smoothing benefit option
+    #     D targets comes from credit assignment via the value function.
+    # See ``bucket_brigade/envs/bucket_brigade_env.py::_extinguish_fires``
+    # and ``bucket-brigade-core/src/engine/phases.rs::extinguish_fires``
+    # for the canonical implementations.
+    extinguish_mode: str = "bernoulli"
+    suppression_per_worker: float = 0.0
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -254,6 +273,18 @@ class Scenario:
             raise ValueError(
                 f"Scenario.action_validity_mode={self.action_validity_mode!r} "
                 f"is not supported; allowed values: {allowed_action_validity_modes!r}."
+            )
+
+        # Issue #253: extinguish_mode allowlist. Keep in sync with the
+        # Rust validator in
+        # ``bucket-brigade-core/src/scenarios.rs::ALLOWED_EXTINGUISH_MODES``.
+        # ``"bernoulli"`` is the default and preserves pre-#253
+        # behavior bit-exactly.
+        allowed_extinguish_modes = ("bernoulli", "continuous")
+        if self.extinguish_mode not in allowed_extinguish_modes:
+            raise ValueError(
+                f"Scenario.extinguish_mode={self.extinguish_mode!r} "
+                f"is not supported; allowed values: {allowed_extinguish_modes!r}."
             )
 
     def to_feature_vector(self) -> np.ndarray:
@@ -560,6 +591,26 @@ def v2_minimal_scenario(num_agents: int) -> Scenario:
     )
 
 
+def default_continuous_scenario(num_agents: int) -> Scenario:
+    """Issue #253 / option D of architect proposal #234: continuous extinguish dynamics. Mirrors `default` (kappa=0.5) but switches to the damage-accumulation model — each work step at a burning house adds suppression_per_worker * workers_here to a per-house accumulator; the fire transitions BURNING -> SAFE deterministically at threshold 1.0. With suppression_per_worker=kappa=0.5, the one-worker expected nights-to-extinguish matches the Bernoulli baseline (1/kappa=2). The smoothing benefit option D targets comes from credit assignment via the value function: workers who contributed but didn't trigger the threshold this step affected the next-step suppression state, so the critic learns their work matters."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.25,
+        prob_solo_agent_extinguishes_fire=0.5,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=100.0,
+        team_penalty_house_burns=100.0,
+        reward_own_house_survives=20.0,
+        reward_other_house_survives=0.0,
+        penalty_own_house_burns=40.0,
+        penalty_other_house_burns=0.0,
+        cost_to_work_one_night=0.5,
+        min_nights=12,
+        num_agents=num_agents,
+        extinguish_mode="continuous",
+        suppression_per_worker=0.5,
+    )
+
+
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -577,6 +628,7 @@ SCENARIO_REGISTRY = {
     "minimal_specialization": minimal_specialization_scenario,
     "positional_default": positional_default_scenario,
     "v2_minimal": v2_minimal_scenario,
+    "default_continuous": default_continuous_scenario,
 }
 
 

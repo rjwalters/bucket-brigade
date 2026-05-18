@@ -106,6 +106,8 @@ impl PyScenario {
         penalty_own_house_burns,
         penalty_other_house_burns,
         progress_shaping_coef = 0.0_f32,
+        extinguish_mode = "bernoulli".to_string(),
+        suppression_per_worker = 0.0_f32,
     ))]
     fn new(
         prob_fire_spreads_to_neighbor: f32,
@@ -120,6 +122,8 @@ impl PyScenario {
         penalty_own_house_burns: PyObject,
         penalty_other_house_burns: PyObject,
         progress_shaping_coef: f32,
+        extinguish_mode: String,
+        suppression_per_worker: f32,
         py: Python,
     ) -> PyResult<Self> {
         // Scalar -> vec![v; 10] auto-promotion (mirrors the Python
@@ -185,6 +189,14 @@ impl PyScenario {
             // should access scenarios through ``bucket_brigade_core.SCENARIOS``
             // (after mutation) or the JSON path which preserves all fields.
             action_validity_mode: "always_valid".to_string(),
+            // Issue #253: continuous extinguish dynamics. Both knobs are
+            // optional kwargs with defaults that match the pre-#253
+            // Bernoulli behavior exactly (mode="bernoulli", suppression=0),
+            // so existing PyScenario callers see byte-identical rewards.
+            // Non-default values are validated by `Scenario::validate()`
+            // below.
+            extinguish_mode,
+            suppression_per_worker,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -317,6 +329,26 @@ impl PyScenario {
     #[getter]
     fn action_validity_mode(&self) -> String {
         self.inner.action_validity_mode.clone()
+    }
+
+    /// Issue #253: extinguish dynamics selector. Defaults to ``"bernoulli"``
+    /// (the pre-#253 model, bit-exact). Setting to ``"continuous"`` enables
+    /// the damage-accumulation model — see
+    /// ``bucket-brigade-core/src/engine/phases.rs::extinguish_fires_continuous``
+    /// for the semantics and ``default_continuous`` in the SCENARIOS map for
+    /// a calibrated example.
+    #[getter]
+    fn extinguish_mode(&self) -> String {
+        self.inner.extinguish_mode.clone()
+    }
+
+    /// Issue #253: per-worker suppression magnitude for the continuous
+    /// extinguish mode. Calibration: with ``suppression_per_worker = kappa``
+    /// (where ``kappa = prob_solo_agent_extinguishes_fire``) the one-worker
+    /// expected nights-to-extinguish matches the Bernoulli baseline.
+    #[getter]
+    fn suppression_per_worker(&self) -> f32 {
+        self.inner.suppression_per_worker
     }
 }
 

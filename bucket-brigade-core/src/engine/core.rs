@@ -35,6 +35,18 @@ pub struct BucketBrigade {
     ///
     /// Positions are validated against `scenario.num_houses` (issue #254).
     pub(super) agent_home_positions: Vec<u8>,
+    /// Per-house accumulated suppression progress (issue #253). Used only
+    /// by the `"continuous"` extinguish mode: each work step at a burning
+    /// house adds `scenario.suppression_per_worker * workers_here` and the
+    /// fire transitions BURNING -> SAFE when the accumulator reaches 1.0.
+    /// Zeroed on ignition and burn-out so per-fire progress does not leak
+    /// across the same-house fire cycle. In the default `"bernoulli"`
+    /// mode the vector is allocated to scenario size but never written —
+    /// the extra storage is `4 * num_houses` bytes per env, negligible
+    /// against the existing `Vec<HouseState>` and trajectory storage.
+    ///
+    /// Length matches `scenario.num_houses` (issue #254).
+    pub(super) fire_progress: Vec<f32>,
     pub(super) trajectory: Vec<GameNight>,
 }
 
@@ -140,6 +152,9 @@ impl BucketBrigade {
             num_agents,
             house_owners: (0..num_houses).map(|i| (i % num_agents) as u8).collect(),
             agent_home_positions,
+            // Issue #253: zero-initialized; only written by the continuous
+            // extinguish branch.
+            fire_progress: vec![0.0; num_houses],
             trajectory: Vec::new(),
         };
         engine.reset();
@@ -162,6 +177,12 @@ impl BucketBrigade {
         // Re-derive home positions for the same reason (and to pick up any
         // scenario mutation).
         self.agent_home_positions = derive_agent_home_positions(&self.scenario, self.num_agents);
+        // Issue #253: zero the per-house suppression accumulator. Done
+        // before `_initialize_houses` so any subsequent ignition starts
+        // with `fire_progress[i] = 0.0` (the continuous-mode dispatch
+        // also zeroes on ignition, but resetting up front keeps the
+        // invariant explicit).
+        self.fire_progress = vec![0.0; num_houses];
         self.trajectory = Vec::new();
 
         // Initialize fires - probabilistic per-house

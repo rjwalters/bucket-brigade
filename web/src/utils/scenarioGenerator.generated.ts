@@ -32,6 +32,7 @@ export const SCENARIO_TYPES = {
   MINIMAL_SPECIALIZATION: 'minimal_specialization',
   POSITIONAL_DEFAULT: 'positional_default',
   V2_MINIMAL: 'v2_minimal',
+  DEFAULT_CONTINUOUS: 'default_continuous',
 } as const;
 
 export type ScenarioType = (typeof SCENARIO_TYPES)[keyof typeof SCENARIO_TYPES];
@@ -316,6 +317,24 @@ const SCENARIO_TEMPLATES: Record<
       reward_other_house_survives: [0.0, 0.0, 0.0, 0.0],
       penalty_own_house_burns: [100.0, 100.0, 100.0, 100.0],
       penalty_other_house_burns: [0.0, 0.0, 0.0, 0.0],
+      num_agents: 4,
+    },
+  },
+  [SCENARIO_TYPES.DEFAULT_CONTINUOUS]: {
+    name: 'Default Continuous',
+    description: 'Issue #253 / option D of architect proposal #234: continuous extinguish dynamics. Mirrors `default` (kappa=0.5) but switches to the damage-accumulation model — each work step at a burning house adds suppression_per_worker * workers_here to a per-house accumulator; the fire transitions BURNING -> SAFE deterministically at threshold 1.0. With suppression_per_worker=kappa=0.5, the one-worker expected nights-to-extinguish matches the Bernoulli baseline (1/kappa=2). The smoothing benefit option D targets comes from credit assignment via the value function: workers who contributed but didn\'t trigger the threshold this step affected the next-step suppression state, so the critic learns their work matters.',
+    parameters: {
+      prob_fire_spreads_to_neighbor: 0.25,
+      prob_solo_agent_extinguishes_fire: 0.5,
+      prob_house_catches_fire: 0.02,
+      team_reward_house_survives: 100.0,
+      team_penalty_house_burns: 100.0,
+      cost_to_work_one_night: 0.5,
+      min_nights: 12,
+      reward_own_house_survives: 20.0,
+      reward_other_house_survives: 0.0,
+      penalty_own_house_burns: 40.0,
+      penalty_other_house_burns: 0.0,
       num_agents: 4,
     },
   },

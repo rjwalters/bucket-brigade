@@ -261,6 +261,25 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # k-hop and continuous-reach variants are deferred to follow-up issues.
         action_validity_mode: str = "always_valid"
 
+        # Continuous extinguish dynamics (issue #253, option D from #234).
+        # ``extinguish_mode`` selects the per-step extinguish dynamics:
+        #   - ``"bernoulli"`` (default): pre-#253 per-step coin flip with
+        #     ``P(extinguish) = 1 - (1-kappa)^k``. Fires that fail their roll
+        #     burn out at end-of-step. Bit-exactly preserved for every
+        #     pre-#253 scenario.
+        #   - ``"continuous"``: damage-accumulation model. Each work step at
+        #     a burning house adds ``suppression_per_worker * workers_here``
+        #     to a per-house accumulator; fire transitions BURNING -> SAFE
+        #     deterministically at threshold 1.0. Fires do NOT auto-burn-out
+        #     in this mode (they persist across steps so the accumulator
+        #     integrates suppression credit). The smoothing benefit option
+        #     D targets comes from credit assignment via the value function.
+        # See ``bucket_brigade/envs/bucket_brigade_env.py::_extinguish_fires``
+        # and ``bucket-brigade-core/src/engine/phases.rs::extinguish_fires``
+        # for the canonical implementations.
+        extinguish_mode: str = "bernoulli"
+        suppression_per_worker: float = 0.0
+
         def __post_init__(self) -> None:
             """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -354,6 +373,18 @@ def generate_scenarios(json_path: Path, output_path: Path):
                 raise ValueError(
                     f"Scenario.action_validity_mode={self.action_validity_mode!r} "
                     f"is not supported; allowed values: {allowed_action_validity_modes!r}."
+                )
+
+            # Issue #253: extinguish_mode allowlist. Keep in sync with the
+            # Rust validator in
+            # ``bucket-brigade-core/src/scenarios.rs::ALLOWED_EXTINGUISH_MODES``.
+            # ``"bernoulli"`` is the default and preserves pre-#253
+            # behavior bit-exactly.
+            allowed_extinguish_modes = ("bernoulli", "continuous")
+            if self.extinguish_mode not in allowed_extinguish_modes:
+                raise ValueError(
+                    f"Scenario.extinguish_mode={self.extinguish_mode!r} "
+                    f"is not supported; allowed values: {allowed_extinguish_modes!r}."
                 )
 
         def to_feature_vector(self) -> np.ndarray:
@@ -462,6 +493,16 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # "always_valid").
         if "action_validity_mode" in spec:
             code += f"        action_validity_mode={spec['action_validity_mode']!r},\n"
+        # Issue #253 optional continuous-extinguish fields. Emit only when
+        # set in JSON so every pre-#253 scenario factory is byte-identical
+        # to pre-#253 codegen output (they keep the dataclass defaults:
+        # mode="bernoulli", suppression=0.0).
+        if "extinguish_mode" in spec:
+            code += f"        extinguish_mode={spec['extinguish_mode']!r},\n"
+        if "suppression_per_worker" in spec:
+            code += (
+                f"        suppression_per_worker={spec['suppression_per_worker']},\n"
+            )
         code += "    )\n\n\n"
 
     # Generate SCENARIO_REGISTRY

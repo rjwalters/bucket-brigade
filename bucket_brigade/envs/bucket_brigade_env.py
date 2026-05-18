@@ -78,6 +78,17 @@ class BucketBrigadeEnv:
         # Previous house state for reward computation
         self._prev_houses_state: np.ndarray = np.zeros(self.num_houses, dtype=np.int8)
 
+        # Issue #253: per-house accumulated suppression progress for the
+        # `"continuous"` extinguish mode. Each work step at a burning house
+        # adds ``suppression_per_worker * workers_here`` to the per-house
+        # accumulator; the fire transitions BURNING -> SAFE deterministically
+        # when the accumulator reaches 1.0. Zeroed on ignition and burn-out
+        # so per-fire progress does not leak across the same-house fire
+        # cycle. In Bernoulli mode (the pre-#253 default) the vector is
+        # allocated but never written, so memory cost is negligible and
+        # behavior is bit-exactly identical to pre-#253.
+        self.fire_progress: np.ndarray = np.zeros(self.num_houses, dtype=np.float32)
+
         # House ownership: assign agents to houses in round-robin fashion.
         # Issue #254: vector length scales with num_houses.
         self.house_owners = np.arange(self.num_houses) % self.num_agents
@@ -130,6 +141,9 @@ class BucketBrigadeEnv:
         # Issue #254: vector length scales with num_houses.
         self.houses = np.zeros(self.num_houses, dtype=np.int8)
         self._prev_houses_state = np.zeros(self.num_houses, dtype=np.int8)
+        # Issue #253: zero the suppression accumulator. Mirrors the Rust
+        # `BucketBrigade::reset` behavior so cross-language parity holds.
+        self.fire_progress = np.zeros(self.num_houses, dtype=np.float32)
 
         # Initialize house states
         self._initialize_houses()
@@ -274,11 +288,45 @@ class BucketBrigadeEnv:
                 self.houses[house_idx] = self.BURNING
 
     def _extinguish_fires(self, actions: np.ndarray) -> None:
-        """Extinguish fires based on worker presence using independent probabilities.
+        """Extinguish fires based on worker presence.
 
-        Each worker has probability `kappa` of extinguishing the fire independently.
-        Formula: P(extinguish with k workers) = 1 - (1 - kappa)^k
-        This matches the Rust implementation and game design specification.
+        Dispatches on ``scenario.extinguish_mode`` (issue #253):
+
+        - ``"bernoulli"`` (default): pre-#253 model. Each worker has
+          probability ``kappa`` of extinguishing the fire independently;
+          ``P(extinguish with k workers) = 1 - (1 - kappa)^k``. Single
+          coin flip per step per burning house. Bit-exactly identical to
+          the pre-#253 behavior on every existing scenario.
+
+        - ``"continuous"``: damage-accumulation model. Each work step at
+          a burning house adds ``workers_here * suppression_per_worker``
+          to the per-house ``fire_progress`` accumulator; the fire
+          transitions BURNING -> SAFE deterministically when the
+          accumulator reaches 1.0 (and the accumulator is zeroed for
+          the next ignition cycle). No RNG draws — the continuous
+          dispatch is deterministic conditional on actions.
+
+        Mirrors the Rust ``engine/phases.rs::extinguish_fires`` dispatch.
+        """
+        mode = getattr(self.scenario, "extinguish_mode", "bernoulli")
+        if mode == "bernoulli":
+            self._extinguish_fires_bernoulli(actions)
+        elif mode == "continuous":
+            self._extinguish_fires_continuous(actions)
+        else:
+            # Mirrors the Rust defensive panic — ``Scenario.__post_init__``
+            # already rejects unknown modes, so this branch is dead in
+            # normal use but surfaces a clear error if a future mode is
+            # added without env wiring.
+            raise ValueError(
+                f"Unknown extinguish_mode={mode!r}; supported: "
+                f"('bernoulli', 'continuous')."
+            )
+
+    def _extinguish_fires_bernoulli(self, actions: np.ndarray) -> None:
+        """Pre-#253 Bernoulli extinguish model. Kept verbatim from the
+        original ``_extinguish_fires`` so default-mode scenarios produce
+        bit-exact identical behavior to the pre-#253 env.
         """
         for house_idx in range(self.num_houses):
             if self.houses[house_idx] != self.BURNING:
@@ -299,6 +347,25 @@ class BucketBrigadeEnv:
 
             if self.rng.random() < p_extinguish:
                 self.houses[house_idx] = self.SAFE
+
+    def _extinguish_fires_continuous(self, actions: np.ndarray) -> None:
+        """Issue #253 continuous extinguish model. See class-level docstring
+        on ``_extinguish_fires`` for the calibration narrative."""
+        suppression_per_worker = float(
+            getattr(self.scenario, "suppression_per_worker", 0.0)
+        )
+        for house_idx in range(self.num_houses):
+            if self.houses[house_idx] != self.BURNING:
+                continue
+            workers_here = int(
+                np.sum((actions[:, 0] == house_idx) & (actions[:, 1] == self.WORK))
+            )
+            if workers_here == 0:
+                continue
+            self.fire_progress[house_idx] += workers_here * suppression_per_worker
+            if self.fire_progress[house_idx] >= 1.0:
+                self.houses[house_idx] = self.SAFE
+                self.fire_progress[house_idx] = 0.0
 
     def _spread_fires(self) -> None:
         """Spread fires to neighboring safe houses.
@@ -322,10 +389,24 @@ class BucketBrigadeEnv:
                         self.houses[neighbor_idx] = self.BURNING
 
     def _burn_out_houses(self) -> None:
-        """Burning houses that neither extinguished nor spread become ruined."""
-        # Any remaining burning houses become ruined
+        """Burning houses that neither extinguished nor spread become ruined.
+
+        Issue #253: in continuous mode fires do NOT auto-burn-out — they
+        persist across steps so the suppression accumulator can integrate
+        credit over multiple work steps. Mirrors the Rust
+        ``engine/phases.rs::burn_out_houses`` dispatch.
+        """
+        mode = getattr(self.scenario, "extinguish_mode", "bernoulli")
+        if mode == "continuous":
+            return
+        # Bernoulli mode: pre-#253 behavior unchanged.
         burning_mask = self.houses == self.BURNING
         self.houses[burning_mask] = self.RUINED
+        # Defensive: zero the accumulator for the just-ruined houses.
+        # In Bernoulli mode the accumulator was never written so this is
+        # a no-op, but keeps the invariant
+        # "fire_progress[i] != 0 implies houses[i] == BURNING" exact.
+        self.fire_progress[burning_mask] = 0.0
 
     def _spark_fires(self) -> None:
         """Add spontaneous fires."""
@@ -336,6 +417,10 @@ class BucketBrigadeEnv:
                 and self.rng.random() < self.scenario.prob_house_catches_fire
             ):
                 self.houses[house_idx] = self.BURNING
+                # Issue #253: a fresh ignition gets a fresh accumulator.
+                # Mirrors the Rust ``engine/phases.rs::spontaneous_ignition``
+                # path so cross-language parity holds.
+                self.fire_progress[house_idx] = 0.0
 
     def _compute_team_welfare_phi(self, houses: np.ndarray) -> float:
         """Issue #283: closed-form team-welfare potential Phi(s).

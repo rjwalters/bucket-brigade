@@ -190,6 +190,12 @@ impl WasmScenario {
             // engine only via the JSON path (``Scenario::to_json`` /
             // ``from_json``) which preserves all fields.
             action_validity_mode: "always_valid".to_string(),
+            // Issue #253: continuous extinguish dynamics default to off so
+            // existing JS/TS callers see byte-identical rewards. The
+            // browser UI doesn't expose these knobs; to consume a scenario
+            // with continuous mode enabled, route through the JSON path.
+            extinguish_mode: "bernoulli".to_string(),
+            suppression_per_worker: 0.0,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent
