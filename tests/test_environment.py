@@ -1395,9 +1395,7 @@ class TestPotentialBasedShaping:
             team_welfare_gamma=gamma,
             team_welfare_kind="team_welfare_closed_form",
         )
-        scenario_shaped = dataclasses.replace(
-            scenario_base, team_welfare_lambda=1.0
-        )
+        scenario_shaped = dataclasses.replace(scenario_base, team_welfare_lambda=1.0)
         env_base = BucketBrigadeEnv(scenario=scenario_base)
         env_shaped = BucketBrigadeEnv(scenario=scenario_shaped)
         # Identical RNG seed -> identical fire dynamics under identical
@@ -1443,8 +1441,7 @@ class TestPotentialBasedShaping:
                 f"shaped envs ({env_base.houses} vs {env_shaped.houses})."
             )
             assert bool(dones_base[0]) == bool(dones_shaped[0]), (
-                f"Step {t}: done flags diverged ({dones_base[0]} vs "
-                f"{dones_shaped[0]})."
+                f"Step {t}: done flags diverged ({dones_base[0]} vs {dones_shaped[0]})."
             )
 
             discount = gamma**t
@@ -1457,8 +1454,7 @@ class TestPotentialBasedShaping:
                 break
 
         assert terminated_at is not None, (
-            f"Episode did not terminate within {max_steps} steps; "
-            "test premise broken."
+            f"Episode did not terminate within {max_steps} steps; test premise broken."
         )
 
         # NHR identity: sum_t gamma^t F_t = lambda * (gamma^T Phi(s_T) - Phi(s_0)).
@@ -1582,7 +1578,10 @@ class TestPotentialBasedShaping:
         # agents — shaping is team-shared, not per-agent.
         diff = r_b - r_a
         np.testing.assert_allclose(
-            diff, np.full(4, diff[0]), rtol=0, atol=1e-5,
+            diff,
+            np.full(4, diff[0]),
+            rtol=0,
+            atol=1e-5,
             err_msg=(
                 "Potential-based shaping must apply equally to every "
                 "agent (team-shared bonus). Per-agent differential is "

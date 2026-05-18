@@ -514,9 +514,7 @@ class BucketBrigadeEnv:
         # scenario) this block is skipped entirely so per-step rewards are
         # byte-identical to pre-#283 behavior. Mirrors the Rust
         # implementation in ``bucket-brigade-core/src/engine/rewards.rs``.
-        team_welfare_lambda = float(
-            getattr(self.scenario, "team_welfare_lambda", 0.0)
-        )
+        team_welfare_lambda = float(getattr(self.scenario, "team_welfare_lambda", 0.0))
         team_welfare_kind = getattr(self.scenario, "team_welfare_kind", "none")
         if team_welfare_lambda != 0.0 and team_welfare_kind != "none":
             gamma = float(getattr(self.scenario, "team_welfare_gamma", 1.0))
@@ -531,8 +529,8 @@ class BucketBrigadeEnv:
             # final-step bonus would leak a Phi(s_T) term that depends on
             # the policy's terminal state — breaking invariance.
             is_terminal_next = self._check_termination()
-            phi_next = 0.0 if is_terminal_next else self._compute_team_welfare_phi(
-                self.houses
+            phi_next = (
+                0.0 if is_terminal_next else self._compute_team_welfare_phi(self.houses)
             )
             shaping_term = team_welfare_lambda * (gamma * phi_next - phi_prev)
             # Apply to every agent (team-shared bonus). Float32 to match
