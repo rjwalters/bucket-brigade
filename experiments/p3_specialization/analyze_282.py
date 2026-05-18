@@ -230,9 +230,7 @@ def main() -> None:
 
     # Best-cell gap_closed_mean over all λ arms with at least one completed seed.
     completed = {
-        lam: arm
-        for lam, arm in lambda_arms.items()
-        if arm.get("n_seeds", 0) > 0
+        lam: arm for lam, arm in lambda_arms.items() if arm.get("n_seeds", 0) > 0
     }
     if completed:
         best_lambda, best_arm = max(
