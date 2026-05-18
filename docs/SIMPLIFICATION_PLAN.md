@@ -154,19 +154,23 @@ scripts/evolve_agents.py                       # CLI tool ✅
 
 ---
 
-### 4. RL Training (PufferLib)
+### 4. RL Training (JointPPOTrainer)
 
-**Keep All**:
+> **Status (2026-05, issue #335)**: The PufferLib path and its
+> `scripts/train_simple.py` / `scripts/evaluate_simple.py` /
+> `scripts/train_policy.py` / `scripts/train_curriculum.py` /
+> `scripts/evaluate_policy.py` orchestration scripts were removed. RL training
+> now lives in `bucket_brigade/training/joint_trainer.py` (`JointPPOTrainer`)
+> and is driven by experiment-specific entry points such as
+> `experiments/p3_specialization/train.py`. This section is retained for
+> historical context only.
+
+**Keep**:
 ```
-scripts/train_simple.py                        # Vanilla PPO training ✅
-scripts/evaluate_simple.py                     # Policy evaluation ✅
-scripts/train_policy.py                        # Advanced training ✅
-scripts/train_curriculum.py                    # Curriculum learning ✅
-scripts/evaluate_policy.py                     # Advanced evaluation ✅
+bucket_brigade/training/joint_trainer.py       # JointPPOTrainer ✅
+experiments/p3_specialization/train.py         # P3 training entry point ✅
 TRAINING_GUIDE.md                              # Documentation ✅
 ```
-
-**Remove**: Only submission/registry integration (if any)
 
 ---
 

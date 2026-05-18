@@ -207,7 +207,7 @@
 ### Comprehensive Testing
 - [ ] Run full Python test suite: `uv run pytest`
 - [ ] Run web tests: `pnpm run test`
-- [ ] Test RL training still works: `uv run python scripts/train_simple.py --num-steps 1000`
+- [ ] Test RL training still works: `uv run python -m experiments.p3_specialization.train --num-iterations 5 --rollout-steps 128`
 - [ ] Test evolution still works: `uv run python scripts/evolve_agents.py`
 - [ ] Test all scripts in `scripts/` directory
 - [ ] Manual web UI testing (all flows)
