@@ -707,7 +707,10 @@ class TransformerPolicyNetwork(nn.Module):
 
     This network uses self-attention to process house observations, allowing
     the agent to reason about spatial relationships and coordination needs.
-    Designed for ~200-500K parameters to better utilize GPU resources.
+    At the documented defaults (d_model=256, nhead=4, num_layers=3,
+    dim_feedforward=512, obs_dim=42) this network has roughly 1.7M parameters,
+    dominated by the transformer encoder stack. The breakdown is approximately:
+    embeddings ~5K + transformer ~1.58M + action/value heads ~100K = ~1.69M.
 
     Architecture:
         - Input embedding: Linear projection of flattened observation
@@ -735,9 +738,9 @@ class TransformerPolicyNetwork(nn.Module):
         ...     d_model=256,
         ...     num_layers=3
         ... )
-        >>> # Approximately 350K parameters
+        >>> # Approximately 1.69M parameters at the documented defaults
         >>> sum(p.numel() for p in policy.parameters())
-        ~350000
+        1686797
     """
 
     def __init__(
