@@ -14,6 +14,10 @@ type WasmModule = {
   WasmBucketBrigade: new (scenarioJson: string) => {
     reset(): void;
     step(actionsJson: string): string;
+    // Issue #252 / #331: two-phase non-binding signaling step. Required for
+    // scenarios with `commitment_mode == "two_phase"`; calling `step()` on
+    // such scenarios panics in the Rust engine.
+    step_two_phase(round1SignalsJson: string, round2ActionsJson: string): string;
     get_observation(agentId: number): string;
     get_current_state(): string;
     get_result(): string;
@@ -129,6 +133,42 @@ export class WasmGameEngine {
   }
 
   /**
+   * Issue #252 / #331: two-phase non-binding signaling step.
+   *
+   * Required when the scenario was constructed with
+   * ``commitment_mode == "two_phase"``. Mirrors the PyO3 surface in
+   * ``bucket-brigade-core/src/python.rs::PyBucketBrigade::step_two_phase``
+   * and the WASM binding in ``bucket-brigade-core/src/wasm.rs``.
+   *
+   * One call advances the night by one step, internally fusing the
+   * signal-phase write and the action-phase step:
+   *   1. Round 1: ``round1Signals`` (length num_agents, each 0/1) become
+   *      visible in subsequent observations via ``round1_signals``.
+   *   2. Round 2: ``round2Actions`` is applied through the regular
+   *      ``step()`` pipeline (phases 0-9).
+   *
+   * The deception channel survives: round-2 mode (`action[1]`) is not
+   * constrained by the round-1 signal. Policies can emit
+   * ``round1Signal=1 (Work)`` and then ``round2Mode=0 (Rest)`` — this is
+   * the "lie" mechanic.
+   *
+   * @param round1Signals - per-agent round-1 signals (length num_agents,
+   *   each in {0, 1}).
+   * @param round2Actions - per-agent round-2 actions
+   *   ``[house, mode, signal]`` (length 3) or legacy ``[house, mode]``
+   *   which is promoted to honest length-3 (signal := mode).
+   */
+  step_two_phase(
+    round1Signals: number[],
+    round2Actions: number[][],
+  ): { rewards: number[]; done: boolean; info: any } {
+    const round1Json = JSON.stringify(round1Signals);
+    const actionsJson = JSON.stringify(round2Actions);
+    const resultJson = this.engine.step_two_phase(round1Json, actionsJson);
+    return JSON.parse(resultJson);
+  }
+
+  /**
    * Get observation for a specific agent
    */
   get_observation(agentId: number): AgentObservation {
@@ -174,7 +214,14 @@ export class WasmGameEngine {
 }
 
 /**
- * Create game engine (WASM if available, fallback to JS)
+ * Create game engine (WASM if available, fallback to JS).
+ *
+ * Issue #252 / #331: two-phase scenarios (``commitment_mode == "two_phase"``)
+ * require the WASM engine — the pure-JS fallback does not implement the
+ * round-1 signal channel. If WASM init fails and the scenario is two-phase,
+ * this function throws instead of falling back (the JS engine would otherwise
+ * throw at construction time with the same message). Single-phase scenarios
+ * fall back to JS as before.
  */
 export async function createGameEngine(
   scenario: Scenario,
@@ -185,11 +232,20 @@ export async function createGameEngine(
       await initWasm();
       return new WasmGameEngine(scenario);
     } catch (error) {
+      if (scenario.commitment_mode === 'two_phase') {
+        // Two-phase scenarios cannot fall back — surface the WASM init
+        // failure directly so the caller knows the WASM engine is required.
+        throw new Error(
+          `WASM engine required for commitment_mode="two_phase" scenarios but ` +
+            `failed to initialize: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
       console.warn('WASM engine unavailable, falling back to JS:', error);
     }
   }
 
-  // Fallback to JS engine
+  // Fallback to JS engine (single-phase only; the JS engine constructor
+  // throws on two-phase scenarios so this is also safe.)
   const { BrowserBucketBrigade } = await import('./browserEngine');
   return new BrowserBucketBrigade(scenario);
 }

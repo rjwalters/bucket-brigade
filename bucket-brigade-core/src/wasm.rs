@@ -32,22 +32,14 @@ impl WasmBucketBrigade {
             )));
         }
 
-        // Issue #252: the WASM frontend (browser UI in `web/`) does not yet
-        // render two-phase nights. The two-phase mechanic doubles policy
-        // forward passes per night and exposes round-1 commitment signals
-        // in the obs; both are out of scope for the pilot pending a
-        // dedicated UI rework follow-up. Reject here with a clear message
-        // rather than silently running the simultaneous fast path. The
-        // Rust core, PyO3 surface, and Python envs all support two-phase;
-        // two-phase scenarios are Python-only for now.
-        if scenario.commitment_mode == "two_phase" {
-            return Err(JsValue::from_str(
-                "WASM frontend does not support two-phase commitment yet \
-                 (issue #252). Two-phase scenarios are Python-only — use \
-                 bucket_brigade.envs.* from Python instead. The browser UI \
-                 will be wired up in a follow-up issue.",
-            ));
-        }
+        // Issue #331: two-phase commitment mode is now exposed through
+        // WASM via the `step_two_phase` binding below (mirrors the PyO3
+        // surface in `src/python.rs`). The simultaneous `step()` panics
+        // on two-phase scenarios (engine guardrail), so JS callers must
+        // dispatch on `scenario.commitment_mode` and use the appropriate
+        // method. The TS wrapper at `web/src/utils/wasmEngine.ts` exposes
+        // both surfaces; the JS-fallback engine at `browserEngine.ts`
+        // raises on two-phase scenarios (WASM required for two-phase).
 
         Ok(Self {
             inner: BucketBrigade::new(scenario, num_agents, None),
@@ -78,6 +70,60 @@ impl WasmBucketBrigade {
         };
 
         let result = self.inner.step(&actions);
+
+        let response = serde_json::json!({
+            "rewards": result.rewards,
+            "done": result.done,
+            "info": result.info
+        });
+
+        Ok(response.to_string())
+    }
+
+    /// Issue #252 / #331: two-phase non-binding signaling step.
+    ///
+    /// One call advances the night by one step, internally fusing the
+    /// signal-phase write and the action-phase step. Required for
+    /// scenarios with `commitment_mode == "two_phase"`; the single-phase
+    /// `step()` panics on those scenarios (engine guardrail). Mirrors
+    /// `PyBucketBrigade::step_two_phase` in `src/python.rs`.
+    ///
+    /// Args (passed as JSON strings to keep the JS interop trivial):
+    /// - `round1_signals_json`: a JSON array of u8 of length num_agents,
+    ///   each in {0, 1}. Free, non-binding — round-2 mode is unconstrained.
+    /// - `round2_actions_json`: a JSON array of length-2 or length-3 u8
+    ///   arrays (`[house, mode]` or `[house, mode, signal]`). Length-2
+    ///   inputs are accepted for legacy callers and promoted to honest
+    ///   length-3 form (signal := mode).
+    ///
+    /// Returns the same JSON shape as `step()`:
+    /// `{ rewards: number[], done: boolean, info: object }`.
+    #[wasm_bindgen]
+    pub fn step_two_phase(
+        &mut self,
+        round1_signals_json: &str,
+        round2_actions_json: &str,
+    ) -> Result<String, JsValue> {
+        let round1_signals: Vec<u8> = serde_json::from_str(round1_signals_json).map_err(|e| {
+            JsValue::from_str(&format!("Failed to parse round1_signals: {}", e))
+        })?;
+
+        let round2_actions: Vec<[u8; 3]> =
+            match serde_json::from_str::<Vec<[u8; 3]>>(round2_actions_json) {
+                Ok(a) => a,
+                Err(_) => {
+                    let legacy: Vec<[u8; 2]> =
+                        serde_json::from_str(round2_actions_json).map_err(|e| {
+                            JsValue::from_str(&format!(
+                                "Failed to parse round2_actions: {}",
+                                e
+                            ))
+                        })?;
+                    legacy.into_iter().map(|a| [a[0], a[1], a[1]]).collect()
+                }
+            };
+
+        let result = self.inner.step_two_phase(&round1_signals, &round2_actions);
 
         let response = serde_json::json!({
             "rewards": result.rewards,
@@ -213,6 +259,14 @@ impl WasmScenario {
             // with continuous mode enabled, route through the JSON path.
             extinguish_mode: "bernoulli".to_string(),
             suppression_per_worker: 0.0,
+            // Issue #252 / #331: within-night commitment mode defaults to
+            // ``"simultaneous"`` so existing JS/TS callers see byte-identical
+            // behavior. To consume a scenario with ``commitment_mode ==
+            // "two_phase"`` from JS, build the scenario JSON (which
+            // preserves all fields) and pass it through the
+            // ``WasmBucketBrigade`` constructor; the engine then dispatches
+            // to ``step_two_phase`` on the WASM surface.
+            commitment_mode: "simultaneous".to_string(),
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent
