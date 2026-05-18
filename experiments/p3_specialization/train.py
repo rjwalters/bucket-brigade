@@ -52,6 +52,7 @@ from bucket_brigade.training.joint_trainer import (
     JointPPOTrainer,
     flatten_dict_obs,
 )
+from bucket_brigade.training.lola_trainer import LolaTrainer
 
 
 @dataclass
@@ -182,6 +183,17 @@ class CellConfig:
     # (default) preserves bit-identical pre-#290 IPPO behavior.
     influence_coef: float = 0.0
     influence_mc_samples: int = 4
+    # Issue #287: LOLA (Learning with Opponent-Learning Awareness, Foerster
+    # et al. 2018). When ``lola_dice=True``, swap the JointPPOTrainer for
+    # the :class:`LolaTrainer` LOLA-DiCE variant. ``lola_eta`` is the
+    # opponent-lookahead step size (paper uses ``eta = lr``);
+    # ``lola_lookahead_steps`` is the number of inner gradient ascents
+    # (paper uses 1). Mutually exclusive with ``centralized_critic`` and
+    # ``lambda_red > 0`` — combining LOLA with MAPPO or the redundancy
+    # penalty entangles two unrelated experiments.
+    lola_dice: bool = False
+    lola_eta: float = 1.0
+    lola_lookahead_steps: int = 1
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -685,6 +697,30 @@ def _parse_curriculum_arg(value: str) -> List[List[int]]:
 
 
 def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
+    # Issue #287: LOLA mutual-exclusion validation. LOLA's second-order
+    # opponent-shaping term is incompatible with the MAPPO/centralized-critic
+    # arm and with the cross-agent redundancy penalty (both modify the
+    # objective in ways that conflict with the inner gradient step). The
+    # guard here mirrors the trainer-side guards at
+    # ``lola_trainer.py:__init__`` and ``joint_trainer.py:236``; surfacing
+    # the error at cell-config validation time gives a clearer error
+    # message and avoids any rollout work before the cell aborts.
+    if cfg.lola_dice:
+        if cfg.centralized_critic:
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with cfg.centralized_critic=True. "
+                "LOLA replaces the per-agent PG objective with a second-order "
+                "opponent-shaping surrogate; combining it with MAPPO's shared "
+                "value baseline would conflate two unrelated experiments. Pick one."
+            )
+        if cfg.lambda_red > 0:
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with cfg.lambda_red > 0. The "
+                "redundancy penalty couples the per-agent actor trunks via a "
+                "shared loss, while LOLA's opponent-shaping term assumes "
+                "independent inner gradient steps per agent. Pick one."
+            )
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     scenario = get_scenario_by_name(cfg.scenario, num_agents=cfg.num_agents)
@@ -748,32 +784,53 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     else:
         action_dims = cfg.action_dims
 
-    trainer = JointPPOTrainer(
-        env_fn=env_fn,
-        num_agents=cfg.num_agents,
-        obs_dim=obs_dim,
-        action_dims=action_dims,
-        hidden_size=cfg.hidden_size,
-        lr=cfg.lr,
-        gae_lambda=cfg.gae_lambda,
-        ppo_epochs=cfg.ppo_epochs,
-        minibatch_size=cfg.minibatch_size,
-        value_coef=cfg.value_coef,
-        entropy_coef=cfg.entropy_coef,
-        redundancy_coef=cfg.lambda_red,
-        normalize_returns=cfg.normalize_returns,
-        centralized_critic=cfg.centralized_critic,
-        coma=cfg.coma,
-        coma_target_update_every=cfg.coma_target_update_every,
-        advantage_estimator=cfg.advantage_estimator,
-        hindsight_lr=cfg.hindsight_lr,
-        hindsight_num_return_buckets=cfg.hindsight_num_return_buckets,
-        hindsight_ratio_clip=cfg.hindsight_ratio_clip,
-        influence_coef=cfg.influence_coef,
-        influence_mc_samples=cfg.influence_mc_samples,
-        device=cfg.device,
-        seed=cfg.seed,
-    )
+    if cfg.lola_dice:
+        # Issue #287: LOLA-DiCE arm. The trainer mirrors JointPPOTrainer's
+        # collect_rollout / update / encoder_outputs_batch surface, so the
+        # rest of the cell loop (rollout collection for info-theory hooks,
+        # metric logging, policy save) is identical. The mutual-exclusion
+        # guard in ``CellConfig`` validation ensures LOLA is not combined
+        # with ``centralized_critic`` or ``lambda_red > 0``.
+        trainer = LolaTrainer(
+            env_fn=env_fn,
+            num_agents=cfg.num_agents,
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            hidden_size=cfg.hidden_size,
+            lr=cfg.lr,
+            lola_eta=cfg.lola_eta,
+            lola_lookahead_steps=cfg.lola_lookahead_steps,
+            lola_dice=True,
+            device=cfg.device,
+            seed=cfg.seed,
+        )
+    else:
+        trainer = JointPPOTrainer(
+            env_fn=env_fn,
+            num_agents=cfg.num_agents,
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            hidden_size=cfg.hidden_size,
+            lr=cfg.lr,
+            gae_lambda=cfg.gae_lambda,
+            ppo_epochs=cfg.ppo_epochs,
+            minibatch_size=cfg.minibatch_size,
+            value_coef=cfg.value_coef,
+            entropy_coef=cfg.entropy_coef,
+            redundancy_coef=cfg.lambda_red,
+            normalize_returns=cfg.normalize_returns,
+            centralized_critic=cfg.centralized_critic,
+            coma=cfg.coma,
+            coma_target_update_every=cfg.coma_target_update_every,
+            advantage_estimator=cfg.advantage_estimator,
+            hindsight_lr=cfg.hindsight_lr,
+            hindsight_num_return_buckets=cfg.hindsight_num_return_buckets,
+            hindsight_ratio_clip=cfg.hindsight_ratio_clip,
+            influence_coef=cfg.influence_coef,
+            influence_mc_samples=cfg.influence_mc_samples,
+            device=cfg.device,
+            seed=cfg.seed,
+        )
 
     # Issue #270: optionally warm-start the actor weights from a BC-pretrained
     # checkpoint directory produced by ``experiments/p3_specialization/bc_init.py``.
@@ -1170,7 +1227,37 @@ def main() -> None:
         help=(
             "PPO Adam learning rate. Default matches CellConfig.lr (3e-4). "
             "Exposed as CLI for issue #288 PBT mutation (Jaderberg-style "
-            "lr perturbation factor in {0.8, 1.25} applied between generations)."
+            "lr perturbation factor in {0.8, 1.25} applied between generations). "
+            "Issue #287 LOLA sweep widens this to 1e-4 / 3e-4 / 1e-3."
+        ),
+    )
+    p.add_argument(
+        "--lola-dice",
+        action="store_true",
+        help=(
+            "Issue #287: enable LOLA-DiCE (Learning with Opponent-Learning "
+            "Awareness) instead of independent-PPO. Uses the DiCE magic-box "
+            "surrogate so the second-order opponent-shaping term is "
+            "automatic under standard .backward(). Mutually exclusive with "
+            "--centralized-critic and --lambda-red > 0."
+        ),
+    )
+    p.add_argument(
+        "--lola-eta",
+        type=float,
+        default=CellConfig.__dataclass_fields__["lola_eta"].default,
+        help=(
+            "Issue #287: LOLA opponent-lookahead step size η. Foerster '18 "
+            "uses η = lr; the curator-spec sweep covers 0.1, 1.0, 10.0 (× lr)."
+        ),
+    )
+    p.add_argument(
+        "--lola-lookahead-steps",
+        type=int,
+        default=CellConfig.__dataclass_fields__["lola_lookahead_steps"].default,
+        help=(
+            "Issue #287: number of opponent inner gradient steps unrolled by "
+            "LOLA. Paper's main experiments use 1; 2 is the standard ablation."
         ),
     )
     p.add_argument("--device", default="cpu")
@@ -1212,6 +1299,9 @@ def main() -> None:
         hindsight_ratio_clip=args.hindsight_ratio_clip,
         influence_coef=args.influence_coef,
         influence_mc_samples=args.influence_mc_samples,
+        lola_dice=args.lola_dice,
+        lola_eta=args.lola_eta,
+        lola_lookahead_steps=args.lola_lookahead_steps,
         device=args.device,
     )
     print(
