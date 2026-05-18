@@ -41,19 +41,72 @@ Gap closed uses the `minimal_specialization` PR #244/#243 references:
 
 ## Status
 
-**Results pending.** Sweep launched in tmux session
-`issue261_calibration` on `COMPUTE_HOST_PRIMARY`. The aggregator
-(`experiments/p3_specialization/analyze_261_calibration.py`) and
-summary outputs (`experiments/p3_specialization/diagnostics/results/
-issue261_calibration/summary.{json,md}`) will be committed in a
-follow-up once the sweep completes (per PR #248/#227 precedent).
+**Sweep complete.** 36/36 cells finished on `COMPUTE_HOST_PRIMARY`
+overnight; results harvested locally and aggregated in this follow-up.
 
-## Verdict (to be filled in)
+Note: the analyzer committed in PR #263 used `f"{alpha:g}"` to rebuild
+the run-dir path, which silently drops the trailing `.0` and skipped 8
+of 12 cells (baseline and `alpha=2.0` rows came back as "missing").
+Fixed to `f"{alpha:.1f}"` in this PR so all 12 cells aggregate.
 
-- _Best cell_: (alpha, beta) = …
-- _Best gap_closed_mean_: …
-- _Tier_: …
-- _Over-shaping flagged_: …
+## Verdict
+
+- **Best cell**: `(alpha, beta) = (0.1, 0.0)`
+- **Best gap_closed_mean**: **`+0.164`** (mean over 3 seeds)
+- **Tier**: **`tier_3_insufficient`** — best cell is well below the
+  pre-registered `0.25` tier-2 boundary.
+- **Over-shaping flagged**: No. Max entropy collapse multiple was
+  `3.4×` at `(alpha=2.0, beta=0.0)`; well under the conservative `100×`
+  threshold. Action shaping at the swept magnitudes does **not**
+  collapse the policy.
+
+### Per-cell numbers
+
+All 12 `(alpha, beta)` cells × 3 seeds (n_seeds=3 everywhere):
+
+| alpha | beta | team_reward (mean ± std) | gap_closed_mean | entropy | collapse_x |
+|---|---|---|---|---|---|
+| 0.0 | 0.0 | -80.31 ± 5.95 | +0.113 | 0.915 | 1.0 |
+| 0.0 | 0.1 | -80.28 ± 5.73 | +0.113 | 0.620 | 1.5 |
+| 0.0 | 0.5 | -77.98 ± 5.04 | +0.148 | 0.497 | 1.8 |
+| 0.1 | 0.0 | -76.98 ± 5.07 | **+0.164** | 0.752 | 1.2 |
+| 0.1 | 0.1 | -81.83 ± 9.43 | +0.090 | 0.563 | 1.6 |
+| 0.1 | 0.5 | -79.97 ± 3.54 | +0.118 | 0.492 | 1.9 |
+| 0.5 | 0.0 | -80.31 ± 6.61 | +0.113 | 0.550 | 1.7 |
+| 0.5 | 0.1 | -80.45 ± 9.38 | +0.111 | 0.496 | 1.8 |
+| 0.5 | 0.5 | -77.69 ± 4.60 | +0.153 | 0.552 | 1.7 |
+| 2.0 | 0.0 | -79.37 ± 7.14 | +0.127 | 0.270 | 3.4 |
+| 2.0 | 0.1 | -80.82 ± 7.82 | +0.105 | 0.792 | 1.2 |
+| 2.0 | 0.5 | -78.48 ± 3.61 | +0.141 | 0.499 | 1.8 |
+
+Gap-closed range across cells: `[+0.090, +0.164]`. The grid is essentially
+flat — action shaping moves the trailing-5 team reward by ~3 reward
+units (out of a 65.65 random→specialist span), regardless of magnitude.
+
+### Interpretation
+
+1. **Baseline anchor**: `(α=0, β=0)` lands at gap_closed `+0.113`, near
+   (slightly under) the PR #257 IPPO obs-fix verdict of `~0.182`. Same
+   plateau, no surprise.
+2. **No interior peak**: Increasing α (credit-shared extinguish bonus)
+   or β (preventive-presence bonus) does not produce a monotonic or
+   even directional improvement. The best cell (`α=0.1, β=0`) beats
+   the baseline by only `+0.051`, well within seed noise (std ≈ 5–9).
+3. **No over-shaping**: Even `α=2.0` produces only a 3.4× entropy
+   collapse — orders of magnitude below MAPPO's 1874× signature.
+   Action shaping is not "too strong"; it is **not strong enough to
+   matter**.
+4. **Plateau is robust to per-step shaping**: This is the **4th of
+   5 interventions** to fail to break the plateau on
+   `minimal_specialization` (after #197 magnitudes, #198 per-agent
+   ownership-reward vectors, #225 MAPPO, and #236 signal-channel
+   work that motivated the post-#236 re-derivation).
+
+### Next steps per the verdict ladder
+
+Tier-3 outcome promotes **intervention #4 (dense progress reward)** or
+rules-level interventions (#251/#253) per the #193 decision frame.
+Action shaping is **not** the lever that breaks the IPPO plateau.
 
 ## Implementation artifacts
 
