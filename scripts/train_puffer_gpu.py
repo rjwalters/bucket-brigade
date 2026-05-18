@@ -35,7 +35,9 @@ def make_env_func(scenario=None, num_opponents=3, **kwargs):
         scenario_obj = get_scenario_by_name(scenario, num_agents=num_opponents + 1)
 
     # PufferBucketBrigade is now a native PufferEnv, no wrapping needed
-    env = PufferBucketBrigade(scenario=scenario_obj, num_opponents=num_opponents, **kwargs)
+    env = PufferBucketBrigade(
+        scenario=scenario_obj, num_opponents=num_opponents, **kwargs
+    )
     return env
 
 
@@ -75,7 +77,7 @@ def train_ppo_vectorized(
             f"⚠️  Warning: batch_size ({batch_size}) not divisible by minibatch_size ({minibatch_size})"
         )
 
-    print(f"🚀 Starting high-throughput vectorized training")
+    print("🚀 Starting high-throughput vectorized training")
     print(
         f"📊 Num envs: {num_envs}, Steps/env: {num_steps_per_env}, Batch: {batch_size:,}"
     )
@@ -106,12 +108,18 @@ def train_ppo_vectorized(
     next_done = torch.zeros(num_envs).to(device)
 
     num_updates = num_steps // batch_size
-    print(f"✅ Environments initialized, starting training loop ({num_updates} updates)...", flush=True)
+    print(
+        f"✅ Environments initialized, starting training loop ({num_updates} updates)...",
+        flush=True,
+    )
 
     for update in range(1, num_updates + 1):
         # DEBUG: Log progress every update
         if update % 10 == 0:
-            print(f"[DEBUG] Starting update {update}/{num_updates}, global_step={global_step}", flush=True)
+            print(
+                f"[DEBUG] Starting update {update}/{num_updates}, global_step={global_step}",
+                flush=True,
+            )
 
         # Collect rollout
         for step in range(num_steps_per_env):
@@ -169,7 +177,6 @@ def train_ppo_vectorized(
         b_actions = actions_buffer.reshape((-1, len(single_action_space.nvec)))
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
-        b_values = values_buffer.reshape(-1)
 
         # Optimizing the policy and value network using minibatches
         b_inds = np.arange(batch_size)
@@ -191,7 +198,7 @@ def train_ppo_vectorized(
 
                 with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    old_approx_kl = (-logratio).mean()
+                    _old_approx_kl = (-logratio).mean()  # noqa: F841 (kept for parity with reference PPO)
                     approx_kl = ((ratio - 1) - logratio).mean()
                     clipfracs += [
                         ((ratio - 1.0).abs() > clip_epsilon).float().mean().item()
@@ -255,7 +262,9 @@ def train_ppo_vectorized(
         # Use floor division to detect when we cross a checkpoint boundary
         checkpoint_interval = 500000
         current_checkpoint = global_step // checkpoint_interval
-        if current_checkpoint > 0 and not hasattr(train_ppo_vectorized, f'_checkpoint_{current_checkpoint}_saved'):
+        if current_checkpoint > 0 and not hasattr(
+            train_ppo_vectorized, f"_checkpoint_{current_checkpoint}_saved"
+        ):
             checkpoint_step = current_checkpoint * checkpoint_interval
             checkpoint_path = f"{writer.log_dir}/checkpoint_{checkpoint_step}.pt"
             torch.save(
@@ -268,8 +277,13 @@ def train_ppo_vectorized(
                 checkpoint_path,
             )
             # Mark this checkpoint as saved to avoid duplicates
-            setattr(train_ppo_vectorized, f'_checkpoint_{current_checkpoint}_saved', True)
-            print(f"💾 Checkpoint saved: {checkpoint_path} (at step {global_step})", flush=True)
+            setattr(
+                train_ppo_vectorized, f"_checkpoint_{current_checkpoint}_saved", True
+            )
+            print(
+                f"💾 Checkpoint saved: {checkpoint_path} (at step {global_step})",
+                flush=True,
+            )
 
     print(
         f"\n{'=' * 60}\n"
@@ -411,7 +425,7 @@ def main():
     obs_dim = vecenv.single_observation_space.shape[0]
     action_dims = vecenv.single_action_space.nvec.tolist()
 
-    print(f"🧠 Creating policy network", flush=True)
+    print("🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 

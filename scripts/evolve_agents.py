@@ -16,7 +16,6 @@ import json
 import time
 from typing import Optional
 
-import numpy as np
 
 from bucket_brigade.evolution import (
     EvolutionConfig,
@@ -24,7 +23,6 @@ from bucket_brigade.evolution import (
     Individual,
     Population,
 )
-from bucket_brigade.envs import default_scenario, greedy_neighbor_scenario
 
 
 def progress_callback(generation: int, population: Population) -> None:
@@ -367,10 +365,10 @@ def main():
     save_results(result, args.output, config)
 
     print("\nTo use the best agent:")
-    print(f"  from bucket_brigade.agents.heuristic_agent import HeuristicAgent")
+    print("  from bucket_brigade.agents.heuristic_agent import HeuristicAgent")
     print(f"  params = {result.best_individual.genome.tolist()}")
     print(
-        f"  agent = HeuristicAgent(params=np.array(params), agent_id=0, name='Evolved Champion')"
+        "  agent = HeuristicAgent(params=np.array(params), agent_id=0, name='Evolved Champion')"
     )
 
 

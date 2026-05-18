@@ -33,14 +33,20 @@ def print_header(text: str):
 def print_scenario_info(scenario):
     """Print detailed scenario information."""
     print("Scenario Parameters:")
-    print(f"  Fire Dynamics:")
-    print(f"    beta (spread probability):     {scenario.prob_fire_spreads_to_neighbor:.2f}")
-    print(f"    kappa (extinguish efficiency): {scenario.prob_solo_agent_extinguishes_fire:.2f}")
-    print(f"  Reward Structure:")
-    print(f"    A (reward per saved house):    {scenario.team_reward_house_survives:.2f}")
+    print("  Fire Dynamics:")
+    print(
+        f"    beta (spread probability):     {scenario.prob_fire_spreads_to_neighbor:.2f}"
+    )
+    print(
+        f"    kappa (extinguish efficiency): {scenario.prob_solo_agent_extinguishes_fire:.2f}"
+    )
+    print("  Reward Structure:")
+    print(
+        f"    A (reward per saved house):    {scenario.team_reward_house_survives:.2f}"
+    )
     print(f"    L (penalty per ruined house):  {scenario.team_penalty_house_burns:.2f}")
     print(f"    c (cost per worker per night): {scenario.cost_to_work_one_night:.2f}")
-    print(f"  Initial Conditions:")
+    print("  Initial Conditions:")
     print(f"    p_spark (spontaneous ignition): {scenario.prob_house_catches_fire:.2f}")
     print(f"    N_min (minimum nights):         {scenario.min_nights}")
     print(f"    num_agents:                     {scenario.num_agents}")
@@ -104,7 +110,7 @@ def print_strategy_details(strategy: np.ndarray, label: str = "Strategy"):
 
     print(f"\n{label}:")
     print(f"  Classification: {classification}")
-    print(f"  Parameters:")
+    print("  Parameters:")
     for param_name, value in analysis.items():
         bar_length = int(value * 20)
         bar = "█" * bar_length + "░" * (20 - bar_length)
@@ -238,7 +244,7 @@ def main():
     for idx, (strategy_idx, probability) in enumerate(sorted_strategies):
         strategy = equilibrium.strategy_pool[strategy_idx]
         print(f"\nStrategy {idx + 1}: Probability = {probability:.3f}")
-        print_strategy_details(strategy, label=f"  Details")
+        print_strategy_details(strategy, label="  Details")
         compare_to_archetypes(strategy)
 
     # Game-theoretic interpretation

@@ -161,7 +161,7 @@ def main():
     action_dims = vecenv.single_action_space.nvec.tolist()
 
     if is_master:
-        print(f"🧠 Creating policy network")
+        print("🧠 Creating policy network")
         print(f"   Observation dim: {obs_dim}")
         print(f"   Action dims: {action_dims}")
 
@@ -173,7 +173,7 @@ def main():
     if dist_info["distributed"]:
         policy = DDP(policy, device_ids=[dist_info["local_rank"]])
         if is_master:
-            print(f"✅ Policy wrapped with DistributedDataParallel")
+            print("✅ Policy wrapped with DistributedDataParallel")
 
     optimizer = torch.optim.Adam(policy.parameters(), lr=args.lr)
 

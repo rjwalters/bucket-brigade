@@ -13,18 +13,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import argparse
-import time
 from collections import deque
 
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 
-from bucket_brigade.envs import get_scenario_by_name
-from bucket_brigade.envs.puffer_env import PufferBucketBrigade
-from bucket_brigade.training import CurriculumTrainer, PolicyNetwork
+from bucket_brigade.training import CurriculumTrainer
 
 
 def compute_gae(rewards, values, dones, gamma=0.99, gae_lambda=0.95):

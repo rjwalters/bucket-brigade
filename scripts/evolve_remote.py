@@ -25,7 +25,6 @@ import time
 from datetime import datetime
 from typing import Optional
 
-import numpy as np
 
 from bucket_brigade.evolution import (
     EvolutionConfig,
@@ -36,16 +35,13 @@ from bucket_brigade.evolution import (
 
 # Try to import Rust evaluator, fall back to Python if unavailable
 try:
-    from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator
+    from bucket_brigade.evolution.fitness_rust import RustFitnessEvaluator  # noqa: F401
 
     RUST_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
     print(f"⚠️  Rust evaluator not available ({e}), using Python implementation")
-    from bucket_brigade.evolution.fitness import FitnessEvaluator
 
     RUST_AVAILABLE = False
-
-from bucket_brigade.envs import default_scenario
 
 
 class RemoteEvolutionRunner:
@@ -181,7 +177,7 @@ class RemoteEvolutionRunner:
                 f"✅ Using Rust fitness evaluator with {self.num_workers} workers"
             )
         else:
-            self._log(f"⚠️  Using Python fitness evaluator (slower, no parallel)")
+            self._log("⚠️  Using Python fitness evaluator (slower, no parallel)")
 
         self._log("Starting evolution...")
         self._log("")
@@ -458,7 +454,7 @@ def main():
     )
 
     # Run evolution
-    result = runner.run(seed_individuals=seed_individuals)
+    runner.run(seed_individuals=seed_individuals)
 
     print("\nEvolution complete! Check output directory for results and logs.")
 

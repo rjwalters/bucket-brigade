@@ -24,14 +24,11 @@ def export_archetypes(output_path: Path):
     for name, params in ARCHETYPES.items():
         archetypes[name] = {
             "params": params.tolist(),
-            "description": f"{name.replace('_', ' ').title()} archetype"
+            "description": f"{name.replace('_', ' ').title()} archetype",
         }
 
-    with open(output_path, 'w') as f:
-        json.dump({
-            "version": "1.0",
-            "archetypes": archetypes
-        }, f, indent=2)
+    with open(output_path, "w") as f:
+        json.dump({"version": "1.0", "archetypes": archetypes}, f, indent=2)
 
     print(f"✓ Exported {len(archetypes)} archetypes to {output_path}")
 
@@ -53,14 +50,11 @@ def export_scenarios(output_path: Path):
             "N_min": int(scenario.min_nights),
             "p_spark": float(scenario.prob_house_catches_fire),
             "N_spark": int(scenario.N_spark),
-            "description": _get_scenario_description(name)
+            "description": _get_scenario_description(name),
         }
 
-    with open(output_path, 'w') as f:
-        json.dump({
-            "version": "1.0",
-            "scenarios": scenarios
-        }, f, indent=2)
+    with open(output_path, "w") as f:
+        json.dump({"version": "1.0", "scenarios": scenarios}, f, indent=2)
 
     print(f"✓ Exported {len(scenarios)} scenarios to {output_path}")
 

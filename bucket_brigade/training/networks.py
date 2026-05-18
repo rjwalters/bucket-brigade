@@ -557,9 +557,7 @@ class HindsightNetwork(nn.Module):
         return torch.stack(log_probs, dim=1).sum(dim=1)
 
 
-def encode_return_bucket(
-    returns: torch.Tensor, num_buckets: int = 8
-) -> torch.Tensor:
+def encode_return_bucket(returns: torch.Tensor, num_buckets: int = 8) -> torch.Tensor:
     """Quantize per-step Monte-Carlo returns into a one-hot bucket encoding.
 
     Used as the future-statistic ``X_t`` consumed by :class:`HindsightNetwork`
@@ -578,8 +576,7 @@ def encode_return_bucket(
     """
     if returns.dim() != 1:
         raise ValueError(
-            f"encode_return_bucket expects 1D returns, got shape "
-            f"{tuple(returns.shape)}"
+            f"encode_return_bucket expects 1D returns, got shape {tuple(returns.shape)}"
         )
     T = returns.shape[0]
     # Use quantile boundaries for an empirically-balanced bucket assignment.
@@ -594,9 +591,7 @@ def encode_return_bucket(
         return torch.zeros((T, num_buckets), dtype=torch.float32, device=returns.device)
     edges = torch.tensor(
         [
-            sorted_returns[
-                min(int((k + 1) * T / num_buckets), T - 1)
-            ].item()
+            sorted_returns[min(int((k + 1) * T / num_buckets), T - 1)].item()
             for k in range(num_buckets - 1)
         ],
         device=returns.device,
@@ -604,9 +599,7 @@ def encode_return_bucket(
     # bucketize: bucket index = number of edges strictly less than returns
     bucket_idx = torch.bucketize(returns, edges)
     bucket_idx = torch.clamp(bucket_idx, 0, num_buckets - 1)
-    one_hot = torch.zeros(
-        (T, num_buckets), dtype=torch.float32, device=returns.device
-    )
+    one_hot = torch.zeros((T, num_buckets), dtype=torch.float32, device=returns.device)
     one_hot.scatter_(1, bucket_idx.unsqueeze(1), 1.0)
     return one_hot
 
@@ -669,7 +662,6 @@ def compute_hca_advantages(
               hindsight-net fit), ``ratio_mean`` (mean unclipped ratio).
     """
     device = observations.device
-    T = len(rewards)
 
     # Monte-Carlo return-to-go Z_t.
     Z_list = compute_returns_to_go(rewards, dones, gamma=gamma)

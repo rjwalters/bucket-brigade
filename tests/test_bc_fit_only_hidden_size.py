@@ -47,7 +47,9 @@ def test_policy_network_accepts_hidden_size(hidden_size: int) -> None:
     from the 10-way house head. Verify all three heads + value head emit
     the expected batch shapes at each capacity level.
     """
-    obs_dim = 42  # minimal_specialization flat-obs dim (4 agents x 10 houses x 4 + global)
+    obs_dim = (
+        42  # minimal_specialization flat-obs dim (4 agents x 10 houses x 4 + global)
+    )
     action_dims = [10, 2, 2]
     batch = 8
 

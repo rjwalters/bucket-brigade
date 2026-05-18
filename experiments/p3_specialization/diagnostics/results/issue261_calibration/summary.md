@@ -1,6 +1,6 @@
 # Issue #261/#262 — Action-shaping calibration sweep
 
-Scenario: ``minimal_specialization``  
+Scenario: ``minimal_specialization``
 References (per-step mean team reward): random=-87.72, specialist=-22.07 (denominator=+65.65).
 
 ## Per-cell results
@@ -33,4 +33,3 @@ Best cell:
 - n_seeds = ``3``
 
 _No over-shaping flagged at the 100× threshold._
-

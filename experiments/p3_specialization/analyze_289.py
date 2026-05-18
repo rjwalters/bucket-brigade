@@ -182,9 +182,7 @@ def main() -> None:
     p.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(
-            "experiments/p3_specialization/diagnostics/results/issue289_hca"
-        ),
+        default=Path("experiments/p3_specialization/diagnostics/results/issue289_hca"),
     )
     args = p.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -200,9 +198,7 @@ def main() -> None:
             payload = json.loads(args.high_lambda_result.read_text())
             high_lambda_gc = float(
                 payload.get("trailing5_gap_closed_mean")
-                or payload.get("high_lambda_arm", {}).get(
-                    "trailing5_gap_closed_mean"
-                )
+                or payload.get("high_lambda_arm", {}).get("trailing5_gap_closed_mean")
             )
         except (ValueError, TypeError, KeyError):
             high_lambda_gc = None
