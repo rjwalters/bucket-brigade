@@ -8,11 +8,14 @@ cell) and produces:
 * ``tier1_verdict.json`` — the same data in machine-readable form for
   programmatic consumption.
 
-Verdict thresholds (mirrored from ``run_tier1_cell.VERDICT_THRESHOLDS``):
+Verdict thresholds (mirrored from ``run_tier1_cell.VERDICT_THRESHOLDS``;
+historical 4-tier ladder from
+``experiments/p3_specialization/diagnostics/random_mlp_search.py``):
 
-* ``gap_closed_mean >= 0.5`` -> ``closed``
-* ``0.25 <= gap_closed_mean < 0.5`` -> ``partial``
-* ``gap_closed_mean < 0.25`` -> ``insufficient``
+* ``gap_closed_mean >= 0.88`` -> ``closed`` (stunning_near_specialist)
+* ``0.49 <= gap_closed_mean < 0.88`` -> ``partial_upper`` (anti-attractor confirmed)
+* ``0.20 <= gap_closed_mean < 0.49`` -> ``partial_lower`` (basin-trap consistent)
+* ``gap_closed_mean < 0.20`` -> ``insufficient`` (random-play basin)
 
 Cells with ``n_seeds_completed == 0`` (or missing ``cell_summary.json``)
 are reported as ``no_data`` and sorted to the bottom.
@@ -34,22 +37,30 @@ from typing import Optional, Sequence
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TIER1_ROOT = REPO_ROOT / "experiments" / "p3_specialization" / "tier1_runs"
 
-VERDICT_THRESHOLDS = (0.25, 0.5)
+VERDICT_THRESHOLDS = (0.20, 0.49, 0.88)
 
 
 def verdict_for(mean) -> tuple[str, str]:
     if mean is None or (isinstance(mean, float) and math.isnan(mean)):
         return "no_data", "no completed seeds"
-    low, high = VERDICT_THRESHOLDS
+    low, mid, high = VERDICT_THRESHOLDS
     if mean >= high:
         return "closed", f"gap_closed_mean = {mean:.3f} >= {high}"
+    if mean >= mid:
+        return "partial_upper", f"{mid} <= gap_closed_mean < {high}"
     if mean >= low:
-        return "partial", f"{low} <= gap_closed_mean < {high}"
+        return "partial_lower", f"{low} <= gap_closed_mean < {mid}"
     return "insufficient", f"gap_closed_mean = {mean:.3f} < {low}"
 
 
 def _verdict_rank(tier: str) -> int:
-    return {"closed": 0, "partial": 1, "insufficient": 2, "no_data": 3}.get(tier, 4)
+    return {
+        "closed": 0,
+        "partial_upper": 1,
+        "partial_lower": 2,
+        "insufficient": 3,
+        "no_data": 4,
+    }.get(tier, 5)
 
 
 def load_cells(tier1_root: Path) -> list[dict]:
@@ -129,9 +140,10 @@ def build_markdown(rows: Sequence[dict]) -> str:
     lines = [
         "# Tier-1 sweep verdict",
         "",
-        "Verdict ladder: `gap_closed_mean >= 0.5` -> **closed**; "
-        "`0.25 <= mean < 0.5` -> **partial**; "
-        "`mean < 0.25` -> **insufficient**.",
+        "Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; "
+        "`0.49 <= mean < 0.88` -> **partial_upper**; "
+        "`0.20 <= mean < 0.49` -> **partial_lower**; "
+        "`mean < 0.20` -> **insufficient**.",
         "",
         "| Trainer | Scenario | gap_closed (mean ± std) | n_seeds | Verdict |",
         "|---------|----------|--------------------------|---------|---------|",
@@ -163,8 +175,9 @@ def build_json(rows: Sequence[dict]) -> dict:
     return {
         "schema_version": 1,
         "thresholds": {
-            "partial": VERDICT_THRESHOLDS[0],
-            "closed": VERDICT_THRESHOLDS[1],
+            "partial_lower": VERDICT_THRESHOLDS[0],
+            "partial_upper": VERDICT_THRESHOLDS[1],
+            "closed": VERDICT_THRESHOLDS[2],
         },
         "cells": [
             {

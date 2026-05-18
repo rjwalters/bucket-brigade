@@ -13,7 +13,8 @@ Covers:
   files, verify the aggregated cell summary matches the curator-defined
   schema and round-trips through JSON cleanly.
 * Aggregator table — feed synthetic ``cell_summary.json`` files at the
-  {0.25, 0.5} verdict thresholds, verify the markdown table is
+  {0.20, 0.49, 0.88} verdict thresholds (historical 4-tier ladder from
+  ``diagnostics/random_mlp_search.py``), verify the markdown table is
   well-formed and verdicts classify correctly.
 """
 
@@ -310,8 +311,8 @@ def test_run_cell_writes_summary_schema(tmp_path):
     assert summary["n_seeds_failed"] == 0
     # gap_closed_mean should be near 0.35 (we wrote rewards mapping to that).
     assert summary["gap_closed_mean"] == pytest.approx(0.35, abs=1e-6)
-    # Verdict should be "partial" at 0.35.
-    assert summary["verdict_tier"] == "partial"
+    # Verdict should be "partial_lower" at 0.35 (0.20 <= 0.35 < 0.49).
+    assert summary["verdict_tier"] == "partial_lower"
 
     # The artifact file exists and round-trips.
     summary_path = output_root / "ippo_minimal_specialization" / "cell_summary.json"
@@ -344,7 +345,7 @@ def test_run_cell_handles_failed_seed(tmp_path):
         if call_count["n"] == 1:
             _CP.returncode = 1
         else:
-            _write_synthetic_metrics(out_dir, gap_target=0.6)
+            _write_synthetic_metrics(out_dir, gap_target=0.9)
         return _CP()
 
     with patch.object(run_tier1_cell.subprocess, "run", side_effect=fake_run):
@@ -360,7 +361,7 @@ def test_run_cell_handles_failed_seed(tmp_path):
     assert summary["n_seeds_completed"] == 2, summary
     assert summary["n_seeds_failed"] == 1, summary
     assert 42 in summary["failed_seeds"], summary
-    # 0.6 is "closed".
+    # 0.9 is "closed" (>= 0.88 threshold).
     assert summary["verdict_tier"] == "closed"
 
 
@@ -401,7 +402,7 @@ def _make_cell_summary(
 
 
 def test_aggregator_table_structure_and_verdicts(tmp_path):
-    """Verdicts and sort order are correct at the {0.25, 0.5} thresholds."""
+    """Verdicts and sort order are correct at the {0.20, 0.49, 0.88} thresholds."""
     root = tmp_path / "tier1_runs"
     _make_cell_summary(
         root / "ippo_minimal_specialization", "ippo", "minimal_specialization", 0.10
@@ -410,24 +411,34 @@ def test_aggregator_table_structure_and_verdicts(tmp_path):
         root / "lola_minimal_specialization", "lola", "minimal_specialization", 0.31
     )
     _make_cell_summary(
-        root / "pbt_minimal_specialization", "pbt", "minimal_specialization", 0.72
+        root / "coma_minimal_specialization", "coma", "minimal_specialization", 0.60
     )
-    # Boundary cells: exactly 0.25 -> partial, exactly 0.5 -> closed.
+    _make_cell_summary(
+        root / "pbt_minimal_specialization", "pbt", "minimal_specialization", 0.95
+    )
+    # Boundary cells: exactly 0.20 -> partial_lower, exactly 0.49 ->
+    # partial_upper, exactly 0.88 -> closed.
     _make_cell_summary(
         root / "edge_low_minimal_specialization",
         "edge_low",
         "minimal_specialization",
-        0.25,
+        0.20,
+    )
+    _make_cell_summary(
+        root / "edge_mid_minimal_specialization",
+        "edge_mid",
+        "minimal_specialization",
+        0.49,
     )
     _make_cell_summary(
         root / "edge_high_minimal_specialization",
         "edge_high",
         "minimal_specialization",
-        0.50,
+        0.88,
     )
 
     rows = aggregate_tier1.load_cells(root)
-    assert len(rows) == 5
+    assert len(rows) == 7
 
     md = aggregate_tier1.build_markdown(rows)
     assert "| Trainer |" in md
@@ -441,10 +452,12 @@ def test_aggregator_table_structure_and_verdicts(tmp_path):
     out = aggregate_tier1.build_json(rows)
     by_trainer = {c["trainer"]: c for c in out["cells"]}
     assert by_trainer["ippo"]["verdict_tier"] == "insufficient"  # 0.10
-    assert by_trainer["lola"]["verdict_tier"] == "partial"  # 0.31
-    assert by_trainer["pbt"]["verdict_tier"] == "closed"  # 0.72
-    assert by_trainer["edge_low"]["verdict_tier"] == "partial"  # exactly 0.25
-    assert by_trainer["edge_high"]["verdict_tier"] == "closed"  # exactly 0.50
+    assert by_trainer["lola"]["verdict_tier"] == "partial_lower"  # 0.31
+    assert by_trainer["coma"]["verdict_tier"] == "partial_upper"  # 0.60
+    assert by_trainer["pbt"]["verdict_tier"] == "closed"  # 0.95
+    assert by_trainer["edge_low"]["verdict_tier"] == "partial_lower"  # exactly 0.20
+    assert by_trainer["edge_mid"]["verdict_tier"] == "partial_upper"  # exactly 0.49
+    assert by_trainer["edge_high"]["verdict_tier"] == "closed"  # exactly 0.88
 
 
 def test_aggregator_handles_missing_cell_summary(tmp_path):
@@ -475,8 +488,9 @@ def test_aggregator_json_roundtrip(tmp_path):
     # Round-trip parse.
     data = json.loads(json_path.read_text())
     assert "cells" in data and "thresholds" in data
-    assert data["thresholds"]["partial"] == 0.25
-    assert data["thresholds"]["closed"] == 0.50
+    assert data["thresholds"]["partial_lower"] == 0.20
+    assert data["thresholds"]["partial_upper"] == 0.49
+    assert data["thresholds"]["closed"] == 0.88
 
 
 def test_aggregator_verdict_for_nan_is_no_data():

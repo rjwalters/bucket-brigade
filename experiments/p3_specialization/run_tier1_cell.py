@@ -57,8 +57,16 @@ PBT_SCRIPT = P3_DIR / "run_issue288_pbt.py"
 # (matches ``analyze_270.py:TRAILING_N``).
 TRAILING_N = 5
 
-# Verdict ladder (#343 / curator's schema).
-VERDICT_THRESHOLDS = (0.25, 0.5)
+# Verdict ladder (#343 / curator's schema, mirroring the historical 4-tier
+# ladder from ``experiments/p3_specialization/diagnostics/random_mlp_search.py``
+# used in #271/#277 verdict notebooks).
+#
+# Tiers (in descending order of gap_closed_mean):
+#   gap_closed >= 0.88           -> ``closed``         (stunning_near_specialist)
+#   0.49 <= gap_closed < 0.88    -> ``partial_upper``  (anti-attractor confirmed)
+#   0.20 <= gap_closed < 0.49    -> ``partial_lower``  (basin-trap consistent)
+#   gap_closed < 0.20            -> ``insufficient``   (random-play basin)
+VERDICT_THRESHOLDS = (0.20, 0.49, 0.88)
 
 
 # ---------------------------------------------------------------------------
@@ -298,11 +306,13 @@ def _trajectory(metrics: list[dict]) -> list[float]:
 
 
 def _verdict_for(mean: float) -> tuple[str, str]:
-    low, high = VERDICT_THRESHOLDS
+    low, mid, high = VERDICT_THRESHOLDS
     if mean >= high:
         return "closed", f"gap_closed_mean = {mean:.3f} >= {high}"
+    if mean >= mid:
+        return "partial_upper", f"{mid} <= gap_closed_mean < {high}"
     if mean >= low:
-        return "partial", f"{low} <= gap_closed_mean < {high}"
+        return "partial_lower", f"{low} <= gap_closed_mean < {mid}"
     return "insufficient", f"gap_closed_mean = {mean:.3f} < {low}"
 
 
