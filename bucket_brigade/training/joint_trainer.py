@@ -57,6 +57,7 @@ from bucket_brigade.training.networks import (
     compute_hca_advantages,
 )
 from bucket_brigade.training.normalizers import RunningMeanStd
+from bucket_brigade.training.obs_audit import ObsAuditor
 
 
 __all__ = ["JointPPOTrainer", "RolloutBuffer", "flatten_dict_obs"]
@@ -297,9 +298,18 @@ class JointPPOTrainer:
         hindsight_ratio_clip: float = 10.0,
         influence_coef: float = 0.0,
         influence_mc_samples: int = 4,
+        obs_auditor: Optional[ObsAuditor] = None,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
+        # Issue #274: optional live observation auditor. ``None`` (default)
+        # makes the rollout path bit-for-bit identical to legacy behavior.
+        # When set, the auditor records per-(step, agent) snapshots of the
+        # exact tensor fed to the policy, the env-side dict that produced
+        # it, the raw (pre-sanitization) action, and the sanitized action
+        # the env applied (read back from ``env.last_actions``). See
+        # ``bucket_brigade/training/obs_audit.py`` for the spec.
+        self.obs_auditor = obs_auditor
         self.num_agents = num_agents
         self.obs_dim = obs_dim
         self.action_dims = action_dims
@@ -542,6 +552,66 @@ class JointPPOTrainer:
         obs = self.env.reset(seed=seed)
         # ``_last_obs`` is now ``[N, obs_dim]`` — one row per agent.
         self._last_obs = self._flatten_per_agent(obs)
+        # Issue #274: keep a handle on the pre-flatten dict so the obs
+        # auditor can record what the flattener actually consumed. Only
+        # used when ``self.obs_auditor is not None and obs_auditor.enabled``;
+        # this assignment is a single bound reference so it is essentially
+        # free for the audit-disabled path. The dict's arrays are already
+        # copies (see ``BucketBrigadeEnv._get_observation``).
+        self._last_obs_dict = obs
+
+    # ------------------------------------------------------------------
+    # Issue #274: obs-auditor helpers
+    # ------------------------------------------------------------------
+
+    def _audit_scenario_info(self) -> Dict[str, object]:
+        """Capture scenario knobs the post-hoc analyzer needs to interpret samples.
+
+        Required fields for v1 (per the curator spec):
+
+        - ``action_validity_mode`` — gates the bit-exact ``raw == sanitized``
+          cross-check on the ``last_actions`` slice (PR #316).
+        - ``macro_actions`` — present if the env is wrapped by
+          :class:`MacroActionEnv` (PR #298). When ``True``, ``raw_action``
+          is a single option index, not ``[house, mode, signal]``.
+        - ``extinguish_mode`` — present iff the underlying scenario opts
+          into the continuous-extinguish dynamics (PR #317). Affects the
+          ``houses`` slice variance interpretation.
+        - ``num_houses`` — needed to compute the houses-slice offset.
+        - ``num_agents`` — needed to recover the identity-tail offset.
+
+        All lookups are defensive: missing knobs return ``None`` and the
+        analyzer is responsible for interpreting an absent value as
+        "scenario does not expose this knob."
+        """
+        scenario = getattr(self.env, "scenario", None)
+        info: Dict[str, object] = {
+            "num_agents": int(self.num_agents),
+            "num_houses": int(self._influence_num_houses),
+            "action_validity_mode": getattr(scenario, "action_validity_mode", None),
+            "extinguish_mode": getattr(scenario, "extinguish_mode", None),
+            # ``MacroActionEnv`` (PR #298) is the only wrapper that exposes
+            # ``num_options`` (the option-head action-dim count). Use it as
+            # a duck-typed marker so this code path doesn't import the
+            # wrapper class.
+            "macro_actions": bool(hasattr(self.env, "num_options")),
+        }
+        return info
+
+    def _safe_env_last_actions(self) -> Optional[np.ndarray]:
+        """Read ``env.last_actions`` post-step, defensively.
+
+        After ``env.step``, ``last_actions`` reflects the *sanitized*
+        action (PR #316; also true on the pre-#316 ``"always_valid"``
+        path, where sanitization is a bit-exact pass-through). For
+        wrappers without a ``last_actions`` field (e.g.
+        :class:`MacroActionEnv` at the macro level), returns ``None`` and
+        the wire-in falls back to ``raw_action`` for ``action_taken``.
+        """
+        la = getattr(self.env, "last_actions", None)
+        if la is None:
+            return None
+        return np.asarray(la)
 
     def _global_obs_from_per_agent(self, obs_per_agent: torch.Tensor) -> torch.Tensor:
         """Strip the per-agent identity one-hot tail to recover the global obs.
@@ -685,9 +755,21 @@ class JointPPOTrainer:
         rewards = np.zeros((self.num_agents, num_steps), dtype=np.float32)
         dones = np.zeros(num_steps, dtype=np.float32)
 
+        # Issue #274: cache the obs-auditor enabled-flag once per rollout so
+        # the inner loop's hot path stays a single bool check. The audit-
+        # disabled path is bit-identical to the pre-#274 code.
+        audit_enabled = self.obs_auditor is not None and self.obs_auditor.enabled
+
         for t in range(num_steps):
             obs_t = torch.from_numpy(self._last_obs).to(self.device)  # [N, obs_dim]
             joint_action, lps, vs = self._act_all(obs_t)
+
+            # Snapshot the pre-step env dict (the one that produced
+            # ``self._last_obs``) before ``env.step`` mutates it. Only
+            # taken when audit is enabled — otherwise this reference
+            # is never read.
+            pre_step_obs_dict = self._last_obs_dict if audit_enabled else None
+            pre_step_flat_obs = self._last_obs.copy() if audit_enabled else None
 
             next_obs_dict, rew, done_arr, _ = self.env.step(joint_action)
             done = bool(np.asarray(done_arr).any())
@@ -700,10 +782,42 @@ class JointPPOTrainer:
                 rewards[i, t] = rew[i]
             dones[t] = float(done)
 
+            # Issue #274: emit per-agent audit records for this step. We
+            # do this *after* the env step so ``action_taken`` (read from
+            # the env's post-step ``last_actions`` slot, which reflects
+            # the sanitized action under PR #316) is available. The
+            # ``raw_action`` is what the policy emitted (``joint_action[i]``);
+            # ``action_taken`` is what the env actually applied.
+            if audit_enabled:
+                scenario_info = self._audit_scenario_info()
+                env_last_actions = self._safe_env_last_actions()
+                for i in range(self.num_agents):
+                    raw_action = np.asarray(joint_action[i], dtype=np.int64)
+                    if env_last_actions is not None and i < len(env_last_actions):
+                        action_taken = np.asarray(env_last_actions[i], dtype=np.int64)
+                    else:
+                        # Fallback (e.g. macro-action wrapper without a
+                        # ``last_actions`` echo): treat raw == taken.
+                        action_taken = raw_action[:2].copy()
+                    self.obs_auditor.maybe_record(
+                        agent_id=i,
+                        flat_obs=pre_step_flat_obs[i],
+                        env_state=pre_step_obs_dict,
+                        raw_action=raw_action,
+                        action_taken=action_taken,
+                        reward=float(rew[i]),
+                        scenario_info=scenario_info,
+                        num_agents=self.num_agents,
+                    )
+                self.obs_auditor.advance_step()
+
             if done:
                 self._reset_env()
             else:
                 self._last_obs = self._flatten_per_agent(next_obs_dict)
+                # Issue #274: keep the env-dict handle in sync with the
+                # flat obs (see ``_reset_env`` for the rationale).
+                self._last_obs_dict = next_obs_dict
 
         return RolloutBuffer(
             observations=torch.from_numpy(observations).to(self.device),

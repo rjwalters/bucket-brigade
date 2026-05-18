@@ -359,6 +359,38 @@ def main():
         choices=["serial", "multiprocessing"],
         help="Vectorization backend (serial for debugging, multiprocessing for performance)",
     )
+    parser.add_argument(
+        "--audit-obs",
+        type=int,
+        default=0,
+        help=(
+            "Issue #274: number of global timesteps to record for the live "
+            "observation audit. NOTE: this script trains via the "
+            "PufferLib vectorized PPO path (a single-agent PolicyNetwork "
+            "over RustPufferBucketBrigade), which is a different code path "
+            "from the JointPPOTrainer rollout that the audit instruments. "
+            "When --audit-obs > 0 here, the flag is forwarded to a "
+            "JointPPOTrainer-based audit run on the same scenario / seed "
+            "so the audit captures the multi-agent obs path that #274 "
+            "targets. The Puffer training itself proceeds unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--audit-obs-path",
+        type=str,
+        default=None,
+        help=(
+            "Issue #274: explicit path for the obs-audit JSONL dump when "
+            "--audit-obs > 0. Defaults to "
+            "``runs/<run_name>/audit_obs.jsonl``."
+        ),
+    )
+    parser.add_argument(
+        "--audit-obs-seed",
+        type=int,
+        default=0,
+        help="Issue #274: seed for the obs-audit reservoir sampler.",
+    )
 
     args = parser.parse_args()
 
@@ -470,6 +502,84 @@ def main():
     )
 
     print(f"💾 Model saved to {args.save_path}")
+
+    # Issue #274: live observation audit. The Puffer-vectorized training
+    # path above does *not* use ``JointPPOTrainer.collect_rollout`` (the
+    # only rollout path the audit instruments), so we run a small,
+    # auditor-attached training pass on the same scenario / seed to
+    # capture the multi-agent obs flow that #274 targets. This pass
+    # writes a JSONL dump but does NOT replace the saved model from the
+    # Puffer path above. ``--audit-obs == 0`` (default) skips this
+    # entirely.
+    if args.audit_obs > 0:
+        from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+        from bucket_brigade.envs import get_scenario_by_name
+        from bucket_brigade.training.joint_trainer import (
+            JointPPOTrainer,
+            flatten_dict_obs,
+        )
+        from bucket_brigade.training.obs_audit import ObsAuditor
+
+        num_agents = args.num_opponents + 1
+        scenario_obj = get_scenario_by_name(args.scenario, num_agents=num_agents)
+
+        def _audit_env_fn():
+            return BucketBrigadeEnv(scenario=scenario_obj)
+
+        probe = _audit_env_fn()
+        probe_obs = probe.reset(seed=args.seed)
+        obs_dim = flatten_dict_obs(probe_obs, agent_id=0, num_agents=num_agents).shape[
+            0
+        ]
+        num_houses = probe.num_houses
+        action_dims = [num_houses, 2, 2]
+
+        # Small audit budget — one rollout that covers the requested
+        # number of picked steps. Use a single rollout of length
+        # >= audit_obs * 2 so the reservoir can find non-overlapping picks.
+        audit_total_steps = max(args.audit_obs * 4, 256)
+        audit_rollout_steps = min(audit_total_steps, 2048)
+        audit_iters = max(1, audit_total_steps // audit_rollout_steps)
+        actual_total = audit_iters * audit_rollout_steps
+
+        auditor = ObsAuditor(
+            num_samples=int(args.audit_obs),
+            total_steps=int(actual_total),
+            seed=int(args.audit_obs_seed),
+        )
+
+        audit_trainer = JointPPOTrainer(
+            env_fn=_audit_env_fn,
+            num_agents=num_agents,
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            hidden_size=args.hidden_size,
+            lr=args.lr,
+            ppo_epochs=1,
+            minibatch_size=64,
+            device="cpu",  # audit is small; force CPU for portability
+            seed=args.seed,
+            obs_auditor=auditor,
+        )
+
+        print(
+            f"[#274] obs-audit pass: scenario={args.scenario} seed={args.seed} "
+            f"total_steps={actual_total} audit_obs={args.audit_obs}"
+        )
+        for _it in range(audit_iters):
+            rollout = audit_trainer.collect_rollout(audit_rollout_steps)
+            # Only do an update if the rollout was big enough — this is an
+            # audit, not a training pass. Skipping update keeps wall-clock
+            # tiny.
+            del rollout
+
+        audit_path = (
+            Path(args.audit_obs_path)
+            if args.audit_obs_path is not None
+            else Path(f"runs/{args.run_name}/audit_obs.jsonl")
+        )
+        auditor.dump(audit_path)
+        print(f"[#274] obs-audit: wrote {len(auditor.samples)} samples to {audit_path}")
 
 
 if __name__ == "__main__":
