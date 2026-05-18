@@ -1085,7 +1085,9 @@ class JointPPOTrainer:
         assert self.advantage_estimator == "hca"
         assert self.hindsight_nets is not None
         assert self.hindsight_optimizers is not None
-        rewards_src = rewards_override if rewards_override is not None else rollout.rewards
+        rewards_src = (
+            rewards_override if rewards_override is not None else rollout.rewards
+        )
         losses: Dict[int, float] = {}
         for i in range(self.num_agents):
             obs_i = rollout.observations[:, i, :]  # [T, obs_dim]
