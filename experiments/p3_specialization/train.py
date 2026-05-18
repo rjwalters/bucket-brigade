@@ -172,6 +172,16 @@ class CellConfig:
     # Issue #289: symmetric clip on the ``pi/h`` hindsight ratio for
     # numerical stability. Mirrors PPO's own clip philosophy.
     hindsight_ratio_clip: float = 10.0
+    # Issue #290: Jaques-2019 social-influence intrinsic motivation knob.
+    # When ``> 0`` the trainer adds ``influence_coef * influence_i(t)`` to
+    # each agent's environmental reward before the advantage estimator in
+    # ``update()`` (works with GAE, HCA, and COMA); the influence term is
+    # the sum across teammates ``j != i`` of KL between
+    # ``pi_j(. | obs_j^{t+1}_real)`` and the counterfactual marginal
+    # averaged over MC samples of ``a'_i ~ pi_i(. | obs_i^t)``. ``0.0``
+    # (default) preserves bit-identical pre-#290 IPPO behavior.
+    influence_coef: float = 0.0
+    influence_mc_samples: int = 4
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -759,6 +769,8 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         hindsight_lr=cfg.hindsight_lr,
         hindsight_num_return_buckets=cfg.hindsight_num_return_buckets,
         hindsight_ratio_clip=cfg.hindsight_ratio_clip,
+        influence_coef=cfg.influence_coef,
+        influence_mc_samples=cfg.influence_mc_samples,
         device=cfg.device,
         seed=cfg.seed,
     )
@@ -1126,6 +1138,31 @@ def main() -> None:
             "numerical stability. Default 10.0."
         ),
     )
+    p.add_argument(
+        "--influence-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["influence_coef"].default,
+        help=(
+            "Issue #290: alpha for Jaques-2019 social-influence intrinsic "
+            "motivation. When > 0, each agent's reward is augmented by "
+            "alpha * sum_{j != i} KL(pi_j(.|obs_j^{t+1}_real) || E_a'_i "
+            "[pi_j(.|obs_j^{t+1}_cf(a'_i))]) before the advantage "
+            "estimator (works with GAE, HCA, and COMA). Default 0.0 "
+            "preserves bit-identical IPPO behavior. Sweep grid: "
+            "{0.0, 0.1, 0.5, 1.0}."
+        ),
+    )
+    p.add_argument(
+        "--influence-mc-samples",
+        type=int,
+        default=CellConfig.__dataclass_fields__["influence_mc_samples"].default,
+        help=(
+            "Issue #290: K, Monte-Carlo samples used to estimate the "
+            "counterfactual marginal in the influence reward. Default 4 "
+            "matches the Jaques 2019 paper. Ignored when "
+            "--influence-coef == 0."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
 
@@ -1162,6 +1199,8 @@ def main() -> None:
         hindsight_lr=args.hindsight_lr,
         hindsight_num_return_buckets=args.hindsight_num_return_buckets,
         hindsight_ratio_clip=args.hindsight_ratio_clip,
+        influence_coef=args.influence_coef,
+        influence_mc_samples=args.influence_mc_samples,
         device=args.device,
     )
     print(
@@ -1173,7 +1212,8 @@ def main() -> None:
         f"progress_shaping_coef={cfg.progress_shaping_coef} "
         f"team_welfare_lambda={cfg.team_welfare_lambda} "
         f"team_welfare_kind={cfg.team_welfare_kind} "
-        f"macro_actions={cfg.macro_actions} commit_steps={cfg.commit_steps} =="
+        f"macro_actions={cfg.macro_actions} commit_steps={cfg.commit_steps} "
+        f"influence_coef={cfg.influence_coef} =="
     )
     train_one_cell(cfg, args.output_dir)
 
