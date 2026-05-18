@@ -1368,6 +1368,10 @@ mod proptests {
                 team_welfare_lambda: 0.0,
                 team_welfare_gamma: 1.0,
                 team_welfare_kind: "none".to_string(),
+                // Issue #251: action-validity off so existing proptest
+                // invariants (which assume pre-#251 unconstrained-action
+                // semantics) hold.
+                action_validity_mode: "always_valid".to_string(),
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));
@@ -1378,5 +1382,150 @@ mod proptests {
 
             prop_assert_eq!(result.rewards.len(), 4);
         }
+    }
+}
+
+// --- Issue #251: position-constrained action validity (adjacent-only v1) ---
+
+#[cfg(test)]
+mod action_validity_tests {
+    use super::*;
+    use crate::{Action, Scenario, SCENARIOS};
+
+    /// Build a scenario with `agent_home_positions = [0, 3, 5, 8]` (mirrors
+    /// `positional_default`) and the supplied `action_validity_mode`. All
+    /// other knobs are inherited from the `default` scenario.
+    fn make_positioned_scenario(mode: &str) -> Scenario {
+        let mut scenario = SCENARIOS.get("default").unwrap().clone();
+        scenario.agent_home_positions = vec![0, 3, 5, 8];
+        scenario.action_validity_mode = mode.to_string();
+        scenario
+    }
+
+    /// `always_valid` mode (the default) is a bit-exact pass-through. Every
+    /// raw action survives sanitization, so the resulting `last_actions`
+    /// matches the input exactly. This is the entire backward-compat
+    /// guarantee for pre-#251 scenarios.
+    #[test]
+    fn test_always_valid_mode_is_bit_exact_pass_through() {
+        let scenario = SCENARIOS.get("default").unwrap().clone();
+        assert_eq!(scenario.action_validity_mode, "always_valid");
+        let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+        // Mix of out-of-reach (5,7,9) and home-position (0) targets.
+        let actions: Vec<Action> = vec![[5, 1, 1], [7, 0, 0], [9, 1, 0], [0, 1, 1]];
+        engine.step(&actions);
+        assert_eq!(engine.last_actions, actions);
+        assert_eq!(engine.agent_positions, vec![5, 7, 9, 0]);
+    }
+
+    /// `adjacent_only` mode rewrites every out-of-reach target to the
+    /// agent's home position. Mode and signal bits are preserved.
+    #[test]
+    fn test_adjacent_only_clamps_out_of_reach_targets_to_home() {
+        let scenario = make_positioned_scenario("adjacent_only");
+        let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+        // Homes: [0, 3, 5, 8]. Adjacent (ring-dist <= 1) windows on a
+        // 10-ring: {9,0,1}, {2,3,4}, {4,5,6}, {7,8,9}. Out-of-reach
+        // targets below: 5 (a0), 6 (a1), 9 (a2), 0 (a3).
+        let raw: Vec<Action> = vec![[5, 1, 1], [6, 0, 0], [9, 1, 0], [0, 1, 1]];
+        engine.step(&raw);
+        // Every action's house should be rewritten to home; mode + signal
+        // unchanged.
+        assert_eq!(engine.agent_positions, vec![0, 3, 5, 8]);
+        assert_eq!(
+            engine.last_actions,
+            vec![[0, 1, 1], [3, 0, 0], [5, 1, 0], [8, 1, 1]]
+        );
+    }
+
+    /// In-reach targets in `adjacent_only` mode pass through unchanged.
+    /// Verifies the boundary gradient: the policy can still choose between
+    /// home and immediate neighbors.
+    #[test]
+    fn test_adjacent_only_passes_through_in_reach_targets() {
+        let scenario = make_positioned_scenario("adjacent_only");
+        let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+        // For homes [0,3,5,8] on a 10-ring (wrap), legal targets:
+        //   a0 home=0: {9, 0, 1}; pick 1
+        //   a1 home=3: {2, 3, 4}; pick 4
+        //   a2 home=5: {4, 5, 6}; pick 6
+        //   a3 home=8: {7, 8, 9}; pick 9 (mode=REST + WORK signal too)
+        let raw: Vec<Action> = vec![[1, 1, 1], [4, 1, 0], [6, 0, 1], [9, 0, 1]];
+        engine.step(&raw);
+        assert_eq!(engine.last_actions, raw);
+        assert_eq!(engine.agent_positions, vec![1, 4, 6, 9]);
+    }
+
+    /// Ring wrap: `adjacent_only` recognizes wraparound neighbors. On a
+    /// 10-ring, house 9 is adjacent to house 0 (ring dist == 1).
+    #[test]
+    fn test_adjacent_only_recognizes_ring_wrap() {
+        let scenario = make_positioned_scenario("adjacent_only");
+        let mut engine = BucketBrigade::new(scenario, 4, Some(42));
+        // a0 home=0: target 9 is the wraparound neighbor (ring dist 1).
+        // a3 home=8: target 7 is the in-ring neighbor (ring dist 1).
+        let raw: Vec<Action> = vec![[9, 1, 1], [3, 0, 0], [5, 0, 0], [7, 1, 1]];
+        engine.step(&raw);
+        // All in-reach -> pass-through.
+        assert_eq!(engine.last_actions, raw);
+    }
+
+    /// Determinism: same raw actions + same seed + same mode produce the
+    /// same trajectory whether or not sanitization fired. Specifically,
+    /// rewards under `always_valid` with home-position actions are
+    /// identical to rewards under `adjacent_only` with the same
+    /// home-position actions.
+    #[test]
+    fn test_adjacent_only_with_home_actions_matches_always_valid() {
+        let base = SCENARIOS.get("default").unwrap().clone();
+        let mut sc_always = base.clone();
+        sc_always.agent_home_positions = vec![0, 3, 5, 8];
+        sc_always.action_validity_mode = "always_valid".to_string();
+
+        let mut sc_adj = sc_always.clone();
+        sc_adj.action_validity_mode = "adjacent_only".to_string();
+
+        let mut e_always = BucketBrigade::new(sc_always, 4, Some(7));
+        let mut e_adj = BucketBrigade::new(sc_adj, 4, Some(7));
+
+        // Both at home: sanitization is a no-op.
+        let actions: Vec<Action> = vec![[0, 1, 1], [3, 1, 1], [5, 1, 1], [8, 1, 1]];
+        let r_always = e_always.step(&actions);
+        let r_adj = e_adj.step(&actions);
+        assert_eq!(r_always.rewards, r_adj.rewards);
+        assert_eq!(e_always.houses, e_adj.houses);
+    }
+
+    /// The sanitized action is what flows to the rewards engine: an agent
+    /// that "tries to" WORK at a far-away house pays only the home work
+    /// cost, not the far-away cost. This is the load-bearing semantic that
+    /// makes the constraint effective rather than cosmetic.
+    #[test]
+    fn test_adjacent_only_redirects_work_cost_to_home() {
+        let base = SCENARIOS.get("default").unwrap().clone();
+        let mut sc = base.clone();
+        sc.agent_home_positions = vec![0, 3, 5, 8];
+        // Turn on a positive distance cost so the redirection is observable.
+        sc.distance_cost_alpha = 0.1;
+        sc.action_validity_mode = "adjacent_only".to_string();
+        let mut engine = BucketBrigade::new(sc, 4, Some(11));
+        // Agent 0 (home=0) tries to work at house 5 (ring dist 5, out of
+        // reach). After sanitization, agent 0 works at home 0 — distance
+        // cost contribution is 0.1 * 0 = 0, not 0.1 * 5.
+        let raw: Vec<Action> = vec![[5, 1, 1], [3, 1, 1], [5, 1, 1], [8, 1, 1]];
+        engine.step(&raw);
+        // Agent 0's recorded position is home, not 5.
+        assert_eq!(engine.agent_positions[0], 0);
+        assert_eq!(engine.last_actions[0], [0, 1, 1]);
+    }
+
+    /// Engine construction with a bogus `action_validity_mode` must panic
+    /// via `Scenario::validate`. Guards every non-serde construction site.
+    #[test]
+    #[should_panic(expected = "action_validity_mode")]
+    fn test_engine_rejects_unknown_action_validity_mode() {
+        let mut scenario = SCENARIOS.get("default").unwrap().clone();
+        scenario.action_validity_mode = "k_hop_2".to_string();
+        let _ = BucketBrigade::new(scenario, 4, Some(42));
     }
 }

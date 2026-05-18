@@ -149,6 +149,18 @@ class Scenario:
     team_welfare_gamma: float = 1.0
     team_welfare_kind: str = "none"
 
+    # Position-constrained action validity (issue #251, optional, opt-in).
+    # Default ``"always_valid"`` preserves bit-exact pre-#251 behavior:
+    # every house index in ``[0, num_houses)`` is a valid target for
+    # every agent. Set to ``"adjacent_only"`` to constrain each agent
+    # to acting at its home position (``agent_home_positions[i]``) or
+    # a directly adjacent house (ring distance exactly 1).
+    # Out-of-reach targets are sanitized to home by the env's ``step``
+    # before any state mutation (the Python env mirrors the canonical
+    # Rust implementation in ``bucket-brigade-core/src/engine/core.rs``).
+    # k-hop and continuous-reach variants are deferred to follow-up issues.
+    action_validity_mode: str = "always_valid"
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -230,6 +242,18 @@ class Scenario:
             raise ValueError(
                 f"Scenario.team_welfare_kind={self.team_welfare_kind!r} "
                 f"is not supported; allowed values: {allowed_team_welfare_kinds!r}."
+            )
+
+        # Issue #251: action_validity_mode allowlist. Keep in sync with
+        # the Rust allowlist in
+        # ``bucket-brigade-core/src/scenarios.rs::ALLOWED_ACTION_VALIDITY_MODES``.
+        # ``"always_valid"`` (default) preserves bit-exact pre-#251 behavior;
+        # ``"adjacent_only"`` enables the v1 position-constrained mask.
+        allowed_action_validity_modes = ("always_valid", "adjacent_only")
+        if self.action_validity_mode not in allowed_action_validity_modes:
+            raise ValueError(
+                f"Scenario.action_validity_mode={self.action_validity_mode!r} "
+                f"is not supported; allowed values: {allowed_action_validity_modes!r}."
             )
 
     def to_feature_vector(self) -> np.ndarray:

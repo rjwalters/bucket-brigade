@@ -150,7 +150,6 @@ where
     Ok(s)
 }
 
-
 /// Allowed values for `Scenario::distance_metric`.
 ///
 /// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
@@ -162,6 +161,52 @@ where
 /// Keep in sync with the Python validator in
 /// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
 pub const ALLOWED_DISTANCE_METRICS: &[&str] = &["ring_arc"];
+
+/// Allowed values for `Scenario::action_validity_mode` (issue #251).
+///
+/// - `"always_valid"` (default): every house index is a valid target for every
+///   agent. Pre-#251 behavior; bit-exact backward compatibility.
+/// - `"adjacent_only"`: agent `i` can only target its home position
+///   `agent_home_positions[i]` or a directly adjacent house (ring distance
+///   exactly 1). Out-of-reach targets are sanitized to the agent's home
+///   position before action effects are computed (see `engine/core.rs::step`).
+///   This preserves a meaningful policy gradient at the validity boundary —
+///   the policy can still choose between home and adjacent reach — rather
+///   than collapsing every invalid action to REST.
+///
+/// k-hop / continuous-reach variants from architect proposal #234 are
+/// deferred to follow-up issues. v1 ships adjacent-only because it is the
+/// smallest scope that exercises the position-constrained-action lever.
+///
+/// Keep in sync with the Python validator in
+/// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
+pub const ALLOWED_ACTION_VALIDITY_MODES: &[&str] = &["always_valid", "adjacent_only"];
+
+/// Default for `Scenario::action_validity_mode` (issue #251). `"always_valid"`
+/// disables the position constraint — every house index is a valid target —
+/// which preserves bit-exact pre-#251 behavior for every existing scenario.
+fn default_action_validity_mode() -> String {
+    "always_valid".to_string()
+}
+
+/// Custom serde deserializer for `Scenario::action_validity_mode` (issue #251)
+/// that enforces the `ALLOWED_ACTION_VALIDITY_MODES` allowlist. Mirrors the
+/// `distance_metric` deserializer's pattern — without this guard, an
+/// unrecognized mode would silently fall through to the always-valid
+/// behavior at runtime (the engine treats any unknown string as a no-op).
+fn deserialize_action_validity_mode<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if !ALLOWED_ACTION_VALIDITY_MODES.contains(&s.as_str()) {
+        return Err(D::Error::custom(format!(
+            "Scenario.action_validity_mode={s:?} is not supported; allowed values: {ALLOWED_ACTION_VALIDITY_MODES:?}"
+        )));
+    }
+    Ok(s)
+}
 
 /// Default for `Scenario::distance_metric`. `"ring_arc"` is the only supported
 /// value today; the field is future-proofing for alternative geometries.
@@ -320,6 +365,24 @@ pub struct Scenario {
         deserialize_with = "deserialize_team_welfare_kind"
     )]
     pub team_welfare_kind: String,
+
+    // Position-constrained action validity (issue #251, optional, opt-in).
+    //
+    // Default `"always_valid"` preserves bit-exact pre-#251 behavior: every
+    // house index in `[0, num_houses)` is a valid target for every agent.
+    // Set to `"adjacent_only"` to constrain each agent to acting at its home
+    // position (`agent_home_positions[i]`) or a directly adjacent house
+    // (ring distance exactly 1). Out-of-reach targets are sanitized to the
+    // agent's home position by the engine before any state mutation; see
+    // `engine/core.rs::step` for the implementation. Per #251, this is v1's
+    // smallest-scope realization of architect proposal #234 option B
+    // (position-constrained action validity); k-hop and continuous-reach
+    // variants are deferred to follow-up issues.
+    #[serde(
+        default = "default_action_validity_mode",
+        deserialize_with = "deserialize_action_validity_mode"
+    )]
+    pub action_validity_mode: String,
 }
 
 impl Scenario {
@@ -347,6 +410,16 @@ impl Scenario {
             return Err(format!(
                 "Scenario.team_welfare_kind={:?} is not supported; allowed values: {:?}",
                 self.team_welfare_kind, ALLOWED_TEAM_WELFARE_KINDS
+            ));
+        }
+        // Issue #251: action_validity_mode allowlist re-check for the
+        // programmatic-construction path. Without this, a bogus mode would
+        // silently fall through to the always-valid branch in
+        // `engine/core.rs::sanitize_actions`.
+        if !ALLOWED_ACTION_VALIDITY_MODES.contains(&self.action_validity_mode.as_str()) {
+            return Err(format!(
+                "Scenario.action_validity_mode={:?} is not supported; allowed values: {:?}",
+                self.action_validity_mode, ALLOWED_ACTION_VALIDITY_MODES
             ));
         }
         Ok(())
@@ -406,6 +479,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -433,6 +507,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -460,6 +535,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -488,6 +564,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -515,6 +592,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -542,6 +620,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -569,6 +648,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -596,6 +676,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -623,6 +704,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -650,6 +732,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -677,6 +760,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -704,6 +788,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -738,6 +823,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -771,6 +857,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -807,6 +894,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         },
     );
 
@@ -1383,6 +1471,7 @@ mod tests {
             team_welfare_lambda: default_team_welfare_lambda(),
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
         };
         let err = scenario
             .validate()
@@ -1507,5 +1596,125 @@ mod tests {
         }"#;
         let scenario: Scenario = serde_json::from_str(json).unwrap();
         assert_eq!(scenario.num_houses, 2);
+    }
+
+    // --- Issue #251: action_validity_mode tests ---------------------------
+
+    /// `action_validity_mode` is optional in JSON and defaults to
+    /// `"always_valid"`. This is the entire backward-compat story: every
+    /// existing JSON scenario (and any external scenario without the field)
+    /// deserializes to the always-valid branch in the engine.
+    #[test]
+    fn test_action_validity_mode_defaults_to_always_valid_in_json() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.action_validity_mode, "always_valid");
+    }
+
+    /// Explicit `"adjacent_only"` in JSON is preserved (not silently
+    /// overridden by the default).
+    #[test]
+    fn test_action_validity_mode_explicit_adjacent_only_preserved() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "action_validity_mode": "adjacent_only"
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.action_validity_mode, "adjacent_only");
+    }
+
+    /// Bogus modes are rejected at deserialization time. Without this guard
+    /// the engine would silently fall through to the always-valid branch.
+    #[test]
+    fn test_unknown_action_validity_mode_rejected_in_deserialize() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "action_validity_mode": "k_hop_2"
+        }"#;
+        let err = serde_json::from_str::<Scenario>(json)
+            .expect_err("k_hop_2 should be rejected by the allowlist (deferred to follow-up)");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("action_validity_mode") && msg.contains("k_hop_2"),
+            "Error should name the offending field and value, got: {msg}"
+        );
+        assert!(
+            msg.contains("always_valid") && msg.contains("adjacent_only"),
+            "Error should advertise the allowed values, got: {msg}"
+        );
+    }
+
+    /// Programmatic-construction path: building a `Scenario` literal with a
+    /// bogus `action_validity_mode` should fail `validate()`.
+    #[test]
+    fn test_validate_rejects_unknown_action_validity_mode() {
+        let mut scenario = SCENARIOS.get("default").unwrap().clone();
+        scenario.action_validity_mode = "k_hop_2".to_string();
+        let err = scenario
+            .validate()
+            .expect_err("k_hop_2 should fail validate()");
+        assert!(
+            err.contains("action_validity_mode") && err.contains("k_hop_2"),
+            "Error should name field and value, got: {err}"
+        );
+        assert!(
+            err.contains("always_valid") && err.contains("adjacent_only"),
+            "Error should list allowed values, got: {err}"
+        );
+    }
+
+    /// Backward compat: every predefined scenario must keep the default
+    /// `"always_valid"` mode so all 15 pre-#251 scenarios are bit-exact.
+    #[test]
+    fn test_all_scenarios_default_to_always_valid() {
+        for (name, scenario) in SCENARIOS.iter() {
+            assert_eq!(
+                scenario.action_validity_mode, "always_valid",
+                "Predefined scenario '{}' must default to always_valid \
+                 to preserve pre-#251 behavior",
+                name
+            );
+        }
+    }
+
+    /// Allowlist invariant: the default value is always allowed, and both
+    /// supported modes are listed.
+    #[test]
+    fn test_action_validity_mode_allowlist_contains_default() {
+        assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&"always_valid"));
+        assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&"adjacent_only"));
+        assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&default_action_validity_mode().as_str()));
     }
 }

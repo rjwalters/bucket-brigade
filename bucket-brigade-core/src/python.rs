@@ -179,6 +179,12 @@ impl PyScenario {
             team_welfare_lambda: 0.0,
             team_welfare_gamma: 1.0,
             team_welfare_kind: "none".to_string(),
+            // Issue #251: position-constrained action validity defaults to
+            // off (``"always_valid"`` -> engine fast-path pass-through, no
+            // sanitization). PyScenario callers that need ``"adjacent_only"``
+            // should access scenarios through ``bucket_brigade_core.SCENARIOS``
+            // (after mutation) or the JSON path which preserves all fields.
+            action_validity_mode: "always_valid".to_string(),
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -301,6 +307,16 @@ impl PyScenario {
     #[getter]
     fn progress_shaping_coef(&self) -> f32 {
         self.inner.progress_shaping_coef
+    }
+
+    /// Issue #251: position-constrained action validity mode. Defaults to
+    /// ``"always_valid"`` so every pre-#251 scenario is bit-exactly
+    /// preserved. ``"adjacent_only"`` enables the v1 mask: agent i can
+    /// only target its home position or a directly adjacent (ring-dist 1)
+    /// house. Out-of-reach targets are sanitized to home by the engine.
+    #[getter]
+    fn action_validity_mode(&self) -> String {
+        self.inner.action_validity_mode.clone()
     }
 }
 

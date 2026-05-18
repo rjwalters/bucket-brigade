@@ -182,20 +182,32 @@ impl BucketBrigade {
         // Store previous house states for reward calculation
         let prev_houses = self.houses.clone();
 
+        // 0. Action-validity sanitization (issue #251). When
+        //    `action_validity_mode == "adjacent_only"`, rewrite any agent
+        //    action whose target house is more than ring-distance 1 from the
+        //    agent's home position to that home position (a no-op move into
+        //    home). The mode bit and signal bit are preserved. When the mode
+        //    is the default `"always_valid"` this is a true bit-exact no-op:
+        //    `sanitize_actions` returns a clone of the input slice. Every
+        //    downstream phase (extinguish, rewards, observation) consumes the
+        //    sanitized actions, not the raw input, so policies can't cheat
+        //    the constraint by separately attacking different phases.
+        let sanitized = self.sanitize_actions(actions);
+
         // 1. Signal phase (issue #235): signals are now a first-class action
         // dimension. Each agent broadcasts `action[2]` independently of the
         // work/rest bit `action[1]`, enabling deceptive signaling. Pre-#235
         // this was `action[1]` (the work bit), so signals carried no
         // information beyond the action itself.
-        self.agent_signals = actions.iter().map(|action| action[2]).collect();
+        self.agent_signals = sanitized.iter().map(|action| action[2]).collect();
 
         // 2. Action phase: update agent positions
-        self.last_actions = actions.to_vec();
-        self.agent_positions = actions.iter().map(|action| action[0]).collect();
+        self.last_actions = sanitized.clone();
+        self.agent_positions = sanitized.iter().map(|action| action[0]).collect();
 
         // 3. Extinguish phase
         // Agents respond to fires visible at start of turn
-        self.extinguish_fires(actions);
+        self.extinguish_fires(&sanitized);
 
         // 4. Burn-out phase
         // Unextinguished fires become ruined houses
@@ -210,7 +222,7 @@ impl BucketBrigade {
         self.spontaneous_ignition();
 
         // 7. Compute rewards
-        self.rewards = self.compute_rewards(actions, &prev_houses);
+        self.rewards = self.compute_rewards(&sanitized, &prev_houses);
 
         // 8. Check termination
         self.done = self.check_termination();
@@ -226,6 +238,45 @@ impl BucketBrigade {
             done: self.done,
             info: serde_json::json!({}),
         }
+    }
+
+    /// Apply the per-agent position-constrained action mask (issue #251).
+    ///
+    /// When `scenario.action_validity_mode == "always_valid"` (the default)
+    /// this is a clone-and-return — every house index is a valid target for
+    /// every agent. Pre-#251 scenarios hit this branch and are bit-exact.
+    ///
+    /// When the mode is `"adjacent_only"`, agent `i` may target any house
+    /// `j` with `ring_dist(num_houses, agent_home_positions[i], j) <= 1`.
+    /// Out-of-reach targets are rewritten to `agent_home_positions[i]` (a
+    /// no-op move into home that preserves the boundary gradient — the
+    /// policy can still choose meaningfully between home and adjacent
+    /// reach). The mode bit (`action[1]`) and signal bit (`action[2]`) are
+    /// untouched, so a policy that targets an out-of-reach house can still
+    /// WORK or REST and can still broadcast any signal — just from home.
+    fn sanitize_actions(&self, actions: &[Action]) -> Vec<Action> {
+        if self.scenario.action_validity_mode == "always_valid" {
+            // Hot path: clone and return. This is the pre-#251 codepath.
+            return actions.to_vec();
+        }
+        // `adjacent_only`: rewrite out-of-reach house indices to home.
+        // The allowlist (`scenarios.rs::ALLOWED_ACTION_VALIDITY_MODES`) +
+        // `Scenario::validate` chokepoint guarantee no other mode reaches
+        // this branch.
+        let num_houses = self.scenario.num_houses;
+        let mut sanitized = actions.to_vec();
+        for (agent_idx, action) in sanitized.iter_mut().enumerate() {
+            // Defensive: agents beyond `self.num_agents` shouldn't exist,
+            // but guard the array bound rather than panicking.
+            if agent_idx >= self.agent_home_positions.len() {
+                break;
+            }
+            let home = self.agent_home_positions[agent_idx];
+            if ring_dist(num_houses, home, action[0]) > 1 {
+                action[0] = home;
+            }
+        }
+        sanitized
     }
 
     pub(super) fn check_termination(&self) -> bool {

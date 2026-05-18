@@ -170,6 +170,20 @@ class BucketBrigadeEnv:
             signal_col = actions[:, 1:2]
             actions = np.concatenate([actions, signal_col], axis=1)
 
+        # 0. Action-validity sanitization (issue #251). When
+        # ``scenario.action_validity_mode == "adjacent_only"``, rewrite any
+        # agent action whose target house is more than ring-distance 1 from
+        # the agent's home position to that home position (a no-op move
+        # into home). Mode bit and signal bit are preserved. When the mode
+        # is the default ``"always_valid"`` this is a true bit-exact no-op:
+        # the input array passes through untouched. Every downstream phase
+        # (extinguish, rewards, observation) consumes the sanitized actions,
+        # not the raw input, so policies can't cheat the constraint by
+        # separately attacking different phases. Mirrors the canonical Rust
+        # implementation in ``bucket-brigade-core/src/engine/core.rs``
+        # (``sanitize_actions``).
+        actions = self._sanitize_actions(actions)
+
         # 1. Signal phase (issue #235): signals are now their own action
         # dimension. Pre-#235 ``self.signals = actions[:, 1]`` made the
         # signal a deterministic copy of the work bit; now agents can
@@ -218,6 +232,38 @@ class BucketBrigadeEnv:
             np.full(self.num_agents, self.done),
             {},
         )
+
+    def _sanitize_actions(self, actions: np.ndarray) -> np.ndarray:
+        """Apply the per-agent position-constrained action mask (issue #251).
+
+        When ``scenario.action_validity_mode == "always_valid"`` (the default)
+        this is a true bit-exact pass-through: the input array is returned
+        unchanged and the engine sees pre-#251 behavior. When the mode is
+        ``"adjacent_only"``, agent ``i`` may target only houses whose ring
+        distance from ``agent_home_positions[i]`` is at most 1; out-of-reach
+        targets are rewritten to the agent's home position. The mode bit
+        (column 1) and signal bit (column 2) are preserved — only the house
+        index in column 0 is potentially rewritten.
+
+        Mirrors the canonical Rust implementation in
+        ``bucket-brigade-core/src/engine/core.rs::sanitize_actions``.
+        """
+        mode = getattr(self.scenario, "action_validity_mode", "always_valid")
+        if mode == "always_valid":
+            return actions
+        # ``adjacent_only``: rewrite out-of-reach house indices to home.
+        # Ring distance on a length-N ring: min(|a-b|, N - |a-b|).
+        n = self.num_houses
+        homes = self.agent_home_positions  # length-num_agents, dtype int8
+        sanitized = actions.copy()
+        targets = sanitized[:, 0].astype(np.int32)
+        homes_i = homes.astype(np.int32)
+        raw = np.abs(targets - homes_i)
+        dist = np.minimum(raw, n - raw)
+        out_of_reach = dist > 1
+        # Cast back to the action array dtype to avoid widening.
+        sanitized[out_of_reach, 0] = homes[out_of_reach].astype(sanitized.dtype)
+        return sanitized
 
     def _initialize_houses(self) -> None:
         """Initialize houses with probabilistic fires based on prob_house_catches_fire."""

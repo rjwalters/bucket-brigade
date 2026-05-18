@@ -134,6 +134,14 @@ class CellConfig:
     team_welfare_lambda: float = 0.0
     team_welfare_gamma: float = 1.0
     team_welfare_kind: str = "none"
+    # Issue #251: position-constrained action validity. Mutated onto the
+    # loaded ``Scenario`` instance in ``train_one_cell`` next to the
+    # other scenario knobs. Default ``"always_valid"`` matches the
+    # ``Scenario.action_validity_mode`` default, keeps the env fast-path
+    # pass-through, and preserves bit-identical pre-#251 behavior. Set to
+    # ``"adjacent_only"`` to constrain each agent to its home position or
+    # a directly adjacent house (ring distance 1).
+    action_validity_mode: str = "always_valid"
     # Issue #270: optional BC-pretrained init. Directory containing per-agent
     # ``agent_{i}.pt`` state dicts produced by
     # ``experiments/p3_specialization/bc_init.py``. ``None`` (default)
@@ -783,6 +791,17 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     scenario.team_welfare_gamma = float(cfg.team_welfare_gamma)
     scenario.team_welfare_kind = str(cfg.team_welfare_kind)
 
+    # Issue #251: position-constrained action validity. Mutate the same
+    # loaded ``Scenario`` instance. ``"always_valid"`` (default) keeps the
+    # env fast-path pass-through and bit-identical pre-#251 behavior;
+    # ``"adjacent_only"`` enables the v1 mask (agent i can only target its
+    # home position or a directly adjacent house). The mutation is safe:
+    # ``Scenario.__post_init__`` validates the allowlist at construction
+    # time, but post-construction mutation of this field is consumed
+    # directly by ``BucketBrigadeEnv._sanitize_actions`` without further
+    # validation — only the engine path runs.
+    scenario.action_validity_mode = str(cfg.action_validity_mode)
+
     # Issue #286: when macro_actions is on, wrap the base env in
     # ``MacroActionEnv``. The wrapper preserves the dict-obs / numpy-action
     # contract so it is a drop-in for ``JointPPOTrainer.env_fn``; only
@@ -1131,6 +1150,21 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--action-validity-mode",
+        type=str,
+        default=CellConfig.__dataclass_fields__["action_validity_mode"].default,
+        choices=("always_valid", "adjacent_only"),
+        help=(
+            "Issue #251: position-constrained action validity. 'always_valid' "
+            "(default) preserves bit-identical pre-#251 behavior. "
+            "'adjacent_only' constrains each agent to acting at its home "
+            "position or a directly adjacent house (ring distance 1); "
+            "out-of-reach targets are sanitized to home by the env's step "
+            "before any state mutation. k-hop and continuous-reach variants "
+            "are deferred to follow-up issues."
+        ),
+    )
+    p.add_argument(
         "--bc-init-checkpoint-dir",
         type=str,
         default=None,
@@ -1323,6 +1357,7 @@ def main() -> None:
         team_welfare_lambda=args.team_welfare_lambda,
         team_welfare_gamma=args.team_welfare_gamma,
         team_welfare_kind=args.team_welfare_kind,
+        action_validity_mode=args.action_validity_mode,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         gae_lambda=args.gae_lambda,
         macro_actions=args.macro_actions,
@@ -1347,6 +1382,7 @@ def main() -> None:
         f"progress_shaping_coef={cfg.progress_shaping_coef} "
         f"team_welfare_lambda={cfg.team_welfare_lambda} "
         f"team_welfare_kind={cfg.team_welfare_kind} "
+        f"action_validity_mode={cfg.action_validity_mode} "
         f"macro_actions={cfg.macro_actions} commit_steps={cfg.commit_steps} "
         f"influence_coef={cfg.influence_coef} =="
     )

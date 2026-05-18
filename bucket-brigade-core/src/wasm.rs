@@ -183,6 +183,13 @@ impl WasmScenario {
             team_welfare_lambda: 0.0,
             team_welfare_gamma: 1.0,
             team_welfare_kind: "none".to_string(),
+            // Issue #251: position-constrained action validity defaults to
+            // off (``"always_valid"``) so existing JS/TS callers see
+            // byte-identical behavior. The browser UI doesn't expose this
+            // knob; non-default modes (``"adjacent_only"``) reach the WASM
+            // engine only via the JSON path (``Scenario::to_json`` /
+            // ``from_json``) which preserves all fields.
+            action_validity_mode: "always_valid".to_string(),
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent
