@@ -162,6 +162,118 @@ class TestMutualExclusion:
                 cfg, output_dir=__import__("pathlib").Path("/tmp/should-not-create")
             )
 
+    # ------------------------------------------------------------------
+    # Issue #313: post-#312 CellConfig knobs (COMA / HCA / influence /
+    # macro-actions) must also raise when combined with lola_dice=True.
+    # The existing if-cfg.lola_dice trainer switch silently dropped these
+    # flags before this guard was extended.
+    # ------------------------------------------------------------------
+
+    def test_cellconfig_guard_lola_plus_coma(self):
+        from experiments.p3_specialization.train import CellConfig, train_one_cell
+
+        cfg = CellConfig(
+            scenario=SCENARIO,
+            lambda_red=0.0,
+            seed=0,
+            num_iterations=1,
+            rollout_steps=SMOKE_ROLLOUT,
+            num_agents=NUM_AGENTS,
+            lola_dice=True,
+            coma=True,
+        )
+        with pytest.raises(ValueError, match="coma"):
+            train_one_cell(
+                cfg, output_dir=__import__("pathlib").Path("/tmp/should-not-create")
+            )
+
+    def test_cellconfig_guard_lola_plus_hca(self):
+        from experiments.p3_specialization.train import CellConfig, train_one_cell
+
+        cfg = CellConfig(
+            scenario=SCENARIO,
+            lambda_red=0.0,
+            seed=0,
+            num_iterations=1,
+            rollout_steps=SMOKE_ROLLOUT,
+            num_agents=NUM_AGENTS,
+            lola_dice=True,
+            advantage_estimator="hca",
+        )
+        with pytest.raises(ValueError, match="advantage_estimator"):
+            train_one_cell(
+                cfg, output_dir=__import__("pathlib").Path("/tmp/should-not-create")
+            )
+
+    def test_cellconfig_guard_lola_plus_influence(self):
+        from experiments.p3_specialization.train import CellConfig, train_one_cell
+
+        cfg = CellConfig(
+            scenario=SCENARIO,
+            lambda_red=0.0,
+            seed=0,
+            num_iterations=1,
+            rollout_steps=SMOKE_ROLLOUT,
+            num_agents=NUM_AGENTS,
+            lola_dice=True,
+            influence_coef=0.1,
+        )
+        with pytest.raises(ValueError, match="influence_coef"):
+            train_one_cell(
+                cfg, output_dir=__import__("pathlib").Path("/tmp/should-not-create")
+            )
+
+    def test_cellconfig_guard_lola_plus_macro_actions(self):
+        from experiments.p3_specialization.train import CellConfig, train_one_cell
+
+        cfg = CellConfig(
+            scenario=SCENARIO,
+            lambda_red=0.0,
+            seed=0,
+            num_iterations=1,
+            rollout_steps=SMOKE_ROLLOUT,
+            num_agents=NUM_AGENTS,
+            lola_dice=True,
+            macro_actions=True,
+        )
+        with pytest.raises(ValueError, match="macro_actions"):
+            train_one_cell(
+                cfg, output_dir=__import__("pathlib").Path("/tmp/should-not-create")
+            )
+
+    def test_cellconfig_lola_alone_passes(self, tmp_path, monkeypatch):
+        """Sanity: ``lola_dice=True`` with all other knobs at default must
+        clear the mutex block. We monkeypatch the LolaTrainer so the test
+        verifies validation only — not a full rollout."""
+        from experiments.p3_specialization import train as train_mod
+        from experiments.p3_specialization.train import CellConfig, train_one_cell
+
+        constructed = {"hit": False}
+
+        class _StubTrainer:
+            def __init__(self, **kwargs):
+                constructed["hit"] = True
+                raise RuntimeError("short-circuit: mutex check passed")
+
+        monkeypatch.setattr(train_mod, "LolaTrainer", _StubTrainer)
+
+        cfg = CellConfig(
+            scenario=SCENARIO,
+            lambda_red=0.0,
+            seed=0,
+            num_iterations=1,
+            rollout_steps=SMOKE_ROLLOUT,
+            num_agents=NUM_AGENTS,
+            lola_dice=True,
+        )
+        # The mutex block must not raise. The stubbed trainer raises a
+        # distinct RuntimeError to confirm we reached construction.
+        with pytest.raises(RuntimeError, match="short-circuit"):
+            train_one_cell(cfg, output_dir=tmp_path / "lola-alone")
+        assert constructed["hit"], (
+            "Mutex block short-circuited; LOLA-alone happy path is broken."
+        )
+
 
 # ----------------------------------------------------------------------
 # Bucket-brigade smoke test

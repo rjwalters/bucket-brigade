@@ -720,6 +720,40 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
                 "shared loss, while LOLA's opponent-shaping term assumes "
                 "independent inner gradient steps per agent. Pick one."
             )
+        # Issue #313: four additional CellConfig knobs landed on main after
+        # PR #303 (LOLA) was authored. The if-cfg.lola_dice trainer switch
+        # at ``train.py:787`` constructs ``LolaTrainer`` with only LOLA-
+        # specific kwargs, so each of these is silently dropped on the
+        # floor unless we surface the conflict here.
+        if cfg.coma:
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with cfg.coma=True. "
+                "COMA installs a CentralizedQCritic and replaces the per-agent "
+                "advantage with a counterfactual Q-value, conflicting with LOLA's "
+                "independent per-agent inner gradient step. Pick one."
+            )
+        if cfg.advantage_estimator != "gae":
+            raise ValueError(
+                f"cfg.lola_dice=True is incompatible with "
+                f"cfg.advantage_estimator={cfg.advantage_estimator!r}. LOLA-DiCE "
+                "uses its own opponent-shaping surrogate; substituting the "
+                "advantage estimator would conflate two unrelated experiments. "
+                "Pick one."
+            )
+        if cfg.influence_coef > 0:
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with cfg.influence_coef > 0. "
+                "Social-influence intrinsic reward couples agents through a "
+                "counterfactual KL bonus, while LOLA assumes independent "
+                "inner-step opponents. Pick one."
+            )
+        if cfg.macro_actions:
+            raise ValueError(
+                "cfg.lola_dice=True is incompatible with cfg.macro_actions=True. "
+                "The LOLA-DiCE x MacroActionEnv interaction is untested; the DiCE "
+                "magic-box surrogate's behavior under temporally-extended actions "
+                "has not been validated. Pick one."
+            )
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
