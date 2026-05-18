@@ -81,6 +81,16 @@ fn default_action_shaping_beta() -> f32 {
     0.0
 }
 
+/// Default for `Scenario::progress_shaping_coef`. Zero preserves bit-exact
+/// backward compatibility with pre-#265 behavior (no dense progress shaping
+/// term added to the per-step team reward). When non-zero, the team reward
+/// each step gains `coef * (cur_safe - prev_safe)`, which gives PPO a dense
+/// per-step gradient signal on save/burn transitions without changing the
+/// long-horizon optimum. See `engine/rewards.rs` for the implementation.
+fn default_progress_shaping_coef() -> f32 {
+    0.0
+}
+
 /// Allowed values for `Scenario::distance_metric`.
 ///
 /// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
@@ -210,6 +220,25 @@ pub struct Scenario {
     pub action_shaping_alpha: f32,
     #[serde(default = "default_action_shaping_beta")]
     pub action_shaping_beta: f32,
+
+    // Dense progress shaping (issue #265, optional, additive).
+    //
+    // Defaults to `0.0` so every pre-#265 scenario is bit-exactly
+    // preserved (the engine takes a fast-path skip when this knob is zero;
+    // see `engine/rewards.rs`).
+    //
+    // When non-zero, the per-step team reward picks up
+    // `coef * (cur_safe - prev_safe)`, which gives PPO a dense gradient
+    // signal on save/burn transition steps. The long-horizon optimum is
+    // not changed: the integral of `(cur_safe - prev_safe)` over an
+    // episode equals net houses saved, which the team reward already
+    // captures via `team_reward_house_survives * saved_fraction`.
+    //
+    // This is *state-difference* shaping (not potential-based / NHR);
+    // policy invariance is not guaranteed in general. Issue #283 covers
+    // the potential-based variant explicitly.
+    #[serde(default = "default_progress_shaping_coef")]
+    pub progress_shaping_coef: f32,
 }
 
 impl Scenario {
@@ -282,6 +311,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -305,6 +335,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -328,6 +359,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -352,6 +384,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -375,6 +408,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -398,6 +432,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -421,6 +456,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -444,6 +480,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -467,6 +504,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -490,6 +528,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -513,6 +552,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -536,6 +576,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -566,6 +607,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -595,6 +637,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -627,6 +670,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             num_houses: 2,
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         },
     );
 
@@ -1199,6 +1243,7 @@ mod tests {
             num_houses: default_num_houses(),
             action_shaping_alpha: default_action_shaping_alpha(),
             action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
         };
         let err = scenario
             .validate()

@@ -109,6 +109,13 @@ class CellConfig:
     # the ``--action-shaping-alpha`` / ``--action-shaping-beta`` flags.
     action_shaping_alpha: float = 0.0
     action_shaping_beta: float = 0.0
+    # Issue #265: dense progress shaping coefficient. Mutated onto the loaded
+    # ``Scenario`` instance in ``train_one_cell`` so the per-cell knob takes
+    # effect inside ``_compute_rewards``. Default ``0.0`` matches the
+    # ``Scenario.progress_shaping_coef`` default, keeps the env fast-path
+    # skip, and preserves bit-identical pre-#265 behavior. The #265 sweep
+    # driver passes per-cell values via ``--progress-shaping-coef``.
+    progress_shaping_coef: float = 0.0
     # Issue #270: optional BC-pretrained init. Directory containing per-agent
     # ``agent_{i}.pt`` state dicts produced by
     # ``experiments/p3_specialization/bc_init.py``. ``None`` (default)
@@ -633,6 +640,11 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     scenario.action_shaping_alpha = float(cfg.action_shaping_alpha)
     scenario.action_shaping_beta = float(cfg.action_shaping_beta)
 
+    # Issue #265: mutate the dense progress shaping coefficient. Default
+    # ``0.0`` keeps the env fast-path skip and bit-identical pre-#265
+    # behavior; the #265 sweep driver passes per-cell values.
+    scenario.progress_shaping_coef = float(cfg.progress_shaping_coef)
+
     def env_fn():
         env = BucketBrigadeEnv(scenario=scenario)
         return env
@@ -858,6 +870,17 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--progress-shaping-coef",
+        type=float,
+        default=CellConfig.__dataclass_fields__["progress_shaping_coef"].default,
+        help=(
+            "Issue #265: dense Δsafe per-step team-shaping coefficient. "
+            "Mutated onto the loaded Scenario instance pre-rollout. "
+            "Default 0.0 keeps the env fast-path skip and bit-identical "
+            "pre-#265 behavior. The #265 sweep uses {0.0, 1.0, 5.0, 25.0}."
+        ),
+    )
+    p.add_argument(
         "--bc-init-checkpoint-dir",
         type=str,
         default=None,
@@ -902,6 +925,7 @@ def main() -> None:
         curriculum=args.curriculum,
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,
+        progress_shaping_coef=args.progress_shaping_coef,
         bc_init_checkpoint_dir=args.bc_init_checkpoint_dir,
         gae_lambda=args.gae_lambda,
         device=args.device,
@@ -911,7 +935,8 @@ def main() -> None:
         f"seed={cfg.seed} "
         f"gae_lambda={cfg.gae_lambda} "
         f"action_shaping_alpha={cfg.action_shaping_alpha} "
-        f"action_shaping_beta={cfg.action_shaping_beta} =="
+        f"action_shaping_beta={cfg.action_shaping_beta} "
+        f"progress_shaping_coef={cfg.progress_shaping_coef} =="
     )
     train_one_cell(cfg, args.output_dir)
 

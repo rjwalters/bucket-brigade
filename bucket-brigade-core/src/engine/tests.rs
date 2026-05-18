@@ -1220,6 +1220,9 @@ mod proptests {
                 // invariants (which assume pre-#259 reward semantics) hold.
                 action_shaping_alpha: 0.0,
                 action_shaping_beta: 0.0,
+                // Issue #265: progress shaping off so the existing proptest
+                // invariants (which assume pre-#265 reward semantics) hold.
+                progress_shaping_coef: 0.0,
             };
 
             let mut engine = BucketBrigade::new(scenario, 4, Some(42));

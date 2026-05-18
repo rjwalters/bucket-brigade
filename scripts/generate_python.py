@@ -199,6 +199,20 @@ def generate_scenarios(json_path: Path, output_path: Path):
         action_shaping_alpha: float = 0.0
         action_shaping_beta: float = 0.0
 
+        # Dense progress shaping (issue #265, optional, additive). Per-step
+        # team-shared reward bonus proportional to the change in the number of
+        # SAFE houses between the previous step and the current step:
+        #
+        #     team_reward += progress_shaping_coef * (cur_safe - prev_safe)
+        #
+        # Defaults to ``0.0`` so every pre-#265 scenario is bit-exactly
+        # preserved (the env takes a fast-path skip when this knob is zero).
+        # See ``bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards``
+        # and ``bucket-brigade-core/src/engine/rewards.rs`` for the canonical
+        # implementation. Sequenced before potential-based shaping (#283) as
+        # the cheap mechanical test of the dense-team-signal hypothesis.
+        progress_shaping_coef: float = 0.0
+
         def __post_init__(self) -> None:
             """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -358,6 +372,13 @@ def generate_scenarios(json_path: Path, output_path: Path):
         if "action_shaping_beta" in spec:
             code += (
                 f"        action_shaping_beta={spec['action_shaping_beta']},\n"
+            )
+        # Issue #265 optional dense progress shaping field. Emit only when set
+        # in JSON so every pre-#265 scenario factory is byte-identical to
+        # pre-#265 codegen output (they all keep the dataclass default of 0.0).
+        if "progress_shaping_coef" in spec:
+            code += (
+                f"        progress_shaping_coef={spec['progress_shaping_coef']},\n"
             )
         code += f"    )\n\n\n"
 
