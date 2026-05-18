@@ -79,6 +79,13 @@ class CellConfig:
     # the Phase 2 sweep. Incompatible with lambda_red > 0 (the redundancy
     # penalty couples the per-agent actor trunks).
     centralized_critic: bool = False
+    # Issue #284: COMA / counterfactual-advantage flag. Default False
+    # preserves the IPPO baseline. Mutually exclusive with both
+    # centralized_critic and lambda_red > 0. Installs a CentralizedQCritic
+    # whose enumerated per-agent Q-values feed the COMA counterfactual
+    # advantage instead of GAE-on-V. See JointPPOTrainer docstring.
+    coma: bool = False
+    coma_target_update_every: int = 200
     # Encoder outputs are quantized for plug-in MI. We first project from
     # ``hidden_size`` down to ``mi_proj_dims`` via a fixed random matrix
     # (seeded from ``seed``); then ``quantize_uniform`` packs each row into
@@ -673,6 +680,8 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         redundancy_coef=cfg.lambda_red,
         normalize_returns=cfg.normalize_returns,
         centralized_critic=cfg.centralized_critic,
+        coma=cfg.coma,
+        coma_target_update_every=cfg.coma_target_update_every,
         device=cfg.device,
         seed=cfg.seed,
     )
@@ -834,6 +843,30 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--use-coma",
+        dest="coma",
+        action="store_true",
+        help=(
+            "Issue #284: enable COMA (counterfactual multi-agent policy "
+            "gradient). Installs a CentralizedQCritic and replaces the "
+            "advantage with A_i = Q(s, a) - sum_u pi_i(u | s) Q(s, "
+            "(a_{-i}, u)), enumerated over the joint per-agent action "
+            "space (prod(action_dims) = 40 for [10, 2, 2]). Default off "
+            "preserves IPPO. Mutually exclusive with --centralized-critic "
+            "and --lambda-red > 0."
+        ),
+    )
+    p.add_argument(
+        "--coma-target-update-every",
+        type=int,
+        default=CellConfig.__dataclass_fields__["coma_target_update_every"].default,
+        help=(
+            "Issue #284: hard-copy cadence for the COMA target Q-network "
+            "(in PPO update steps). Default 200 matches Foerster 2018. "
+            "Set to 0 to disable target-network updates entirely."
+        ),
+    )
+    p.add_argument(
         "--curriculum",
         type=_parse_curriculum_arg,
         default=[],
@@ -922,6 +955,8 @@ def main() -> None:
         entropy_coef=args.entropy_coef,
         normalize_returns=args.normalize_returns,
         centralized_critic=args.centralized_critic,
+        coma=args.coma,
+        coma_target_update_every=args.coma_target_update_every,
         curriculum=args.curriculum,
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,

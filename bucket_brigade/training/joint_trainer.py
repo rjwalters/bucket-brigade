@@ -50,6 +50,7 @@ import torch.optim as optim
 
 from bucket_brigade.training.networks import (
     CentralizedCritic,
+    CentralizedQCritic,
     PolicyNetwork,
     compute_gae,
 )
@@ -188,6 +189,29 @@ class JointPPOTrainer:
             penalty couples the per-agent actor trunks; combining it with
             a centralized critic would entangle two unrelated experiments.
             Raises ``ValueError`` if both are set.
+        coma: If True, enable COMA (issue #284). A
+            :class:`CentralizedQCritic` Q-function replaces the V-baseline:
+            advantages are the COMA counterfactual
+
+            ::
+
+                A_i = Q(s, a)_i - sum_u  pi_i(u | s) * Q(s, (a_{-i}, u))_i
+
+            evaluated by enumerating over the joint per-agent action space
+            (``prod(action_dims) = 40`` for the default ``[10, 2, 2]``).
+            The Q-critic is trained against 1-step TD targets
+            ``r_t + gamma * Q_target(s_{t+1}, a_{t+1})``; a slow target
+            network is updated by hard-copy every ``coma_target_update_every``
+            update steps. The per-agent value heads are bypassed (as with
+            ``centralized_critic``). Default ``False`` preserves IPPO.
+
+            **Incompatible with ``redundancy_coef > 0`` and
+            ``centralized_critic=True``**: COMA, MAPPO, and the redundancy
+            penalty are three separate experiments — pick one. Raises
+            ``ValueError`` if more than one is set.
+        coma_target_update_every: How often (in PPO update steps) to hard-
+            copy the Q-critic into the target network. Default 200 matches
+            the Foerster 2018 paper. Only used when ``coma=True``.
     """
 
     def __init__(
@@ -211,6 +235,8 @@ class JointPPOTrainer:
         seed: Optional[int] = None,
         normalize_returns: bool = False,
         centralized_critic: bool = False,
+        coma: bool = False,
+        coma_target_update_every: int = 200,
     ):
         self.env_fn = env_fn
         self.env = env_fn()
@@ -241,6 +267,33 @@ class JointPPOTrainer:
                 "heads. Combining them entangles two unrelated experiments. "
                 "Pick one."
             )
+
+        # Issue #284: COMA / counterfactual-advantage flag. Mutually exclusive
+        # with both MAPPO and the redundancy penalty — each is a separate
+        # experiment with a distinct critic stack.
+        self.coma = coma
+        self.coma_target_update_every = coma_target_update_every
+        if coma and centralized_critic:
+            raise ValueError(
+                "coma=True is incompatible with centralized_critic=True: "
+                "COMA installs a Q-critic for counterfactual advantages, "
+                "while MAPPO installs a V-critic for shared baselines. "
+                "Pick one."
+            )
+        if coma and redundancy_coef > 0:
+            raise ValueError(
+                "coma=True is incompatible with redundancy_coef>0: the "
+                "redundancy penalty couples the per-agent actor trunks, "
+                "while COMA replaces the per-agent value heads with a "
+                "centralized Q-network. Combining them entangles two "
+                "unrelated experiments. Pick one."
+            )
+
+        # COMA enumerates over the joint per-agent action space (option 2 in
+        # the curator's spec). For multi-discrete ``[10, 2, 2]`` this is
+        # 40 entries — cheap enough that a per-agent forward over all 40
+        # candidate actions is feasible at update time.
+        self.action_dim_total = int(np.prod(action_dims)) if coma else 0
 
         # Issue #159: optional running mean/std of returns to shrink the
         # value-loss MSE target to O(1) (Phase 1 diagnostics showed
@@ -297,6 +350,43 @@ class JointPPOTrainer:
             self.critic = None
             self.critic_optimizer = None
 
+        # Issue #284: optional COMA Q-critic + target network. Mirrors the
+        # MAPPO critic structure above (separate optimizer, separate state).
+        # The target network is a hard-copy of the live Q-critic, refreshed
+        # every ``coma_target_update_every`` PPO update steps.
+        if self.coma:
+            self._global_obs_dim = obs_dim - num_agents
+            if self._global_obs_dim <= 0:
+                raise ValueError(
+                    f"coma=True requires obs_dim ({obs_dim}) > num_agents "
+                    f"({num_agents}) so the identity-tail-stripped global "
+                    "obs has positive length."
+                )
+            self.q_critic: Optional[CentralizedQCritic] = CentralizedQCritic(
+                global_obs_dim=self._global_obs_dim,
+                num_agents=num_agents,
+                action_dim_total=self.action_dim_total,
+                hidden_size=hidden_size,
+            ).to(self.device)
+            self.q_critic_target: Optional[CentralizedQCritic] = CentralizedQCritic(
+                global_obs_dim=self._global_obs_dim,
+                num_agents=num_agents,
+                action_dim_total=self.action_dim_total,
+                hidden_size=hidden_size,
+            ).to(self.device)
+            self.q_critic_target.load_state_dict(self.q_critic.state_dict())
+            for p in self.q_critic_target.parameters():
+                p.requires_grad_(False)
+            self.q_critic_optimizer: Optional[optim.Optimizer] = optim.Adam(
+                self.q_critic.parameters(), lr=lr
+            )
+            self._coma_update_step = 0
+        else:
+            self.q_critic = None
+            self.q_critic_target = None
+            self.q_critic_optimizer = None
+            self._coma_update_step = 0
+
         self._reset_env(seed=seed)
 
     # ------------------------------------------------------------------
@@ -350,6 +440,51 @@ class JointPPOTrainer:
             )
         return agent0[..., : self._global_obs_dim]
 
+    def _pack_joint_action(self, actions: torch.Tensor) -> torch.Tensor:
+        """Pack a multi-discrete action tensor into a flat integer code.
+
+        Used by the COMA path (issue #284) to map the multi-discrete action
+        ``[a_0, a_1, a_2]`` (sub-action sizes from ``self.action_dims``) into
+        a single integer in ``[0, prod(action_dims))``. Mirrors the standard
+        row-major flatten that ``np.unravel_index`` reverses.
+
+        Args:
+            actions: Long tensor of shape ``(..., A)`` where ``A = len(action_dims)``.
+
+        Returns:
+            Long tensor of shape ``(...)`` with values in
+            ``[0, prod(action_dims))``.
+        """
+        # Compute strides for row-major packing: stride[k] = prod(action_dims[k+1:]).
+        # For action_dims = [10, 2, 2]: strides = [4, 2, 1].
+        strides = []
+        s = 1
+        for d in reversed(self.action_dims):
+            strides.insert(0, s)
+            s *= d
+        out = torch.zeros(actions.shape[:-1], dtype=torch.long, device=actions.device)
+        for k, stride in enumerate(strides):
+            out = out + actions[..., k].long() * stride
+        return out
+
+    def _coma_joint_action_one_hot(
+        self, packed_joint_actions: torch.Tensor
+    ) -> torch.Tensor:
+        """One-hot encode the joint per-agent action across all N agents.
+
+        Args:
+            packed_joint_actions: Long tensor of shape ``(batch, N)`` — each
+                entry is in ``[0, action_dim_total)``.
+
+        Returns:
+            Tensor of shape ``(batch, N * action_dim_total)`` — flat
+            concatenation of per-agent one-hots. Used as the
+            ``joint_action_one_hot`` input to :class:`CentralizedQCritic`.
+        """
+        batch = packed_joint_actions.shape[0]
+        oh = F.one_hot(packed_joint_actions, num_classes=self.action_dim_total).float()
+        return oh.reshape(batch, self.num_agents * self.action_dim_total)
+
     @torch.no_grad()
     def _act_all(
         self, obs_per_agent_t: torch.Tensor
@@ -388,6 +523,14 @@ class JointPPOTrainer:
             global_obs = self._global_obs_from_per_agent(obs_per_agent_t).unsqueeze(0)
             shared_value = self.critic(global_obs).squeeze(-1).squeeze(0)
             values = [shared_value for _ in range(self.num_agents)]
+        elif self.coma:
+            # COMA computes advantages at update-time from the Q-critic, not
+            # from a per-step value baseline. We still populate the rollout's
+            # per-agent value slots (the buffer schema is shared with IPPO /
+            # MAPPO) but with zeros — they are explicitly ignored in
+            # ``update()`` when ``self.coma`` is True.
+            zero = obs_per_agent_t.new_zeros(())
+            values = [zero for _ in range(self.num_agents)]
         return joint_action, log_probs, values
 
     def collect_rollout(self, num_steps: int) -> RolloutBuffer:
@@ -528,6 +671,188 @@ class JointPPOTrainer:
         ret = adv + values
         return adv, ret
 
+    @staticmethod
+    def coma_counterfactual_advantage(
+        q_chosen: torch.Tensor,
+        q_all: torch.Tensor,
+        action_probs: torch.Tensor,
+    ) -> torch.Tensor:
+        """Compute the COMA counterfactual advantage.
+
+        For each batch entry, COMA's per-agent advantage is
+
+        ::
+
+            A_i = Q(s, a)_i - sum_u  pi_i(u | s) * Q(s, (a_{-i}, u))_i
+
+        where ``q_all`` enumerates the Q-vector over all possible per-agent
+        actions for agent i, and ``q_chosen`` is the Q-value indexed by the
+        actually-taken action.
+
+        Args:
+            q_chosen: Tensor of shape ``(batch,)`` — Q evaluated at the
+                taken joint action, for agent i.
+            q_all: Tensor of shape ``(batch, action_dim_total)`` — Q
+                evaluated for every possible per-agent action of agent i
+                holding the other agents' actions fixed.
+            action_probs: Tensor of shape ``(batch, action_dim_total)`` —
+                agent i's policy probabilities over the joint per-agent
+                action space.
+
+        Returns:
+            Tensor of shape ``(batch,)`` — the COMA counterfactual
+            advantage A_i.
+
+        Note:
+            ``q_chosen`` must equal ``(q_all * one_hot(taken_action)).sum(-1)``
+            up to floating-point error. The function does not assume this —
+            it accepts both as inputs so the caller controls the indexing.
+        """
+        baseline = (action_probs * q_all).sum(dim=-1)
+        return q_chosen - baseline
+
+    def _coma_compute_td_targets(
+        self,
+        global_obs: torch.Tensor,
+        joint_action_packed: torch.Tensor,
+        rewards: torch.Tensor,
+        dones: torch.Tensor,
+    ) -> torch.Tensor:
+        """1-step TD targets for the COMA Q-critic.
+
+        Computes ``y_t = r_t + gamma * (1 - done_t) * Q_target(s_{t+1}, a_{t+1})_i``
+        for every (t, i) in the rollout, using the target network and the
+        next-step action from the same on-policy rollout (Foerster 2018
+        uses TD(lambda); we use 1-step TD here as the simplest unbiased
+        bootstrap — documented in the PR body and the issue spec).
+
+        Args:
+            global_obs: Tensor of shape ``(T, global_obs_dim)`` — the global
+                obs for each rollout step (already identity-tail stripped).
+            joint_action_packed: Long tensor ``(T, N)`` — packed joint
+                actions, one entry per (step, agent).
+            rewards: Tensor of shape ``(T, N)`` — per-agent rewards.
+            dones: Tensor of shape ``(T,)`` — shared episode-termination flag.
+
+        Returns:
+            Tensor of shape ``(T, N)`` — TD targets per (step, agent).
+        """
+        with torch.no_grad():
+            T = global_obs.shape[0]
+            joint_action_oh_all = self._coma_joint_action_one_hot(
+                joint_action_packed
+            )  # [T, N * action_dim_total]
+
+            # Q_target(s_{t+1}, a_{t+1}) — shift everything by 1 step.
+            # For the last step, we treat the bootstrap as 0 (consistent with
+            # the GAE path in ``compute_gae`` which sets next_value = 0 at
+            # the rollout boundary).
+            next_targets = global_obs.new_zeros((T, self.num_agents))
+            if T > 1:
+                next_global = global_obs[1:]  # [T-1, global_obs_dim]
+                next_joint_oh = joint_action_oh_all[1:]  # [T-1, N * adt]
+                next_actions_packed = joint_action_packed[1:]  # [T-1, N]
+                # For each agent, run the target Q with that agent's id one-hot.
+                # We use the per-step joint action one-hot as input — Foerster's
+                # Q takes the *full* joint action; the "joint_action_one_hot"
+                # field includes agent i's own slot for the on-policy taken action.
+                for i in range(self.num_agents):
+                    agent_id_oh = global_obs.new_zeros((T - 1, self.num_agents))
+                    agent_id_oh[:, i] = 1.0
+                    q_next = self.q_critic_target(
+                        next_global, next_joint_oh, agent_id_oh
+                    )  # [T-1, action_dim_total]
+                    q_next_taken = q_next.gather(
+                        1, next_actions_packed[:, i : i + 1]
+                    ).squeeze(-1)
+                    next_targets[:-1, i] = q_next_taken
+
+            done_mask = (1.0 - dones).unsqueeze(-1)  # [T, 1]
+            targets = rewards + self.gamma * done_mask * next_targets
+        return targets
+
+    def _coma_compute_advantages(
+        self,
+        global_obs: torch.Tensor,
+        joint_action_packed: torch.Tensor,
+        action_probs_per_agent: List[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute COMA counterfactual advantages from the live Q-critic.
+
+        For each agent i, evaluates the live Q at (s, a) (taken action) and
+        the policy-weighted baseline ``sum_u pi_i(u | s) Q(s, (a_{-i}, u))``
+        by enumerating over the per-agent action space.
+
+        Args:
+            global_obs: Tensor of shape ``(T, global_obs_dim)``.
+            joint_action_packed: Long tensor of shape ``(T, N)``.
+            action_probs_per_agent: List of N tensors, each shape
+                ``(T, action_dim_total)`` — per-step probability over the
+                joint per-agent action space at the *current* policy (i.e.
+                the rollout-time policy: detached, used only as the COMA
+                baseline weights).
+
+        Returns:
+            Tuple of ``(advantages, q_chosen)`` each shape ``(T, N)``.
+        """
+        with torch.no_grad():
+            T = global_obs.shape[0]
+            joint_action_oh_all = self._coma_joint_action_one_hot(joint_action_packed)
+            advantages = global_obs.new_zeros((T, self.num_agents))
+            q_chosen_all = global_obs.new_zeros((T, self.num_agents))
+            for i in range(self.num_agents):
+                agent_id_oh = global_obs.new_zeros((T, self.num_agents))
+                agent_id_oh[:, i] = 1.0
+                q_all = self.q_critic(
+                    global_obs, joint_action_oh_all, agent_id_oh
+                )  # [T, action_dim_total]
+                q_chosen = q_all.gather(1, joint_action_packed[:, i : i + 1]).squeeze(
+                    -1
+                )
+                adv_i = self.coma_counterfactual_advantage(
+                    q_chosen=q_chosen,
+                    q_all=q_all,
+                    action_probs=action_probs_per_agent[i],
+                )
+                advantages[:, i] = adv_i
+                q_chosen_all[:, i] = q_chosen
+        return advantages, q_chosen_all
+
+    def _coma_policy_action_probs(
+        self, observations_per_agent: torch.Tensor
+    ) -> List[torch.Tensor]:
+        """Per-agent action probabilities over the joint per-agent action space.
+
+        For each agent i, computes ``pi_i(u | tau_i)`` for every
+        ``u in [0, action_dim_total)`` by taking the outer product of the
+        per-dimension categorical probabilities at the current actor weights.
+
+        Args:
+            observations_per_agent: Tensor of shape ``(T, N, obs_dim)``.
+
+        Returns:
+            List of N tensors, each shape ``(T, action_dim_total)``.
+        """
+        with torch.no_grad():
+            T = observations_per_agent.shape[0]
+            out: List[torch.Tensor] = []
+            for i, policy in enumerate(self.policies):
+                obs_i = observations_per_agent[:, i, :]
+                action_logits, _ = policy.forward(obs_i)
+                # Per-dim softmax probabilities.
+                probs_per_dim = [
+                    torch.softmax(logits, dim=-1) for logits in action_logits
+                ]
+                # Outer product across action dims → joint per-agent prob table.
+                # For action_dims = [10, 2, 2]: shape evolves as
+                #   [T, 10] -> [T, 10, 2] -> [T, 10, 2, 2] -> [T, 40].
+                joint = probs_per_dim[0]
+                for d in range(1, len(probs_per_dim)):
+                    joint = joint.unsqueeze(-1) * probs_per_dim[d].unsqueeze(-2)
+                    joint = joint.reshape(T, -1)
+                out.append(joint)
+        return out
+
     def update(self, rollout: RolloutBuffer) -> Dict[str, float]:
         """Run ``ppo_epochs`` PPO updates against the rollout.
 
@@ -585,6 +910,59 @@ class JointPPOTrainer:
             ).mean(dim=0)
             stats["critic_value_loss"] = 0.0
 
+        # Issue #284: COMA. Pre-compute the global obs trajectory, packed
+        # joint actions, TD targets, and counterfactual advantages once
+        # for the whole rollout. The PPO epochs then read these via index
+        # slicing (the live policy mutates between epochs so technically
+        # the on-policy baseline drifts — we use the rollout-time policy
+        # as Foerster does; the gap is what PPO's clip term protects).
+        if self.coma:
+            stats["coma_q_loss"] = 0.0
+            # Global obs trajectory: take agent 0's row, strip identity tail.
+            global_obs_T = rollout.observations[:, 0, : self._global_obs_dim]
+            # Pack joint actions for all agents: [T, N].
+            joint_action_packed_T = torch.stack(
+                [
+                    self._pack_joint_action(rollout.actions[i])
+                    for i in range(self.num_agents)
+                ],
+                dim=1,
+            )
+            # Per-agent rewards as [T, N].
+            rewards_TN = torch.stack(
+                [rollout.rewards[i] for i in range(self.num_agents)], dim=1
+            )
+            # 1-step TD targets for the Q-critic regression.
+            coma_td_targets = self._coma_compute_td_targets(
+                global_obs=global_obs_T,
+                joint_action_packed=joint_action_packed_T,
+                rewards=rewards_TN,
+                dones=rollout.dones,
+            )  # [T, N]
+            # Per-agent action probs over the joint per-agent action space
+            # at the rollout-time policy (used as the COMA baseline weights).
+            action_probs_per_agent = self._coma_policy_action_probs(
+                rollout.observations
+            )
+            # COMA counterfactual advantages from the live Q-critic.
+            coma_advantages, _q_chosen = self._coma_compute_advantages(
+                global_obs=global_obs_T,
+                joint_action_packed=joint_action_packed_T,
+                action_probs_per_agent=action_probs_per_agent,
+            )
+            # Override the per-agent advantages with the COMA counterfactuals
+            # (standardized per-agent to keep the policy gradient scale stable).
+            for i in range(self.num_agents):
+                adv_i = coma_advantages[:, i]
+                advantages[i] = (adv_i - adv_i.mean()) / (adv_i.std() + 1e-8)
+            # The COMA TD targets replace the GAE returns for the value loss.
+            # Stored per-agent so the critic-loss minibatch indexer can read it.
+            coma_targets_per_agent = {
+                i: coma_td_targets[:, i] for i in range(self.num_agents)
+            }
+            # One-hot joint action tensor, cached for the Q-critic forwards.
+            joint_action_oh_T = self._coma_joint_action_one_hot(joint_action_packed_T)
+
         for _epoch in range(self.ppo_epochs):
             idx = torch.randperm(t_total, device=self.device)[:mb_size]
             # Issue #204: ``rollout.observations`` is now ``[T, N, obs_dim]``.
@@ -627,10 +1005,11 @@ class JointPPOTrainer:
                 )
                 policy_loss = -torch.min(surr1, surr2).mean()
 
-                if self.centralized_critic:
+                if self.centralized_critic or self.coma:
                     # Per-agent value head is bypassed; the centralized
-                    # critic handles all value learning below. Record
-                    # value_loss=0 to keep the stats schema consistent.
+                    # critic (MAPPO) or Q-critic (COMA) handles all value
+                    # learning below. Record value_loss=0 to keep the
+                    # stats schema consistent.
                     value_loss = policy_loss.new_tensor(0.0)
                     agent_loss = policy_loss - self.entropy_coef * entropy
                 else:
@@ -665,6 +1044,27 @@ class JointPPOTrainer:
                     torch.stack(per_agent_losses).sum()
                     + self.value_coef * critic_value_loss
                 )
+            elif self.coma:
+                # Issue #284: Q-critic loss against 1-step TD targets. One
+                # Q forward per agent on the minibatch's global obs +
+                # joint-action one-hot. The targets are detached
+                # (computed from the target network outside the graph).
+                global_obs_mb = global_obs_T[idx]  # [mb, global_obs_dim]
+                joint_oh_mb = joint_action_oh_T[idx]  # [mb, N * action_dim_total]
+                q_losses: List[torch.Tensor] = []
+                for i in range(self.num_agents):
+                    agent_id_oh = global_obs_mb.new_zeros((mb_size, self.num_agents))
+                    agent_id_oh[:, i] = 1.0
+                    q_all = self.q_critic(global_obs_mb, joint_oh_mb, agent_id_oh)
+                    actions_packed_i = joint_action_packed_T[idx, i].unsqueeze(-1)
+                    q_chosen = q_all.gather(1, actions_packed_i).squeeze(-1)
+                    target_i = coma_targets_per_agent[i][idx]
+                    q_losses.append(F.mse_loss(q_chosen, target_i))
+                coma_q_loss = torch.stack(q_losses).mean()
+                stats["coma_q_loss"] += coma_q_loss.item() / self.ppo_epochs
+                total_loss = (
+                    torch.stack(per_agent_losses).sum() + self.value_coef * coma_q_loss
+                )
             else:
                 total_loss = (
                     torch.stack(per_agent_losses).sum() + self.redundancy_coef * red_pen
@@ -675,15 +1075,28 @@ class JointPPOTrainer:
                 opt.zero_grad()
             if self.centralized_critic:
                 self.critic_optimizer.zero_grad()
+            if self.coma:
+                self.q_critic_optimizer.zero_grad()
             total_loss.backward()
             for policy in self.policies:
                 nn.utils.clip_grad_norm_(policy.parameters(), self.max_grad_norm)
             if self.centralized_critic:
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
+            if self.coma:
+                nn.utils.clip_grad_norm_(self.q_critic.parameters(), self.max_grad_norm)
             for opt in self.optimizers:
                 opt.step()
             if self.centralized_critic:
                 self.critic_optimizer.step()
+            if self.coma:
+                self.q_critic_optimizer.step()
+                # Hard-copy target network on the configured cadence.
+                self._coma_update_step += 1
+                if (
+                    self.coma_target_update_every > 0
+                    and self._coma_update_step % self.coma_target_update_every == 0
+                ):
+                    self.q_critic_target.load_state_dict(self.q_critic.state_dict())
 
         return stats
 
