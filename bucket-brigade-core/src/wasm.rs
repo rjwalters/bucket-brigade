@@ -172,6 +172,10 @@ impl WasmScenario {
             // fields.
             action_shaping_alpha: 0.0,
             action_shaping_beta: 0.0,
+            // Issue #265: dense progress shaping defaults to off so existing
+            // JS/TS callers see byte-identical rewards. Routed through the
+            // JSON path (``Scenario::to_json`` / ``from_json``) when non-zero.
+            progress_shaping_coef: 0.0,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator so future kwargs additions can't reintroduce silent

@@ -105,6 +105,7 @@ impl PyScenario {
         reward_other_house_survives,
         penalty_own_house_burns,
         penalty_other_house_burns,
+        progress_shaping_coef = 0.0_f32,
     ))]
     fn new(
         prob_fire_spreads_to_neighbor: f32,
@@ -118,6 +119,7 @@ impl PyScenario {
         reward_other_house_survives: PyObject,
         penalty_own_house_burns: PyObject,
         penalty_other_house_burns: PyObject,
+        progress_shaping_coef: f32,
         py: Python,
     ) -> PyResult<Self> {
         // Scalar -> vec![v; 10] auto-promotion (mirrors the Python
@@ -163,6 +165,12 @@ impl PyScenario {
             // existing PyScenario callers see byte-identical rewards).
             action_shaping_alpha: 0.0,
             action_shaping_beta: 0.0,
+            // Issue #265: dense progress shaping coefficient. Exposed as an
+            // optional kwarg with default ``0.0`` so existing PyScenario
+            // callers (which pass only positional args) are byte-identical
+            // to the pre-#265 path. Non-zero values flow through to the
+            // engine's progress-shaping block in ``engine/rewards.rs``.
+            progress_shaping_coef,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -274,6 +282,17 @@ impl PyScenario {
     #[getter]
     fn action_shaping_beta(&self) -> f32 {
         self.inner.action_shaping_beta
+    }
+
+    /// Issue #265: dense progress shaping coefficient. Defaults to ``0.0``
+    /// so every pre-#265 scenario is bit-exactly preserved. When non-zero,
+    /// the per-step team reward picks up ``coef * (cur_safe - prev_safe)``,
+    /// giving PPO a dense gradient signal on save/burn transition steps.
+    /// To use this knob from Python, prefer the ``Scenario`` dataclass or
+    /// pull from ``bucket_brigade_core.SCENARIOS[...]`` (JSON path).
+    #[getter]
+    fn progress_shaping_coef(&self) -> f32 {
+        self.inner.progress_shaping_coef
     }
 }
 

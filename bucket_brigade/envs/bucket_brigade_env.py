@@ -316,6 +316,20 @@ class BucketBrigadeEnv:
             - self.scenario.team_penalty_house_burns * total_burned_fraction
         )
 
+        # Issue #265: dense progress shaping. Per-step team-shared bonus
+        # proportional to the change in the number of SAFE houses since
+        # the previous step. ``progress_shaping_coef`` defaults to 0.0 on
+        # every pre-#265 scenario, so this block is a no-op (preserving
+        # bit-exact behavior). When non-zero, the team component picks up
+        # ``coef * (cur_safe - prev_safe)`` and is broadcast to all agents
+        # via the per-agent ``individual_rewards[i] += team_reward`` line
+        # below. Mirrors ``bucket-brigade-core/src/engine/rewards.rs``.
+        progress_coef = float(getattr(self.scenario, "progress_shaping_coef", 0.0))
+        if progress_coef != 0.0:
+            prev_safe = int(np.sum(prev_houses == self.SAFE))
+            cur_safe = int(saved_houses)
+            team_reward += progress_coef * float(cur_safe - prev_safe)
+
         # Individual rewards
         individual_rewards = np.zeros(self.num_agents, dtype=np.float32)
 

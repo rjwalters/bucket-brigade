@@ -24,8 +24,23 @@ impl BucketBrigade {
         let total_burned_fraction = ruined_houses / num_houses_f;
 
         // Team reward component (shared by all, public goods)
-        let team_reward = self.scenario.team_reward_house_survives * total_saved_fraction
+        let mut team_reward = self.scenario.team_reward_house_survives * total_saved_fraction
             - self.scenario.team_penalty_house_burns * total_burned_fraction;
+
+        // Issue #265: dense progress shaping. Per-step team-shared bonus
+        // proportional to the change in the number of SAFE houses since
+        // the previous step. ``progress_shaping_coef`` defaults to 0.0 on
+        // every pre-#265 scenario, so this block is a no-op (preserving
+        // bit-exact behavior). When non-zero, the team component picks up
+        // ``coef * (cur_safe - prev_safe)`` and is broadcast to all agents
+        // via the per-agent ``rewards[i] += team_reward`` line below.
+        // Mirrors ``bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards``.
+        let progress_coef = self.scenario.progress_shaping_coef;
+        if progress_coef != 0.0 {
+            let prev_safe = prev_houses.iter().filter(|&&h| h == 0).count() as f32;
+            let cur_safe = saved_houses;
+            team_reward += progress_coef * (cur_safe - prev_safe);
+        }
 
         for agent_idx in 0..self.num_agents {
             // 1. Work/rest component.
