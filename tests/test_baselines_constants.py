@@ -1,5 +1,5 @@
 """Anti-regression guard for the canonical minimal_specialization baselines
-(issue #293).
+(issue #293) and the scenario-wide random-baselines mirror (issue #323).
 
 This test pins the per-step team-reward references published by
 :mod:`bucket_brigade.baselines` to the canonical post-#246 derivation
@@ -14,6 +14,12 @@ documented in that module's docstring:
   reward on the same scenario. Re-derived post-#236 under issue #238 /
   PR #243; specialist policies signal honestly so the value is unchanged
   from pre-#236 at the precision of the n=50 sampler.
+
+* ``SCENARIO_RANDOM_BASELINES`` — value-only mirror of the ``random``
+  column of ``random_baseline.SCENARIO_CITED_VALUES`` (issue #323). The
+  drift guard asserts every key/value pair matches the diagnostics table
+  so non-torch consumers (e.g. ``compute_nash_trained.py``) get the same
+  numbers as the authoritative measurement record.
 
 Before issue #293 the codebase had three coexisting MINSPEC_RANDOM values
 spread across analyzers: ``-96.07`` (pre-#246 2-dim sampler bug),
@@ -32,7 +38,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+from bucket_brigade.baselines import (
+    MINSPEC_RANDOM,
+    MINSPEC_SPECIALIST,
+    SCENARIO_RANDOM_BASELINES,
+)
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _RANDOM_BASELINE = (
@@ -89,4 +99,51 @@ def test_minspec_random_matches_measurement_table() -> None:
         f"['random'] = {table_value!r} disagrees with "
         f"bucket_brigade.baselines.MINSPEC_RANDOM = {MINSPEC_RANDOM!r}. "
         "Issue #293 requires these to stay aligned."
+    )
+
+
+def _parse_scenario_cited_values_random_column() -> dict[str, float]:
+    """Extract ``scenario -> random`` pairs from ``random_baseline.py`` via grep.
+
+    We avoid importing ``random_baseline`` because it transitively pulls in
+    torch (see module docstring). This mirrors the approach in
+    ``test_minspec_random_matches_measurement_table``.
+    """
+    src = _RANDOM_BASELINE.read_text()
+    # Match each `"scenario": { ... "random": <float>, ...` entry.
+    pattern = re.compile(
+        r'"(?P<name>[a-z_][a-z0-9_]*)"\s*:\s*\{[^}]*?"random"\s*:\s*(?P<value>-?\d+\.\d+)',
+        re.DOTALL,
+    )
+    return {m.group("name"): float(m.group("value")) for m in pattern.finditer(src)}
+
+
+def test_scenario_random_baselines_matches_measurement_table() -> None:
+    """``SCENARIO_RANDOM_BASELINES`` must equal the diagnostics ``random`` column.
+
+    Issue #323: ``bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES`` is a
+    value-only mirror of
+    ``random_baseline.SCENARIO_CITED_VALUES[<scenario>]["random"]``. The two
+    must agree exactly on every scenario the mirror exposes.
+    """
+    table = _parse_scenario_cited_values_random_column()
+    assert table, (
+        "Could not parse any scenario entries from random_baseline.py — "
+        "has the SCENARIO_CITED_VALUES layout changed?"
+    )
+    missing = sorted(set(SCENARIO_RANDOM_BASELINES) - set(table))
+    assert not missing, (
+        f"SCENARIO_RANDOM_BASELINES references scenarios absent from "
+        f"random_baseline.SCENARIO_CITED_VALUES: {missing}"
+    )
+    mismatches = {
+        name: (SCENARIO_RANDOM_BASELINES[name], table[name])
+        for name in SCENARIO_RANDOM_BASELINES
+        if SCENARIO_RANDOM_BASELINES[name] != table[name]
+    }
+    assert not mismatches, (
+        "SCENARIO_RANDOM_BASELINES disagrees with "
+        "random_baseline.SCENARIO_CITED_VALUES on these scenarios "
+        f"(mirror, source): {mismatches}. Issue #323 requires these to stay "
+        "aligned — update both tables together when re-deriving baselines."
     )

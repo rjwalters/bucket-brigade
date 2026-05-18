@@ -64,6 +64,7 @@ from bucket_brigade.agents import (  # noqa: E402
     TrainedPolicyArchetype,
 )
 from bucket_brigade.agents.archetypes import ARCHETYPES  # noqa: E402
+from bucket_brigade.baselines import SCENARIO_RANDOM_BASELINES  # noqa: E402
 from bucket_brigade.envs import BucketBrigadeEnv, get_scenario_by_name  # noqa: E402
 from bucket_brigade.equilibrium.nash_solver import (  # noqa: E402
     compute_support,
@@ -297,27 +298,17 @@ def screen_trained_checkpoints(
 
 
 # ---------------------------------------------------------------------------
-# Reward-baseline lookup (subset of the SCENARIO_CITED_VALUES table; kept
-# inline so this module has no dependency on experiments/p3_specialization
-# diagnostics).
+# Reward-baseline lookup
 # ---------------------------------------------------------------------------
+#
+# Sourced from :data:`bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES`,
+# which is the canonical value-only mirror of
+# ``experiments/p3_specialization/diagnostics/random_baseline.py``'s
+# ``SCENARIO_CITED_VALUES``. Imported via ``bucket_brigade.baselines`` to
+# avoid pulling in the torch-based training stack that
+# ``random_baseline.py`` depends on (issue #323).
 
-RANDOM_BASELINES: Dict[str, float] = {
-    "default": 251.23,
-    "easy": 355.07,
-    "hard": 124.66,
-    "trivial_cooperation": 399.99,
-    "early_containment": 297.24,
-    "greedy_neighbor": 292.78,
-    "sparse_heroics": 246.06,
-    "rest_trap": 302.87,
-    "chain_reaction": 227.39,
-    "deceptive_calm": 78.55,
-    "overcrowding": 120.24,
-    "mixed_motivation": 224.06,
-    "minimal_specialization": -87.72,
-    "positional_default": 250.73,
-}
+RANDOM_BASELINES: Dict[str, float] = SCENARIO_RANDOM_BASELINES
 
 
 # ---------------------------------------------------------------------------
