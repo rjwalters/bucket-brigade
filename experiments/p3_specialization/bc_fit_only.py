@@ -36,7 +36,7 @@ from bucket_brigade.baselines.specialist import (
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.training.joint_trainer import flatten_dict_obs
-from bucket_brigade.training.networks import PolicyNetwork
+from bucket_brigade.training.networks import PolicyNetwork, TransformerPolicyNetwork
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +151,42 @@ def _compute_class_weights(
     return house_w, mode_w, signal_w
 
 
+def _build_network(
+    architecture: str,
+    obs_dim: int,
+    action_dims: list,
+    hidden_size: int,
+    transformer_d_model: int = 256,
+    transformer_nhead: int = 4,
+    transformer_num_layers: int = 3,
+    transformer_dim_feedforward: int = 512,
+    transformer_dropout: float = 0.1,
+):
+    """Instantiate the chosen policy architecture.
+
+    Default ``mlp`` preserves the pre-#281 :class:`PolicyNetwork` path
+    (bit-identical when ``architecture='mlp'``). ``transformer`` uses
+    :class:`TransformerPolicyNetwork` (#281 escalation).
+    """
+    if architecture == "mlp":
+        return PolicyNetwork(
+            obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+        )
+    if architecture == "transformer":
+        return TransformerPolicyNetwork(
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            d_model=transformer_d_model,
+            nhead=transformer_nhead,
+            num_layers=transformer_num_layers,
+            dim_feedforward=transformer_dim_feedforward,
+            dropout=transformer_dropout,
+        )
+    raise ValueError(
+        f"Unknown --architecture {architecture!r}; expected 'mlp' or 'transformer'."
+    )
+
+
 def train_bc(
     obs: np.ndarray,
     labels: np.ndarray,
@@ -162,8 +198,19 @@ def train_bc(
     train_frac: float,
     seed: int,
     class_balanced: bool = False,
+    architecture: str = "mlp",
+    transformer_d_model: int = 256,
+    transformer_nhead: int = 4,
+    transformer_num_layers: int = 3,
+    transformer_dim_feedforward: int = 512,
+    transformer_dropout: float = 0.1,
 ) -> dict:
-    """Train ``PolicyNetwork`` via sum-of-cross-entropy over its 3 heads.
+    """Train a policy network via sum-of-cross-entropy over its 3 heads.
+
+    The ``architecture`` parameter selects between :class:`PolicyNetwork`
+    (default; ``'mlp'``) and :class:`TransformerPolicyNetwork` (``'transformer'``,
+    #281 escalation). Default values preserve bit-identical behaviour with
+    the pre-#281 MLP path.
 
     Returns a dict with per-epoch eval losses + per-head accuracies and the
     final-epoch summary for verdict thresholding.
@@ -197,8 +244,16 @@ def train_bc(
 
     obs_dim = obs.shape[1]
     action_dims = [num_houses, 2, 2]
-    net = PolicyNetwork(
-        obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+    net = _build_network(
+        architecture=architecture,
+        obs_dim=obs_dim,
+        action_dims=action_dims,
+        hidden_size=hidden_size,
+        transformer_d_model=transformer_d_model,
+        transformer_nhead=transformer_nhead,
+        transformer_num_layers=transformer_num_layers,
+        transformer_dim_feedforward=transformer_dim_feedforward,
+        transformer_dropout=transformer_dropout,
     )
 
     n_params = sum(p.numel() for p in net.parameters())
@@ -329,6 +384,7 @@ def train_bc(
 
     final = history[-1]
     return {
+        "architecture": architecture,
         "n_params": n_params,
         "obs_dim": obs_dim,
         "n_train": n_train,
@@ -411,6 +467,47 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--architecture",
+        type=str,
+        choices=["mlp", "transformer"],
+        default="mlp",
+        help=(
+            "Policy architecture: 'mlp' (default; PolicyNetwork) preserves the "
+            "pre-#281 path. 'transformer' uses TransformerPolicyNetwork (#281 "
+            "escalation) — ~350K params vs ~14K for the MLP at hidden_size=64."
+        ),
+    )
+    parser.add_argument(
+        "--transformer-d-model",
+        type=int,
+        default=256,
+        help="Transformer embedding dim (only if --architecture transformer).",
+    )
+    parser.add_argument(
+        "--transformer-nhead",
+        type=int,
+        default=4,
+        help="Transformer attention heads (only if --architecture transformer).",
+    )
+    parser.add_argument(
+        "--transformer-num-layers",
+        type=int,
+        default=3,
+        help="Transformer encoder layers (only if --architecture transformer).",
+    )
+    parser.add_argument(
+        "--transformer-dim-feedforward",
+        type=int,
+        default=512,
+        help="Transformer FFN dim (only if --architecture transformer).",
+    )
+    parser.add_argument(
+        "--transformer-dropout",
+        type=float,
+        default=0.1,
+        help="Transformer dropout (only if --architecture transformer).",
+    )
+    parser.add_argument(
         "--out",
         type=str,
         default="experiments/p3_specialization/bc_fit_only_result.json",
@@ -441,10 +538,17 @@ def main() -> None:
     scenario = get_scenario_by_name(args.scenario, args.num_agents)
     num_houses = int(getattr(scenario, "num_houses", 10))
 
-    print(
-        f"[bc_fit_only] training PolicyNetwork(obs_dim={obs.shape[1]}, "
-        f"action_dims=[{num_houses},2,2], hidden_size={args.hidden_size})"
-    )
+    if args.architecture == "mlp":
+        print(
+            f"[bc_fit_only] training PolicyNetwork(obs_dim={obs.shape[1]}, "
+            f"action_dims=[{num_houses},2,2], hidden_size={args.hidden_size})"
+        )
+    else:
+        print(
+            f"[bc_fit_only] training TransformerPolicyNetwork(obs_dim={obs.shape[1]}, "
+            f"action_dims=[{num_houses},2,2], d_model={args.transformer_d_model}, "
+            f"nhead={args.transformer_nhead}, num_layers={args.transformer_num_layers})"
+        )
     t1 = time.time()
     result = train_bc(
         obs=obs,
@@ -457,6 +561,12 @@ def main() -> None:
         train_frac=args.train_frac,
         seed=args.seed,
         class_balanced=args.class_balanced,
+        architecture=args.architecture,
+        transformer_d_model=args.transformer_d_model,
+        transformer_nhead=args.transformer_nhead,
+        transformer_num_layers=args.transformer_num_layers,
+        transformer_dim_feedforward=args.transformer_dim_feedforward,
+        transformer_dropout=args.transformer_dropout,
     )
     t_train = time.time() - t1
     print(f"[bc_fit_only] training done in {t_train:.1f}s")
@@ -469,6 +579,7 @@ def main() -> None:
     print("=" * 60)
     print("FINAL SUMMARY")
     print("=" * 60)
+    print(f"architecture:     {result['architecture']}")
     print(f"obs_dim:          {result['obs_dim']}")
     print(f"n_params:         {result['n_params']}")
     print(f"train/eval pairs: {result['n_train']} / {result['n_eval']}")

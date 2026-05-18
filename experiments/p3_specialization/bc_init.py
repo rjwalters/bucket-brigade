@@ -48,7 +48,7 @@ from bucket_brigade.baselines import (
 from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
 from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
 from bucket_brigade.training.joint_trainer import flatten_dict_obs
-from bucket_brigade.training.networks import PolicyNetwork
+from bucket_brigade.training.networks import PolicyNetwork, TransformerPolicyNetwork
 
 # Verdict reference constants imported from the canonical source
 # (``bucket_brigade.baselines``; issue #293 unified the three previously
@@ -117,9 +117,19 @@ def bc_fit_one_agent(
     lr: float,
     device: str,
     seed: int,
-) -> Tuple[PolicyNetwork, List[float]]:
-    """Supervised fit of one PolicyNetwork to (obs, acts) by summing
+    architecture: str = "mlp",
+    transformer_d_model: int = 256,
+    transformer_nhead: int = 4,
+    transformer_num_layers: int = 3,
+    transformer_dim_feedforward: int = 512,
+    transformer_dropout: float = 0.1,
+) -> Tuple[torch.nn.Module, List[float]]:
+    """Supervised fit of one policy network to (obs, acts) by summing
     cross-entropy on each of ``len(action_dims)`` heads.
+
+    ``architecture`` selects between :class:`PolicyNetwork` (default; ``'mlp'``)
+    and :class:`TransformerPolicyNetwork` (#281 escalation; ``'transformer'``).
+    Default values preserve bit-identical behaviour with the pre-#281 MLP path.
 
     Returns the trained policy plus per-epoch mean training losses (for
     inspection only — convergence is verified by the eval gate, not the loss
@@ -128,9 +138,24 @@ def bc_fit_one_agent(
     # Reproducible per-agent fits: seed both the model init and the dataloader
     # shuffle by tying torch's RNG to the same seed used for the broader run.
     torch.manual_seed(seed)
-    policy = PolicyNetwork(
-        obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
-    ).to(device)
+    if architecture == "mlp":
+        policy: torch.nn.Module = PolicyNetwork(
+            obs_dim=obs_dim, action_dims=action_dims, hidden_size=hidden_size
+        ).to(device)
+    elif architecture == "transformer":
+        policy = TransformerPolicyNetwork(
+            obs_dim=obs_dim,
+            action_dims=action_dims,
+            d_model=transformer_d_model,
+            nhead=transformer_nhead,
+            num_layers=transformer_num_layers,
+            dim_feedforward=transformer_dim_feedforward,
+            dropout=transformer_dropout,
+        ).to(device)
+    else:
+        raise ValueError(
+            f"Unknown architecture {architecture!r}; expected 'mlp' or 'transformer'."
+        )
     opt = torch.optim.Adam(policy.parameters(), lr=lr)
 
     x_t = torch.from_numpy(obs).float().to(device)
@@ -156,7 +181,7 @@ def bc_fit_one_agent(
 
 
 def evaluate_policies(
-    policies: List[PolicyNetwork],
+    policies: List[torch.nn.Module],
     scenario_name: str,
     num_agents: int,
     num_episodes: int,
@@ -227,6 +252,24 @@ def main() -> None:
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--hidden-size", type=int, default=64)
+    p.add_argument(
+        "--architecture",
+        type=str,
+        choices=["mlp", "transformer"],
+        default="mlp",
+        help=(
+            "Policy architecture: 'mlp' (default; PolicyNetwork) preserves the "
+            "pre-#281 path. 'transformer' uses TransformerPolicyNetwork (#281 "
+            "escalation). NB: saved state dicts are not cross-architecture "
+            "compatible, so a transformer BC-init checkpoint can only be "
+            "consumed by a transformer PPO run."
+        ),
+    )
+    p.add_argument("--transformer-d-model", type=int, default=256)
+    p.add_argument("--transformer-nhead", type=int, default=4)
+    p.add_argument("--transformer-num-layers", type=int, default=3)
+    p.add_argument("--transformer-dim-feedforward", type=int, default=512)
+    p.add_argument("--transformer-dropout", type=float, default=0.1)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument(
         "--eval-episodes",
@@ -281,8 +324,11 @@ def main() -> None:
     print(f"  agent 0 specialist WORK fraction: {work_frac:.3f}")
 
     # ----- Phase 2: BC fit per agent -----
-    print(f"[2/3] Fitting {args.num_agents} per-agent policies...")
-    policies: List[PolicyNetwork] = []
+    print(
+        f"[2/3] Fitting {args.num_agents} per-agent policies "
+        f"(architecture={args.architecture})..."
+    )
+    policies: List[torch.nn.Module] = []
     per_agent_loss_history: List[List[float]] = []
     action_dims = [10, 2, 2]  # MultiDiscrete([num_houses, mode, signal])
     for i in range(args.num_agents):
@@ -300,6 +346,12 @@ def main() -> None:
             # supervised target is per-agent (identity one-hot differs), so the
             # init nudge is purely a numerical-stability nicety.
             seed=args.seed + i,
+            architecture=args.architecture,
+            transformer_d_model=args.transformer_d_model,
+            transformer_nhead=args.transformer_nhead,
+            transformer_num_layers=args.transformer_num_layers,
+            transformer_dim_feedforward=args.transformer_dim_feedforward,
+            transformer_dropout=args.transformer_dropout,
         )
         policies.append(policy)
         per_agent_loss_history.append(losses)
@@ -329,7 +381,13 @@ def main() -> None:
         "epochs": args.epochs,
         "batch_size": args.batch_size,
         "lr": args.lr,
+        "architecture": args.architecture,
         "hidden_size": args.hidden_size,
+        "transformer_d_model": args.transformer_d_model,
+        "transformer_nhead": args.transformer_nhead,
+        "transformer_num_layers": args.transformer_num_layers,
+        "transformer_dim_feedforward": args.transformer_dim_feedforward,
+        "transformer_dropout": args.transformer_dropout,
         "obs_dim": obs_dim,
         "action_dims": action_dims,
         "seed": args.seed,
