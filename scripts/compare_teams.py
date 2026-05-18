@@ -23,7 +23,6 @@ from bucket_brigade.envs import BucketBrigadeEnv
 from bucket_brigade.agents import HeuristicAgent
 from bucket_brigade.envs import (
     Scenario,
-    random_scenario,
     trivial_cooperation_scenario,
     early_containment_scenario,
     greedy_neighbor_scenario,
@@ -244,19 +243,19 @@ def display_comparison_table(
 
         t_stat, p_value = scipy_stats.ttest_ind(rewards1, rewards2)
 
-        console.print(f"\n📊 Statistical Significance Test (t-test):")
+        console.print("\n📊 Statistical Significance Test (t-test):")
         console.print(f"   t-statistic: {t_stat:.4f}")
         console.print(f"   p-value: {p_value:.4f}")
 
         if p_value < 0.05:
             winner = teams[0] if np.mean(rewards1) > np.mean(rewards2) else teams[1]
             console.print(
-                f"   ✅ [bold green]Significant difference detected (p < 0.05)[/bold green]"
+                "   ✅ [bold green]Significant difference detected (p < 0.05)[/bold green]"
             )
             console.print(f"   🏆 [bold]{winner}[/bold] performs significantly better")
         else:
             console.print(
-                f"   ⚠️  [yellow]No significant difference (p >= 0.05)[/yellow]"
+                "   ⚠️  [yellow]No significant difference (p >= 0.05)[/yellow]"
             )
 
 
@@ -313,7 +312,7 @@ def compare(
     # Ensure all teams have same size
     team_sizes = [len(team) for team in teams]
     if len(set(team_sizes)) > 1:
-        console.print(f"[red]Error: All teams must have the same size[/red]", err=True)
+        console.print("[red]Error: All teams must have the same size[/red]", err=True)
         console.print(f"Team sizes: {team_sizes}", err=True)
         raise typer.Exit(1)
 
@@ -330,7 +329,7 @@ def compare(
             raise typer.Exit(1)
 
     # Display header
-    console.print(f"\n🎮 [bold]Team Comparison[/bold]")
+    console.print("\n🎮 [bold]Team Comparison[/bold]")
     console.print(f"📋 Scenario types: {', '.join(scenario_types)}")
     console.print(f"🎲 Games per team: {count}")
     console.print(f"👥 Teams to compare: {len(teams)}\n")

@@ -333,7 +333,7 @@ def test(
     typer.echo("\n" + "=" * 60)
     typer.echo("📊 TOURNAMENT RESULTS")
     typer.echo("=" * 60)
-    typer.echo(f"\n🏆 Team Performance:")
+    typer.echo("\n🏆 Team Performance:")
     typer.echo(
         f"   Mean Team Reward: {stats['team_reward']['mean']:.2f} ± {stats['team_reward']['std']:.2f}"
     )
@@ -342,19 +342,19 @@ def test(
         f"   Range: [{stats['team_reward']['min']:.2f}, {stats['team_reward']['max']:.2f}]"
     )
 
-    typer.echo(f"\n🏠 Houses Saved:")
+    typer.echo("\n🏠 Houses Saved:")
     typer.echo(
         f"   Mean: {stats['houses_saved']['mean']:.2f} ± {stats['houses_saved']['std']:.2f}"
     )
     typer.echo(f"   Median: {stats['houses_saved']['median']:.2f}")
     typer.echo(f"   Success Rate (≥5): {stats['success_rate'] * 100:.1f}%")
 
-    typer.echo(f"\n⏱️  Game Length:")
+    typer.echo("\n⏱️  Game Length:")
     typer.echo(
         f"   Mean Nights: {stats['nights_played']['mean']:.1f} ± {stats['nights_played']['std']:.1f}"
     )
 
-    typer.echo(f"\n👥 Agent Contributions (by mean reward):")
+    typer.echo("\n👥 Agent Contributions (by mean reward):")
     for i, contrib in enumerate(results["agent_contributions"], 1):
         typer.echo(
             f"   {i}. {contrib['archetype']:12s} ({contrib['agent_id']}): "

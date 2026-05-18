@@ -7,7 +7,7 @@ This script reads JSON definitions and generates TypeScript modules.
 
 import json
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import dedent
 
 
 def escape_ts_string(s: str) -> str:
@@ -128,15 +128,15 @@ def generate_archetypes(json_path: Path, output_path: Path):
         code += f"    id: '{name}',\n"
         code += f"    name: '{display_name}',\n"
         code += f"    description: '{escape_ts_string(spec['description'])}',\n"
-        code += f"    params: {{\n"
+        code += "    params: {\n"
 
         # Map parameter array to named parameters
         for i, value in enumerate(spec["params"]):
             param_name = PARAM_NAMES[i]
             code += f"      {param_name}: {value},\n"
 
-        code += f"    }},\n"
-        code += f"  }},\n"
+        code += "    },\n"
+        code += "  },\n"
 
     code += "};\n\n"
 
@@ -146,7 +146,7 @@ def generate_archetypes(json_path: Path, output_path: Path):
         code += f"  {param_name}: {{\n"
         code += f"    label: '{escape_ts_string(desc_info['label'])}',\n"
         code += f"    description: '{escape_ts_string(desc_info['description'])}',\n"
-        code += f"  }},\n"
+        code += "  },\n"
     code += "};\n\n"
 
     # Generate helper functions
@@ -236,11 +236,13 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f"  [SCENARIO_TYPES.{constant_name}]: {{\n"
         code += f"    name: '{display_name}',\n"
         code += f"    description: '{escape_ts_string(spec.get('description', ''))}',\n"
-        code += f"    parameters: {{\n"
+        code += "    parameters: {\n"
         code += f"      prob_fire_spreads_to_neighbor: {spec['prob_fire_spreads_to_neighbor']},\n"
         code += f"      prob_solo_agent_extinguishes_fire: {spec['prob_solo_agent_extinguishes_fire']},\n"
         code += f"      prob_house_catches_fire: {spec['prob_house_catches_fire']},\n"
-        code += f"      team_reward_house_survives: {spec['team_reward_house_survives']},\n"
+        code += (
+            f"      team_reward_house_survives: {spec['team_reward_house_survives']},\n"
+        )
         code += f"      team_penalty_house_burns: {spec['team_penalty_house_burns']},\n"
         code += f"      cost_to_work_one_night: {spec['cost_to_work_one_night']},\n"
         code += f"      min_nights: {spec['min_nights']},\n"
@@ -249,8 +251,8 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f"      penalty_own_house_burns: {spec.get('penalty_own_house_burns', 0)},\n"
         code += f"      penalty_other_house_burns: {spec.get('penalty_other_house_burns', 0)},\n"
         code += f"      num_agents: {spec.get('num_agents', 4)},\n"
-        code += f"    }},\n"
-        code += f"  }},\n"
+        code += "    },\n"
+        code += "  },\n"
 
     code += "};\n\n"
 

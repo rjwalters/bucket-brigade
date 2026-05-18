@@ -11,7 +11,6 @@ from pathlib import Path
 import json
 import typer
 import pandas as pd
-import numpy as np
 from typing import List, Optional
 
 # Add the bucket_brigade package to the path

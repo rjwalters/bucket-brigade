@@ -312,21 +312,21 @@ def main():
         return
 
     # Set seeds
-    print(f"🔍 DEBUG: Setting random seeds", flush=True)
+    print("🔍 DEBUG: Setting random seeds", flush=True)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
     # Create environment with scenario
-    print(f"🔍 DEBUG: Importing scenario functions", flush=True)
+    print("🔍 DEBUG: Importing scenario functions", flush=True)
     from bucket_brigade.envs import get_scenario_by_name
 
     print(f"🎮 Creating environment with scenario: {args.scenario}", flush=True)
     print(f"   Number of opponents: {args.num_opponents}")
 
     scenario = get_scenario_by_name(args.scenario, num_agents=args.num_opponents + 1)
-    print(f"🔍 DEBUG: Got scenario, creating environment...", flush=True)
+    print("🔍 DEBUG: Got scenario, creating environment...", flush=True)
     env = PufferBucketBrigade(scenario=scenario, num_opponents=args.num_opponents)
-    print(f"🔍 DEBUG: Environment created!", flush=True)
+    print("🔍 DEBUG: Environment created!", flush=True)
 
     # Create policy
     obs_dim = env.observation_space.shape[0]
@@ -342,7 +342,7 @@ def main():
             flush=True,
         )
 
-    print(f"🧠 Creating policy network", flush=True)
+    print("🧠 Creating policy network", flush=True)
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
 
@@ -358,7 +358,7 @@ def main():
 
     writer = SummaryWriter(f"runs/{args.run_name}")
     print(f"📊 TensorBoard logging to: runs/{args.run_name}")
-    print(f"   View with: tensorboard --logdir runs/")
+    print("   View with: tensorboard --logdir runs/")
 
     # Log hyperparameters
     writer.add_text("hyperparameters/scenario", args.scenario)
@@ -378,7 +378,7 @@ def main():
             complete_experiment_run,
         )
 
-        print(f"🗄️  Initializing experiment tracking...")
+        print("🗄️  Initializing experiment tracking...")
         experiment_session = init_experiments_db(args.experiments_db)
 
         # Create experiment run
@@ -428,7 +428,7 @@ def main():
             }
             complete_experiment_run(experiment_session, experiment_run.id, final_stats)
             experiment_session.close()
-            print(f"✅ Experiment tracking completed")
+            print("✅ Experiment tracking completed")
 
     # Save model
     Path(args.save_path).parent.mkdir(parents=True, exist_ok=True)

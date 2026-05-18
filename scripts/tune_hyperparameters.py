@@ -309,7 +309,7 @@ def main():
         args.study_name = f"ppo_tune_{args.scenario}_{int(time.time())}"
 
     print(f"\n{'=' * 70}")
-    print(f"🔍 Hyperparameter Tuning Configuration")
+    print("🔍 Hyperparameter Tuning Configuration")
     print(f"{'=' * 70}")
     print(f"Scenario: {args.scenario}")
     print(f"Study name: {args.study_name}")
@@ -339,7 +339,7 @@ def main():
     )
 
     # Run optimization
-    print(f"🚀 Starting hyperparameter optimization...\n")
+    print("🚀 Starting hyperparameter optimization...\n")
 
     try:
         study.optimize(
@@ -353,14 +353,14 @@ def main():
 
     # Print results
     print(f"\n{'=' * 70}")
-    print(f"✅ Optimization Complete!")
+    print("✅ Optimization Complete!")
     print(f"{'=' * 70}")
     print(f"Number of finished trials: {len(study.trials)}")
-    print(f"Best trial:")
+    print("Best trial:")
 
     trial = study.best_trial
     print(f"  Value (mean reward): {trial.value:.2f}")
-    print(f"  Params:")
+    print("  Params:")
     for key, value in trial.params.items():
         print(f"    {key}: {value}")
 
@@ -418,12 +418,12 @@ def main():
 
     # Print recommended command
     print("🎯 To train with best hyperparameters, run:")
-    print(f"\nuv run python scripts/train_simple.py \\")
+    print("\nuv run python scripts/train_simple.py \\")
     print(f"  --scenario {args.scenario} \\")
     print(f"  --hidden-size {trial.params['hidden_size']} \\")
     print(f"  --lr {trial.params['learning_rate']:.2e} \\")
     print(f"  --batch-size {trial.params['batch_size']} \\")
-    print(f"  --num-steps 500000\n")
+    print("  --num-steps 500000\n")
 
 
 if __name__ == "__main__":

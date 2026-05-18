@@ -50,18 +50,20 @@ class ResearchContentBuilder:
                     if ":" in line:
                         key, value = line.split(":", 1)
                         key = key.strip()
-                        value = value.strip().strip('"\'')
+                        value = value.strip().strip("\"'")
 
                         # Parse arrays
                         if value.startswith("[") and value.endswith("]"):
                             # Simple array parsing
                             items = value[1:-1].split(",")
-                            frontmatter[key] = [item.strip().strip('"\'') for item in items]
+                            frontmatter[key] = [
+                                item.strip().strip("\"'") for item in items
+                            ]
                         else:
                             frontmatter[key] = value
 
                 # Body starts after closing ---
-                body = "\n".join(lines[end_idx + 1:])
+                body = "\n".join(lines[end_idx + 1 :])
                 return frontmatter, body
 
         # Fall back to old format if no YAML frontmatter
@@ -284,7 +286,7 @@ class ResearchContentBuilder:
 
         output_file = self.output_dir / "content_index.json"
         output_file.write_text(json.dumps(index, indent=2))
-        print(f"\nGenerated: content_index.json")
+        print("\nGenerated: content_index.json")
         print(f"  - {len(index['notebook']['entries'])} notebook entries")
         print(f"  - {len(index['library']['documents'])} library documents")
         print(f"  - {len(index['tags'])} unique tags")

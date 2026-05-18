@@ -45,7 +45,9 @@ def load_evolved_agent(version: str, scenario: str) -> Optional[np.ndarray]:
     Returns:
         Agent parameters or None if not found
     """
-    agent_path = Path(f"experiments/scenarios/{scenario}/evolved_{version}/best_agent.json")
+    agent_path = Path(
+        f"experiments/scenarios/{scenario}/evolved_{version}/best_agent.json"
+    )
     if not agent_path.exists():
         return None
 
@@ -160,13 +162,15 @@ def create_tournament_fitness(
                                 action = agent.get_action(obs)
                                 actions.append(action)
 
-                            obs, rewards, terminated, truncated, info = env.step(actions)
+                            obs, rewards, terminated, truncated, info = env.step(
+                                actions
+                            )
                             total_reward += rewards[0]  # Focal agent reward
                             done = terminated or truncated
 
                         all_payoffs.append(total_reward)
 
-                    except Exception as e:
+                    except Exception:
                         # Penalize failures
                         all_payoffs.append(-200.0)
 
@@ -176,7 +180,9 @@ def create_tournament_fitness(
     return fitness_fn
 
 
-def progress_callback(generation: int, population: Population, output_dir: Path) -> None:
+def progress_callback(
+    generation: int, population: Population, output_dir: Path
+) -> None:
     """Print evolution progress and save checkpoints.
 
     Args:

@@ -15,7 +15,7 @@ print("=" * 80)
 
 # Create scenario
 scenario = default_scenario(num_agents=1)
-print(f"\nScenario: Default (num_agents=1)")
+print("\nScenario: Default (num_agents=1)")
 print(f"  beta:  {scenario.prob_fire_spreads_to_neighbor}")
 print(f"  kappa: {scenario.prob_solo_agent_extinguishes_fire}")
 print(f"  c (work cost): {scenario.cost_to_work_one_night}")
@@ -73,11 +73,11 @@ print("-" * 80)
 
 if firefighter_fitness > free_rider_fitness:
     advantage = firefighter_fitness - free_rider_fitness
-    print(f"\n✓ Firefighter strategy is SUPERIOR")
+    print("\n✓ Firefighter strategy is SUPERIOR")
     print(f"  Advantage: {advantage:.2f} points")
 else:
     advantage = free_rider_fitness - firefighter_fitness
-    print(f"\n✓ Free Rider strategy is SUPERIOR")
+    print("\n✓ Free Rider strategy is SUPERIOR")
     print(f"  Advantage: {advantage:.2f} points")
 
 print("\n" + "=" * 80)

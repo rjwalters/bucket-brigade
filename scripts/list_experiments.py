@@ -12,7 +12,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import argparse
-from datetime import datetime
 from bucket_brigade.db.experiments import init_experiments_db
 from bucket_brigade.db.models import ExperimentRun, TrainingMetric, EvaluationResult
 
@@ -55,7 +54,7 @@ def show_run_details(session, run_name):
     print(f"\n🔬 Experiment Run: {run.run_name} (ID: {run.id})")
     print("=" * 80)
 
-    print(f"\n📋 Basic Info:")
+    print("\n📋 Basic Info:")
     print(f"   Scenario: {run.scenario}")
     print(f"   Model Path: {run.model_path}")
     print(f"   Started: {run.started_at.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -64,15 +63,15 @@ def show_run_details(session, run_name):
         duration = (run.completed_at - run.started_at).total_seconds() / 60
         print(f"   Duration: {duration:.1f} minutes")
     else:
-        print(f"   Status: Running")
+        print("   Status: Running")
 
     if run.hyperparameters:
-        print(f"\n⚙️  Hyperparameters:")
+        print("\n⚙️  Hyperparameters:")
         for key, value in run.hyperparameters.items():
             print(f"   {key}: {value}")
 
     if run.final_stats:
-        print(f"\n📊 Final Statistics:")
+        print("\n📊 Final Statistics:")
         for key, value in run.final_stats.items():
             print(f"   {key}: {value}")
 
@@ -100,7 +99,7 @@ def show_run_details(session, run_name):
     )
 
     if evaluations:
-        print(f"\n🎯 Evaluation Results:")
+        print("\n🎯 Evaluation Results:")
         print(f"   {'Scenario':<25} {'Mean Reward':<15} {'Episodes':<10} {'Date':<20}")
         print("   " + "-" * 70)
         for eval in evaluations:

@@ -158,7 +158,9 @@ def classify_verdict(rows: List[Dict]) -> Tuple[str, str]:
         acc_sorted[i + 1] >= acc_sorted[i] - 0.01 for i in range(len(acc_sorted) - 1)
     )
     if monotone and max_acc >= HOUSE_ON_WORK_SUCCESS:
-        winning_hs = next(h for h, a in zip(hs_sorted, acc_sorted) if a >= HOUSE_ON_WORK_SUCCESS)
+        winning_hs = next(
+            h for h, a in zip(hs_sorted, acc_sorted) if a >= HOUSE_ON_WORK_SUCCESS
+        )
         return "capacity_bound", (
             f"Monotone improvement with hidden_size; plateau >= "
             f"{HOUSE_ON_WORK_SUCCESS} reached at hidden_size={winning_hs} "
@@ -201,9 +203,7 @@ def render_markdown(rows: List[Dict], verdict: str, reasoning: str) -> str:
     ]
     for r in sorted(rows, key=lambda x: x["hidden_size"]):
         if r.get("n_seeds", 0) == 0:
-            lines.append(
-                f"| {r['hidden_size']} | - | 0 | - | - | - | - |"
-            )
+            lines.append(f"| {r['hidden_size']} | - | 0 | - | - | - | - |")
             continue
         lines.append(
             f"| {r['hidden_size']} | {r.get('n_params', '-')} | "

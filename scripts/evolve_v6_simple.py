@@ -32,7 +32,9 @@ from bucket_brigade.evolution import (
 from bucket_brigade.envs import list_scenarios
 
 
-def progress_callback(generation: int, population: Population, output_dir: Path) -> None:
+def progress_callback(
+    generation: int, population: Population, output_dir: Path
+) -> None:
     """Print evolution progress and save checkpoints."""
     stats = population.get_fitness_stats()
     diversity = population.get_diversity()
@@ -62,7 +64,9 @@ def progress_callback(generation: int, population: Population, output_dir: Path)
         print(f"  → Checkpoint saved: {checkpoint_path.name}")
 
 
-def save_results(result, output_dir: Path, config: EvolutionConfig, scenario: str) -> None:
+def save_results(
+    result, output_dir: Path, config: EvolutionConfig, scenario: str
+) -> None:
     """Save evolution results."""
     output_dir.mkdir(parents=True, exist_ok=True)
 

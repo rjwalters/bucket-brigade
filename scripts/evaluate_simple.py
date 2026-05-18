@@ -117,7 +117,7 @@ def main():
     policy.load_state_dict(checkpoint["policy_state_dict"])
     policy.eval()
 
-    print(f"✅ Model loaded successfully")
+    print("✅ Model loaded successfully")
     print(f"   Observation dim: {obs_dim}")
     print(f"   Action dims: {action_dims}")
     print(f"   Hidden size: {hidden_size}")
@@ -125,7 +125,7 @@ def main():
     # Create environment with scenario
     from bucket_brigade.envs import get_scenario_by_name
 
-    print(f"\n🎮 Creating environment")
+    print("\n🎮 Creating environment")
     print(f"   Scenario: {args.scenario}")
     print(f"   Number of opponents: {args.num_opponents}")
 
@@ -141,7 +141,7 @@ def main():
     # Print statistics
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
-    print(f"\n📊 Evaluation Results:")
+    print("\n📊 Evaluation Results:")
     print(f"   Mean Reward: {mean_reward:.2f} ± {std_reward:.2f}")
     print(f"   Min Reward: {np.min(episode_rewards):.2f}")
     print(f"   Max Reward: {np.max(episode_rewards):.2f}")
@@ -157,7 +157,7 @@ def main():
             log_evaluation_result,
         )
 
-        print(f"\n🗄️  Logging evaluation results to database...")
+        print("\n🗄️  Logging evaluation results to database...")
         experiment_session = init_experiments_db(args.experiments_db)
 
         # Find the experiment run by model path

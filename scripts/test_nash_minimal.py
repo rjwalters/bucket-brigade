@@ -110,11 +110,11 @@ print("\n" + "-" * 80)
 print("Computing Nash Equilibrium (Linear Programming)")
 print("-" * 80)
 
-from bucket_brigade.equilibrium.nash_solver import solve_symmetric_nash
+from bucket_brigade.equilibrium.nash_solver import solve_symmetric_nash  # noqa: E402
 
 distribution = solve_symmetric_nash(payoff_matrix)
 
-print(f"\nEquilibrium strategy:")
+print("\nEquilibrium strategy:")
 print(f"  Play Firefighter: {distribution[0]:.1%}")
 print(f"  Play Free Rider:  {distribution[1]:.1%}")
 

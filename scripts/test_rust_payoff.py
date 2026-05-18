@@ -4,7 +4,6 @@ Test Rust-backed payoff evaluator - should be FAST!
 """
 
 import time
-import numpy as np
 from bucket_brigade.envs import greedy_neighbor_scenario
 from bucket_brigade.agents.archetypes import FIREFIGHTER_PARAMS, FREE_RIDER_PARAMS
 from bucket_brigade.equilibrium.payoff_evaluator_rust import RustPayoffEvaluator
@@ -15,10 +14,12 @@ print("=" * 80)
 
 # Greedy neighbor scenario
 scenario = greedy_neighbor_scenario(num_agents=4)
-print(f"\nScenario: Greedy Neighbor (high work cost)")
+print("\nScenario: Greedy Neighbor (high work cost)")
 print(f"  beta:  {scenario.prob_fire_spreads_to_neighbor}")
 print(f"  kappa: {scenario.prob_solo_agent_extinguishes_fire}")
-print(f"  c (work cost): {scenario.cost_to_work_one_night}  ← High cost creates free-riding incentive")
+print(
+    f"  c (work cost): {scenario.cost_to_work_one_night}  ← High cost creates free-riding incentive"
+)
 
 # Create Rust evaluator
 print("\n" + "-" * 80)
@@ -89,21 +90,21 @@ print("-" * 80)
 
 if fr_vs_ff > ff_vs_ff:
     advantage = fr_vs_ff - ff_vs_ff
-    print(f"\n✓ Free-riding is PROFITABLE when others cooperate")
+    print("\n✓ Free-riding is PROFITABLE when others cooperate")
     print(f"  Advantage: {advantage:.2f} points")
-    print(f"  → Creates incentive to free-ride")
+    print("  → Creates incentive to free-ride")
 else:
-    print(f"\n✓ Cooperation is STABLE")
-    print(f"  → Firefighter does better even when opponents cooperate")
+    print("\n✓ Cooperation is STABLE")
+    print("  → Firefighter does better even when opponents cooperate")
 
 if ff_vs_fr > fr_vs_fr:
     advantage = ff_vs_fr - fr_vs_fr
-    print(f"\n✓ Cooperation PUNISHES free-riders")
+    print("\n✓ Cooperation PUNISHES free-riders")
     print(f"  Firefighters get {advantage:.2f} more points vs free-riders")
-    print(f"  → Provides deterrent against free-riding")
+    print("  → Provides deterrent against free-riding")
 else:
-    print(f"\n✓ Free-riding is safe")
-    print(f"  → Free-riders not punished when others also free-ride")
+    print("\n✓ Free-riding is safe")
+    print("  → Free-riders not punished when others also free-ride")
 
 print("\n" + "=" * 80)
 print("SUCCESS! Rust backend is working and FAST!")

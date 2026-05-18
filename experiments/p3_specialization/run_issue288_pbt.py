@@ -48,7 +48,7 @@ import argparse
 import json
 import math
 import random
-import subprocess
+import subprocess  # nosec B404 (orchestrator spawns train.py with fixed argv)
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -148,7 +148,7 @@ def _run_lineage_cell(
 
     log_path = output_dir / "train.log"
     with log_path.open("w") as logf:
-        proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)
+        proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)  # nosec B603 (cmd is list, no shell)
     return proc.returncode
 
 
@@ -315,7 +315,7 @@ def run_pbt(
     seed_root = output_root / f"seed_{pbt_seed}"
     seed_root.mkdir(parents=True, exist_ok=True)
 
-    rng = random.Random(pbt_seed)
+    rng = random.Random(pbt_seed)  # nosec B311 (PBT mutation seeding, not cryptographic)
 
     # Distinct per-lineage PPO seeds. Using ``pbt_seed * 1000 + i`` keeps the
     # numbering human-readable in the per-cell config.json.

@@ -31,13 +31,14 @@ from bucket_brigade.evolution import (
     Population,
 )
 from bucket_brigade.evolution.heterogeneous_evaluator import (
-    HeterogeneousEvaluator,
     create_heterogeneous_evaluator,
 )
 from bucket_brigade.envs import list_scenarios
 
 
-def progress_callback(generation: int, population: Population, output_dir: Path) -> None:
+def progress_callback(
+    generation: int, population: Population, output_dir: Path
+) -> None:
     """Print evolution progress and save checkpoints."""
     stats = population.get_fitness_stats()
     diversity = population.get_diversity()
@@ -67,7 +68,9 @@ def progress_callback(generation: int, population: Population, output_dir: Path)
         print(f"  → Checkpoint saved: {checkpoint_path.name}")
 
 
-def save_results(result, output_dir: Path, config: EvolutionConfig, scenario: str) -> None:
+def save_results(
+    result, output_dir: Path, config: EvolutionConfig, scenario: str
+) -> None:
     """Save evolution results."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -119,7 +122,7 @@ def save_results(result, output_dir: Path, config: EvolutionConfig, scenario: st
         f.write(f"Population: {config.population_size}\n")
         f.write(f"Generations: {config.num_generations}\n")
         f.write(f"Mutation Rate: {config.mutation_rate}\n")
-        f.write(f"Fitness Type: heterogeneous_tournament\n")
+        f.write("Fitness Type: heterogeneous_tournament\n")
         f.write(f"Converged At: {result.converged_at}\n\n")
         f.write("Best Individual:\n")
         f.write(f"  Fitness: {result.best_individual.fitness:.4f}\n")
@@ -243,7 +246,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
 
     # Create heterogeneous evaluator
-    print(f"Creating heterogeneous evaluator...")
+    print("Creating heterogeneous evaluator...")
     print(f"  Opponent pool: {args.opponent_types}")
     evaluator = create_heterogeneous_evaluator(
         scenario_name=args.scenario,
@@ -256,6 +259,7 @@ def main():
     if args.verbose:
         print("\nTesting evaluator on random genome...")
         import numpy as np
+
         test_genome = np.random.rand(10)
         test_fitness = evaluator.evaluate(test_genome, num_games=5, verbose=True)
         print(f"Test fitness: {test_fitness:.2f}")
@@ -302,7 +306,9 @@ def main():
     print()
     start_time = time.time()
 
-    result = ga.evolve(progress_callback=lambda gen, pop: progress_callback(gen, pop, args.output))
+    result = ga.evolve(
+        progress_callback=lambda gen, pop: progress_callback(gen, pop, args.output)
+    )
 
     elapsed_time = time.time() - start_time
 
@@ -314,7 +320,7 @@ def main():
     print(f"Best Fitness: {result.best_individual.fitness:.4f}")
     print(f"Best Generation: {result.best_individual.generation}")
     print(f"Converged At: {result.converged_at}")
-    print(f"Elapsed Time: {elapsed_time:.1f}s ({elapsed_time/60:.1f}min)")
+    print(f"Elapsed Time: {elapsed_time:.1f}s ({elapsed_time / 60:.1f}min)")
     print()
 
     # Save results
@@ -326,12 +332,14 @@ def main():
     print()
     print("Next steps:")
     print("  1. Run tournament validation:")
-    print(f"     uv run python experiments/scripts/run_heterogeneous_tournament.py \\")
-    print(f"       --agents evolved_v7 evolved_v6 firefighter hero free_rider coordinator \\")
+    print("     uv run python experiments/scripts/run_heterogeneous_tournament.py \\")
+    print(
+        "       --agents evolved_v7 evolved_v6 firefighter hero free_rider coordinator \\"
+    )
     print(f"       --scenarios {args.scenario} --num-games 100")
     print()
     print("  2. Compare V7 vs V6:")
-    print(f"     Check if V7 ranks better against free_rider!")
+    print("     Check if V7 ranks better against free_rider!")
     print()
 
 
