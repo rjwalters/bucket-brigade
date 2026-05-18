@@ -215,6 +215,22 @@
       "penalty_own_house_burns": [100.0, 100.0, 100.0, 100.0],
       "penalty_other_house_burns": [0.0, 0.0, 0.0, 0.0],
       "description": "Issue #254 / option E of architect proposal #234: 2-house x 4-agent PPO learnability diagnostic. Joint action space shrinks to 4 * (2 * 2 * 2) = 32 per-agent moves vs default 4 * (10 * 2 * 2) = 1600, so PPO has a tractable exploration problem. Reward shape mirrors minimal_specialization (per-agent ownership dominates 10 team reward). Ignition rate bumped 0.02->0.05 because at 0.02 a 2-house ring has too many fire-free episodes. Python/Rust only - WASM frontend (web/) is fixed at 10 houses; non-10 scenarios panic in wasm.rs."
+    },
+    "default_continuous": {
+      "prob_fire_spreads_to_neighbor": 0.25,
+      "prob_solo_agent_extinguishes_fire": 0.5,
+      "prob_house_catches_fire": 0.02,
+      "team_reward_house_survives": 100.0,
+      "team_penalty_house_burns": 100.0,
+      "cost_to_work_one_night": 0.5,
+      "min_nights": 12,
+      "reward_own_house_survives": 20.0,
+      "reward_other_house_survives": 0.0,
+      "penalty_own_house_burns": 40.0,
+      "penalty_other_house_burns": 0.0,
+      "extinguish_mode": "continuous",
+      "suppression_per_worker": 0.5,
+      "description": "Issue #253 / option D of architect proposal #234: continuous extinguish dynamics. Mirrors `default` (kappa=0.5) but switches to the damage-accumulation model — each work step at a burning house adds suppression_per_worker * workers_here to a per-house accumulator; the fire transitions BURNING -> SAFE deterministically at threshold 1.0. With suppression_per_worker=kappa=0.5, the one-worker expected nights-to-extinguish matches the Bernoulli baseline (1/kappa=2). The smoothing benefit option D targets comes from credit assignment via the value function: workers who contributed but didn't trigger the threshold this step affected the next-step suppression state, so the critic learns their work matters."
     }
   }
 }

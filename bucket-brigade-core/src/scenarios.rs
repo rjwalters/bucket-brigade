@@ -150,6 +150,58 @@ where
     Ok(s)
 }
 
+/// Allowed values for `Scenario::extinguish_mode` (issue #253).
+///
+/// - `"bernoulli"` (default): the pre-#253 per-step Bernoulli model.
+///   `p_extinguish = 1 - (1 - kappa)^k` where `k` is workers-here. Single
+///   coin flip per step per burning house.
+/// - `"continuous"`: damage-accumulation model. Each work step at a burning
+///   house adds `suppression_per_worker * workers_here` to a per-house
+///   accumulator; the fire transitions BURNING -> SAFE deterministically
+///   when the accumulator reaches 1.0. Designed to smooth PPO's gradient
+///   on extinguish events (the per-step variance of the Bernoulli outcome
+///   is the credit-assignment problem #234 option D targets).
+///
+/// Keep in sync with the Python validator in
+/// `bucket_brigade/envs/scenarios_generated.py::Scenario.__post_init__`.
+pub const ALLOWED_EXTINGUISH_MODES: &[&str] = &["bernoulli", "continuous"];
+
+/// Default for `Scenario::extinguish_mode` (issue #253). `"bernoulli"` is
+/// the pre-#253 model and preserves bit-exact behavior for every existing
+/// scenario that omits the field.
+fn default_extinguish_mode() -> String {
+    "bernoulli".to_string()
+}
+
+/// Custom serde deserializer for `Scenario::extinguish_mode` (issue #253)
+/// that enforces the `ALLOWED_EXTINGUISH_MODES` allowlist. Mirrors the
+/// `distance_metric` pattern — without this guard, an unrecognized mode
+/// would silently fall back to the Bernoulli branch.
+fn deserialize_extinguish_mode<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let s = String::deserialize(deserializer)?;
+    if !ALLOWED_EXTINGUISH_MODES.contains(&s.as_str()) {
+        return Err(D::Error::custom(format!(
+            "Scenario.extinguish_mode={s:?} is not supported; allowed values: {ALLOWED_EXTINGUISH_MODES:?}"
+        )));
+    }
+    Ok(s)
+}
+
+/// Default for `Scenario::suppression_per_worker` (issue #253). Zero is
+/// inert in both extinguish modes: in `"bernoulli"` the field is unused;
+/// in `"continuous"` zero suppression means fires never get extinguished
+/// (callers must set this knob to a positive value when enabling the
+/// continuous mode). Calibration: matching the Bernoulli expectation for
+/// `kappa = prob_solo_agent_extinguishes_fire` with one worker per step
+/// gives `suppression_per_worker = kappa`.
+fn default_suppression_per_worker() -> f32 {
+    0.0
+}
+
 /// Allowed values for `Scenario::distance_metric`.
 ///
 /// `engine/rewards.rs` currently consumes `distance_cost_alpha + ring_dist_10(...)`
@@ -383,6 +435,42 @@ pub struct Scenario {
         deserialize_with = "deserialize_action_validity_mode"
     )]
     pub action_validity_mode: String,
+
+    // Continuous extinguish dynamics (issue #253, option D from #234).
+    //
+    // `extinguish_mode` selects the per-step extinguish dynamics:
+    //   - `"bernoulli"` (default): pre-#253 model. The engine takes a
+    //     fast-path that's bit-exactly identical to the pre-#253 behavior
+    //     for every existing scenario.
+    //   - `"continuous"`: damage-accumulation model. Each work step at a
+    //     burning house adds `suppression_per_worker * workers_here` to a
+    //     per-house accumulator (`BucketBrigade::fire_progress`); the fire
+    //     transitions BURNING -> SAFE deterministically when the
+    //     accumulator reaches 1.0. The accumulator is zeroed on
+    //     ignition and burn-out so per-fire suppression progress doesn't
+    //     leak across episodes-within-an-episode.
+    //
+    // The extinguish *reward* (per-house ownership rewards, action-shaping
+    // bonuses, etc.) is unchanged: it still fires at the
+    // BURNING -> SAFE transition. The smoothing benefit option D targets
+    // comes from credit assignment via the value function — workers who
+    // contributed but didn't trigger the deterministic threshold this
+    // step get visited and learn the suppression matters, because the
+    // value function sees the accumulator's contribution to the next-step
+    // transition probability.
+    //
+    // Calibration: matching the pre-#253 Bernoulli expectation for
+    // `kappa = prob_solo_agent_extinguishes_fire` with one worker per
+    // step gives `suppression_per_worker = kappa` (expected
+    // nights-to-extinguish = `1/kappa` in both models). The
+    // `default_continuous` scenario uses this calibration.
+    #[serde(
+        default = "default_extinguish_mode",
+        deserialize_with = "deserialize_extinguish_mode"
+    )]
+    pub extinguish_mode: String,
+    #[serde(default = "default_suppression_per_worker")]
+    pub suppression_per_worker: f32,
 }
 
 impl Scenario {
@@ -420,6 +508,16 @@ impl Scenario {
             return Err(format!(
                 "Scenario.action_validity_mode={:?} is not supported; allowed values: {:?}",
                 self.action_validity_mode, ALLOWED_ACTION_VALIDITY_MODES
+            ));
+        }
+        // Issue #253: extinguish_mode allowlist re-check for the
+        // programmatic-construction path (PyScenario kwargs, WASM
+        // construction, Rust literal builds). Mirrors the
+        // `distance_metric` re-check above.
+        if !ALLOWED_EXTINGUISH_MODES.contains(&self.extinguish_mode.as_str()) {
+            return Err(format!(
+                "Scenario.extinguish_mode={:?} is not supported; allowed values: {:?}",
+                self.extinguish_mode, ALLOWED_EXTINGUISH_MODES
             ));
         }
         Ok(())
@@ -480,6 +578,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -508,6 +608,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -536,6 +638,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -565,6 +669,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -593,6 +699,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -621,6 +729,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -649,6 +759,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -677,6 +789,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -705,6 +819,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -733,6 +849,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -761,6 +879,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -789,6 +909,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -824,6 +946,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -858,6 +982,8 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         },
     );
 
@@ -895,6 +1021,54 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
+        },
+    );
+
+    // Issue #253 / option D of architect proposal #234: the
+    // ``default_continuous`` scenario mirrors ``default`` exactly except for
+    // the extinguish dynamics. Calibration:
+    //   * ``default`` has ``prob_solo_agent_extinguishes_fire = 0.5``
+    //     (Bernoulli kappa). Expected nights-to-extinguish with one
+    //     worker = ``1/kappa = 2``.
+    //   * The continuous model with ``suppression_per_worker = 0.5`` gives
+    //     deterministic nights-to-extinguish = ``ceil(1 / 0.5) = 2`` for
+    //     one worker, ``ceil(1 / 1.0) = 1`` for two workers.
+    // So the calibrated continuous mode matches the Bernoulli expectation
+    // in the single-worker case and is *slightly faster than the
+    // expectation* in the multi-worker case (the Bernoulli model has
+    // ``p = 1 - 0.5^k`` so two workers extinguish in
+    // ``E = 1 / 0.75 ≈ 1.33`` nights vs the continuous's deterministic 1
+    // night). Tests confirm the long-run extinguish rate matches within
+    // 5% on average for the single-worker calibration point.
+    m.insert(
+        "default_continuous",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.25,
+            prob_solo_agent_extinguishes_fire: 0.5,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 100.0,
+            team_penalty_house_burns: 100.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(20.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(40.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: "continuous".to_string(),
+            suppression_per_worker: 0.5,
         },
     );
 
@@ -931,6 +1105,9 @@ mod tests {
         assert!(SCENARIOS.get("positional_default").is_some());
         // Issue #254: v2_minimal is the 2x4 PPO learnability diagnostic.
         assert!(SCENARIOS.get("v2_minimal").is_some());
+        // Issue #253: default_continuous mirrors default with continuous
+        // extinguish dynamics enabled.
+        assert!(SCENARIOS.get("default_continuous").is_some());
     }
 
     #[test]
@@ -1066,8 +1243,8 @@ mod tests {
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
         assert_eq!(
-            count, 15,
-            "Expected 15 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional + 1 v2 minimal)"
+            count, 16,
+            "Expected 16 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional + 1 v2 minimal + 1 continuous)"
         );
     }
 
@@ -1472,6 +1649,8 @@ mod tests {
             team_welfare_gamma: default_team_welfare_gamma(),
             team_welfare_kind: default_team_welfare_kind(),
             action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
         };
         let err = scenario
             .validate()
@@ -1716,5 +1895,143 @@ mod tests {
         assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&"always_valid"));
         assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&"adjacent_only"));
         assert!(ALLOWED_ACTION_VALIDITY_MODES.contains(&default_action_validity_mode().as_str()));
+    }
+
+    // ==========================================================================
+    // Issue #253: continuous extinguish dynamics
+    // ==========================================================================
+
+    /// `extinguish_mode` defaults to `"bernoulli"` so every pre-#253
+    /// scenario is bit-exact under the default extinguish dynamics.
+    #[test]
+    fn test_extinguish_mode_defaults_to_bernoulli() {
+        for (name, scenario) in SCENARIOS.iter() {
+            if name == &"default_continuous" {
+                continue;
+            }
+            assert_eq!(
+                scenario.extinguish_mode, "bernoulli",
+                "Scenario '{}' must default to bernoulli extinguish_mode",
+                name
+            );
+            assert_eq!(
+                scenario.suppression_per_worker, 0.0,
+                "Scenario '{}' must default to zero suppression_per_worker",
+                name
+            );
+        }
+    }
+
+    /// `default_continuous` exposes the calibrated continuous extinguish
+    /// mode: same Bernoulli kappa as `default`, with
+    /// `suppression_per_worker = kappa = 0.5` so the one-worker expected
+    /// nights-to-extinguish matches across modes.
+    #[test]
+    fn test_default_continuous_values() {
+        let scenario = SCENARIOS.get("default_continuous").unwrap();
+        assert_eq!(scenario.extinguish_mode, "continuous");
+        assert_eq!(scenario.suppression_per_worker, 0.5);
+        // Bernoulli kappa kept around so callers (and the calibration
+        // narrative) can read it. The continuous dispatch ignores it.
+        assert_eq!(scenario.prob_solo_agent_extinguishes_fire, 0.5);
+        // Everything else mirrors `default` bit-exactly.
+        let default = SCENARIOS.get("default").unwrap();
+        assert_eq!(
+            scenario.prob_fire_spreads_to_neighbor,
+            default.prob_fire_spreads_to_neighbor
+        );
+        assert_eq!(
+            scenario.prob_house_catches_fire,
+            default.prob_house_catches_fire
+        );
+        assert_eq!(
+            scenario.team_reward_house_survives,
+            default.team_reward_house_survives
+        );
+        assert_eq!(
+            scenario.team_penalty_house_burns,
+            default.team_penalty_house_burns
+        );
+        assert_eq!(
+            scenario.cost_to_work_one_night,
+            default.cost_to_work_one_night
+        );
+        assert_eq!(scenario.min_nights, default.min_nights);
+    }
+
+    /// Backward-compat: omitting the new fields in JSON yields the
+    /// documented defaults (mode `"bernoulli"`, suppression 0.0) so all
+    /// pre-#253 scenarios remain bit-exact.
+    #[test]
+    fn test_extinguish_fields_optional_in_json() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12
+        }"#;
+        let scenario: Scenario = serde_json::from_str(json).unwrap();
+        assert_eq!(scenario.extinguish_mode, "bernoulli");
+        assert_eq!(scenario.suppression_per_worker, 0.0);
+    }
+
+    /// Unknown `extinguish_mode` values must be rejected at deserialize time.
+    /// Mirrors the `distance_metric` allowlist guard from issue #222.
+    #[test]
+    fn test_unknown_extinguish_mode_rejected_in_deserialize() {
+        let json = r#"{
+            "prob_fire_spreads_to_neighbor": 0.25,
+            "prob_solo_agent_extinguishes_fire": 0.5,
+            "prob_house_catches_fire": 0.02,
+            "team_reward_house_survives": 100.0,
+            "team_penalty_house_burns": 100.0,
+            "reward_own_house_survives": 1.0,
+            "reward_other_house_survives": 0.0,
+            "penalty_own_house_burns": 2.0,
+            "penalty_other_house_burns": 0.0,
+            "cost_to_work_one_night": 0.5,
+            "min_nights": 12,
+            "extinguish_mode": "exponential_decay"
+        }"#;
+        let err = serde_json::from_str::<Scenario>(json)
+            .expect_err("unknown extinguish_mode should be rejected");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("extinguish_mode") && msg.contains("exponential_decay"),
+            "Error should name field + value, got: {msg}"
+        );
+        assert!(
+            msg.contains("bernoulli") && msg.contains("continuous"),
+            "Error should list allowed modes, got: {msg}"
+        );
+    }
+
+    /// Programmatic construction with an unknown mode must fail `validate()`.
+    #[test]
+    fn test_validate_rejects_unknown_extinguish_mode() {
+        let mut scenario = SCENARIOS.get("default").unwrap().clone();
+        scenario.extinguish_mode = "garbage".to_string();
+        let err = scenario
+            .validate()
+            .expect_err("bogus mode should fail validate()");
+        assert!(
+            err.contains("extinguish_mode") && err.contains("garbage"),
+            "Error should name field + value, got: {err}"
+        );
+    }
+
+    /// Sanity: the allowlist contains both supported modes and the default.
+    #[test]
+    fn test_extinguish_mode_allowlist_contents() {
+        assert!(ALLOWED_EXTINGUISH_MODES.contains(&"bernoulli"));
+        assert!(ALLOWED_EXTINGUISH_MODES.contains(&"continuous"));
+        assert!(ALLOWED_EXTINGUISH_MODES.contains(&default_extinguish_mode().as_str()));
     }
 }
