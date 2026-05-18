@@ -40,7 +40,7 @@ import argparse
 import importlib.util
 import json
 import math
-import subprocess
+import subprocess  # nosec B404 (orchestrator spawns train.py with fixed argv)
 import sys
 import time
 from dataclasses import dataclass
@@ -441,13 +441,13 @@ def build_cell_summary(
 def _run_subprocess(argv: Sequence[str], *, cwd: Path) -> int:
     """Run a subprocess and stream its output. Returns the exit code."""
     print(f"\n$ {' '.join(argv)}", flush=True)
-    completed = subprocess.run(list(argv), cwd=str(cwd))
+    completed = subprocess.run(list(argv), cwd=str(cwd))  # nosec B603 (cmd is list, no shell)
     return int(completed.returncode)
 
 
 def _git_sha(cwd: Path) -> str:
     try:
-        out = subprocess.run(
+        out = subprocess.run(  # nosec B603 B607 (git rev-parse — argv is hardcoded, not user input)
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=str(cwd),
             check=True,
