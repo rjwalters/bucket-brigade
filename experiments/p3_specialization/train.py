@@ -53,6 +53,7 @@ from bucket_brigade.training.joint_trainer import (
     flatten_dict_obs,
 )
 from bucket_brigade.training.lola_trainer import LolaTrainer
+from bucket_brigade.training.obs_audit import ObsAuditor
 
 
 @dataclass
@@ -202,6 +203,15 @@ class CellConfig:
     lola_dice: bool = False
     lola_eta: float = 1.0
     lola_lookahead_steps: int = 1
+    # Issue #274: live observation audit. When ``audit_obs > 0``, a passive
+    # :class:`ObsAuditor` is wired into the trainer and ``audit_obs`` global
+    # timesteps are sampled uniformly across the full run; per-(step, agent)
+    # snapshots are dumped to ``audit_obs_path`` as JSON-Lines. Default
+    # ``0`` is a true no-op: the trainer's rollout path is bit-for-bit
+    # identical to the audit-disabled legacy code.
+    audit_obs: int = 0
+    audit_obs_path: Optional[str] = None
+    audit_obs_seed: int = 0
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -837,6 +847,28 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     else:
         action_dims = cfg.action_dims
 
+    # Issue #274: build the obs auditor up-front so its total-step budget
+    # can be threaded into the trainer. ``audit_obs == 0`` (default) yields
+    # a disabled auditor whose ``maybe_record`` is a true no-op, so the
+    # legacy rollout path stays bit-identical. ``audit_obs`` is intentionally
+    # not supported on the LOLA-DiCE arm (its rollout path is in
+    # :class:`LolaTrainer`, not :class:`JointPPOTrainer`); fail loud rather
+    # than silently disable.
+    audit_total_steps = cfg.num_iterations * cfg.rollout_steps
+    obs_auditor: Optional[ObsAuditor] = None
+    if cfg.audit_obs > 0:
+        if cfg.lola_dice:
+            raise ValueError(
+                "cfg.audit_obs > 0 is not supported on the LOLA-DiCE arm. "
+                "The audit hook lives in JointPPOTrainer.collect_rollout; "
+                "extend LolaTrainer separately if needed."
+            )
+        obs_auditor = ObsAuditor(
+            num_samples=int(cfg.audit_obs),
+            total_steps=int(audit_total_steps),
+            seed=int(cfg.audit_obs_seed),
+        )
+
     if cfg.lola_dice:
         # Issue #287: LOLA-DiCE arm. The trainer mirrors JointPPOTrainer's
         # collect_rollout / update / encoder_outputs_batch surface, so the
@@ -883,6 +915,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
             influence_mc_samples=cfg.influence_mc_samples,
             device=cfg.device,
             seed=cfg.seed,
+            obs_auditor=obs_auditor,
         )
 
     # Issue #270: optionally warm-start the actor weights from a BC-pretrained
@@ -990,6 +1023,21 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
         json.dump(metrics_log, f, indent=2)
     with (output_dir / "config.json").open("w") as f:
         json.dump(asdict(cfg), f, indent=2)
+
+    # Issue #274: dump obs-audit samples to disk if the auditor was wired in.
+    # ``ObsAuditor.dump`` is itself a no-op when no samples were picked.
+    if obs_auditor is not None and obs_auditor.enabled:
+        audit_path = (
+            Path(cfg.audit_obs_path)
+            if cfg.audit_obs_path is not None
+            else output_dir / "audit_obs.jsonl"
+        )
+        obs_auditor.dump(audit_path)
+        print(
+            f"  obs-audit (#274): wrote {len(obs_auditor.samples)} samples "
+            f"({cfg.audit_obs} picked steps x {cfg.num_agents} agents) "
+            f"to {audit_path}"
+        )
 
 
 def main() -> None:
@@ -1329,6 +1377,40 @@ def main() -> None:
         ),
     )
     p.add_argument("--device", default="cpu")
+    p.add_argument(
+        "--audit-obs",
+        type=int,
+        default=0,
+        help=(
+            "Issue #274: number of global timesteps to record for the live "
+            "observation audit. Picks N steps uniformly across the planned "
+            "num_iterations * rollout_steps budget, then dumps per-(step, "
+            "agent) snapshots (obs slices, raw + sanitized action, reward, "
+            "identity-tail one-hot, scenario info) as JSON-Lines. Default "
+            "0 disables the audit (bit-for-bit identical to legacy "
+            "behavior)."
+        ),
+    )
+    p.add_argument(
+        "--audit-obs-path",
+        type=str,
+        default=None,
+        help=(
+            "Issue #274: explicit path for the obs-audit JSONL dump. "
+            "Defaults to ``<output_dir>/audit_obs.jsonl`` when "
+            "--audit-obs > 0."
+        ),
+    )
+    p.add_argument(
+        "--audit-obs-seed",
+        type=int,
+        default=0,
+        help=(
+            "Issue #274: seed for the obs-audit reservoir sampler. The "
+            "picked step set is fully determined by (audit_obs, "
+            "num_iterations * rollout_steps, audit_obs_seed)."
+        ),
+    )
     args = p.parse_args()
 
     # Issue #289: ``--use-hca`` is a convenience alias for
@@ -1372,6 +1454,9 @@ def main() -> None:
         lola_eta=args.lola_eta,
         lola_lookahead_steps=args.lola_lookahead_steps,
         device=args.device,
+        audit_obs=args.audit_obs,
+        audit_obs_path=args.audit_obs_path,
+        audit_obs_seed=args.audit_obs_seed,
     )
     print(
         f"== P3 cell: scenario={cfg.scenario} lambda_red={cfg.lambda_red} "
