@@ -180,6 +180,26 @@ class Scenario:
     extinguish_mode: str = "bernoulli"
     suppression_per_worker: float = 0.0
 
+    # Within-night commitment mode (issue #252, option C from #234).
+    # ``commitment_mode`` selects the per-night turn structure:
+    #   - ``"simultaneous"`` (default): pre-#252 single-phase mechanic.
+    #     Every agent emits ``[house, mode, signal]`` in a single
+    #     round per night. Bit-exact backward compatibility.
+    #   - ``"two_phase"``: C1 non-binding signaling. Each night becomes
+    #     two micro-rounds at the trainer surface — round-1 emits a
+    #     signal only (no movement, no cost, night does not advance),
+    #     round-2 observes everyone's round-1 signal (in a new
+    #     ``round1_signals`` obs channel) and emits a full
+    #     ``[house, mode, signal]`` action. Round-2 mode is
+    #     unconstrained by the round-1 signal — policies can emit
+    #     ``signal=Work`` round-1 and ``mode=Rest`` round-2 (the
+    #     deception channel survives).
+    # The two-phase mechanic requires using
+    # ``BucketBrigadeEnv.step_two_phase(round1_signals, round2_actions)``
+    # instead of ``step``; calling ``step`` on a two-phase scenario
+    # raises a clear error.
+    commitment_mode: str = "simultaneous"
+
     def __post_init__(self) -> None:
         """Auto-promote scalar ownership reward fields to per-agent vectors.
 
@@ -285,6 +305,20 @@ class Scenario:
             raise ValueError(
                 f"Scenario.extinguish_mode={self.extinguish_mode!r} "
                 f"is not supported; allowed values: {allowed_extinguish_modes!r}."
+            )
+
+        # Issue #252: commitment_mode allowlist. Keep in sync with the
+        # Rust validator in
+        # ``bucket-brigade-core/src/scenarios.rs::ALLOWED_COMMITMENT_MODES``.
+        # ``"simultaneous"`` is the default and preserves pre-#252
+        # single-phase behavior bit-exactly. ``"two_phase"`` invokes
+        # the C1 non-binding signaling mechanic; callers must use
+        # ``BucketBrigadeEnv.step_two_phase`` instead of ``step``.
+        allowed_commitment_modes = ("simultaneous", "two_phase")
+        if self.commitment_mode not in allowed_commitment_modes:
+            raise ValueError(
+                f"Scenario.commitment_mode={self.commitment_mode!r} "
+                f"is not supported; allowed values: {allowed_commitment_modes!r}."
             )
 
     def to_feature_vector(self) -> np.ndarray:

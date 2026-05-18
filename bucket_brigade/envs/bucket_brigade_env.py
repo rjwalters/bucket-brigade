@@ -89,6 +89,15 @@ class BucketBrigadeEnv:
         # behavior is bit-exactly identical to pre-#253.
         self.fire_progress: np.ndarray = np.zeros(self.num_houses, dtype=np.float32)
 
+        # Issue #252: round-1 non-binding commitment signals from the
+        # `"two_phase"` commitment mode. Length matches num_agents. Only
+        # written by `step_two_phase`; the single-phase `step()` path
+        # leaves this vector at its default (all-zeros) so the obs is
+        # byte-identical to pre-#252 once the channel is excluded from
+        # the flat obs vector. Exposed via `_get_observation` so the
+        # round-2 policy forward can condition on round-1 signals.
+        self.round1_signals: np.ndarray = np.zeros(self.num_agents, dtype=np.int8)
+
         # House ownership: assign agents to houses in round-robin fashion.
         # Issue #254: vector length scales with num_houses.
         self.house_owners = np.arange(self.num_houses) % self.num_agents
@@ -145,6 +154,12 @@ class BucketBrigadeEnv:
         # `BucketBrigade::reset` behavior so cross-language parity holds.
         self.fire_progress = np.zeros(self.num_houses, dtype=np.float32)
 
+        # Issue #252: zero the round-1 commitment-signal buffer at reset
+        # so cross-episode signal state does not leak. In simultaneous
+        # mode the buffer is never written; this is a no-op for those
+        # scenarios.
+        self.round1_signals = np.zeros(self.num_agents, dtype=np.int8)
+
         # Initialize house states
         self._initialize_houses()
 
@@ -176,6 +191,20 @@ class BucketBrigadeEnv:
         """
         if self.done:
             raise RuntimeError("Game is already finished")
+
+        # Issue #252: refuse single-phase `step()` calls on a two-phase
+        # scenario. The two-phase mechanic requires running the signal
+        # round before the action round; calling `step()` directly would
+        # silently skip the signal phase and leak round-1 signals across
+        # nights. Callers should use `step_two_phase(round1_signals,
+        # round2_actions)` instead. Mirrors the Rust defensive panic in
+        # `BucketBrigade::step`.
+        if getattr(self.scenario, "commitment_mode", "simultaneous") == "two_phase":
+            raise RuntimeError(
+                f"BucketBrigadeEnv.step() called on a two-phase scenario; "
+                f"use step_two_phase(round1_signals, round2_actions) instead. "
+                f"commitment_mode={self.scenario.commitment_mode!r}"
+            )
 
         # Accept legacy length-2 actions by promoting them to honest
         # length-3 actions (signal == mode_flag). This keeps any external
@@ -238,6 +267,109 @@ class BucketBrigadeEnv:
         self._record_night()
 
         # 10. Advance to next night
+        self.night += 1
+
+        return (
+            self._get_observation(),
+            self.rewards.copy(),
+            np.full(self.num_agents, self.done),
+            {},
+        )
+
+    def step_two_phase(
+        self,
+        round1_signals: np.ndarray,
+        round2_actions: np.ndarray,
+    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, Dict]:
+        """Issue #252: two-phase non-binding signaling step (option C / C1
+        from architect proposal #234).
+
+        One call advances the night by one step, internally fusing the
+        signal-phase write and the action-phase step. Required for
+        scenarios with ``commitment_mode == "two_phase"``; the
+        single-phase ``step()`` raises a clear error on those scenarios.
+
+        Mechanic:
+
+        1. **Round 1 (signal phase)**: round-1 signals are written into
+           ``self.round1_signals``, which is exposed via the observation
+           dict. The night does NOT advance, houses do NOT update,
+           ``self.signals`` does NOT update (round 2 overwrites it
+           below), no work cost is incurred, no reward is produced.
+        2. **Round 2 (action phase)**: the engine runs the regular
+           ``step()`` body on ``round2_actions``. The round-2 signal
+           value (column 2 of the action) overwrites
+           ``self.signals`` matching today's semantics so v1-trained
+           policies still parse obs correctly. The round-1 signals stay
+           in ``self.round1_signals`` until the next ``step_two_phase``
+           overwrites them.
+
+        **Deception channel survives**: round-2 mode (column 1 of the
+        action) is not constrained by the round-1 signal at all.
+        Policies can emit ``round1_signal=1 (Work)`` then ``round2_mode=0
+        (Rest)``. The PR-gate test
+        ``tests/test_environment.py::TestCommitmentMode::test_can_still_lie``
+        exercises this directly with a hardcoded Liar policy.
+
+        Mirrors the canonical Rust implementation in
+        ``bucket-brigade-core/src/engine/core.rs::step_two_phase``.
+
+        Args:
+            round1_signals: Per-agent round-1 commitment signals, shape
+                ``(num_agents,)`` or ``(num_agents, 1)``, dtype int.
+                Values in ``{0, 1}``.
+            round2_actions: Per-agent round-2 actions, shape
+                ``(num_agents, 3)`` with ``[house, mode, signal]``.
+                Length-2 actions are accepted for legacy callers and
+                promoted with ``signal := mode``.
+
+        Returns:
+            ``(observation, rewards, dones, info)`` matching ``step()``.
+        """
+        if self.done:
+            raise RuntimeError("Game is already finished")
+        mode = getattr(self.scenario, "commitment_mode", "simultaneous")
+        if mode != "two_phase":
+            raise RuntimeError(
+                f"BucketBrigadeEnv.step_two_phase requires "
+                f"commitment_mode='two_phase'; got {mode!r}. "
+                f"Use step() for simultaneous mode."
+            )
+
+        # Validate shapes.
+        r1 = np.asarray(round1_signals).reshape(-1)
+        if r1.shape[0] != self.num_agents:
+            raise ValueError(
+                f"round1_signals length {r1.shape[0]} != num_agents {self.num_agents}"
+            )
+        r2 = np.asarray(round2_actions)
+        if r2.shape[0] != self.num_agents:
+            raise ValueError(
+                f"round2_actions length {r2.shape[0]} != num_agents {self.num_agents}"
+            )
+
+        # Round 1 (signal phase): write the round-1 signals into the obs
+        # channel. No other state mutates.
+        self.round1_signals = r1.astype(np.int8)
+
+        # Round 2 (action phase): inline the body of `step()` rather than
+        # delegating, because `step()` panics on two-phase scenarios as a
+        # guardrail. The body below is byte-identical to `step()` apart
+        # from that guardrail check.
+        if r2.shape[1] == 2:
+            signal_col = r2[:, 1:2]
+            r2 = np.concatenate([r2, signal_col], axis=1)
+        r2 = self._sanitize_actions(r2)
+        self.signals = r2[:, 2].copy()
+        self.last_actions = r2[:, :2].copy()
+        self.locations = r2[:, 0].copy()
+        self._extinguish_fires(r2)
+        self._burn_out_houses()
+        self._spread_fires()
+        self._spark_fires()
+        self.rewards = self._compute_rewards(r2)
+        self.done = self._check_termination()
+        self._record_night()
         self.night += 1
 
         return (
@@ -686,13 +818,24 @@ class BucketBrigadeEnv:
         return bool(all_safe or all_ruined or no_fires)
 
     def _get_observation(self) -> Dict[str, np.ndarray]:
-        """Get current observation for all agents."""
+        """Get current observation for all agents.
+
+        Issue #252: the ``round1_signals`` channel is always present
+        but in simultaneous mode it is all-zeros (the signal phase is
+        never run). Downstream consumers should ignore the field on
+        simultaneous scenarios — the trainer's flat-obs builder
+        (``flatten_dict_obs``) omits it unconditionally so the obs
+        vector width is bit-exact for pre-#252 callers.
+        """
         return {
             "signals": self.signals.copy(),
             "locations": self.locations.copy(),
             "houses": self.houses.copy(),
             "last_actions": self.last_actions.copy(),
             "scenario_info": self.scenario.to_feature_vector(),
+            # Issue #252: round-1 non-binding commitment signals exposed
+            # to the round-2 policy forward. Zeros in simultaneous mode.
+            "round1_signals": self.round1_signals.copy(),
         }
 
     def _record_night(self) -> None:

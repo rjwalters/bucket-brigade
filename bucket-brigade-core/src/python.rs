@@ -25,6 +25,51 @@ impl PyBucketBrigade {
         self.inner.reset();
     }
 
+    /// Issue #252: two-phase non-binding signaling step (option C / C1
+    /// from architect proposal #234).
+    ///
+    /// One call advances the night by one step, internally fusing the
+    /// signal-phase write and the action-phase step. Required for
+    /// scenarios with `commitment_mode == "two_phase"`; the single-phase
+    /// `step()` panics on those scenarios.
+    ///
+    /// Args:
+    ///     round1_signals: Per-agent round-1 commitment signals (length
+    ///         num_agents, each in {0, 1}). Free, non-binding — round-2
+    ///         mode is unconstrained.
+    ///     round2_actions: Per-agent round-2 actions
+    ///         `[house, mode, signal]` (length num_agents). Length-2
+    ///         actions are accepted for legacy callers (signal := mode).
+    ///
+    /// Returns:
+    ///     `(rewards, done, info)` matching `step()`.
+    fn step_two_phase(
+        &mut self,
+        py: Python,
+        round1_signals: Vec<u8>,
+        round2_actions: Vec<Vec<u8>>,
+    ) -> PyResult<(PyObject, bool, PyObject)> {
+        let rust_actions: Vec<[u8; 3]> = round2_actions
+            .iter()
+            .map(|a| match a.len() {
+                2 => [a[0], a[1], a[1]],
+                3 => [a[0], a[1], a[2]],
+                _ => [
+                    a[0],
+                    a.get(1).copied().unwrap_or(0),
+                    a.get(2).copied().unwrap_or(0),
+                ],
+            })
+            .collect();
+
+        let result = self.inner.step_two_phase(&round1_signals, &rust_actions);
+
+        let rewards = result.rewards.clone().into_py(py);
+        let info = result.info.to_string().into_py(py);
+
+        Ok((rewards, result.done, info))
+    }
+
     fn step(&mut self, py: Python, actions: Vec<Vec<u8>>) -> PyResult<(PyObject, bool, PyObject)> {
         // Issue #235: action is [house, mode, signal] (length 3). For
         // backward compatibility we accept length-2 inputs and default the
@@ -108,6 +153,7 @@ impl PyScenario {
         progress_shaping_coef = 0.0_f32,
         extinguish_mode = "bernoulli".to_string(),
         suppression_per_worker = 0.0_f32,
+        commitment_mode = "simultaneous".to_string(),
     ))]
     fn new(
         prob_fire_spreads_to_neighbor: f32,
@@ -124,6 +170,7 @@ impl PyScenario {
         progress_shaping_coef: f32,
         extinguish_mode: String,
         suppression_per_worker: f32,
+        commitment_mode: String,
         py: Python,
     ) -> PyResult<Self> {
         // Scalar -> vec![v; 10] auto-promotion (mirrors the Python
@@ -197,6 +244,14 @@ impl PyScenario {
             // below.
             extinguish_mode,
             suppression_per_worker,
+            // Issue #252: within-night commitment mode. Defaults to
+            // ``"simultaneous"`` so existing PyScenario callers see
+            // byte-identical behavior (the engine takes its pre-#252
+            // single-phase fast path). Set to ``"two_phase"`` to enable
+            // the C1 non-binding signaling mechanic; this requires
+            // callers to use ``PyBucketBrigade::step_two_phase`` instead
+            // of ``step``.
+            commitment_mode,
         };
         // Issue #222: route programmatic construction through the allowlist
         // validator. The literal above is safe today but the helper keeps the
@@ -350,6 +405,36 @@ impl PyScenario {
     fn suppression_per_worker(&self) -> f32 {
         self.inner.suppression_per_worker
     }
+
+    /// Issue #252: within-night commitment mode selector. Defaults to
+    /// ``"simultaneous"`` (the pre-#252 single-phase mechanic, bit-exact).
+    /// Setting to ``"two_phase"`` enables the C1 non-binding signaling
+    /// mechanic — see ``BucketBrigade::step_two_phase`` (Rust) /
+    /// ``PyBucketBrigade::step_two_phase`` (Python) for the canonical
+    /// implementation. The two-phase mechanic preserves the deception
+    /// channel: round-1 signals are non-binding, so round-2 mode is
+    /// unconstrained.
+    #[getter]
+    fn commitment_mode(&self) -> String {
+        self.inner.commitment_mode.clone()
+    }
+
+    /// Issue #252: setter for `commitment_mode` so Python callers (e.g.
+    /// the experiments/p3 train CLI) can mutate the field on a scenario
+    /// pulled from the `SCENARIOS` registry without rebuilding the
+    /// whole `PyScenario` from kwargs. Validates against the allowlist
+    /// at write time so the engine never sees an unknown mode.
+    #[setter]
+    fn set_commitment_mode(&mut self, value: String) -> PyResult<()> {
+        let allowed = ["simultaneous", "two_phase"];
+        if !allowed.contains(&value.as_str()) {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "commitment_mode={value:?} is not supported; allowed values: {allowed:?}"
+            )));
+        }
+        self.inner.commitment_mode = value;
+        Ok(())
+    }
 }
 
 /// Python-compatible Agent Observation
@@ -413,6 +498,13 @@ impl PyAgentObservation {
     #[getter]
     fn night(&self) -> u32 {
         self.inner.night
+    }
+    /// Issue #252: round-1 commitment signals from the most recent
+    /// signal phase. Length = num_agents. All zeros in
+    /// ``simultaneous`` mode (no signal phase ever runs).
+    #[getter]
+    fn round1_signals(&self) -> Vec<u8> {
+        self.inner.round1_signals.clone()
     }
 }
 

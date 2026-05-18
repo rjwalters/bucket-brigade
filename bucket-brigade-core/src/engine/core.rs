@@ -47,6 +47,16 @@ pub struct BucketBrigade {
     ///
     /// Length matches `scenario.num_houses` (issue #254).
     pub(super) fire_progress: Vec<f32>,
+    /// Issue #252: round-1 non-binding commitment signals from the
+    /// `"two_phase"` commitment mode. Length matches `num_agents`. Only
+    /// written by `step_two_phase` (the two-phase plumbing); the
+    /// single-phase `step()` path leaves this vector at its default
+    /// (all-zeros) so behavior is bit-exactly identical to pre-#252.
+    /// Exposed read-only via `AgentObservation::round1_signals` so the
+    /// round-2 policy forward (and any info-theory hooks) can condition
+    /// on what was just signaled in round 1 vs. what was signaled last
+    /// night.
+    pub(super) round1_signals: Vec<u8>,
     pub(super) trajectory: Vec<GameNight>,
 }
 
@@ -155,6 +165,10 @@ impl BucketBrigade {
             // Issue #253: zero-initialized; only written by the continuous
             // extinguish branch.
             fire_progress: vec![0.0; num_houses],
+            // Issue #252: zero-initialized; only written by `step_two_phase`
+            // in the two-phase commitment mode. `simultaneous`-mode envs
+            // never touch this vector.
+            round1_signals: vec![0; num_agents],
             trajectory: Vec::new(),
         };
         engine.reset();
@@ -183,6 +197,10 @@ impl BucketBrigade {
         // also zeroes on ignition, but resetting up front keeps the
         // invariant explicit).
         self.fire_progress = vec![0.0; num_houses];
+        // Issue #252: zero the round-1 commitment-signal buffer at reset
+        // so cross-episode signal state does not leak. In `simultaneous`
+        // mode the buffer is never written, so this is a no-op.
+        self.round1_signals = vec![0; self.num_agents];
         self.trajectory = Vec::new();
 
         // Initialize fires - probabilistic per-house
@@ -198,6 +216,24 @@ impl BucketBrigade {
     pub fn step(&mut self, actions: &[Action]) -> StepResult {
         if self.done {
             panic!("Game is already finished");
+        }
+
+        // Issue #252: refuse single-phase `step()` calls on a two-phase
+        // scenario. The two-phase mechanic requires running the signal
+        // round before the action round (so the round-2 obs carries
+        // round-1 signals); calling `step()` directly would silently
+        // skip the signal phase and leak round-1 signals across nights.
+        // Callers should use `step_two_phase(round1_signals, actions)`
+        // instead. Mirrors the defensive panic on
+        // `BucketBrigade::new` for unknown distance metrics — fail
+        // loudly rather than producing wrong results.
+        if self.scenario.commitment_mode == "two_phase" {
+            panic!(
+                "BucketBrigade::step called on a two-phase scenario; \
+                 use step_two_phase(round1_signals, round2_actions) instead. \
+                 commitment_mode={:?}",
+                self.scenario.commitment_mode
+            );
         }
 
         // Store previous house states for reward calculation
@@ -252,6 +288,104 @@ impl BucketBrigade {
         self.record_night();
 
         // 10. Advance to next night
+        self.night += 1;
+
+        StepResult {
+            rewards: self.rewards.clone(),
+            done: self.done,
+            info: serde_json::json!({}),
+        }
+    }
+
+    /// Issue #252: two-phase non-binding signaling commitment mechanic
+    /// (option C / C1 from architect proposal #234).
+    ///
+    /// Runs one "night" of the C1 mechanic in a single call (option A from
+    /// the curator spec — engine-internal fusion). The trainer-facing
+    /// rollout still sees one transition per night, but does two policy
+    /// forward passes before invoking this method:
+    ///
+    /// 1. **Round 1 (signal phase)**: trainer calls
+    ///    `set_round1_signals(round1_signals)` (or passes them via this
+    ///    method directly). The engine writes them into
+    ///    `self.round1_signals`, which is then exposed via
+    ///    `AgentObservation::round1_signals`. Round 1 does NOT advance
+    ///    the night, NOT touch houses/positions/agent_signals, NOT
+    ///    incur work cost, NOT produce rewards.
+    /// 2. **Round 2 (action phase)**: trainer collects round-2 actions
+    ///    from a second policy forward (conditioned on the round-1
+    ///    signals in obs) and passes them as `round2_actions`. The
+    ///    engine runs phases 0–9 of the existing `step()` semantics on
+    ///    those actions; everything else is unchanged.
+    ///
+    /// **Deception channel survives**: round-2 mode (`action[1]`) is not
+    /// constrained by the round-1 signal at all. Policies can emit
+    /// `round1_signal=1 (Work)` and then `round2_mode=0 (Rest)` — this is
+    /// the "lie" mechanic. The PR gate
+    /// `engine/tests.rs::test_can_still_lie_two_phase` exercises this
+    /// path and asserts the engine does not constrain or reward the
+    /// inconsistency.
+    ///
+    /// Panics if `scenario.commitment_mode != "two_phase"` (callers
+    /// should use `step()` for simultaneous mode) or if input vector
+    /// lengths don't match `num_agents`.
+    pub fn step_two_phase(
+        &mut self,
+        round1_signals: &[u8],
+        round2_actions: &[Action],
+    ) -> StepResult {
+        if self.done {
+            panic!("Game is already finished");
+        }
+        assert_eq!(
+            self.scenario.commitment_mode, "two_phase",
+            "BucketBrigade::step_two_phase requires commitment_mode='two_phase', \
+             got {:?}",
+            self.scenario.commitment_mode
+        );
+        assert_eq!(
+            round1_signals.len(),
+            self.num_agents,
+            "round1_signals length {} != num_agents {}",
+            round1_signals.len(),
+            self.num_agents
+        );
+        assert_eq!(
+            round2_actions.len(),
+            self.num_agents,
+            "round2_actions length {} != num_agents {}",
+            round2_actions.len(),
+            self.num_agents
+        );
+
+        // Round 1 (signal phase): write round-1 signals into the
+        // observation channel. No other state mutates. The night does NOT
+        // advance, houses do NOT update, agent_signals do NOT update (the
+        // round-2 signal overwrites them in the action phase below to
+        // match today's semantics so v1-trained policies still parse obs
+        // correctly).
+        self.round1_signals.clear();
+        self.round1_signals.extend_from_slice(round1_signals);
+
+        // Round 2 (action phase): same as the regular `step()` body. We
+        // inline rather than calling `step()` because (a) `step()` panics
+        // on two-phase scenarios as a guardrail, and (b) we want to keep
+        // the round-1 signal buffer alive through the round-2 obs build.
+        let prev_houses = self.houses.clone();
+        let sanitized = self.sanitize_actions(round2_actions);
+        // Note: the engine overwrites `agent_signals` with round-2 signals
+        // (action[2]). The round-1 signals live separately in
+        // `self.round1_signals` until the next `step_two_phase` call.
+        self.agent_signals = sanitized.iter().map(|action| action[2]).collect();
+        self.last_actions = sanitized.clone();
+        self.agent_positions = sanitized.iter().map(|action| action[0]).collect();
+        self.extinguish_fires(&sanitized);
+        self.burn_out_houses();
+        self.spread_fires();
+        self.spontaneous_ignition();
+        self.rewards = self.compute_rewards(&sanitized, &prev_houses);
+        self.done = self.check_termination();
+        self.record_night();
         self.night += 1;
 
         StepResult {
