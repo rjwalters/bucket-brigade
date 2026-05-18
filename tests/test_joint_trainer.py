@@ -701,10 +701,12 @@ class TestCOMA:
         # Joint actions all zero (deterministic and easy to gather).
         joint_action_packed = torch.zeros((T, NUM_AGENTS), dtype=torch.long)
         rewards = torch.tensor(
-            [[1.0] * NUM_AGENTS,
-             [2.0] * NUM_AGENTS,
-             [3.0] * NUM_AGENTS,
-             [4.0] * NUM_AGENTS],
+            [
+                [1.0] * NUM_AGENTS,
+                [2.0] * NUM_AGENTS,
+                [3.0] * NUM_AGENTS,
+                [4.0] * NUM_AGENTS,
+            ],
         )
         dones = torch.tensor([0.0, 0.0, 1.0, 0.0])  # episode ends at t=2
 

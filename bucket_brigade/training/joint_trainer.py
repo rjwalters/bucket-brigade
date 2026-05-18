@@ -806,9 +806,9 @@ class JointPPOTrainer:
                 q_all = self.q_critic(
                     global_obs, joint_action_oh_all, agent_id_oh
                 )  # [T, action_dim_total]
-                q_chosen = q_all.gather(
-                    1, joint_action_packed[:, i : i + 1]
-                ).squeeze(-1)
+                q_chosen = q_all.gather(1, joint_action_packed[:, i : i + 1]).squeeze(
+                    -1
+                )
                 adv_i = self.coma_counterfactual_advantage(
                     q_chosen=q_chosen,
                     q_all=q_all,
@@ -1063,8 +1063,7 @@ class JointPPOTrainer:
                 coma_q_loss = torch.stack(q_losses).mean()
                 stats["coma_q_loss"] += coma_q_loss.item() / self.ppo_epochs
                 total_loss = (
-                    torch.stack(per_agent_losses).sum()
-                    + self.value_coef * coma_q_loss
+                    torch.stack(per_agent_losses).sum() + self.value_coef * coma_q_loss
                 )
             else:
                 total_loss = (
