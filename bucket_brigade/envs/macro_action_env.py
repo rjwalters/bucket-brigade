@@ -104,9 +104,7 @@ class MacroActionEnv:
         discount_gamma: Optional[float] = None,
     ) -> None:
         if commit_steps < 1:
-            raise ValueError(
-                f"commit_steps must be >= 1; got {commit_steps}"
-            )
+            raise ValueError(f"commit_steps must be >= 1; got {commit_steps}")
         if discount_gamma is not None and not (0.0 < discount_gamma <= 1.0):
             raise ValueError(
                 f"discount_gamma must be None or in (0, 1]; got {discount_gamma}"
@@ -221,7 +219,7 @@ class MacroActionEnv:
             if self.discount_gamma is None:
                 accumulated_rewards += rewards.astype(np.float32)
             else:
-                accumulated_rewards += (self.discount_gamma ** k) * rewards.astype(
+                accumulated_rewards += (self.discount_gamma**k) * rewards.astype(
                     np.float32
                 )
 
@@ -283,7 +281,9 @@ class MacroActionEnv:
                     or houses[left] == BucketBrigadeEnv.BURNING
                     or houses[right] == BucketBrigadeEnv.BURNING
                 )
-                mode = BucketBrigadeEnv.WORK if burning_nearby else BucketBrigadeEnv.REST
+                mode = (
+                    BucketBrigadeEnv.WORK if burning_nearby else BucketBrigadeEnv.REST
+                )
                 primitive[i, 0] = target
                 primitive[i, 1] = mode
                 primitive[i, 2] = mode
