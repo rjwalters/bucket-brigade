@@ -16,6 +16,10 @@ from bucket_brigade.equilibrium.payoff_evaluator_rust import (
 )
 from bucket_brigade.equilibrium.best_response import compute_best_response
 from bucket_brigade.equilibrium.double_oracle import DoubleOracle, NashEquilibrium
+from bucket_brigade.equilibrium.double_oracle_heterogeneous import (
+    HeterogeneousDoubleOracle,
+    HeterogeneousNashEquilibrium,
+)
 from bucket_brigade.equilibrium.evolved_agents import (
     load_evolved_agent,
     load_all_evolved_agents,
@@ -28,6 +32,8 @@ __all__ = [
     "compute_best_response",
     "DoubleOracle",
     "NashEquilibrium",
+    "HeterogeneousDoubleOracle",
+    "HeterogeneousNashEquilibrium",
     "load_evolved_agent",
     "load_all_evolved_agents",
     "load_evolved_agent_metadata",
