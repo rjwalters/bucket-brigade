@@ -23,5 +23,3 @@ Issue tracker:
 - #359 — analytical NE characterization for 4-agent Bucket Brigade.
 - #362 — this issue (formal environment specification).
 - #363 — comparative benchmark report (merged in PR #374).
-</content>
-</invoke>

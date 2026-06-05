@@ -41,7 +41,7 @@ The full parameter family is $\theta = (\beta, \kappa, \rho, c, H, N, T_{\min}, 
 | $T_{\min}$ | $\mathbb{Z}_{\geq 0}$ | Minimum nights before termination is allowed |
 | $W$ | reward tuple (§4) | Reward weights (team and per-agent) |
 
-The default scenario referenced as the "10-house default" in the paper uses $H{=}10, N{=}4, \beta{=}0.25, \kappa{=}0.5, \rho{=}0.02, c{=}0.5, T_{\min}{=}12$ and reward weights $W = (R_{\text{team}}, P_{\text{team}}, r_{\text{own}}, r_{\text{other}}, p_{\text{own}}, p_{\text{other}}) = (100, 100, 20, 0, 40, 0)$. The "minimal" scenario (`v2_minimal`) sets $H{=}2, N{=}4$.
+The default scenario referenced as the "10-house default" in the paper uses $H{=}10, N{=}4, \beta{=}0.25, \kappa{=}0.5, \rho{=}0.02, c{=}0.5, T_{\min}{=}12$ and reward weights $W = (R_{\text{team}}, P_{\text{team}}, r_{\text{own}}, r_{\text{other}}, p_{\text{own}}, p_{\text{other}}) = (100, 100, 20, 0, 40, 0)$. The minimal-parameterization scenario sets $H{=}2, N{=}4$.
 
 # 2. State, action, observation
 
@@ -111,7 +111,7 @@ This is **deterministic** conditional on the extinguish phase: any fire not exti
 
 For each pair $(h, h')$ such that $h_{t,h}^{(4)} = B$ and $h' \in \{h{-}1, h{+}1\} \bmod H$ and $h_{t,h'}^{(4)} = S$, draw independent $U \sim \text{Uniform}[0,1]$ and set $h_{t,h'}^{(5)} = B$ if $U < \beta$.
 
-**Observation on phase composition.** Because the burn-out phase 4 transitions every unextinguished BURNING house to RUINED, the spread phase as written above finds no BURNING source houses under canonical (`bernoulli` extinguish) dynamics — phase 5 is effectively inert in the canonical sequence, and the only path from SAFE to BURNING during a night is the spontaneous-ignition phase 6. This is the literal behavior of the reference implementation. A reader who wants neighbor-driven contagion to *fire* under the canonical mode should swap phases 4 and 5 (perform spread before burn-out so that unextinguished fires can ignite neighbors before themselves ruining), at which point:
+**Observation on phase composition.** Because the burn-out phase 4 transitions every unextinguished BURNING house to RUINED, the spread phase as written above finds no BURNING source houses under the canonical (binary-extinguish) dynamics — phase 5 is effectively inert in the canonical sequence, and the only path from SAFE to BURNING during a night is the spontaneous-ignition phase 6. This is the literal behavior of the specification as written. A reader who wants neighbor-driven contagion to *fire* under the canonical mode should swap phases 4 and 5 (perform spread before burn-out so that unextinguished fires can ignite neighbors before themselves ruining), at which point:
 
 $$\Pr[h_{t,h'}^{(5)} = B \mid h_{t,h'}^{(3)} = S, h_{t,h}^{(3)} = B, h' \sim h] = \beta$$
 
@@ -193,10 +193,10 @@ The implementation exposes per-agent reward weight vectors so that $r_{\text{own
 
 ## 5.5 Optional dynamic variants
 
-The base specification of §3 is the canonical Bucket Brigade. The implementation supports four optional variants, each gated by a parameter that defaults to the no-op value:
+The base specification of §3 is the canonical Bucket Brigade. Four optional variants are also part of the calibrated parameter family, each gated by a parameter that defaults to the no-op value:
 
 - **Adjacent-only action validity**: a per-agent home position $h^{\text{home}}_i$ and a constraint that $a_i^{\text{house}}$ must satisfy ring-distance $\leq 1$ from $h^{\text{home}}_i$. Out-of-reach targets are remapped to $h^{\text{home}}_i$ before phase 1.
-- **Continuous extinguish**: a damage-accumulation alternative to §3.2. Each WORK at a BURNING house adds a fixed increment $\sigma$ to a per-house accumulator; the fire transitions to SAFE deterministically when the accumulator reaches 1. Fires do not burn out in this variant.
+- **Continuous-extinguish variant**: a damage-accumulation alternative to §3.2. Each WORK at a BURNING house adds a fixed increment $\sigma$ to a per-house accumulator; the fire transitions to SAFE deterministically when the accumulator reaches 1. Fires do not burn out in this variant.
 - **Two-phase signaling**: each night becomes two micro-rounds. Round-1 emits a signal only; round-2 observes everyone's round-1 signal in an added observation channel and emits a full action. Round-2 mode is unconstrained by the round-1 signal, preserving the deception channel.
 - **Distance-cost asymmetry**: the work cost is augmented to $c + \alpha \cdot d(h^{\text{home}}_i, a_i^{\text{house}})$ where $d$ is ring-arc distance, breaking ring-rotation symmetry.
 
@@ -240,10 +240,8 @@ Bucket Brigade is a parametric family that recovers, as limiting cases or restri
 
 The notation above is the canonical vocabulary for §2 of the paper; every downstream section ($§3$ equilibrium analysis, $§4$ experiments, $§5$ discussion) reuses it without redefinition.
 
-# 8. Implementation and reproducibility note
+# 8. Reproducibility note
 
-The reference implementation lives in the in-repo Python module `bucket_brigade/envs/bucket_brigade_env.py` with a parameter-equivalent Rust kernel at `bucket-brigade-core/src/engine/`. Scenarios — concrete instantiations of the parameter family $\theta$ — are declared in `bucket_brigade/envs/scenarios_generated.py` (generated from a JSON specification). Both implementations are bit-exactly equivalent under seeded RNG. This specification is the **mathematical contract**; the implementations are the reference instances. A paper reader who reimplements from this document alone — using any RNG and any language — should obtain matching equilibrium structure and policy-evaluation results at the documented parameter cells.
+This specification is the **mathematical contract** for Bucket Brigade. A reader who reimplements from this document alone — using any RNG and any programming language — should obtain matching equilibrium structure and policy-evaluation results at the documented parameter cells. (For pointers to the in-repo reference implementations and scenario declarations, see `refs/bucket-brigade-env.md`.)
 
-The seven-phase ordering of §3 is load-bearing: implementers must apply phases in the exact order (signal write, location/mode write, extinguish, burn-out, spread, spontaneous ignition, reward). The independent-workers extinguish formula of §3.2 and the post-extinguish-pre-burn-out spread test of §3.4 are the two implementation details most often misread on first encounter; both are explicit above to make reimplementation tractable.
-</content>
-</invoke>
+The seven-phase ordering of §3 is load-bearing: implementers must apply phases in the exact order (signal write, location/mode write, extinguish, burn-out, spread, spontaneous ignition, reward). The independent-workers extinguish formula of §3.2 and the post-extinguish-pre-burn-out spread test of §3.4 are the two details most often misread on first encounter; both are explicit above to make reimplementation tractable.
