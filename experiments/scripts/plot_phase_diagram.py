@@ -213,7 +213,9 @@ def render_png(data: dict[str, Any], out_png: Path) -> None:
                 else:
                     color = _verdict_color(cell.get("verdict", ""))
                     payoff = cell.get("best_team_payoff")
-                    label = f"{payoff:.0f}" if isinstance(payoff, (int, float)) else "n/a"
+                    label = (
+                        f"{payoff:.0f}" if isinstance(payoff, (int, float)) else "n/a"
+                    )
                 rect = plt.Rectangle(
                     (ki - 0.5, bi - 0.5),
                     1.0,
@@ -298,15 +300,11 @@ def render_markdown(data: dict[str, Any], out_md: Path) -> None:
             f"ε={params.get('epsilon')}\n"
         )
     lines.append("\n")
-    lines.append(
-        "| c | β | κ | verdict | equilibrium_payoff | convergence_rate |\n"
-    )
+    lines.append("| c | β | κ | verdict | equilibrium_payoff | convergence_rate |\n")
     lines.append("|---|---|---|---|---|---|\n")
     for cell in cells:
         payoff = cell.get("best_team_payoff")
-        payoff_str = (
-            f"{payoff:.2f}" if isinstance(payoff, (int, float)) else "n/a"
-        )
+        payoff_str = f"{payoff:.2f}" if isinstance(payoff, (int, float)) else "n/a"
         total = cell.get("total_restarts", 0) or 0
         converged = cell.get("converged", 0) or 0
         if total > 0:

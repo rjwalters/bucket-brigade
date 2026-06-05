@@ -138,9 +138,7 @@ def test_plot_2x2x2_runs_and_writes_outputs(plot_module, tmp_path: Path) -> None
         for beta in beta_values:
             for kappa in kappa_values:
                 cells.append(
-                    _make_cell(
-                        beta, kappa, c, verdicts[idx % 4], -100.0 - 10.0 * idx
-                    )
+                    _make_cell(beta, kappa, c, verdicts[idx % 4], -100.0 - 10.0 * idx)
                 )
                 idx += 1
     aggregate = _make_aggregate(beta_values, kappa_values, c_values, cells)
@@ -203,7 +201,14 @@ def test_markdown_rows_sorted_by_c_beta_kappa(plot_module, tmp_path: Path) -> No
     )
     # Sanity: header columns include the required fields.
     header_line = next(ln for ln in lines if "verdict" in ln and ln.startswith("|"))
-    for required in ("c", "β", "κ", "verdict", "equilibrium_payoff", "convergence_rate"):
+    for required in (
+        "c",
+        "β",
+        "κ",
+        "verdict",
+        "equilibrium_payoff",
+        "convergence_rate",
+    ):
         assert required in header_line, (
             f"Markdown header missing required column '{required}': {header_line}"
         )
