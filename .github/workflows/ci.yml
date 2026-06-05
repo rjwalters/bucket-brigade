@@ -120,9 +120,9 @@ jobs:
       env:
         VIRTUAL_ENV: ${{ github.workspace }}/.venv
     - name: Run Ruff
-      run: uv run ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
+      run: uv run ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run Ruff Format Check
-      run: uv run ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/
+      run: uv run ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run MyPy
       run: uv run mypy . --ignore-missing-imports || true
 

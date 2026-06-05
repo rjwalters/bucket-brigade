@@ -73,9 +73,16 @@ ARCHETYPE_POOL = {
 }
 
 PARAM_NAMES = [
-    "honesty", "work_tendency", "neighbor_help", "own_priority",
-    "risk_aversion", "coordination", "exploration", "fatigue_memory",
-    "rest_bias", "altruism",
+    "honesty",
+    "work_tendency",
+    "neighbor_help",
+    "own_priority",
+    "risk_aversion",
+    "coordination",
+    "exploration",
+    "fatigue_memory",
+    "rest_bias",
+    "altruism",
 ]
 
 
@@ -103,6 +110,7 @@ def _profile_is_symmetric(profile: list[np.ndarray], atol: float = 0.05) -> bool
 # Serialisation helpers
 # ---------------------------------------------------------------------------
 
+
 def _eq_to_dict(eq: HeterogeneousNashEquilibrium) -> dict:
     return {
         "converged": eq.converged,
@@ -127,6 +135,7 @@ def _eq_to_dict(eq: HeterogeneousNashEquilibrium) -> dict:
 # ---------------------------------------------------------------------------
 # Main computation
 # ---------------------------------------------------------------------------
+
 
 def compute_heterogeneous_nash(
     scenario_name: str,
@@ -177,7 +186,7 @@ def compute_heterogeneous_nash(
     elapsed = time.time() - t0
 
     print("\n" + "=" * 70)
-    print(f"Run complete in {elapsed/3600:.2f}h ({elapsed:.0f}s)")
+    print(f"Run complete in {elapsed / 3600:.2f}h ({elapsed:.0f}s)")
     print(f"Restarts completed: {len(equilibria)}")
     converged = [e for e in equilibria if e.converged]
     print(f"Converged:          {len(converged)}/{len(equilibria)}")
@@ -185,7 +194,9 @@ def compute_heterogeneous_nash(
 
     # --- Analyse results ---
     symmetric = [e for e in equilibria if _profile_is_symmetric(e.strategy_profile)]
-    asymmetric = [e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)]
+    asymmetric = [
+        e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)
+    ]
 
     print(f"Symmetric profiles:   {len(symmetric)}")
     print(f"Asymmetric profiles:  {len(asymmetric)}")
@@ -209,7 +220,9 @@ def compute_heterogeneous_nash(
             print(f"         work_tendency={t[1]:.3f}  honesty={t[0]:.3f}")
         print()
     else:
-        print("No asymmetric equilibria found — all restarts converged to symmetric profiles.")
+        print(
+            "No asymmetric equilibria found — all restarts converged to symmetric profiles."
+        )
         print()
 
     # --- Determine verdict ---
@@ -266,7 +279,11 @@ def compute_heterogeneous_nash(
             "symmetric_profiles": len(symmetric),
             "asymmetric_profiles": len(asymmetric),
             "best_team_payoff": float(best.team_payoff) if equilibria else None,
-            "best_team_payoff_is_symmetric": _profile_is_symmetric(best.strategy_profile) if equilibria else None,
+            "best_team_payoff_is_symmetric": _profile_is_symmetric(
+                best.strategy_profile
+            )
+            if equilibria
+            else None,
             "verdict": verdict,
         },
         "equilibria": [_eq_to_dict(e) for e in equilibria],
@@ -351,34 +368,63 @@ def compute_heterogeneous_nash(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Heterogeneous Nash equilibrium via asymmetric Double Oracle"
     )
     parser.add_argument("scenario", help="Scenario name (e.g. minimal_specialization)")
-    parser.add_argument("--restarts", type=int, default=20,
-                        help="Random starting profiles to try (default: 20)")
-    parser.add_argument("--simulations", type=int, default=1000,
-                        help="MC episodes per payoff estimate (default: 1000)")
-    parser.add_argument("--opt-simulations", type=int, default=300,
-                        help="Cheaper simulations during gradient search (default: 300)")
-    parser.add_argument("--max-iterations", type=int, default=25,
-                        help="BR rounds per restart (default: 25)")
-    parser.add_argument("--epsilon", type=float, default=2.0,
-                        help="Minimum payoff improvement to update a position (default: 2.0)")
+    parser.add_argument(
+        "--restarts",
+        type=int,
+        default=20,
+        help="Random starting profiles to try (default: 20)",
+    )
+    parser.add_argument(
+        "--simulations",
+        type=int,
+        default=1000,
+        help="MC episodes per payoff estimate (default: 1000)",
+    )
+    parser.add_argument(
+        "--opt-simulations",
+        type=int,
+        default=300,
+        help="Cheaper simulations during gradient search (default: 300)",
+    )
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=25,
+        help="BR rounds per restart (default: 25)",
+    )
+    parser.add_argument(
+        "--epsilon",
+        type=float,
+        default=2.0,
+        help="Minimum payoff improvement to update a position (default: 2.0)",
+    )
     parser.add_argument("--seed", type=int, default=42, help="RNG seed (default: 42)")
-    parser.add_argument("--output-dir", type=Path, default=None,
-                        help="Output directory (default: experiments/nash/heterogeneous/<scenario>)")
-    parser.add_argument("--min-free-mib", type=int, default=DEFAULT_MIN_FREE_MIB,
-                        help="Minimum free disk space in MiB before aborting")
-    parser.add_argument("--quiet", action="store_true", help="Suppress per-position logs")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Output directory (default: experiments/nash/heterogeneous/<scenario>)",
+    )
+    parser.add_argument(
+        "--min-free-mib",
+        type=int,
+        default=DEFAULT_MIN_FREE_MIB,
+        help="Minimum free disk space in MiB before aborting",
+    )
+    parser.add_argument(
+        "--quiet", action="store_true", help="Suppress per-position logs"
+    )
 
     args = parser.parse_args()
 
     if args.output_dir is None:
-        args.output_dir = (
-            Path("experiments/nash/heterogeneous") / args.scenario
-        )
+        args.output_dir = Path("experiments/nash/heterogeneous") / args.scenario
 
     check_free_space(args.output_dir, min_free_mib=args.min_free_mib)
 

@@ -1,0 +1,9 @@
+{
+  "anvil_version": "0.3.1",
+  "anvil_source": "/Users/rwalters/GitHub/anvil",
+  "install_date": "2026-06-05",
+  "layout_version": 2,
+  "installed_skills": ["deck", "installation", "ip-uspto", "memo", "project-migrate", "proposal", "pub", "report", "slides"],
+  "skipped_overrides": [],
+  "skill_hashes": {"deck": "9090daa3209b8f564cacfe9c52512802fc941d60a39ebbd2ce033abf34db2fc8", "installation": "decd037afea7021e2365de8a3b4d09bb36483848eda3a77a46e800166ba911f6", "ip-uspto": "ca9ca56adf8aeb0494b3265b449c1bdc930ec42a32a6d6c66e71d7bcc61aea63", "memo": "b2f152191b75cc6ceab9ecf25656d46a55f3c72da39727658fb0ce750d3fde4f", "project-migrate": "624ae4af653cc33eeb11328ba4c0a95a3623e3f1c9bc15b76a3b13a28c1fcd92", "proposal": "8d8ba93adab5b18eb9114bf4ae06efed84507e49e98b049c016e3a0ee4638206", "pub": "e72895d77a69d3333f37df46c9aac33bfc5decffe291f931b77dff5311ddffad", "report": "c291ccfe3731446f23029b8466c0f377c0db6d6fa149a257536abd15794a441a", "slides": "168154fa09d25d2c149eb652ba6883ee7aedd0ee1ed16cc408137c4fdbfb6f2a"}
+}
