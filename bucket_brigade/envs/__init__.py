@@ -31,6 +31,13 @@ from .scenarios_generated import (
     SCENARIO_REGISTRY,
 )
 from .scenarios_random import random_scenario
+from .registry import (
+    DEFAULT_NUM_AGENTS,
+    SCENARIO_VERSIONS,
+    get_scenario_by_id,
+    list_versioned_scenarios,
+    parse_scenario_id,
+)
 
 __all__ = [
     "BucketBrigadeEnv",
@@ -58,4 +65,10 @@ __all__ = [
     "get_scenario_by_name",
     "list_scenarios",
     "SCENARIO_REGISTRY",
+    # Versioned scenario registry (issue #369)
+    "DEFAULT_NUM_AGENTS",
+    "SCENARIO_VERSIONS",
+    "get_scenario_by_id",
+    "list_versioned_scenarios",
+    "parse_scenario_id",
 ]
