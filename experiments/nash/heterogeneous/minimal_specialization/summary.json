@@ -1,0 +1,15 @@
+{
+  "scenario": "minimal_specialization",
+  "verdict": "symmetric_ne_superior",
+  "verdict_detail": "Symmetric NE (payoff=-756.36) outperforms best converged asymmetric NE (payoff=-878.95). Hero-like symmetric play is the dominant equilibrium.",
+  "elapsed_seconds": 24757.762135267258,
+  "converged": 5,
+  "total_restarts": 20,
+  "symmetric_profiles": 11,
+  "asymmetric_profiles": 9,
+  "converged_asymmetric_profiles": 1,
+  "converged_symmetric_profiles": 4,
+  "best_team_payoff": -728.4245,
+  "best_converged_symmetric_payoff": -756.363,
+  "best_converged_asymmetric_payoff": -878.95025
+}
