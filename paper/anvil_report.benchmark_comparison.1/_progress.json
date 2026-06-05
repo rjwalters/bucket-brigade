@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "thread": "anvil_report.benchmark_comparison",
+  "project": "paper",
+  "phases": {
+    "draft": {
+      "state": "done",
+      "started": "2026-06-05T10:00:00Z",
+      "completed": "2026-06-05T10:30:00Z"
+    },
+    "review": {
+      "state": "done",
+      "started": "2026-06-05T10:30:00Z",
+      "completed": "2026-06-05T10:35:00Z"
+    },
+    "audit": {
+      "state": "done",
+      "started": "2026-06-05T10:30:00Z",
+      "completed": "2026-06-05T10:35:00Z"
+    }
+  },
+  "metadata": {
+    "iteration": 1,
+    "max_iterations": 4
+  }
+}
