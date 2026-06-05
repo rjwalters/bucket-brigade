@@ -1079,4 +1079,3 @@ Document Maintenance Phase
 - WORK_PLAN is only regenerated when label state actually changes
 - README updates are conservative (stale sections only)
 - All changes go through the standard PR review pipeline
-

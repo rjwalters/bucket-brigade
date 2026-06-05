@@ -41,6 +41,7 @@ from bucket_brigade.equilibrium.payoff_evaluator_rust import _convert_scenario_t
 # Worker function (module-level so it can be pickled by multiprocessing)
 # ---------------------------------------------------------------------------
 
+
 def _run_heterogeneous_sim(args: tuple) -> list[float]:
     """Run one episode with per-agent strategies, return all-agent rewards.
 
@@ -57,6 +58,7 @@ def _run_heterogeneous_sim(args: tuple) -> list[float]:
 # ---------------------------------------------------------------------------
 # Result dataclass
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class HeterogeneousNashEquilibrium:
@@ -82,6 +84,7 @@ class HeterogeneousNashEquilibrium:
 # ---------------------------------------------------------------------------
 # Main class
 # ---------------------------------------------------------------------------
+
 
 class HeterogeneousDoubleOracle:
     """
@@ -120,7 +123,9 @@ class HeterogeneousDoubleOracle:
         self.seed = seed
         self.num_restarts = num_restarts
         self.verbose = verbose
-        self.num_workers = num_workers if num_workers is not None else min(cpu_count(), 8)
+        self.num_workers = (
+            num_workers if num_workers is not None else min(cpu_count(), 8)
+        )
         self._rng = np.random.RandomState(seed)
 
     # ------------------------------------------------------------------
@@ -199,8 +204,7 @@ class HeterogeneousDoubleOracle:
             n = self.opt_simulations
             seeds = [_rng_local.randint(0, 2**31 - 1) for _ in range(n)]
             profile_t = [
-                theta if j == position else others[j - (j > position)]
-                for j in range(4)
+                theta if j == position else others[j - (j > position)] for j in range(4)
             ]
             results = [
                 _run_heterogeneous_sim((profile_t, self.scenario, s)) for s in seeds
@@ -339,7 +343,7 @@ class HeterogeneousDoubleOracle:
                     for i in indices
                 ]
                 print(
-                    f"\n{'='*60}\n"
+                    f"\n{'=' * 60}\n"
                     f"Restart {restart_idx + 1}/{self.num_restarts} — "
                     f"start profile: {names}",
                     flush=True,
