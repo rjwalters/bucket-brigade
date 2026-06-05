@@ -331,9 +331,7 @@ class SyncVectorEnv:
         keys = set()
         for d in infos:
             keys.update(d.keys())
-        batched: Dict[str, Any] = {
-            k: [d.get(k, None) for d in infos] for k in keys
-        }
+        batched: Dict[str, Any] = {k: [d.get(k, None) for d in infos] for k in keys}
         # Stash the raw list-of-dicts under a private-ish key so callers
         # that prefer that shape don't have to re-zip.
         batched["_per_env"] = list(infos)

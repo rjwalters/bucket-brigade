@@ -119,9 +119,7 @@ class TestShapes:
     def test_step_rejects_wrong_leading_dim(self):
         vec = bucket_brigade.make_vec(_PRIMARY_ID, num_envs=3)
         vec.reset(seed=0)
-        bad = np.zeros(
-            (5,) + vec.single_action_space.shape, dtype=np.int64
-        )
+        bad = np.zeros((5,) + vec.single_action_space.shape, dtype=np.int64)
         with pytest.raises(ValueError):
             vec.step(bad)
 
