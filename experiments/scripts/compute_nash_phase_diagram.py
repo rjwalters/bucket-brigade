@@ -255,14 +255,12 @@ def _run_one_cell(
 
     converged = [e for e in equilibria if e.converged]
     symmetric = [e for e in equilibria if _profile_is_symmetric(e.strategy_profile)]
-    asymmetric = [e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)]
+    asymmetric = [
+        e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)
+    ]
     best = max(equilibria, key=lambda e: e.team_payoff) if equilibria else None
-    best_asym = (
-        max(asymmetric, key=lambda e: e.team_payoff) if asymmetric else None
-    )
-    best_sym = (
-        max(symmetric, key=lambda e: e.team_payoff) if symmetric else None
-    )
+    best_asym = max(asymmetric, key=lambda e: e.team_payoff) if asymmetric else None
+    best_sym = max(symmetric, key=lambda e: e.team_payoff) if symmetric else None
 
     verdict, verdict_detail = _classify_cell(equilibria, epsilon=epsilon)
 
@@ -360,13 +358,17 @@ def compute_phase_diagram(
     print("=" * 70)
     print(f"Output dir:      {output_dir}")
     print(f"Base scenario:   {BASE_SCENARIO_NAME}")
-    print(f"Grid:            {len(beta_values)}×{len(kappa_values)}×{len(c_values)} = {total} cells")
+    print(
+        f"Grid:            {len(beta_values)}×{len(kappa_values)}×{len(c_values)} = {total} cells"
+    )
     print(f"  β values:      {beta_values}")
     print(f"  κ values:      {kappa_values}")
     print(f"  c values:      {c_values}")
     print("Per-cell DO budget:")
-    print(f"  restarts={num_restarts}, max_iter={max_iterations}, "
-          f"simulations={num_simulations} (opt={opt_simulations}), ε={epsilon}")
+    print(
+        f"  restarts={num_restarts}, max_iter={max_iterations}, "
+        f"simulations={num_simulations} (opt={opt_simulations}), ε={epsilon}"
+    )
     print()
 
     grid_t0 = time.time()
@@ -378,7 +380,12 @@ def compute_phase_diagram(
             for bi, beta in enumerate(beta_values):
                 tag = _cell_tag(beta, kappa, c)
                 cell_dir = cells_dir / tag
-                idx = ci * len(beta_values) * len(kappa_values) + ki * len(beta_values) + bi + 1
+                idx = (
+                    ci * len(beta_values) * len(kappa_values)
+                    + ki * len(beta_values)
+                    + bi
+                    + 1
+                )
                 cell_summary_path = cell_dir / "summary.json"
 
                 if cell_summary_path.exists() and not force:
@@ -458,7 +465,7 @@ def compute_phase_diagram(
         f"Grid: {len(beta_values)}×{len(kappa_values)}×{len(c_values)} = {total} cells\n",
         f"Per-cell budget: restarts={num_restarts}, max_iter={max_iterations}, "
         f"simulations={num_simulations}, ε={epsilon}\n",
-        f"Grid elapsed: {grid_elapsed:.0f}s ({grid_elapsed/3600:.2f}h)\n",
+        f"Grid elapsed: {grid_elapsed:.0f}s ({grid_elapsed / 3600:.2f}h)\n",
         "## Verdict counts\n",
     ]
     for v, n in sorted(verdict_counts.items()):
@@ -470,7 +477,11 @@ def compute_phase_diagram(
     for c in c_values:
         lines.append(f"\n## c = {c}\n")
         # Header row: kappa values
-        header = "| β \\\\ κ | " + " | ".join(f"{kappa:.2f}" for kappa in kappa_values) + " |\n"
+        header = (
+            "| β \\\\ κ | "
+            + " | ".join(f"{kappa:.2f}" for kappa in kappa_values)
+            + " |\n"
+        )
         sep = "|---" * (len(kappa_values) + 1) + "|\n"
         lines.append(header)
         lines.append(sep)
@@ -487,7 +498,7 @@ def compute_phase_diagram(
 
     print()
     print("=" * 70)
-    print(f"Grid complete in {grid_elapsed/3600:.2f}h ({grid_elapsed:.0f}s)")
+    print(f"Grid complete in {grid_elapsed / 3600:.2f}h ({grid_elapsed:.0f}s)")
     print(f"Cells:          {total} ({len(skipped)} cached)")
     print(f"Verdicts:       {verdict_counts}")
     print(f"Aggregate JSON → {results_path}")
@@ -515,9 +526,7 @@ def main() -> None:
     grid_group.add_argument(
         "--preview",
         action="store_true",
-        help=(
-            "Preview grid: 3×3×2 = 18 cells (~108h on alc-9). REMOTE ONLY."
-        ),
+        help=("Preview grid: 3×3×2 = 18 cells (~108h on alc-9). REMOTE ONLY."),
     )
     parser.add_argument(
         "--beta-values",
@@ -620,9 +629,7 @@ def main() -> None:
         opt_simulations = (
             args.opt_simulations if args.opt_simulations is not None else 10
         )
-        max_iterations = (
-            args.max_iterations if args.max_iterations is not None else 1
-        )
+        max_iterations = args.max_iterations if args.max_iterations is not None else 1
     else:
         num_restarts = args.restarts if args.restarts is not None else DEFAULT_RESTARTS
         num_simulations = (
