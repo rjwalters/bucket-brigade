@@ -5,6 +5,8 @@ Public entry points:
 - :func:`make` — Gym/Gymnasium-compatible factory keyed on a versioned
   scenario ID (e.g. ``"minimal_specialization-v1"``). See
   :mod:`bucket_brigade.envs.registry` for the version-bump policy.
+- :func:`make_vec` — synchronous vectorized factory returning a
+  :class:`~bucket_brigade.envs.vector.SyncVectorEnv` (issue #370).
 - :func:`list_envs` — list every registered frozen scenario ID.
 
 Example:
@@ -33,10 +35,12 @@ if (
     TYPE_CHECKING
 ):  # pragma: no cover - type hint only, avoid hard gym import at import time
     from .envs.gym_adapter import BucketBrigadeGymEnv
+    from .envs.vector import SyncVectorEnv
 
 
 __all__ = [
     "make",
+    "make_vec",
     "list_envs",
     "DEFAULT_NUM_AGENTS",
     "SCENARIO_VERSIONS",
@@ -92,6 +96,49 @@ def make(
     n = int(num_agents) if num_agents is not None else DEFAULT_NUM_AGENTS
     scenario = get_scenario_by_id(id, num_agents=n)
     return BucketBrigadeGymEnv(scenario=scenario, scenario_id=id)
+
+
+def make_vec(
+    id: str,
+    num_envs: int,
+    *,
+    num_agents: Optional[int] = None,
+) -> "SyncVectorEnv":
+    """Construct a synchronous vectorized Bucket Brigade env (issue #370).
+
+    Returns a :class:`bucket_brigade.envs.vector.SyncVectorEnv` wrapping
+    ``num_envs`` independent :class:`BucketBrigadeGymEnv` instances built
+    from the same versioned scenario ``id``. The vectorized env exposes
+    the Gymnasium-style batched ``step`` / ``reset`` API with auto-reset
+    semantics (terminal observations surfaced via ``info["final_observation"]``
+    / ``info["final_info"]``).
+
+    Args:
+        id: A versioned scenario ID — see :func:`make` for the contract.
+        num_envs: Number of parallel sub-envs (>= 1).
+        num_agents: Optional per-sub-env override; same caveat as
+            :func:`make` regarding reproducibility guarantees.
+
+    Returns:
+        A :class:`bucket_brigade.envs.vector.SyncVectorEnv` instance.
+
+    Raises:
+        KeyError: If ``id`` is not a registered frozen scenario ID.
+        ValueError: If ``num_envs < 1``.
+
+    Example:
+        >>> import bucket_brigade
+        >>> vec = bucket_brigade.make_vec("minimal_specialization-v1", num_envs=8)
+        >>> obs, info = vec.reset(seed=0)
+        >>> obs.shape[0]
+        8
+    """
+    # Local import for the same reason as ``make``: keep top-level import
+    # of ``bucket_brigade`` cheap and avoid a hard gymnasium dependency
+    # until the user actually constructs an env.
+    from .envs.vector import make_vec as _make_vec
+
+    return _make_vec(id, num_envs, num_agents=num_agents)
 
 
 def list_envs() -> List[str]:
