@@ -198,6 +198,11 @@ def compute_heterogeneous_nash(
         e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)
     ]
 
+    # Partition converged equilibria by symmetry up front — both the reporting
+    # block below and the verdict block further down reference these.
+    converged_asymmetric = [e for e in asymmetric if e.converged]
+    converged_symmetric = [e for e in symmetric if e.converged]
+
     print(f"Symmetric profiles:   {len(symmetric)}")
     print(f"Asymmetric profiles:  {len(asymmetric)}")
     print()
@@ -209,9 +214,23 @@ def compute_heterogeneous_nash(
         print(f"Symmetric:         {_profile_is_symmetric(best.strategy_profile)}")
         print()
 
-    if asymmetric:
+    if converged_asymmetric:
+        _best_print = max(converged_asymmetric, key=lambda e: e.team_payoff)
+        print(
+            f"Best converged ASYMMETRIC equilibrium ({len(converged_asymmetric)} total converged):"
+        )
+        print(f"  Team payoff:  {_best_print.team_payoff:.2f}")
+        print(f"  Profile:      {_profile_label(_best_print.strategy_profile)}")
+        print(f"  Iterations:   {_best_print.iterations}")
+        for i, (t, p) in enumerate(
+            zip(_best_print.strategy_profile, _best_print.payoffs)
+        ):
+            print(f"  Pos {i}: payoff={p:.1f}  {_classify(t)}")
+            print(f"         work_tendency={t[1]:.3f}  honesty={t[0]:.3f}")
+        print()
+    elif asymmetric:
         best_asym = max(asymmetric, key=lambda e: e.team_payoff)
-        print("Best ASYMMETRIC equilibrium:")
+        print("Best ASYMMETRIC profile (not converged):")
         print(f"  Team payoff:  {best_asym.team_payoff:.2f}")
         print(f"  Profile:      {_profile_label(best_asym.strategy_profile)}")
         print(f"  Converged:    {best_asym.converged}")
@@ -226,36 +245,66 @@ def compute_heterogeneous_nash(
         print()
 
     # --- Determine verdict ---
-    if asymmetric and best_asym.converged:
-        # Is the asymmetric NE meaningfully better than the symmetric one?
-        sym_payoffs = [e.team_payoff for e in symmetric if e.converged]
-        sym_best = max(sym_payoffs) if sym_payoffs else None
-        if sym_best is None or best_asym.team_payoff > sym_best + abs(epsilon):
+    # Use best *converged* equilibria for the verdict. A non-converged profile
+    # having a higher payoff doesn't mean converged equilibria don't exist.
+    # (converged_asymmetric / converged_symmetric were partitioned above so the
+    # reporting block could reference them.)
+    best_conv_asym = (
+        max(converged_asymmetric, key=lambda e: e.team_payoff)
+        if converged_asymmetric
+        else None
+    )
+    best_conv_sym = (
+        max(converged_symmetric, key=lambda e: e.team_payoff)
+        if converged_symmetric
+        else None
+    )
+    sym_best = best_conv_sym.team_payoff if best_conv_sym else None
+
+    if best_conv_asym is not None and sym_best is not None:
+        if best_conv_asym.team_payoff > sym_best + abs(epsilon):
             verdict = "asymmetric_ne_superior"
             verdict_detail = (
-                f"Asymmetric NE (payoff={best_asym.team_payoff:.2f}) outperforms "
-                f"best symmetric NE (payoff={sym_best:.2f if sym_best else 'n/a'}). "
+                f"Asymmetric NE (payoff={best_conv_asym.team_payoff:.2f}) outperforms "
+                f"best symmetric NE (payoff={sym_best:.2f}). "
                 "Role differentiation is a genuine equilibrium advantage."
+            )
+        elif sym_best > best_conv_asym.team_payoff + abs(epsilon):
+            verdict = "symmetric_ne_superior"
+            verdict_detail = (
+                f"Symmetric NE (payoff={sym_best:.2f}) outperforms best converged "
+                f"asymmetric NE (payoff={best_conv_asym.team_payoff:.2f}). "
+                "Hero-like symmetric play is the dominant equilibrium."
             )
         else:
             verdict = "asymmetric_ne_exists_not_superior"
             verdict_detail = (
-                "Asymmetric NE exists but its payoff is not significantly higher "
-                "than the symmetric NE. Both equilibria are approximately equivalent."
+                f"Asymmetric NE (payoff={best_conv_asym.team_payoff:.2f}) and "
+                f"symmetric NE (payoff={sym_best:.2f}) are within ε={epsilon} of each other."
             )
+    elif best_conv_asym is not None:
+        verdict = "asymmetric_only"
+        verdict_detail = (
+            f"All {len(converged)} converged equilibria are asymmetric "
+            f"(best payoff={best_conv_asym.team_payoff:.2f}). "
+            "No symmetric NE exists — role differentiation is required."
+        )
+    elif best_conv_sym is not None:
+        verdict = "symmetric_only"
+        verdict_detail = (
+            f"All {len(converged)} converged equilibria are symmetric "
+            f"(best payoff={sym_best:.2f}). "
+            "Role-differentiated specialization is not a Nash equilibrium."
+        )
     elif asymmetric:
         verdict = "asymmetric_profile_found_not_converged"
         verdict_detail = (
-            "Asymmetric profiles were found during search but did not converge "
-            "within max_iterations. Increase restarts/iterations for a definitive answer."
+            "Asymmetric profiles were found during search but none converged. "
+            "Increase restarts/iterations for a definitive answer."
         )
     else:
-        verdict = "symmetric_only"
-        verdict_detail = (
-            "All restarts converged to symmetric profiles. "
-            "This suggests the symmetric NE (likely Hero) is the dominant equilibrium "
-            "and specialisation via role differentiation is not a Nash equilibrium."
-        )
+        verdict = "no_convergence"
+        verdict_detail = "No restarts converged within max_iterations."
 
     print(f"VERDICT: {verdict}")
     print(f"  {verdict_detail}")
@@ -321,10 +370,24 @@ def compute_heterogeneous_nash(
             f"- Converged: {best.converged}\n",
         ]
 
-    if asymmetric:
+    if converged_asymmetric:
+        lines += [
+            "## Best converged asymmetric equilibrium\n",
+            f"- Team payoff: **{best_conv_asym.team_payoff:.2f}**\n",
+            f"- Converged: {best_conv_asym.converged}\n",
+            f"- Iterations: {best_conv_asym.iterations}\n",
+            "\n| Position | Payoff | Closest archetype | work_tendency |\n"
+            "|---|---|---|---|\n",
+        ] + [
+            f"| {i} | {p:.1f} | {_classify(t)} | {t[1]:.3f} |\n"
+            for i, (t, p) in enumerate(
+                zip(best_conv_asym.strategy_profile, best_conv_asym.payoffs)
+            )
+        ]
+    elif asymmetric:
         best_asym = max(asymmetric, key=lambda e: e.team_payoff)
         lines += [
-            "## Best asymmetric equilibrium\n",
+            "## Best asymmetric profile (not converged)\n",
             f"- Team payoff: **{best_asym.team_payoff:.2f}**\n",
             f"- Converged: {best_asym.converged}\n",
             f"- Iterations: {best_asym.iterations}\n",
@@ -354,7 +417,15 @@ def compute_heterogeneous_nash(
                 "total_restarts": len(equilibria),
                 "symmetric_profiles": len(symmetric),
                 "asymmetric_profiles": len(asymmetric),
+                "converged_asymmetric_profiles": len(converged_asymmetric),
+                "converged_symmetric_profiles": len(converged_symmetric),
                 "best_team_payoff": float(best.team_payoff) if equilibria else None,
+                "best_converged_symmetric_payoff": float(best_conv_sym.team_payoff)
+                if best_conv_sym
+                else None,
+                "best_converged_asymmetric_payoff": float(best_conv_asym.team_payoff)
+                if best_conv_asym
+                else None,
             },
             f,
             indent=2,

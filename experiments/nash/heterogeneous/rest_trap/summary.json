@@ -1,0 +1,15 @@
+{
+  "scenario": "rest_trap",
+  "verdict": "asymmetric_only",
+  "verdict_detail": "All 13 converged equilibria are asymmetric (best payoff=2984.04). No symmetric NE exists \u2014 role differentiation is required.",
+  "elapsed_seconds": 18598.587767124176,
+  "converged": 13,
+  "total_restarts": 20,
+  "symmetric_profiles": 0,
+  "asymmetric_profiles": 20,
+  "converged_asymmetric_profiles": 13,
+  "converged_symmetric_profiles": 0,
+  "best_team_payoff": 3029.121892512321,
+  "best_converged_symmetric_payoff": null,
+  "best_converged_asymmetric_payoff": 2984.043694076538
+}

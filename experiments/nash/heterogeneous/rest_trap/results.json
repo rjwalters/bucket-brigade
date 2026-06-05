@@ -1,0 +1,2586 @@
+{
+  "scenario": "rest_trap",
+  "algorithm": "heterogeneous_double_oracle",
+  "parameters": {
+    "num_simulations": 1000,
+    "opt_simulations": 300,
+    "max_iterations": 25,
+    "epsilon": 50.0,
+    "num_restarts": 20,
+    "seed": 42
+  },
+  "timing": {
+    "elapsed_seconds": 18598.587767124176
+  },
+  "summary": {
+    "total_restarts": 20,
+    "converged": 13,
+    "symmetric_profiles": 0,
+    "asymmetric_profiles": 20,
+    "best_team_payoff": 3029.121892512321,
+    "best_team_payoff_is_symmetric": false,
+    "verdict": "asymmetric_profile_found_not_converged"
+  },
+  "equilibria": [
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2833.667746153832,
+      "per_position_payoffs": [
+        2829.302291091919,
+        2814.113398010254,
+        2845.402381969452,
+        2845.852913543701
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | coordinator(d=0.00) | liar(d=0.00) | liar(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.10000139341760605,
+            "work_tendency": 0.7000004802438587,
+            "neighbor_help": 1.4202668706806688e-06,
+            "own_priority": 0.8999986531335501,
+            "risk_aversion": 0.20000121141324037,
+            "coordination": 0.7999987830016592,
+            "exploration": 0.3000009866885345,
+            "fatigue_memory": 1.3795089405210664e-06,
+            "rest_bias": 0.4000008615828537,
+            "altruism": 0.2000010795946199
+          },
+          "genome": [
+            0.10000139341760605,
+            0.7000004802438587,
+            1.4202668706806688e-06,
+            0.8999986531335501,
+            0.20000121141324037,
+            0.7999987830016592,
+            0.3000009866885345,
+            1.3795089405210664e-06,
+            0.4000008615828537,
+            0.2000010795946199
+          ]
+        }
+      ],
+      "start_profile_label": "coordinator(d=0.00) | liar(d=0.00) | hero(d=0.00) | liar(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 6,
+      "team_payoff": 2819.0664881896973,
+      "per_position_payoffs": [
+        2814.153681884766,
+        2817.8231727294924,
+        2834.3235583496094,
+        2809.965539794922
+      ],
+      "symmetric_profile": false,
+      "profile_label": "liar(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9000007565668353,
+            "neighbor_help": 0.49999959114589965,
+            "own_priority": 0.799999909583365,
+            "risk_aversion": 0.4999997017315054,
+            "coordination": 0.6999997996451799,
+            "exploration": 0.09999934293898667,
+            "fatigue_memory": 0.0,
+            "rest_bias": 1.9410693085292829e-07,
+            "altruism": 0.7999997243668507
+          },
+          "genome": [
+            1.0,
+            0.9000007565668353,
+            0.49999959114589965,
+            0.799999909583365,
+            0.4999997017315054,
+            0.6999997996451799,
+            0.09999934293898667,
+            0.0,
+            1.9410693085292829e-07,
+            0.7999997243668507
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | hero(d=0.00) | free_rider(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 5,
+      "team_payoff": 2800.1243802080153,
+      "per_position_payoffs": [
+        2793.1318811035158,
+        2795.40408203125,
+        2819.3805693969725,
+        2792.5809883003235
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "free_rider(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2910.5241352462767,
+      "per_position_payoffs": [
+        2907.567890396118,
+        2896.2923304023743,
+        2922.762522583008,
+        2915.473797603607
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | liar(d=0.00) | liar(d=0.00) | coordinator(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.6999999952226406,
+            "work_tendency": 0.19999999863498072,
+            "neighbor_help": 0.0,
+            "own_priority": 0.8999999938598244,
+            "risk_aversion": 0.0,
+            "coordination": 6.8215175962432996e-09,
+            "exploration": 0.09999999931724102,
+            "fatigue_memory": 6.8217952371662406e-09,
+            "rest_bias": 0.899999993860767,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.6999999952226406,
+            0.19999999863498072,
+            0.0,
+            0.8999999938598244,
+            0.0,
+            6.8215175962432996e-09,
+            0.09999999931724102,
+            6.8217952371662406e-09,
+            0.899999993860767,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        }
+      ],
+      "start_profile_label": "liar(d=0.00) | liar(d=0.00) | liar(d=0.00) | coordinator(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 3029.121892512321,
+      "per_position_payoffs": [
+        3025.3758710784914,
+        3024.6558631591797,
+        3046.8139715003967,
+        3019.6418643112183
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7000003950274163,
+            "work_tendency": 0.20000105340644356,
+            "neighbor_help": 1.316758054442163e-06,
+            "own_priority": 0.899998814917751,
+            "risk_aversion": 1.316758054442163e-06,
+            "coordination": 1.316758054442163e-06,
+            "exploration": 0.100001185082249,
+            "fatigue_memory": 1.316758054442163e-06,
+            "rest_bias": 0.9000001316758055,
+            "altruism": 1.316758054442163e-06
+          },
+          "genome": [
+            0.7000003950274163,
+            0.20000105340644356,
+            1.316758054442163e-06,
+            0.899998814917751,
+            1.316758054442163e-06,
+            1.316758054442163e-06,
+            0.100001185082249,
+            1.316758054442163e-06,
+            0.9000001316758055,
+            1.316758054442163e-06
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2958.8086102371217,
+      "per_position_payoffs": [
+        2955.8795688934324,
+        2954.2368660583497,
+        2946.888830001831,
+        2978.229175994873
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00) | free_rider(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        }
+      ],
+      "start_profile_label": "firefighter(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00) | free_rider(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 2,
+      "team_payoff": 2850.373821275711,
+      "per_position_payoffs": [
+        2848.0604777526855,
+        2843.301776107788,
+        2840.787156288147,
+        2869.3458749542237
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00) | free_rider(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7000004249820388,
+            "work_tendency": 0.20000084518512798,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9000001408471598,
+            "risk_aversion": 1.722967072129934e-06,
+            "coordination": 1.5023211650768558e-06,
+            "exploration": 0.09999981420241319,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.8999997815639741,
+            "altruism": 1.5766955848428625e-06
+          },
+          "genome": [
+            0.7000004249820388,
+            0.20000084518512798,
+            0.0,
+            0.9000001408471598,
+            1.722967072129934e-06,
+            1.5023211650768558e-06,
+            0.09999981420241319,
+            0.0,
+            0.8999997815639741,
+            1.5766955848428625e-06
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | liar(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 5,
+      "team_payoff": 2864.738867027283,
+      "per_position_payoffs": [
+        2850.45953616333,
+        2868.6131752929687,
+        2869.8209361572267,
+        2870.0618204956054
+      ],
+      "symmetric_profile": false,
+      "profile_label": "coordinator(d=0.00) | free_rider(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9000000786030786,
+            "work_tendency": 0.599999528381528,
+            "neighbor_help": 0.7000002358092359,
+            "own_priority": 0.6000003144123146,
+            "risk_aversion": 0.8000001572061574,
+            "coordination": 0.9999992139692134,
+            "exploration": 0.05000074672924722,
+            "fatigue_memory": 7.860307865406105e-07,
+            "rest_bias": 0.20000062882462924,
+            "altruism": 0.6000003144123146
+          },
+          "genome": [
+            0.9000000786030786,
+            0.599999528381528,
+            0.7000002358092359,
+            0.6000003144123146,
+            0.8000001572061574,
+            0.9999992139692134,
+            0.05000074672924722,
+            7.860307865406105e-07,
+            0.20000062882462924,
+            0.6000003144123146
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        }
+      ],
+      "start_profile_label": "firefighter(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | liar(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 10,
+      "team_payoff": 2898.003531509399,
+      "per_position_payoffs": [
+        2896.1447633666994,
+        2894.6920711669923,
+        2914.0398736724856,
+        2887.137417831421
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "liar(d=0.00) | hero(d=0.00) | liar(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 3,
+      "team_payoff": 2786.780940032005,
+      "per_position_payoffs": [
+        2784.1857885894774,
+        2783.5738771095275,
+        2802.549873046875,
+        2776.814221382141
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7000000999782388,
+            "work_tendency": 0.19999992591167443,
+            "neighbor_help": 6.512047208409591e-10,
+            "own_priority": 0.9000000458629318,
+            "risk_aversion": 3.06766973610404e-07,
+            "coordination": 0.0,
+            "exploration": 0.10000030422494469,
+            "fatigue_memory": 2.3120735348114835e-08,
+            "rest_bias": 0.9000000248152211,
+            "altruism": 9.408764013034662e-09
+          },
+          "genome": [
+            0.7000000999782388,
+            0.19999992591167443,
+            6.512047208409591e-10,
+            0.9000000458629318,
+            3.06766973610404e-07,
+            0.0,
+            0.10000030422494469,
+            2.3120735348114835e-08,
+            0.9000000248152211,
+            9.408764013034662e-09
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 19,
+      "team_payoff": 2868.8545805416106,
+      "per_position_payoffs": [
+        2854.176164756775,
+        2848.1196329078675,
+        2893.7244811553956,
+        2879.398043346405
+      ],
+      "symmetric_profile": false,
+      "profile_label": "liar(d=0.00) | coordinator(d=0.00) | free_rider(d=0.00) | liar(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.6999999989092185,
+            "work_tendency": 0.20000000063699824,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9000000003289045,
+            "risk_aversion": 3.32830963153005e-10,
+            "coordination": 7.121505085800894e-10,
+            "exploration": 0.09999999902594894,
+            "fatigue_memory": 6.859189732347772e-10,
+            "rest_bias": 0.9000000001180664,
+            "altruism": 6.67159391135185e-10
+          },
+          "genome": [
+            0.6999999989092185,
+            0.20000000063699824,
+            0.0,
+            0.9000000003289045,
+            3.32830963153005e-10,
+            7.121505085800894e-10,
+            0.09999999902594894,
+            6.859189732347772e-10,
+            0.9000000001180664,
+            6.67159391135185e-10
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        }
+      ],
+      "start_profile_label": "free_rider(d=0.00) | liar(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2673.1473479528427,
+      "per_position_payoffs": [
+        2666.672013671875,
+        2669.2050475120545,
+        2677.49573828125,
+        2679.216592346191
+      ],
+      "symmetric_profile": false,
+      "profile_label": "liar(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00) | liar(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.09999999756767033,
+            "work_tendency": 0.6999999829736923,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9000000024323297,
+            "risk_aversion": 0.20000001945863743,
+            "coordination": 0.7999999805413627,
+            "exploration": 0.30000001702630774,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4000000145939781,
+            "altruism": 0.20000001945863743
+          },
+          "genome": [
+            0.09999999756767033,
+            0.6999999829736923,
+            0.0,
+            0.9000000024323297,
+            0.20000001945863743,
+            0.7999999805413627,
+            0.30000001702630774,
+            0.0,
+            0.4000000145939781,
+            0.20000001945863743
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        }
+      ],
+      "start_profile_label": "coordinator(d=0.00) | liar(d=0.00) | free_rider(d=0.00) | liar(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 13,
+      "team_payoff": 2911.5778792228693,
+      "per_position_payoffs": [
+        2896.591279296875,
+        2898.6531943893433,
+        2917.9471680374145,
+        2933.1198751678467
+      ],
+      "symmetric_profile": false,
+      "profile_label": "liar(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00) | free_rider(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9000003220028865,
+            "work_tendency": 0.600001486133282,
+            "neighbor_help": 0.7000011196184187,
+            "own_priority": 0.6000014873146432,
+            "risk_aversion": 0.7999968745246454,
+            "coordination": 0.9999999878622422,
+            "exploration": 0.04999981894171448,
+            "fatigue_memory": 3.7535956048480143e-06,
+            "rest_bias": 0.1999991795875359,
+            "altruism": 0.6000014910055467
+          },
+          "genome": [
+            0.9000003220028865,
+            0.600001486133282,
+            0.7000011196184187,
+            0.6000014873146432,
+            0.7999968745246454,
+            0.9999999878622422,
+            0.04999981894171448,
+            3.7535956048480143e-06,
+            0.1999991795875359,
+            0.6000014910055467
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | liar(d=0.00) | free_rider(d=0.00) | coordinator(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 8,
+      "team_payoff": 2904.734761865616,
+      "per_position_payoffs": [
+        2899.4837881393432,
+        2889.2010497512815,
+        2909.947573616028,
+        2920.3066359558106
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | liar(d=0.00) | coordinator(d=0.00) | liar(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        }
+      ],
+      "start_profile_label": "firefighter(d=0.00) | coordinator(d=0.00) | hero(d=0.00) | coordinator(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2908.792928251267,
+      "per_position_payoffs": [
+        2912.226876678467,
+        2890.5863146095276,
+        2917.533042144775,
+        2914.825479572296
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | coordinator(d=0.00) | liar(d=0.00) | coordinator(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        }
+      ],
+      "start_profile_label": "hero(d=0.00) | coordinator(d=0.00) | coordinator(d=0.00) | liar(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 5,
+      "team_payoff": 2984.043694076538,
+      "per_position_payoffs": [
+        2981.2104723510743,
+        2976.882569900513,
+        3002.2085700073244,
+        2975.873164047241
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 0.9999998414514231,
+            "work_tendency": 0.9000000149719943,
+            "neighbor_help": 0.500000078275724,
+            "own_priority": 0.7999998736179385,
+            "risk_aversion": 0.5000000789618053,
+            "coordination": 0.7000000476596261,
+            "exploration": 0.10000014161990646,
+            "fatigue_memory": 1.3809696828869458e-09,
+            "rest_bias": 1.5743406197180647e-07,
+            "altruism": 0.8000000317372954
+          },
+          "genome": [
+            0.9999998414514231,
+            0.9000000149719943,
+            0.500000078275724,
+            0.7999998736179385,
+            0.5000000789618053,
+            0.7000000476596261,
+            0.10000014161990646,
+            1.3809696828869458e-09,
+            1.5743406197180647e-07,
+            0.8000000317372954
+          ]
+        }
+      ],
+      "start_profile_label": "coordinator(d=0.00) | liar(d=0.00) | liar(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "converged": false,
+      "iterations": 25,
+      "team_payoff": 2851.1215242204667,
+      "per_position_payoffs": [
+        2849.348072555542,
+        2846.2550775642394,
+        2840.4093651809694,
+        2868.473581581116
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00) | free_rider(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.6999998438617869,
+            "work_tendency": 0.20000013982237952,
+            "neighbor_help": 2.2058846879373442e-07,
+            "own_priority": 0.8999997934608038,
+            "risk_aversion": 1.942121239506662e-07,
+            "coordination": 0.0,
+            "exploration": 0.10000018002565188,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.8999997956972219,
+            "altruism": 2.0815731560233331e-07
+          },
+          "genome": [
+            0.6999998438617869,
+            0.20000013982237952,
+            2.2058846879373442e-07,
+            0.8999997934608038,
+            1.942121239506662e-07,
+            0.0,
+            0.10000018002565188,
+            0.0,
+            0.8999997956972219,
+            2.0815731560233331e-07
+          ]
+        }
+      ],
+      "start_profile_label": "firefighter(d=0.00) | free_rider(d=0.00) | hero(d=0.00) | free_rider(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 6,
+      "team_payoff": 2841.735115898609,
+      "per_position_payoffs": [
+        2821.6106029090884,
+        2826.3448536548613,
+        2853.2180201263427,
+        2865.7669869041442
+      ],
+      "symmetric_profile": false,
+      "profile_label": "coordinator(d=0.00) | liar(d=0.00) | liar(d=0.00) | free_rider(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "coordinator(d=0.00)",
+          "parameters": {
+            "honesty": 0.9,
+            "work_tendency": 0.6,
+            "neighbor_help": 0.7,
+            "own_priority": 0.6,
+            "risk_aversion": 0.8,
+            "coordination": 1.0,
+            "exploration": 0.05,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.2,
+            "altruism": 0.6
+          },
+          "genome": [
+            0.9,
+            0.6,
+            0.7,
+            0.6,
+            0.8,
+            1.0,
+            0.05,
+            0.0,
+            0.2,
+            0.6
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.09999996774900792,
+            "work_tendency": 0.6999997753730082,
+            "neighbor_help": 3.209440753754925e-07,
+            "own_priority": 0.9000000319990793,
+            "risk_aversion": 0.1999999359503022,
+            "coordination": 0.8000000641359566,
+            "exploration": 0.30000022471014265,
+            "fatigue_memory": 3.210140891828148e-07,
+            "rest_bias": 0.3999998713493169,
+            "altruism": 0.20000025651951395
+          },
+          "genome": [
+            0.09999996774900792,
+            0.6999997753730082,
+            3.209440753754925e-07,
+            0.9000000319990793,
+            0.1999999359503022,
+            0.8000000641359566,
+            0.30000022471014265,
+            3.210140891828148e-07,
+            0.3999998713493169,
+            0.20000025651951395
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "liar(d=0.00)",
+          "parameters": {
+            "honesty": 0.1,
+            "work_tendency": 0.7,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.2,
+            "coordination": 0.8,
+            "exploration": 0.3,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.4,
+            "altruism": 0.2
+          },
+          "genome": [
+            0.1,
+            0.7,
+            0.0,
+            0.9,
+            0.2,
+            0.8,
+            0.3,
+            0.0,
+            0.4,
+            0.2
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        }
+      ],
+      "start_profile_label": "liar(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 14,
+      "team_payoff": 2817.3966984710696,
+      "per_position_payoffs": [
+        2809.569282836914,
+        2818.3648818359375,
+        2832.6109711914064,
+        2809.0416580200194
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7000004606145058,
+            "work_tendency": 0.20000125717082912,
+            "neighbor_help": 1.4262796729971437e-06,
+            "own_priority": 0.900000160607405,
+            "risk_aversion": 1.5867261579007083e-06,
+            "coordination": 1.5392668812138115e-06,
+            "exploration": 0.10000144956268602,
+            "fatigue_memory": 5.722029344138945e-09,
+            "rest_bias": 0.9000001181949538,
+            "altruism": 1.3898888125029255e-06
+          },
+          "genome": [
+            0.7000004606145058,
+            0.20000125717082912,
+            1.4262796729971437e-06,
+            0.900000160607405,
+            1.5867261579007083e-06,
+            1.5392668812138115e-06,
+            0.10000144956268602,
+            5.722029344138945e-09,
+            0.9000001181949538,
+            1.3898888125029255e-06
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "liar(d=0.00) | coordinator(d=0.00) | free_rider(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "converged": true,
+      "iterations": 9,
+      "team_payoff": 2796.1897922077183,
+      "per_position_payoffs": [
+        2792.0773770751953,
+        2796.2167828369143,
+        2810.153978363037,
+        2786.311030555725
+      ],
+      "symmetric_profile": false,
+      "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+      "strategy_profile": [
+        {
+          "position": 0,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 1,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 2,
+          "closest_archetype": "free_rider(d=0.00)",
+          "parameters": {
+            "honesty": 0.7,
+            "work_tendency": 0.2,
+            "neighbor_help": 0.0,
+            "own_priority": 0.9,
+            "risk_aversion": 0.0,
+            "coordination": 0.0,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.9,
+            "altruism": 0.0
+          },
+          "genome": [
+            0.7,
+            0.2,
+            0.0,
+            0.9,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.9,
+            0.0
+          ]
+        },
+        {
+          "position": 3,
+          "closest_archetype": "firefighter(d=0.00)",
+          "parameters": {
+            "honesty": 1.0,
+            "work_tendency": 0.9,
+            "neighbor_help": 0.5,
+            "own_priority": 0.8,
+            "risk_aversion": 0.5,
+            "coordination": 0.7,
+            "exploration": 0.1,
+            "fatigue_memory": 0.0,
+            "rest_bias": 0.0,
+            "altruism": 0.8
+          },
+          "genome": [
+            1.0,
+            0.9,
+            0.5,
+            0.8,
+            0.5,
+            0.7,
+            0.1,
+            0.0,
+            0.0,
+            0.8
+          ]
+        }
+      ],
+      "start_profile_label": "firefighter(d=0.00) | coordinator(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    }
+  ]
+}
