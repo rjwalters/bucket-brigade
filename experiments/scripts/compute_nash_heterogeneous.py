@@ -198,6 +198,11 @@ def compute_heterogeneous_nash(
         e for e in equilibria if not _profile_is_symmetric(e.strategy_profile)
     ]
 
+    # Partition converged equilibria by symmetry up front — both the reporting
+    # block below and the verdict block further down reference these.
+    converged_asymmetric = [e for e in asymmetric if e.converged]
+    converged_symmetric = [e for e in symmetric if e.converged]
+
     print(f"Symmetric profiles:   {len(symmetric)}")
     print(f"Asymmetric profiles:  {len(asymmetric)}")
     print()
@@ -211,11 +216,15 @@ def compute_heterogeneous_nash(
 
     if converged_asymmetric:
         _best_print = max(converged_asymmetric, key=lambda e: e.team_payoff)
-        print(f"Best converged ASYMMETRIC equilibrium ({len(converged_asymmetric)} total converged):")
+        print(
+            f"Best converged ASYMMETRIC equilibrium ({len(converged_asymmetric)} total converged):"
+        )
         print(f"  Team payoff:  {_best_print.team_payoff:.2f}")
         print(f"  Profile:      {_profile_label(_best_print.strategy_profile)}")
         print(f"  Iterations:   {_best_print.iterations}")
-        for i, (t, p) in enumerate(zip(_best_print.strategy_profile, _best_print.payoffs)):
+        for i, (t, p) in enumerate(
+            zip(_best_print.strategy_profile, _best_print.payoffs)
+        ):
             print(f"  Pos {i}: payoff={p:.1f}  {_classify(t)}")
             print(f"         work_tendency={t[1]:.3f}  honesty={t[0]:.3f}")
         print()
@@ -238,10 +247,18 @@ def compute_heterogeneous_nash(
     # --- Determine verdict ---
     # Use best *converged* equilibria for the verdict. A non-converged profile
     # having a higher payoff doesn't mean converged equilibria don't exist.
-    converged_asymmetric = [e for e in asymmetric if e.converged]
-    converged_symmetric = [e for e in symmetric if e.converged]
-    best_conv_asym = max(converged_asymmetric, key=lambda e: e.team_payoff) if converged_asymmetric else None
-    best_conv_sym = max(converged_symmetric, key=lambda e: e.team_payoff) if converged_symmetric else None
+    # (converged_asymmetric / converged_symmetric were partitioned above so the
+    # reporting block could reference them.)
+    best_conv_asym = (
+        max(converged_asymmetric, key=lambda e: e.team_payoff)
+        if converged_asymmetric
+        else None
+    )
+    best_conv_sym = (
+        max(converged_symmetric, key=lambda e: e.team_payoff)
+        if converged_symmetric
+        else None
+    )
     sym_best = best_conv_sym.team_payoff if best_conv_sym else None
 
     if best_conv_asym is not None and sym_best is not None:
@@ -403,8 +420,12 @@ def compute_heterogeneous_nash(
                 "converged_asymmetric_profiles": len(converged_asymmetric),
                 "converged_symmetric_profiles": len(converged_symmetric),
                 "best_team_payoff": float(best.team_payoff) if equilibria else None,
-                "best_converged_symmetric_payoff": float(best_conv_sym.team_payoff) if best_conv_sym else None,
-                "best_converged_asymmetric_payoff": float(best_conv_asym.team_payoff) if best_conv_asym else None,
+                "best_converged_symmetric_payoff": float(best_conv_sym.team_payoff)
+                if best_conv_sym
+                else None,
+                "best_converged_asymmetric_payoff": float(best_conv_asym.team_payoff)
+                if best_conv_asym
+                else None,
             },
             f,
             indent=2,

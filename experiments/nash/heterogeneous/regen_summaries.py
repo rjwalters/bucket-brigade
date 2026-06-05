@@ -4,9 +4,9 @@
 Use this when the verdict logic in compute_nash_heterogeneous.py is updated
 without re-running the (expensive) sweep.
 """
+
 from __future__ import annotations
 import json
-import sys
 from pathlib import Path
 
 EPSILON = 50.0
@@ -30,11 +30,13 @@ def regen(scenario_dir: Path) -> None:
 
     best_conv_asym = (
         max(converged_asymmetric, key=lambda e: e["team_payoff"])
-        if converged_asymmetric else None
+        if converged_asymmetric
+        else None
     )
     best_conv_sym = (
         max(converged_symmetric, key=lambda e: e["team_payoff"])
-        if converged_symmetric else None
+        if converged_symmetric
+        else None
     )
 
     sym_best = best_conv_sym["team_payoff"] if best_conv_sym else None
