@@ -1,0 +1,28 @@
+{
+  "name": "firefighter",
+  "param_names": [
+    "honesty_bias",
+    "work_tendency",
+    "neighbor_help_bias",
+    "own_house_priority",
+    "risk_aversion",
+    "coordination_weight",
+    "exploration_rate",
+    "fatigue_memory",
+    "rest_reward_bias",
+    "altruism_factor"
+  ],
+  "genome": [
+    1.0,
+    0.9,
+    0.5,
+    0.8,
+    0.5,
+    0.7,
+    0.1,
+    0.0,
+    0.0,
+    0.8
+  ],
+  "source": "bucket_brigade/agents/archetypes.py"
+}

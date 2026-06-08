@@ -1,0 +1,100 @@
+{
+  "scenario_id": "rest_trap-v1",
+  "algorithm": "heterogeneous_double_oracle",
+  "param_names": [
+    "honesty_bias",
+    "work_tendency",
+    "neighbor_help_bias",
+    "own_house_priority",
+    "risk_aversion",
+    "coordination_weight",
+    "exploration_rate",
+    "fatigue_memory",
+    "rest_reward_bias",
+    "altruism_factor"
+  ],
+  "team_payoff": 2984.043694076538,
+  "per_position_payoffs": [
+    2981.2104723510743,
+    2976.882569900513,
+    3002.2085700073244,
+    2975.873164047241
+  ],
+  "symmetric_profile": false,
+  "profile_label": "free_rider(d=0.00) | free_rider(d=0.00) | free_rider(d=0.00) | firefighter(d=0.00)",
+  "iterations": 5,
+  "positions": [
+    {
+      "position": 0,
+      "closest_archetype": "free_rider(d=0.00)",
+      "genome": [
+        0.7,
+        0.2,
+        0.0,
+        0.9,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.9,
+        0.0
+      ]
+    },
+    {
+      "position": 1,
+      "closest_archetype": "free_rider(d=0.00)",
+      "genome": [
+        0.7,
+        0.2,
+        0.0,
+        0.9,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.9,
+        0.0
+      ]
+    },
+    {
+      "position": 2,
+      "closest_archetype": "free_rider(d=0.00)",
+      "genome": [
+        0.7,
+        0.2,
+        0.0,
+        0.9,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.9,
+        0.0
+      ]
+    },
+    {
+      "position": 3,
+      "closest_archetype": "firefighter(d=0.00)",
+      "genome": [
+        0.9999998414514231,
+        0.9000000149719943,
+        0.500000078275724,
+        0.7999998736179385,
+        0.5000000789618053,
+        0.7000000476596261,
+        0.10000014161990646,
+        1.3809696828869458e-09,
+        1.5743406197180647e-07,
+        0.8000000317372954
+      ]
+    }
+  ],
+  "source_parameters": {
+    "num_simulations": 1000,
+    "opt_simulations": 300,
+    "max_iterations": 25,
+    "epsilon": 50.0,
+    "num_restarts": 20,
+    "seed": 42
+  }
+}
