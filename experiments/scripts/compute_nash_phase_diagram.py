@@ -42,6 +42,15 @@ calibration is ~5–7 h on alc-9 (see ``memory/nash_heterogeneous_calibration.md
 The full 5×5×3 = 75-cell grid is therefore ~450 h wall-clock on a single
 host. The issue recommends a 3×3×2 = 18-cell preview first.
 
+By default the per-cell solver uses a persistent ``multiprocessing.Pool``
+sized to ``cpu_count()`` for parallel MC evaluation. Issue #389 traced a
+32× single-core slowdown observed during the #383 preview to (a) the
+previous worker cap of 8 on 32-core hosts and (b) a per-call Pool lifecycle
+that left the L-BFGS-B inner loop in
+``HeterogeneousDoubleOracle._best_response_for_position`` running serially
+in the parent process. Both are fixed; use ``--num-workers`` to cap if
+sharing a host.
+
 This script ships with a ``--smoke`` mode that runs a 1×1×1 = 1-cell grid
 at trivially small budget (restarts=1, max_iter=1, simulations=20) so the
 driver wiring can be smoke-tested locally in a few minutes. Real runs MUST
@@ -80,6 +89,7 @@ import time
 import argparse
 import dataclasses
 from pathlib import Path
+from typing import Optional
 
 # Allow running from repo root or scripts/
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -233,8 +243,14 @@ def _run_one_cell(
     num_restarts: int,
     seed: int,
     verbose: bool,
+    num_workers: Optional[int] = None,
 ) -> dict:
-    """Run heterogeneous DO on one (β, κ, c) cell. Returns the cell summary dict."""
+    """Run heterogeneous DO on one (β, κ, c) cell. Returns the cell summary dict.
+
+    ``num_workers`` plumbs through to ``HeterogeneousDoubleOracle.solve`` so
+    the cluster wrapper can match Pool size to the host (issue #389). ``None``
+    delegates to the solver default, which is ``cpu_count()``.
+    """
     scenario = _make_scenario(beta, kappa, c, num_agents=4)
     cell_dir.mkdir(parents=True, exist_ok=True)
 
@@ -247,6 +263,7 @@ def _run_one_cell(
         seed=seed,
         num_restarts=num_restarts,
         verbose=verbose,
+        num_workers=num_workers,
     )
 
     t0 = time.time()
@@ -352,6 +369,7 @@ def compute_phase_diagram(
     seed: int,
     verbose: bool,
     force: bool,
+    num_workers: Optional[int] = None,
 ) -> None:
     cells_dir = output_dir / "cells"
     cells_dir.mkdir(parents=True, exist_ok=True)
@@ -418,6 +436,7 @@ def compute_phase_diagram(
                     num_restarts=num_restarts,
                     seed=cell_seed,
                     verbose=verbose,
+                    num_workers=num_workers,
                 )
                 cell_summaries.append(cell_summary)
                 print(
@@ -601,6 +620,19 @@ def main() -> None:
     parser.add_argument(
         "--quiet", action="store_true", help="Suppress per-position DO logs"
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help=(
+            "Pool workers for parallel MC evaluation per cell. ``None`` (the "
+            "default) uses ``cpu_count()`` — recommended for cluster hosts. "
+            "Pass an explicit integer to cap (e.g. ``--num-workers 16`` on a "
+            "32-core box when sharing the machine). Set to 1 to force "
+            "sequential execution (slow but deterministic; mainly for "
+            "debugging). See issue #389."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -671,6 +703,7 @@ def main() -> None:
         seed=args.seed,
         verbose=not args.quiet,
         force=args.force,
+        num_workers=args.num_workers,
     )
 
 
