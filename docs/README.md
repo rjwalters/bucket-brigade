@@ -6,6 +6,8 @@ This documentation directory contains detailed guides, specifications, and resea
 
 ## Quick Start
 
+- **[Env API (`ENV.md`)](ENV.md)** - Python `make()` / `make_vec()` reference + versioned scenario registry
+- **[Paper Results (`PAPER_RESULTS.md`)](PAPER_RESULTS.md)** - One-line reproduction commands per paper figure
 - **[Game Mechanics](game_mechanics.md)** - Complete rules and game mechanics
 - **[Agent Roster](AGENT_ROSTER.md)** - Available AI agents (Firefighter, Hero, Free Rider, etc.)
 - **[API Reference](archive/API.md)** - Technical API and data structures (archived — aspirational, see SIMPLIFIED_ARCHITECTURE.md for current)
