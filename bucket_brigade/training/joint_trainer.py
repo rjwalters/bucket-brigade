@@ -376,17 +376,50 @@ class JointPPOTrainer:
             else "simultaneous"
         )
         if self._commitment_mode == "two_phase":
-            # MacroActionEnv (#298) does not yet support two-phase. We
-            # gate here rather than silently producing wrong behavior.
+            # Issue #344: MacroActionEnv x two-phase is now supported via
+            # the wrapper's :meth:`step_two_phase` method, which loops
+            # the base env's two-phase step for each base step in the
+            # commit window (Option 2a). Detect that path here so the
+            # rollout loop knows whether to call ``env.step_two_phase``
+            # with primitives (raw base env) or per-base-step signal
+            # arrays (wrapper). The check is kept lightweight; we do not
+            # raise on macro+two_phase any more.
             from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+            from bucket_brigade.envs.macro_action_env import MacroActionEnv
 
-            if not isinstance(self.env, BucketBrigadeEnv):
+            if not isinstance(self.env, (BucketBrigadeEnv, MacroActionEnv)):
                 raise NotImplementedError(
                     "commitment_mode='two_phase' is currently only supported "
-                    "with a raw BucketBrigadeEnv. Wrappers like MacroActionEnv "
-                    "(#298) require a follow-up to translate options into "
-                    "round-1 signal + round-2 action."
+                    "with a raw BucketBrigadeEnv or a MacroActionEnv-wrapped "
+                    "one. Got env type: " + type(self.env).__name__
                 )
+            self._is_macro_two_phase = isinstance(self.env, MacroActionEnv)
+            if self._is_macro_two_phase:
+                # Issue #344 (Option 2a / Option 4): the macro head emits
+                # the round-2 macro option; a second head (size 2) emits
+                # the per-base-step round-1 signal. Caller must declare
+                # ``action_dims = [num_options, 2]``: head 0 = macro
+                # option (Discrete(num_options)), head 1 = round-1 signal
+                # bit (Discrete(2)). The trainer reads column 0 of the
+                # joint action for the macro step (stored for PPO update)
+                # and column 1 for the per-base-step round-1 signal
+                # (re-sampled ``commit_steps`` times per macro-step from
+                # the macro-boundary obs; not in the PPO loss, matching
+                # the raw two-phase trainer's "round-1 lp not in loss"
+                # simplification at line 933-938).
+                expected_macro_head = int(self.env.num_options)
+                if (
+                    len(action_dims) != 2
+                    or action_dims[0] != expected_macro_head
+                    or action_dims[1] != 2
+                ):
+                    raise ValueError(
+                        f"MacroActionEnv + two_phase requires "
+                        f"action_dims=[{expected_macro_head}, 2] "
+                        f"(head 0 = macro option, head 1 = round-1 signal "
+                        f"bit); got action_dims={action_dims!r}. See issue "
+                        f"#344 (Option 2a)."
+                    )
             # Issue #252 + #274 mutex: obs-audit's "what did the policy see
             # when it picked this action" invariant does not hold under
             # two-phase rollouts (round-1 obs feeds the signal forward;
@@ -394,6 +427,10 @@ class JointPPOTrainer:
             # record one per (step, agent)). Surface the conflict at
             # construction time rather than silently logging a misleading
             # record. The audit + simultaneous path is unchanged.
+            # Issue #344: the mutex extends to MacroActionEnv + two_phase
+            # for the same reason — there are now N round-1 obs per
+            # macro-step on top of the round-2 obs, none of which line
+            # up with the single audit slot.
             if obs_auditor is not None and obs_auditor.enabled:
                 raise NotImplementedError(
                     "commitment_mode='two_phase' is incompatible with "
@@ -403,6 +440,8 @@ class JointPPOTrainer:
                     "round-2 action). Run them separately or extend the "
                     "audit record to carry both phases."
                 )
+        else:
+            self._is_macro_two_phase = False
 
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -944,33 +983,84 @@ class JointPPOTrainer:
             # two-phase. We surface this conflict at config-validation
             # time rather than silently logging a misleading record.
             if self._commitment_mode == "two_phase":
-                # Round 1: signal-only forward pass. Reuse _act_all but
-                # discard everything except the signal column.
-                _r1_joint, _r1_lps, _r1_vs = self._act_all(obs_t)
-                round1_signals = _r1_joint[:, 2].astype(np.uint8)
-                # Stash round-1 signals into the env so the round-2 obs
-                # carries them. We mutate the env's buffer directly
-                # rather than running env.step_two_phase twice — the env
-                # exposes `round1_signals` as a public attribute (#252).
-                self.env.round1_signals = round1_signals.astype(np.int8)
-                # Rebuild the per-agent flat obs with the now-populated
-                # round1_signals so the round-2 policy forward sees them.
-                round2_dict = {
-                    "signals": self.env.signals.copy(),
-                    "locations": self.env.locations.copy(),
-                    "houses": self.env.houses.copy(),
-                    "last_actions": self.env.last_actions.copy(),
-                    "scenario_info": self.env.scenario.to_feature_vector(),
-                    "round1_signals": self.env.round1_signals.copy(),
-                }
-                self._last_obs = self._flatten_per_agent(round2_dict)
-                obs_t = torch.from_numpy(self._last_obs).to(self.device)
-                # Round 2: full-action forward pass. This is the one we
-                # store for PPO updates.
-                joint_action, lps, vs = self._act_all(obs_t)
-                next_obs_dict, rew, done_arr, _ = self.env.step_two_phase(
-                    round1_signals, joint_action
-                )
+                if self._is_macro_two_phase:
+                    # Issue #344: MacroActionEnv + two_phase (Option 2a).
+                    # The macro is committed for ``commit_steps`` base
+                    # steps; the round-1 signal is sampled fresh per
+                    # base step inside the window (NOT once per macro
+                    # window — that would silently collapse to Option
+                    # 2b / Option 1, throttling the deception channel
+                    # to 1/N). To approximate per-base-step conditioning
+                    # cheaply, we draw ``commit_steps`` independent
+                    # stochastic samples from the same macro-boundary
+                    # obs (one forward each), reading the signal head
+                    # (column 1 of action_dims=[num_options, 2]).
+                    # Each draw is a fresh sample from the round-1 signal
+                    # distribution; this is the architecturally cheapest
+                    # way to keep the native per-night lie-rate
+                    # (#234 / #344).
+                    commit_steps = int(self.env.commit_steps)
+                    round1_signals_per_step = np.zeros(
+                        (commit_steps, self.num_agents), dtype=np.int8
+                    )
+                    for k in range(commit_steps):
+                        _r1k_joint, _, _ = self._act_all(obs_t)
+                        round1_signals_per_step[k] = _r1k_joint[:, 1].astype(np.int8)
+                    # Stash the first base step's round-1 signal into the
+                    # env so the round-2 macro forward conditions on a
+                    # plausible obs. (Round 2's obs only carries one
+                    # round1_signals vector at a time; the natural choice
+                    # is "what would be active at the START of the macro
+                    # window".)
+                    self.env.round1_signals = round1_signals_per_step[0]
+                    round2_dict = {
+                        "signals": self.env.signals.copy(),
+                        "locations": self.env.locations.copy(),
+                        "houses": self.env.houses.copy(),
+                        "last_actions": self.env.last_actions.copy(),
+                        "scenario_info": self.env.scenario.to_feature_vector(),
+                        "round1_signals": self.env.round1_signals.copy(),
+                    }
+                    self._last_obs = self._flatten_per_agent(round2_dict)
+                    obs_t = torch.from_numpy(self._last_obs).to(self.device)
+                    # Round 2 (macro): one forward pass per macro-step,
+                    # stored for PPO updates (correct credit assignment).
+                    # The macro option is in column 0 of action_dims=
+                    # [num_options, 2]; the wrapper consumes that column.
+                    joint_action, lps, vs = self._act_all(obs_t)
+                    macro_action_col0 = joint_action[:, 0]
+                    next_obs_dict, rew, done_arr, _ = self.env.step_two_phase(
+                        round1_signals_per_step, macro_action_col0
+                    )
+                else:
+                    # Raw BucketBrigadeEnv two-phase rollout (pre-#344).
+                    # Round 1: signal-only forward pass. Reuse _act_all but
+                    # discard everything except the signal column.
+                    _r1_joint, _r1_lps, _r1_vs = self._act_all(obs_t)
+                    round1_signals = _r1_joint[:, 2].astype(np.uint8)
+                    # Stash round-1 signals into the env so the round-2 obs
+                    # carries them. We mutate the env's buffer directly
+                    # rather than running env.step_two_phase twice — the env
+                    # exposes `round1_signals` as a public attribute (#252).
+                    self.env.round1_signals = round1_signals.astype(np.int8)
+                    # Rebuild the per-agent flat obs with the now-populated
+                    # round1_signals so the round-2 policy forward sees them.
+                    round2_dict = {
+                        "signals": self.env.signals.copy(),
+                        "locations": self.env.locations.copy(),
+                        "houses": self.env.houses.copy(),
+                        "last_actions": self.env.last_actions.copy(),
+                        "scenario_info": self.env.scenario.to_feature_vector(),
+                        "round1_signals": self.env.round1_signals.copy(),
+                    }
+                    self._last_obs = self._flatten_per_agent(round2_dict)
+                    obs_t = torch.from_numpy(self._last_obs).to(self.device)
+                    # Round 2: full-action forward pass. This is the one we
+                    # store for PPO updates.
+                    joint_action, lps, vs = self._act_all(obs_t)
+                    next_obs_dict, rew, done_arr, _ = self.env.step_two_phase(
+                        round1_signals, joint_action
+                    )
             else:
                 joint_action, lps, vs = self._act_all(obs_t)
                 next_obs_dict, rew, done_arr, _ = self.env.step(joint_action)
