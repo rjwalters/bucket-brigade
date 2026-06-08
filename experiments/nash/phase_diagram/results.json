@@ -1,0 +1,140 @@
+{
+  "base_scenario": "preview/primary",
+  "grid": {
+    "beta_values": [
+      0.1,
+      0.5,
+      0.9
+    ],
+    "kappa_values": [
+      0.1,
+      0.5,
+      0.9
+    ],
+    "c_values": [
+      0.5
+    ]
+  },
+  "cells": [
+    {
+      "beta": 0.5,
+      "kappa": 0.1,
+      "c": 0.5,
+      "tag": "b0.50_k0.10_c0.50",
+      "elapsed_seconds": 59010.54132390022,
+      "total_restarts": 20,
+      "converged": 0,
+      "symmetric_profiles": 2,
+      "asymmetric_profiles": 18,
+      "best_team_payoff": -9692.665,
+      "best_symmetric_team_payoff": -9960.165500000001,
+      "best_asymmetric_team_payoff": -9692.665,
+      "best_asymmetric_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+      "verdict": "no_convergence",
+      "verdict_detail": "No restart converged within max_iterations (20 attempted). Likely needs more iterations or a tighter epsilon. Compute budget?"
+    },
+    {
+      "beta": 0.5,
+      "kappa": 0.5,
+      "c": 0.5,
+      "tag": "b0.50_k0.50_c0.50",
+      "elapsed_seconds": 25352.112627506256,
+      "total_restarts": 20,
+      "converged": 3,
+      "symmetric_profiles": 4,
+      "asymmetric_profiles": 16,
+      "best_team_payoff": -648.015,
+      "best_symmetric_team_payoff": -648.015,
+      "best_asymmetric_team_payoff": -861.9834999999999,
+      "best_asymmetric_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+      "verdict": "symmetric_only",
+      "verdict_detail": "Symmetric NE (-821.68) dominates best asymmetric NE (-876.56) by gap=54.88 > epsilon=50.0."
+    },
+    {
+      "beta": 0.5,
+      "kappa": 0.9,
+      "c": 0.5,
+      "tag": "b0.50_k0.90_c0.50",
+      "elapsed_seconds": 9148.928839921951,
+      "total_restarts": 20,
+      "converged": 14,
+      "symmetric_profiles": 0,
+      "asymmetric_profiles": 20,
+      "best_team_payoff": 72.0095,
+      "best_symmetric_team_payoff": null,
+      "best_asymmetric_team_payoff": 72.0095,
+      "best_asymmetric_profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)",
+      "verdict": "asymmetric_only",
+      "verdict_detail": "All 14 converged restarts produced asymmetric profiles; best asymmetric team payoff = 72.01."
+    },
+    {
+      "beta": 0.1,
+      "kappa": 0.1,
+      "c": 0.5,
+      "tag": "b0.10_k0.10_c0.50",
+      "elapsed_seconds": 65100.79769611359,
+      "total_restarts": 20,
+      "converged": 0,
+      "symmetric_profiles": 2,
+      "asymmetric_profiles": 18,
+      "best_team_payoff": -9692.665,
+      "best_symmetric_team_payoff": -9960.165500000001,
+      "best_asymmetric_team_payoff": -9692.665,
+      "best_asymmetric_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+      "verdict": "no_convergence",
+      "verdict_detail": "No restart converged within max_iterations (20 attempted). Likely needs more iterations or a tighter epsilon. Compute budget?"
+    },
+    {
+      "beta": 0.9,
+      "kappa": 0.1,
+      "c": 0.5,
+      "tag": "b0.90_k0.10_c0.50",
+      "elapsed_seconds": 64389.38978981972,
+      "total_restarts": 20,
+      "converged": 0,
+      "symmetric_profiles": 2,
+      "asymmetric_profiles": 18,
+      "best_team_payoff": -9692.665,
+      "best_symmetric_team_payoff": -9960.165500000001,
+      "best_asymmetric_team_payoff": -9692.665,
+      "best_asymmetric_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+      "verdict": "no_convergence",
+      "verdict_detail": "No restart converged within max_iterations (20 attempted). Likely needs more iterations or a tighter epsilon. Compute budget?"
+    },
+    {
+      "beta": 0.9,
+      "kappa": 0.5,
+      "c": 0.5,
+      "tag": "b0.90_k0.50_c0.50",
+      "elapsed_seconds": 25662.86415910721,
+      "total_restarts": 20,
+      "converged": 3,
+      "symmetric_profiles": 4,
+      "asymmetric_profiles": 16,
+      "best_team_payoff": -648.015,
+      "best_symmetric_team_payoff": -648.015,
+      "best_asymmetric_team_payoff": -861.9834999999999,
+      "best_asymmetric_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+      "verdict": "symmetric_only",
+      "verdict_detail": "Symmetric NE (-821.68) dominates best asymmetric NE (-876.56) by gap=54.88 > epsilon=50.0."
+    },
+    {
+      "beta": 0.9,
+      "kappa": 0.9,
+      "c": 0.5,
+      "tag": "b0.90_k0.90_c0.50",
+      "elapsed_seconds": 9229.70953297615,
+      "total_restarts": 20,
+      "converged": 14,
+      "symmetric_profiles": 0,
+      "asymmetric_profiles": 20,
+      "best_team_payoff": 72.0095,
+      "best_symmetric_team_payoff": null,
+      "best_asymmetric_team_payoff": 72.0095,
+      "best_asymmetric_profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)",
+      "verdict": "asymmetric_only",
+      "verdict_detail": "All 14 converged restarts produced asymmetric profiles; best asymmetric team payoff = 72.01."
+    }
+  ],
+  "note": "Partial aggregate built from per-cell summary.json files after localhost crash on 2026-06-05. alc-10 (c=2.0 slice) never came back online; \u03b2=0.1 row is incomplete (alc-4 only produced 1 cell)."
+}

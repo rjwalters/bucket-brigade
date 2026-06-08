@@ -1,0 +1,17 @@
+{
+  "beta": 0.9,
+  "kappa": 0.9,
+  "c": 0.5,
+  "tag": "b0.90_k0.90_c0.50",
+  "elapsed_seconds": 9229.70953297615,
+  "total_restarts": 20,
+  "converged": 14,
+  "symmetric_profiles": 0,
+  "asymmetric_profiles": 20,
+  "best_team_payoff": 72.0095,
+  "best_symmetric_team_payoff": null,
+  "best_asymmetric_team_payoff": 72.0095,
+  "best_asymmetric_profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)",
+  "verdict": "asymmetric_only",
+  "verdict_detail": "All 14 converged restarts produced asymmetric profiles; best asymmetric team payoff = 72.01."
+}
