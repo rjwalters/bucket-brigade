@@ -111,7 +111,11 @@ class HeterogeneousDoubleOracle:
     seed              : master RNG seed
     num_restarts      : random starting profiles to try
     verbose           : print per-position progress
-    num_workers       : parallel workers for MC evaluation
+    num_workers       : parallel workers for MC evaluation. ``None`` (the
+        default) uses ``cpu_count()``. The phase-diagram driver
+        (``compute_nash_phase_diagram.py``) is CPU-bound on every restart, so
+        leaving this unset is correct for cluster hosts. Set to ``1`` for
+        deterministic sequential execution (used by unit tests).
     """
 
     def __init__(
@@ -134,14 +138,43 @@ class HeterogeneousDoubleOracle:
         self.seed = seed
         self.num_restarts = num_restarts
         self.verbose = verbose
-        self.num_workers = (
-            num_workers if num_workers is not None else min(cpu_count(), 8)
-        )
+        # ``num_workers`` defaults to ``cpu_count()`` so cluster hosts saturate
+        # all cores on the heavy DO loop. Issue #389 traced the 32× single-core
+        # slowdown observed on alc-* during the #383 preview to (a) the
+        # previous ``min(cpu_count(), 8)`` cap leaving 24/32 cores idle, and
+        # (b) the L-BFGS-B inner loop in ``_best_response_for_position``
+        # running the per-call ``opt_simulations`` MC sweep entirely in the
+        # parent process. The fix here addresses (a); the persistent-Pool
+        # refactor below (see ``solve`` + ``_map_sims``) addresses (b).
+        self.num_workers = num_workers if num_workers is not None else cpu_count()
         self._rng = np.random.RandomState(seed)
+        # Persistent Pool, lifetime = one ``solve()`` call. ``None`` outside
+        # ``solve()`` and when ``num_workers <= 1`` (in which case
+        # ``_map_sims`` runs sequentially). See issue #389 for why we keep one
+        # Pool per cell instead of one per ``_evaluate_team`` call.
+        self._pool: Optional[Pool] = None
 
     # ------------------------------------------------------------------
     # Evaluation helpers
     # ------------------------------------------------------------------
+
+    def _map_sims(self, args_list: list[tuple]) -> list[list[float]]:
+        """Run ``_run_heterogeneous_sim`` over ``args_list``, parallel if possible.
+
+        Uses ``self._pool`` (the persistent per-``solve()`` Pool) when set,
+        falls back to a sequential map otherwise. Centralising the dispatch
+        here is what lets the L-BFGS-B inner loop in
+        ``_best_response_for_position`` share the same workers as
+        ``_evaluate_team``: before issue #389 each ``_evaluate_team`` call
+        constructed its own ``Pool`` and the L-BFGS-B closure ran serially in
+        the parent process, capping cluster-host utilisation at 1 core.
+
+        Order is preserved (``pool.map`` is order-preserving), so callers can
+        zip the result back against ``args_list`` for per-sim seed accounting.
+        """
+        if self._pool is not None:
+            return self._pool.map(_run_heterogeneous_sim, args_list)
+        return [_run_heterogeneous_sim(a) for a in args_list]
 
     def _evaluate_team(
         self,
@@ -153,11 +186,7 @@ class HeterogeneousDoubleOracle:
         seeds = [self._rng.randint(0, 2**31 - 1) for _ in range(n_sims)]
         args_list = [(strategy_profile, self.scenario, s) for s in seeds]
 
-        if self.num_workers > 1:
-            with Pool(processes=self.num_workers) as pool:
-                results = pool.map(_run_heterogeneous_sim, args_list)
-        else:
-            results = [_run_heterogeneous_sim(a) for a in args_list]
+        results = self._map_sims(args_list)
 
         rewards = np.array(results)  # (n_sims, 4)
         return list(np.mean(rewards, axis=0))
@@ -210,16 +239,21 @@ class HeterogeneousDoubleOracle:
         _rng_local = np.random.RandomState(opt_seed)
 
         def _objective(theta: np.ndarray) -> float:
-            # Sequential — called many times by L-BFGS-B; spawning a Pool
-            # per call would dominate runtime.
+            # Issue #389: L-BFGS-B calls this O(50) times per BR per position
+            # per outer iter. The dominant per-cell cost is this loop. With a
+            # persistent solver-level Pool (created in ``solve()``) we get the
+            # same parallel speedup as ``_evaluate_team`` without paying
+            # Pool-construction overhead per call. When ``self._pool is None``
+            # (``num_workers <= 1`` or solver called outside ``solve()``)
+            # ``_map_sims`` falls back to a sequential map — historical
+            # behaviour, preserved for tests.
             n = self.opt_simulations
             seeds = [_rng_local.randint(0, 2**31 - 1) for _ in range(n)]
             profile_t = [
                 theta if j == position else others[j - (j > position)] for j in range(4)
             ]
-            results = [
-                _run_heterogeneous_sim((profile_t, self.scenario, s)) for s in seeds
-            ]
+            args_list = [(profile_t, self.scenario, s) for s in seeds]
+            results = self._map_sims(args_list)
             return -float(np.mean([r[position] for r in results]))
 
         res = minimize(
@@ -491,62 +525,92 @@ class HeterogeneousDoubleOracle:
         use_deterministic_per_restart = progress_dir is not None
         base_seed = self.seed if self.seed is not None else 0
 
-        for restart_idx in range(self.num_restarts):
-            if restart_idx in completed_set:
+        # ----- Persistent Pool (issue #389) -----
+        # One Pool per ``solve()`` call instead of one per ``_evaluate_team``.
+        # The previous per-call lifecycle paid Pool-construction overhead on
+        # every evaluation and — more importantly — forced the L-BFGS-B inner
+        # loop in ``_best_response_for_position`` to run serially in the
+        # parent process (constructing a Pool there would have dominated
+        # runtime). With one Pool per cell we get parallel scaling on every
+        # MC call, including the L-BFGS-B loop. ``num_workers <= 1`` disables
+        # the Pool entirely; ``_map_sims`` falls back to a sequential loop,
+        # which is what the unit tests require.
+        pool_cm: Optional[Pool] = (
+            Pool(processes=self.num_workers) if self.num_workers > 1 else None
+        )
+        try:
+            if pool_cm is not None:
+                self._pool = pool_cm
                 if self.verbose:
                     print(
-                        f"[checkpoint] skipping restart {restart_idx + 1}/{self.num_restarts} "
-                        f"(already complete)",
+                        f"[pool] solver Pool engaged: {self.num_workers} workers "
+                        f"(cpu_count={cpu_count()})",
                         flush=True,
                     )
-                continue
 
-            if use_deterministic_per_restart:
-                # Derived seed is stable across resume; high-entropy mix so
-                # adjacent restart indices don't get correlated streams.
-                restart_seed = (
-                    base_seed * 2654435761 + restart_idx * 40503
-                ) & 0x7FFFFFFF
-                self._rng = np.random.RandomState(restart_seed)
+            for restart_idx in range(self.num_restarts):
+                if restart_idx in completed_set:
+                    if self.verbose:
+                        print(
+                            f"[checkpoint] skipping restart {restart_idx + 1}/{self.num_restarts} "
+                            f"(already complete)",
+                            flush=True,
+                        )
+                    continue
 
-            # Sample 4 strategies from the current pool (may include BRs from
-            # earlier restarts — pool grows during the run)
-            n_pool = len(strategy_pool)
-            indices = self._rng.randint(0, n_pool, size=4)
-            initial_profile = [strategy_pool[i].copy() for i in indices]
+                if use_deterministic_per_restart:
+                    # Derived seed is stable across resume; high-entropy mix so
+                    # adjacent restart indices don't get correlated streams.
+                    restart_seed = (
+                        base_seed * 2654435761 + restart_idx * 40503
+                    ) & 0x7FFFFFFF
+                    self._rng = np.random.RandomState(restart_seed)
 
-            if self.verbose:
-                names = [
-                    archetype_names[i] if i < len(archetype_names) else f"BR{i}"
-                    for i in indices
-                ]
-                print(
-                    f"\n{'=' * 60}\n"
-                    f"Restart {restart_idx + 1}/{self.num_restarts} — "
-                    f"start profile: {names}",
-                    flush=True,
-                )
+                # Sample 4 strategies from the current pool (may include BRs from
+                # earlier restarts — pool grows during the run)
+                n_pool = len(strategy_pool)
+                indices = self._rng.randint(0, n_pool, size=4)
+                initial_profile = [strategy_pool[i].copy() for i in indices]
 
-            eq = self._run_restart(initial_profile, strategy_pool, restart_idx)
-            results.append(eq)
-            completed_restarts.append(restart_idx)
+                if self.verbose:
+                    names = [
+                        archetype_names[i] if i < len(archetype_names) else f"BR{i}"
+                        for i in indices
+                    ]
+                    print(
+                        f"\n{'=' * 60}\n"
+                        f"Restart {restart_idx + 1}/{self.num_restarts} — "
+                        f"start profile: {names}",
+                        flush=True,
+                    )
 
-            if self.verbose:
-                status = "CONVERGED" if eq.converged else "MAX_ITER"
-                print(
-                    f"  → {status} in {eq.iterations} rounds, "
-                    f"team_payoff={eq.team_payoff:.1f}",
-                    flush=True,
-                )
+                eq = self._run_restart(initial_profile, strategy_pool, restart_idx)
+                results.append(eq)
+                completed_restarts.append(restart_idx)
 
-            # Persist progress after each completed restart so a crash here
-            # costs at most one restart of work.
-            if progress_path is not None:
-                self._write_progress(
-                    progress_path,
-                    completed_restarts,
-                    results,
-                    strategy_pool,
-                )
+                if self.verbose:
+                    status = "CONVERGED" if eq.converged else "MAX_ITER"
+                    print(
+                        f"  → {status} in {eq.iterations} rounds, "
+                        f"team_payoff={eq.team_payoff:.1f}",
+                        flush=True,
+                    )
+
+                # Persist progress after each completed restart so a crash here
+                # costs at most one restart of work.
+                if progress_path is not None:
+                    self._write_progress(
+                        progress_path,
+                        completed_restarts,
+                        results,
+                        strategy_pool,
+                    )
+        finally:
+            # Always release Pool workers, even on exception, so a crash
+            # mid-cell doesn't leak ``num_workers`` Python processes.
+            if pool_cm is not None:
+                pool_cm.close()
+                pool_cm.join()
+            self._pool = None
 
         return results
