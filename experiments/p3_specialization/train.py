@@ -233,6 +233,20 @@ class CellConfig:
     # — the diagnostic's interpretation depends on running clean vanilla
     # PG. ``"ppo"`` (default) preserves bit-identical pre-#273 behavior.
     algorithm: str = "ppo"
+    # Issue #386: asymmetry-aware ("HetGPPO") per-agent init seed offset.
+    # When ``None`` (default), the legacy single-stream init is preserved
+    # bit-for-bit (every per-agent ``PolicyNetwork`` is drawn off the same
+    # RNG state derived from ``seed``). When set to a positive integer ``K``,
+    # each agent ``i`` is initialized with seed ``seed + i * K`` so per-
+    # position policies start from maximally-distinct random inits. This is
+    # the architectural commitment to per-position parameter heterogeneity
+    # that HetGPPO (Bettini et al. AAMAS 2023) calls out as the simplest
+    # "drop parameter sharing" baseline. The trainer *already* maintains
+    # N independent policies + optimizers; this flag completes the
+    # symmetry break at init so SGD cannot fall into a basin that depends
+    # on shared-stream coupling. Recommended value: ``1000``. Wired to
+    # ``--per-agent-init-seed-offset`` on the CLI.
+    per_agent_init_seed_offset: Optional[int] = None
 
 
 # Default number of day bins for the state-summary conditioner. Episodes in
@@ -1070,6 +1084,7 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
             hindsight_ratio_clip=cfg.hindsight_ratio_clip,
             influence_coef=cfg.influence_coef,
             influence_mc_samples=cfg.influence_mc_samples,
+            per_agent_init_seed_offset=cfg.per_agent_init_seed_offset,
             device=cfg.device,
             seed=cfg.seed,
             obs_auditor=obs_auditor,
@@ -1569,6 +1584,23 @@ def main() -> None:
             "--lola-dice."
         ),
     )
+    p.add_argument(
+        "--per-agent-init-seed-offset",
+        type=int,
+        default=None,
+        help=(
+            "Issue #386: asymmetry-aware (HetGPPO-style) per-agent init "
+            "seed offset. When unset (default), the legacy single-stream "
+            "init is preserved bit-for-bit: every PolicyNetwork is drawn "
+            "off the same RNG state derived from --seed. When set to a "
+            "positive integer K, each agent i is seeded with seed + i * K "
+            "before its policy is constructed, producing maximally-distinct "
+            "starting points across positions. This completes the symmetry "
+            "break at init for the per-position-distinct equilibria that "
+            "asymmetric_only phase-diagram cells require (e.g. rest_trap). "
+            "Recommended value: 1000."
+        ),
+    )
     p.add_argument("--device", default="cpu")
     p.add_argument(
         "--audit-obs",
@@ -1648,6 +1680,7 @@ def main() -> None:
         lola_eta=args.lola_eta,
         lola_lookahead_steps=args.lola_lookahead_steps,
         algorithm=args.algorithm,
+        per_agent_init_seed_offset=args.per_agent_init_seed_offset,
         device=args.device,
         audit_obs=args.audit_obs,
         audit_obs_path=args.audit_obs_path,

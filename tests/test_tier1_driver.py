@@ -60,6 +60,11 @@ def _argv_contains_pair(argv: list[str], flag: str, value: str) -> bool:
 SINGLE_STEP_TRAINER_EXPECTATIONS = [
     # (trainer, expected_flag_substring, expected_pair_or_None)
     ("ippo", "--algorithm", ("--algorithm", "ppo")),
+    (
+        "het_ppo",
+        "--per-agent-init-seed-offset",
+        ("--per-agent-init-seed-offset", "1000"),
+    ),
     ("mappo", "--centralized-critic", None),
     ("high_lambda", "--gae-lambda", ("--gae-lambda", "0.99")),
     ("lola", "--lola-dice", None),
@@ -523,3 +528,51 @@ def test_all_required_trainers_present():
         "pbt",
     }
     assert expected.issubset(set(run_tier1_cell.TRAINERS))
+
+
+def test_het_ppo_trainer_registered():
+    """Issue #386: ``het_ppo`` is the asymmetry-aware (HetGPPO-style) PPO arm.
+
+    Dispatches via train.py with ``--algorithm ppo --per-agent-init-seed-offset
+    1000`` so each per-position policy is initialized from a maximally-distinct
+    RNG stream. Designed for ``asymmetric_only`` phase-diagram cells.
+    """
+    assert "het_ppo" in run_tier1_cell.TRAINERS
+    spec = run_tier1_cell.TRAINERS["het_ppo"]
+    assert spec.is_pbt is False, "het_ppo is a single-step train.py trainer"
+    assert spec.run_seed is None, "het_ppo uses the default per-seed dispatch"
+    assert ("--per-agent-init-seed-offset", "1000") == (
+        spec.train_extra[-2],
+        spec.train_extra[-1],
+    ), (
+        f"het_ppo train_extra must end with --per-agent-init-seed-offset 1000; "
+        f"got {spec.train_extra!r}"
+    )
+
+
+def test_het_ppo_dispatch_does_not_overlap_other_arms(tmp_path):
+    """het_ppo must not silently pull in centralized critic, COMA, HCA, LOLA,
+    macro-actions, influence, etc. — those would entangle the asymmetry-aware
+    diagnostic with a different experimental arm."""
+    argv = run_tier1_cell.build_argvs_for_seed(
+        "het_ppo",
+        scenario="rest_trap",
+        seed=42,
+        output_dir=tmp_path,
+        num_iterations=1,
+        rollout_steps=64,
+    )[0]
+    for forbidden in (
+        "--centralized-critic",
+        "--use-coma",
+        "--use-hca",
+        "--lola-dice",
+        "--macro-actions",
+        "--influence-coef",
+        "--team-welfare-lambda",
+        "--progress-shaping-coef",
+        "--bc-init-checkpoint-dir",
+    ):
+        assert not _argv_contains(argv, forbidden), (
+            f"het_ppo argv should not contain {forbidden!r}: {argv!r}"
+        )
