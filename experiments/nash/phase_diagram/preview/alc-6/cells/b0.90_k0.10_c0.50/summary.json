@@ -1,0 +1,17 @@
+{
+  "beta": 0.9,
+  "kappa": 0.1,
+  "c": 0.5,
+  "tag": "b0.90_k0.10_c0.50",
+  "elapsed_seconds": 64389.38978981972,
+  "total_restarts": 20,
+  "converged": 0,
+  "symmetric_profiles": 2,
+  "asymmetric_profiles": 18,
+  "best_team_payoff": -9692.665,
+  "best_symmetric_team_payoff": -9960.165500000001,
+  "best_asymmetric_team_payoff": -9692.665,
+  "best_asymmetric_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+  "verdict": "no_convergence",
+  "verdict_detail": "No restart converged within max_iterations (20 attempted). Likely needs more iterations or a tighter epsilon. Compute budget?"
+}
