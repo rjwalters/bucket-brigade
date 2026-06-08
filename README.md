@@ -27,6 +27,30 @@ The full rules live in [docs/game_mechanics.md](docs/game_mechanics.md). Design 
 
 ## Quickstart
 
+### As an end-user (env + frozen baselines only)
+
+The lightweight install — pure Python, no Rust toolchain, no GPU stack
+— suitable for reproducing paper results from a notebook:
+
+```bash
+# Not yet on PyPI; install from the GitHub repo until the paper lands.
+pip install "git+https://github.com/rjwalters/bucket-brigade.git"
+
+python -c "
+import bucket_brigade
+env = bucket_brigade.make('minimal_specialization-v1')
+obs, info = env.reset(seed=0)
+print(env, obs.shape)
+"
+```
+
+Optional install extras: `pip install '<spec>[rl]'` for PPO training,
+`[research]` for pandas/matplotlib analysis, `[huggingface]` for the
+frozen-baselines downloader, `[all]` for everything. See
+[docs/RELEASE.md](docs/RELEASE.md) for the full distribution layout.
+
+### As a developer (full repo)
+
 ```bash
 # Install uv + pnpm
 curl -LsSf https://astral.sh/uv/install.sh | sh

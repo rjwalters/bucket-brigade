@@ -18,6 +18,10 @@ Currently exports:
   mirroring the value column of
   ``experiments/p3_specialization/diagnostics/random_baseline.py``'s
   ``SCENARIO_CITED_VALUES`` for non-torch consumers (issue #323).
+
+For the **frozen baseline distribution** (archetype pickles, Nash vectors,
+PPO checkpoints shipped with the pip wheel + mirrored to HuggingFace), see
+:mod:`bucket_brigade.baselines.release` (issue #373 / parent epic #365).
 """
 
 from bucket_brigade.baselines.specialist import (
