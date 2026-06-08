@@ -1979,10 +1979,23 @@ class TestCommitmentMode:
         py_obs, _, _, _ = py_env.step_two_phase(r1_np, r2_np)
         np.testing.assert_array_equal(py_obs["round1_signals"], r1_np)
 
-    def test_macro_action_env_rejects_two_phase(self):
-        """MacroActionEnv x two-phase is gated as NotImplementedError."""
+    def test_macro_action_env_accepts_two_phase(self):
+        """Issue #344: MacroActionEnv x two-phase is now SUPPORTED via
+        :meth:`MacroActionEnv.step_two_phase` (Option 2a — round-1
+        sampled per base step, round-2 macro committed for the window).
+        The construction-time gate that previously raised
+        ``NotImplementedError`` has been removed; the wrapper's
+        :meth:`step` instead raises a clear ``RuntimeError`` directing
+        callers to :meth:`step_two_phase`. See
+        ``tests/test_macro_action_env.py::TestMacroTwoPhaseDeceptionChannel``
+        for the deception-channel PR-gate."""
         from bucket_brigade.envs.macro_action_env import MacroActionEnv
 
         env = BucketBrigadeEnv(scenario=self._make_two_phase_scenario())
-        with pytest.raises(NotImplementedError, match="two_phase"):
-            MacroActionEnv(env, commit_steps=3)
+        # Must not raise.
+        wrapped = MacroActionEnv(env, commit_steps=3)
+        wrapped.reset(seed=0)
+        # Single-phase step path is gated with a clear runtime error.
+        macro_actions = np.zeros(4, dtype=np.int64)
+        with pytest.raises(RuntimeError, match="two_phase"):
+            wrapped.step(macro_actions)

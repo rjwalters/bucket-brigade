@@ -1367,6 +1367,130 @@ class TestCommitmentModeTwoPhase:
         assert with_r1 == without_r1 + NUM_AGENTS
 
 
+class TestMacroActionEnvTwoPhase:
+    """Issue #344: trainer wiring for MacroActionEnv + two_phase.
+
+    The trainer auto-detects the composition (``MacroActionEnv`` wrapper +
+    ``commitment_mode='two_phase'``) and uses the wrapper's
+    :meth:`MacroActionEnv.step_two_phase` API, sampling
+    ``commit_steps`` round-1 signals per macro-step (Option 2a from
+    architect #344).
+    """
+
+    _COMMIT_STEPS = 3
+
+    def _env_fn(self):
+        import dataclasses
+
+        from bucket_brigade.envs.macro_action_env import MacroActionEnv
+        from bucket_brigade.envs.scenarios_generated import default_scenario
+
+        scenario = default_scenario(num_agents=NUM_AGENTS)
+        scenario = dataclasses.replace(scenario, commitment_mode="two_phase")
+        base = BucketBrigadeEnv(scenario=scenario)
+        return MacroActionEnv(base, commit_steps=self._COMMIT_STEPS)
+
+    def _make_trainer(self) -> JointPPOTrainer:
+        env = self._env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(
+            obs,
+            agent_id=0,
+            num_agents=NUM_AGENTS,
+            include_round1_signals=True,
+        ).shape[0]
+        return JointPPOTrainer(
+            env_fn=self._env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            # Issue #344 (Option 2a / Option 4): macro+two_phase requires
+            # a 2-head policy — head 0 = macro option (Discrete(num_options)),
+            # head 1 = round-1 signal bit (Discrete(2)). num_options =
+            # 3 + (num_agents - 1) = 6 for num_agents=4.
+            action_dims=[6, 2],
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            seed=0,
+        )
+
+    def test_trainer_construction_no_longer_raises(self):
+        """Pre-#344 the trainer raised ``NotImplementedError`` on the
+        composition; post-#344 it constructs cleanly and sets the
+        ``_is_macro_two_phase`` dispatch flag."""
+        trainer = self._make_trainer()
+        assert trainer._commitment_mode == "two_phase"
+        assert trainer._is_macro_two_phase is True
+
+    def test_rollout_finite_shapes(self):
+        """A short rollout through MacroActionEnv + two_phase produces
+        finite tensors with shapes matching the simultaneous case
+        (the rollout buffer schema is shared)."""
+        trainer = self._make_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        assert rollout.observations.shape == (
+            ROLLOUT_STEPS,
+            NUM_AGENTS,
+            trainer.obs_dim,
+        )
+        for i in range(NUM_AGENTS):
+            # 2-head action: column 0 = macro option, column 1 = round-1
+            # signal bit (issue #344 Option 2a / Option 4).
+            assert rollout.actions[i].shape == (ROLLOUT_STEPS, 2)
+            assert torch.isfinite(rollout.log_probs[i]).all()
+            assert torch.isfinite(rollout.values[i]).all()
+            assert torch.isfinite(rollout.rewards[i]).all()
+
+    def test_update_does_not_nan(self):
+        """A PPO update on a macro+two_phase rollout produces finite
+        gradients and no NaN losses."""
+        trainer = self._make_trainer()
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        metrics = trainer.update(rollout)
+        for key, value in metrics.items():
+            assert np.isfinite(value), (
+                f"metric {key}={value} is not finite in macro+two_phase update"
+            )
+
+    def test_simultaneous_macro_path_unchanged(self):
+        """Regression: when ``commitment_mode='simultaneous'`` the
+        ``_is_macro_two_phase`` flag is False and the trainer routes to
+        the legacy ``env.step()`` path — bit-identical to pre-#344
+        behavior for single-phase macro scenarios."""
+        import dataclasses
+
+        from bucket_brigade.envs.macro_action_env import MacroActionEnv
+        from bucket_brigade.envs.scenarios_generated import default_scenario
+
+        def _sim_macro_env_fn():
+            scenario = default_scenario(num_agents=NUM_AGENTS)
+            # Explicit simultaneous (the default).
+            scenario = dataclasses.replace(scenario, commitment_mode="simultaneous")
+            return MacroActionEnv(
+                BucketBrigadeEnv(scenario=scenario),
+                commit_steps=self._COMMIT_STEPS,
+            )
+
+        env = _sim_macro_env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        trainer = JointPPOTrainer(
+            env_fn=_sim_macro_env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            action_dims=[6],
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=2,
+            seed=0,
+        )
+        assert trainer._commitment_mode == "simultaneous"
+        assert trainer._is_macro_two_phase is False
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        for i in range(NUM_AGENTS):
+            assert torch.isfinite(rollout.rewards[i]).all()
+
+
 class TestAsymmetryAwareInit:
     """Issue #386: per-agent init seed offset (HetGPPO-style symmetry break).
 

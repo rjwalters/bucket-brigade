@@ -109,26 +109,19 @@ class MacroActionEnv:
                 f"discount_gamma must be None or in (0, 1]; got {discount_gamma}"
             )
 
-        # Issue #252: MacroActionEnv x two-phase commitment is out of
-        # scope for the v1 pilot. The macro-option translation already
-        # emits primitive ``[house, mode, signal]`` actions per base
-        # step; under two-phase the wrapper would need to also emit a
-        # deterministic round-1 signal per base step (e.g. always
-        # Uncommitted) and feed it through ``base_env.step_two_phase``.
-        # This is documented as a follow-up in the issue body; for now
-        # we gate with a clear NotImplementedError.
+        # Issue #344: MacroActionEnv x two-phase commitment is supported
+        # via :meth:`step_two_phase`, which loops the base env's
+        # ``step_two_phase`` for each of the ``commit_steps`` base steps
+        # inside the macro window. Caller passes per-base-step round-1
+        # signals (Option 2a from the architect's #344 ratification) so
+        # the deception channel survives at native per-night rate rather
+        # than throttling to 1/N (Option 1 / 2b). The single-phase
+        # :meth:`step` path is unchanged and raises a clear error on
+        # two-phase scenarios (caller must use ``step_two_phase``).
         base_commitment = getattr(
             getattr(base_env, "scenario", None), "commitment_mode", "simultaneous"
         )
-        if base_commitment == "two_phase":
-            raise NotImplementedError(
-                f"MacroActionEnv does not support commitment_mode="
-                f"{base_commitment!r} (issue #252). The macro-option "
-                f"translation needs to emit a round-1 signal per base "
-                f"step; this is deferred to a follow-up issue. Use the "
-                f"raw BucketBrigadeEnv with JointPPOTrainer's two-phase "
-                f"rollout path instead."
-            )
+        self._is_two_phase = base_commitment == "two_phase"
 
         self.base_env = base_env
         self.commit_steps = int(commit_steps)
@@ -188,23 +181,21 @@ class MacroActionEnv:
             number of base steps executed within the macro-step (``<=
             commit_steps``); ``info["primitive_actions"]`` is a list of
             the ``[N, 3]`` primitive arrays emitted (for tests/debug).
+
+        Raises:
+            RuntimeError: if the wrapped scenario uses
+                ``commitment_mode="two_phase"``. Callers must use
+                :meth:`step_two_phase` in that case (mirrors the base
+                env's guardrail).
         """
-        macro_actions = np.asarray(macro_actions)
-        if macro_actions.ndim == 2 and macro_actions.shape[1] == 1:
-            macro_actions = macro_actions[:, 0]
-        if macro_actions.ndim != 1 or macro_actions.shape[0] != self.num_agents:
-            raise ValueError(
-                f"macro_actions must have shape ({self.num_agents},) or "
-                f"({self.num_agents}, 1); got {macro_actions.shape}"
+        if self._is_two_phase:
+            raise RuntimeError(
+                "MacroActionEnv.step requires commitment_mode='simultaneous'; "
+                "the wrapped scenario uses 'two_phase'. Use "
+                "MacroActionEnv.step_two_phase(round1_signals, macro_actions) "
+                "instead (issue #344)."
             )
-        # Validate option indices.
-        bad = (macro_actions < 0) | (macro_actions >= self.num_options)
-        if bad.any():
-            raise ValueError(
-                f"macro_actions contains out-of-range option indices "
-                f"(num_options={self.num_options}): {macro_actions.tolist()}"
-            )
-        macro_actions = macro_actions.astype(np.int64)
+        macro_actions = self._validate_macro_actions(macro_actions)
 
         # Reset per-window REST_UNTIL_FIRE state for agents holding that option.
         # (Agents that are not running REST_UNTIL_FIRE this window will not
@@ -264,6 +255,160 @@ class MacroActionEnv:
         info_out["base_steps"] = base_steps_done
         info_out["primitive_actions"] = primitive_log
         return last_obs, accumulated_rewards, last_dones, info_out
+
+    def step_two_phase(
+        self,
+        round1_signals: np.ndarray,
+        macro_actions: np.ndarray,
+    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray, Dict]:
+        """Execute one macro-step under two-phase commitment (issue #344).
+
+        Implements **Option 2a** from the architect's #344 ratification:
+        the round-1 signal is sampled per base step inside the macro
+        window (NOT per macro window); the macro option is fixed for the
+        whole window. This preserves the deception channel at its native
+        per-night rate rather than throttling it to 1/``commit_steps``.
+
+        For each of the ``commit_steps`` base steps inside the window
+        the wrapper calls ``base_env.step_two_phase(r1_k, primitive_k)``
+        where ``r1_k`` is the caller-provided round-1 signal for base
+        step ``k`` and ``primitive_k`` is the macro option's translated
+        primitive ``[house, mode, signal]`` (same translation as the
+        single-phase path). The round-1 signal that the base env writes
+        into its observation is the CALLER-provided ``r1_k`` — the
+        macro's "honest mirror of mode" pattern only affects the round-2
+        signal column of the primitive, NOT the round-1 channel. This is
+        what keeps the deception channel open at per-night rate.
+
+        Args:
+            round1_signals: Per-base-step round-1 signals. Accepted
+                shapes:
+
+                - ``(commit_steps, num_agents)`` — Option 2a (fresh per
+                  base step). This is the trainer's default path.
+                - ``(num_agents,)`` — broadcast to all base steps inside
+                  the window (Option 2b; throttled deception channel).
+                  Accepted for direct callers / tests that don't care
+                  about within-window variation.
+
+                Dtype is coerced to ``int8``. Values must be in
+                ``{0, 1}`` (the base env clamps invalid values via
+                ``np.asarray.reshape`` so we don't re-validate here).
+            macro_actions: Integer array of shape ``(num_agents,)`` or
+                ``(num_agents, 1)``. Each entry is an option index in
+                ``[0, num_options)``.
+
+        Returns:
+            ``(obs, rewards, dones, info)`` matching :meth:`step`. The
+            ``info`` dict also carries ``info["round1_signals_used"]``,
+            a list of ``[num_agents]`` arrays of the round-1 signals
+            actually fed to the base env each base step (for tests).
+
+        Raises:
+            RuntimeError: if the wrapped scenario does NOT use
+                ``commitment_mode="two_phase"`` (callers must use
+                :meth:`step` in that case; mirrors the base env's
+                guardrail).
+            ValueError: if ``round1_signals`` has an unsupported shape
+                or ``macro_actions`` is malformed.
+        """
+        if not self._is_two_phase:
+            raise RuntimeError(
+                "MacroActionEnv.step_two_phase requires "
+                "commitment_mode='two_phase'; the wrapped scenario uses "
+                "'simultaneous'. Use MacroActionEnv.step instead."
+            )
+        macro_actions = self._validate_macro_actions(macro_actions)
+
+        # Validate / normalize round1_signals to shape (commit_steps, N).
+        r1 = np.asarray(round1_signals)
+        if r1.ndim == 1:
+            if r1.shape[0] != self.num_agents:
+                raise ValueError(
+                    f"1D round1_signals must have length num_agents="
+                    f"{self.num_agents}; got shape {r1.shape}"
+                )
+            # Broadcast a single signal vector across the commit window
+            # (Option 2b — throttled). Accepted for caller convenience.
+            r1 = np.broadcast_to(r1, (self.commit_steps, self.num_agents))
+        elif r1.ndim == 2:
+            if r1.shape != (self.commit_steps, self.num_agents):
+                raise ValueError(
+                    f"2D round1_signals must have shape "
+                    f"({self.commit_steps}, {self.num_agents}); got {r1.shape}"
+                )
+        else:
+            raise ValueError(
+                f"round1_signals must be 1D (num_agents,) or 2D "
+                f"(commit_steps, num_agents); got ndim={r1.ndim}"
+            )
+
+        # Reset per-window REST_UNTIL_FIRE state for agents holding that option.
+        self._fire_seen = np.zeros(self.num_agents, dtype=bool)
+
+        accumulated_rewards = np.zeros(self.num_agents, dtype=np.float32)
+        primitive_log: List[np.ndarray] = []
+        r1_log: List[np.ndarray] = []
+        base_steps_done = 0
+        last_obs: Optional[Dict[str, np.ndarray]] = None
+        last_dones: Optional[np.ndarray] = None
+        last_info: Dict = {}
+
+        for k in range(self.commit_steps):
+            # Mirror the single-phase REST_UNTIL_FIRE bookkeeping.
+            if np.any(self.base_env.houses == BucketBrigadeEnv.BURNING):
+                self._fire_seen[:] = True
+
+            primitive = self._build_primitive_actions(macro_actions)
+            primitive_log.append(primitive.copy())
+
+            r1_k = np.asarray(r1[k]).astype(np.int8)
+            r1_log.append(r1_k.copy())
+
+            obs, rewards, dones, info = self.base_env.step_two_phase(r1_k, primitive)
+
+            if self.discount_gamma is None:
+                accumulated_rewards += rewards.astype(np.float32)
+            else:
+                accumulated_rewards += (self.discount_gamma**k) * rewards.astype(
+                    np.float32
+                )
+
+            base_steps_done += 1
+            last_obs = obs
+            last_dones = dones
+            last_info = info
+
+            if np.any(obs["houses"] == BucketBrigadeEnv.BURNING):
+                self._fire_seen[:] = True
+
+            if bool(np.asarray(dones).any()):
+                break
+
+        assert last_obs is not None and last_dones is not None
+        info_out = dict(last_info)
+        info_out["base_steps"] = base_steps_done
+        info_out["primitive_actions"] = primitive_log
+        info_out["round1_signals_used"] = r1_log
+        return last_obs, accumulated_rewards, last_dones, info_out
+
+    def _validate_macro_actions(self, macro_actions: np.ndarray) -> np.ndarray:
+        """Normalize macro-action input to a ``(num_agents,)`` int64 array."""
+        macro_actions = np.asarray(macro_actions)
+        if macro_actions.ndim == 2 and macro_actions.shape[1] == 1:
+            macro_actions = macro_actions[:, 0]
+        if macro_actions.ndim != 1 or macro_actions.shape[0] != self.num_agents:
+            raise ValueError(
+                f"macro_actions must have shape ({self.num_agents},) or "
+                f"({self.num_agents}, 1); got {macro_actions.shape}"
+            )
+        bad = (macro_actions < 0) | (macro_actions >= self.num_options)
+        if bad.any():
+            raise ValueError(
+                f"macro_actions contains out-of-range option indices "
+                f"(num_options={self.num_options}): {macro_actions.tolist()}"
+            )
+        return macro_actions.astype(np.int64)
 
     # ------------------------------------------------------------------
     # Option -> primitive action translation
@@ -381,6 +526,31 @@ class MacroActionEnv:
     @property
     def signals(self) -> np.ndarray:
         return self.base_env.signals
+
+    def _get_observation(self) -> Dict[str, np.ndarray]:
+        """Pass-through to :meth:`BucketBrigadeEnv._get_observation`.
+
+        Issue #344: :class:`JointPPOTrainer` probes the env via
+        ``_get_observation()`` at construction time (to recover the
+        ``last_actions`` slot offsets in the flattened obs vector;
+        :mod:`joint_trainer` lines 670-690). The macro wrapper does not
+        rewrite obs, so the natural answer is the base env's obs.
+        """
+        return self.base_env._get_observation()
+
+    @property
+    def round1_signals(self) -> np.ndarray:
+        """Issue #344: two-phase round-1 signal channel pass-through.
+
+        Mirrors :attr:`BucketBrigadeEnv.round1_signals` so the trainer
+        and obs-builder code that probes the env directly work uniformly
+        across the wrapped and un-wrapped paths.
+        """
+        return self.base_env.round1_signals
+
+    @round1_signals.setter
+    def round1_signals(self, value: np.ndarray) -> None:
+        self.base_env.round1_signals = value
 
     @property
     def last_actions(self) -> np.ndarray:
