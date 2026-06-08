@@ -8,17 +8,42 @@ version = "0.1.0"
 description = "Multi-agent cooperation game and ranking engine"
 authors = [{name = "rjwalters", email = "rjwalters@users.noreply.github.com"}]
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9,<3.14"  # PyO3 0.22.6 (bucket-brigade-core) requires Python <=3.13
-dependencies = [
-"numpy>=1.26.0",
-"pandas>=2.0.0",
-"scikit-learn>=1.0.0",
-"scipy>=1.7.0",
-"typer>=0.4.0",
-"rich>=10.0.0",
-"tqdm>=4.64.0",
-"hatchling",
+keywords = ["multi-agent", "reinforcement-learning", "game-theory", "cooperation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+# Core dependencies — the minimum to `import bucket_brigade`, call
+# `make()` / `make_vec()`, run hand-coded baselines, and pull frozen
+# baseline artifacts from a local release directory. Heavy ML deps
+# (torch, optuna, tensorboard, ...) live under the `rl` extra; research
+# tooling (pandas, scikit-learn, plotly) under the `research` extra;
+# HuggingFace integration under the `huggingface` extra. See
+# `docs/RELEASE.md` for the distribution rationale (issue #373).
+dependencies = [
+    "numpy>=1.26.0",
+    "scipy>=1.7.0",
+    "gymnasium>=0.28.0",
+    "typer>=0.4.0",
+    "rich>=10.0.0",
+    "tqdm>=4.64.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/rjwalters/bucket-brigade"
+Documentation = "https://github.com/rjwalters/bucket-brigade/tree/main/docs"
+Repository = "https://github.com/rjwalters/bucket-brigade"
+Issues = "https://github.com/rjwalters/bucket-brigade/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -31,11 +56,40 @@ dev = [
 ]
 rl = [
     "torch>=2.0.0",
-    "gymnasium>=0.28.0",
     "tensorboard>=2.13.0",
     "psutil>=5.9.0",
     "optuna>=3.0.0",
     "plotly>=5.0.0",
+]
+# Tabular analysis tooling used by experiments/ and research_notebook/.
+# Not required to run the env or load frozen baselines.
+research = [
+    "pandas>=2.0.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+]
+# Optional integration for mirroring frozen baselines to HuggingFace
+# (see bucket_brigade/baselines/release/hub.py). Without this extra,
+# only the local-file path of the loader works; HF download/upload
+# raises ImportError with a hint pointing back here.
+huggingface = [
+    "huggingface_hub>=0.20.0",
+]
+# Convenience umbrella: everything except `dev`. Useful for one-shot
+# `pip install bucket-brigade[all]` on a research workstation.
+all = [
+    "bucket-brigade[rl,research,huggingface]",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["bucket_brigade"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "bucket_brigade",
+    "README.md",
+    "LICENSE",
+    "docs/RELEASE.md",
 ]
 
 [tool.setuptools.packages.find]
