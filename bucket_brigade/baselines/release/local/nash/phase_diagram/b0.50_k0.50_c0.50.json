@@ -1,0 +1,105 @@
+{
+  "scenario_id": "minimal_specialization-v1",
+  "algorithm": "heterogeneous_double_oracle",
+  "param_names": [
+    "honesty_bias",
+    "work_tendency",
+    "neighbor_help_bias",
+    "own_house_priority",
+    "risk_aversion",
+    "coordination_weight",
+    "exploration_rate",
+    "fatigue_memory",
+    "rest_reward_bias",
+    "altruism_factor"
+  ],
+  "team_payoff": -821.6789999999999,
+  "per_position_payoffs": [
+    -1020.2415,
+    -1033.0415,
+    -621.0415,
+    -612.3915
+  ],
+  "symmetric_profile": true,
+  "profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+  "iterations": 21,
+  "positions": [
+    {
+      "position": 0,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "position": 1,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "position": 2,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "position": 3,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.1,
+        0.5,
+        0.0,
+        0.9,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "source_parameters": {
+    "num_simulations": 1000,
+    "opt_simulations": 300,
+    "max_iterations": 25,
+    "epsilon": 50.0,
+    "num_restarts": 20,
+    "seed": 1051
+  },
+  "swept_parameters": {
+    "beta": 0.5,
+    "kappa": 0.5,
+    "c": 0.5
+  }
+}

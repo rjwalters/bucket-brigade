@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "release_version": "0.1.0",
+  "release_date": "2026-06-08",
+  "source_commit": "9adf1d3a",
+  "huggingface_repo": "rjwalters/bucket-brigade-baselines",
+  "artifacts": [
+    {
+      "kind": "archetype",
+      "name": "coordinator",
+      "filename": "archetypes/coordinator.json",
+      "scenario_id": null,
+      "sha256": "66550039ff039e3756879dc08e676324be48d3e596826eb0955c921725bace86",
+      "size_bytes": 445,
+      "notes": "Hand-coded archetype from bucket_brigade.agents.archetypes"
+    },
+    {
+      "kind": "archetype",
+      "name": "firefighter",
+      "filename": "archetypes/firefighter.json",
+      "scenario_id": null,
+      "sha256": "6258a3b763eabd0fc119d6c83277377622719effa82fb39453d6026c25e232f9",
+      "size_bytes": 444,
+      "notes": "Hand-coded archetype from bucket_brigade.agents.archetypes"
+    },
+    {
+      "kind": "archetype",
+      "name": "free_rider",
+      "filename": "archetypes/free_rider.json",
+      "scenario_id": null,
+      "sha256": "6807e06b415bb7a62555f736f2187481202e7b11f321868965ef1ef573b9adb0",
+      "size_bytes": 443,
+      "notes": "Hand-coded archetype from bucket_brigade.agents.archetypes"
+    },
+    {
+      "kind": "archetype",
+      "name": "hero",
+      "filename": "archetypes/hero.json",
+      "scenario_id": null,
+      "sha256": "e0e6b150ca543c77d78c73ff9a9b395ef3d67ec9c38f9546e3e3f430d518aefa",
+      "size_bytes": 437,
+      "notes": "Hand-coded archetype from bucket_brigade.agents.archetypes"
+    },
+    {
+      "kind": "archetype",
+      "name": "liar",
+      "filename": "archetypes/liar.json",
+      "scenario_id": null,
+      "sha256": "b8b63f3b26e12d9b06be9d55177186b7668c6e331882479d2c947251563abd9e",
+      "size_bytes": 437,
+      "notes": "Hand-coded archetype from bucket_brigade.agents.archetypes"
+    },
+    {
+      "kind": "nash",
+      "name": "minimal_specialization",
+      "filename": "nash/minimal_specialization-v1.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "1f2d773126ecdbf67320c2165fb95388e9eeb89e42b680bbaadc31e864030d8a",
+      "size_bytes": 1861,
+      "notes": "Best converged NE from experiments/nash/heterogeneous/minimal_specialization/results.json"
+    },
+    {
+      "kind": "nash",
+      "name": "rest_trap",
+      "filename": "nash/rest_trap-v1.json",
+      "scenario_id": "rest_trap-v1",
+      "sha256": "9cf9723579c1fddc1ed970935eba8fc493b2a2851c9d399298ea077707a9050c",
+      "size_bytes": 1960,
+      "notes": "Best converged NE from experiments/nash/heterogeneous/rest_trap/results.json"
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.50_c0.50",
+      "filename": "nash/phase_diagram/b0.50_k0.50_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "8f8f5357e6956988db59bfd0526fef4d319b5c6eb00aaf4a1351105383ffbc45",
+      "size_bytes": 1813,
+      "notes": "Phase-diagram cell b0.50_k0.50_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.90_c0.50",
+      "filename": "nash/phase_diagram/b0.50_k0.90_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "c8804d73c4f3c935dffb6ef3d40c1437f58655fd512cfad5bd83ecafc6a6aaa2",
+      "size_bytes": 1834,
+      "notes": "Phase-diagram cell b0.50_k0.90_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.50_c0.50",
+      "filename": "nash/phase_diagram/b0.90_k0.50_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "3793d230ac9fdec556d2385a60d73946ac6259acc874915b99d1db2b70ca1987",
+      "size_bytes": 1813,
+      "notes": "Phase-diagram cell b0.90_k0.50_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.90_c0.50",
+      "filename": "nash/phase_diagram/b0.90_k0.90_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "e24855c14bd8710972dd53358265606a689977d29291f6f86d71382f3b61b1ef",
+      "size_bytes": 1834,
+      "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point."
+    }
+  ],
+  "extra": {
+    "frozen_by": "bucket_brigade.baselines.release.freeze"
+  }
+}

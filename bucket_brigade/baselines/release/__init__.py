@@ -31,6 +31,15 @@ PyPI publish, HuggingFace upload).
 
 from __future__ import annotations
 
+from .loaders import (
+    list_archetypes,
+    list_nash_scenarios,
+    list_ppo_scenarios,
+    load_archetype,
+    load_nash,
+    load_nash_genomes,
+    load_ppo,
+)
 from .manifest import (
     DEFAULT_HUGGINGFACE_REPO,
     MANIFEST_FILENAME,
@@ -62,4 +71,12 @@ __all__ = [
     "release_path",
     "resolve_artifact_path",
     "iter_release_kinds",
+    # Loader API (#371)
+    "load_archetype",
+    "load_nash",
+    "load_nash_genomes",
+    "load_ppo",
+    "list_archetypes",
+    "list_nash_scenarios",
+    "list_ppo_scenarios",
 ]
