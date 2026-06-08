@@ -250,7 +250,11 @@ def _run_one_cell(
     )
 
     t0 = time.time()
-    equilibria = solver.solve()
+    # Pass cell_dir as the progress directory so the solver writes a
+    # per-restart checkpoint (restarts_progress.json) inside this cell's
+    # artifact dir. Resuming the script after a crash replays already-
+    # completed restarts and only runs the missing ones. See issue #388.
+    equilibria = solver.solve(progress_dir=cell_dir)
     elapsed = time.time() - t0
 
     converged = [e for e in equilibria if e.converged]
