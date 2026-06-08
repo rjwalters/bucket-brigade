@@ -198,6 +198,7 @@ KNOWN_TRAINERS=(
     macro_actions
     reinforce
     pbt
+    het_ppo
 )
 
 is_known_trainer() {
