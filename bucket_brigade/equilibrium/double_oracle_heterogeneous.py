@@ -26,8 +26,12 @@ entirely in Rust and accepts a different strategy vector per agent.
 
 from __future__ import annotations
 
+import json
+import os
+import tempfile
 import numpy as np
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 from multiprocessing import Pool, cpu_count
 from scipy.optimize import minimize
@@ -35,6 +39,13 @@ from scipy.optimize import minimize
 import bucket_brigade_core as core
 from bucket_brigade.envs.scenarios_generated import Scenario
 from bucket_brigade.equilibrium.payoff_evaluator_rust import _convert_scenario_to_rust
+
+
+# ---------------------------------------------------------------------------
+# Checkpoint file name (constant so callers can find / clean it up)
+# ---------------------------------------------------------------------------
+
+PROGRESS_FILENAME = "restarts_progress.json"
 
 
 # ---------------------------------------------------------------------------
@@ -293,12 +304,109 @@ class HeterogeneousDoubleOracle:
         )
 
     # ------------------------------------------------------------------
+    # Checkpoint (de)serialisation helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _eq_to_state(eq: HeterogeneousNashEquilibrium) -> dict:
+        """Serialise a single equilibrium result to plain JSON types."""
+        return {
+            "strategy_profile": [[float(v) for v in t] for t in eq.strategy_profile],
+            "payoffs": [float(p) for p in eq.payoffs],
+            "team_payoff": float(eq.team_payoff),
+            "iterations": int(eq.iterations),
+            "converged": bool(eq.converged),
+            "start_profile": [[float(v) for v in t] for t in eq.start_profile],
+        }
+
+    @staticmethod
+    def _eq_from_state(state: dict) -> HeterogeneousNashEquilibrium:
+        return HeterogeneousNashEquilibrium(
+            strategy_profile=[
+                np.asarray(t, dtype=float) for t in state["strategy_profile"]
+            ],
+            payoffs=[float(p) for p in state["payoffs"]],
+            team_payoff=float(state["team_payoff"]),
+            iterations=int(state["iterations"]),
+            converged=bool(state["converged"]),
+            start_profile=[np.asarray(t, dtype=float) for t in state["start_profile"]],
+        )
+
+    @staticmethod
+    def _atomic_write_json(path: Path, payload: dict) -> None:
+        """Write JSON atomically: write to temp file in same dir, then rename."""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # NamedTemporaryFile in the same directory guarantees same-filesystem
+        # rename, which is atomic on POSIX.
+        fd, tmp_path = tempfile.mkstemp(
+            prefix=path.name + ".", suffix=".tmp", dir=str(path.parent)
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(payload, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
+        except Exception:
+            # Clean up the temp file if anything goes wrong before the rename.
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+
+    def _write_progress(
+        self,
+        progress_path: Path,
+        completed_restarts: list[int],
+        equilibria: list[HeterogeneousNashEquilibrium],
+        strategy_pool: list[np.ndarray],
+    ) -> None:
+        """Persist a per-restart checkpoint atomically."""
+        if equilibria:
+            best_idx_local = max(
+                range(len(equilibria)), key=lambda i: equilibria[i].team_payoff
+            )
+            best_so_far = {
+                "restart_idx": int(completed_restarts[best_idx_local]),
+                "team_payoff": float(equilibria[best_idx_local].team_payoff),
+                "converged": bool(equilibria[best_idx_local].converged),
+            }
+        else:
+            best_so_far = None
+
+        payload = {
+            "schema_version": 1,
+            "num_restarts_target": int(self.num_restarts),
+            "completed_restarts": [int(i) for i in completed_restarts],
+            "equilibria": [self._eq_to_state(e) for e in equilibria],
+            "strategy_pool": [[float(v) for v in s] for s in strategy_pool],
+            "best_so_far": best_so_far,
+        }
+        self._atomic_write_json(progress_path, payload)
+
+    @staticmethod
+    def _read_progress(progress_path: Path) -> Optional[dict]:
+        """Load a checkpoint, or return None if missing / unreadable."""
+        if not progress_path.exists():
+            return None
+        try:
+            with open(progress_path) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            # A corrupt or partially-written checkpoint should not crash the
+            # solver; treat it as "no checkpoint" and start fresh.
+            return None
+
+    # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
     def solve(
         self,
         initial_pool: Optional[list[np.ndarray]] = None,
+        progress_dir: Optional[Path] = None,
     ) -> list[HeterogeneousNashEquilibrium]:
         """
         Find asymmetric Nash equilibria from multiple random starting profiles.
@@ -306,6 +414,18 @@ class HeterogeneousDoubleOracle:
         Returns a list of HeterogeneousNashEquilibrium objects — one per
         restart.  Converged entries are epsilon-Nash equilibria; non-converged
         entries are the best profile found within max_iterations rounds.
+
+        Parameters
+        ----------
+        initial_pool : optional list of seed strategies. Defaults to the five
+            archetype parameter vectors.
+        progress_dir : optional directory in which to write
+            ``restarts_progress.json`` after each completed restart. If the
+            file already exists in this directory, the already-completed
+            restart indices are skipped and their stored equilibria are
+            replayed verbatim into the result list. When ``None`` (the
+            default) no checkpoint file is written or read — exactly the
+            historical behaviour. See issue #388.
         """
         from bucket_brigade.agents.archetypes import (
             FIREFIGHTER_PARAMS,
@@ -315,7 +435,40 @@ class HeterogeneousDoubleOracle:
             LIAR_PARAMS,
         )
 
-        if initial_pool is None:
+        archetype_names = ["FF", "FR", "Hero", "Coord", "Liar"]
+
+        # ----- Resume from checkpoint, if requested and present -----
+        progress_path: Optional[Path] = None
+        completed_restarts: list[int] = []
+        results: list[HeterogeneousNashEquilibrium] = []
+        resumed_pool: Optional[list[np.ndarray]] = None
+
+        if progress_dir is not None:
+            progress_dir = Path(progress_dir)
+            progress_dir.mkdir(parents=True, exist_ok=True)
+            progress_path = progress_dir / PROGRESS_FILENAME
+            existing = self._read_progress(progress_path)
+            if existing is not None:
+                completed_restarts = [
+                    int(i) for i in existing.get("completed_restarts", [])
+                ]
+                results = [
+                    self._eq_from_state(s) for s in existing.get("equilibria", [])
+                ]
+                pool_state = existing.get("strategy_pool")
+                if pool_state:
+                    resumed_pool = [np.asarray(s, dtype=float) for s in pool_state]
+                if self.verbose and completed_restarts:
+                    print(
+                        f"[checkpoint] resuming from {progress_path}: "
+                        f"{len(completed_restarts)}/{self.num_restarts} restarts already complete",
+                        flush=True,
+                    )
+
+        # ----- Initial strategy pool -----
+        if resumed_pool is not None:
+            strategy_pool = resumed_pool
+        elif initial_pool is None:
             strategy_pool = [
                 FIREFIGHTER_PARAMS.copy(),
                 FREE_RIDER_PARAMS.copy(),
@@ -326,11 +479,36 @@ class HeterogeneousDoubleOracle:
         else:
             strategy_pool = [s.copy() for s in initial_pool]
 
-        archetype_names = ["FF", "FR", "Hero", "Coord", "Liar"]
+        completed_set = set(completed_restarts)
 
-        results: list[HeterogeneousNashEquilibrium] = []
+        # When checkpointing is enabled we use a deterministic per-restart
+        # seed derived from (self.seed, restart_idx) instead of the shared
+        # self._rng. This makes a resumed run produce the same equilibria as
+        # an uninterrupted run with the same progress_dir, regardless of how
+        # many restarts had completed before the interruption. When
+        # progress_dir is None we preserve the historical RNG-sharing
+        # behaviour byte-for-byte (existing tests depend on it).
+        use_deterministic_per_restart = progress_dir is not None
+        base_seed = self.seed if self.seed is not None else 0
 
         for restart_idx in range(self.num_restarts):
+            if restart_idx in completed_set:
+                if self.verbose:
+                    print(
+                        f"[checkpoint] skipping restart {restart_idx + 1}/{self.num_restarts} "
+                        f"(already complete)",
+                        flush=True,
+                    )
+                continue
+
+            if use_deterministic_per_restart:
+                # Derived seed is stable across resume; high-entropy mix so
+                # adjacent restart indices don't get correlated streams.
+                restart_seed = (
+                    base_seed * 2654435761 + restart_idx * 40503
+                ) & 0x7FFFFFFF
+                self._rng = np.random.RandomState(restart_seed)
+
             # Sample 4 strategies from the current pool (may include BRs from
             # earlier restarts — pool grows during the run)
             n_pool = len(strategy_pool)
@@ -351,6 +529,7 @@ class HeterogeneousDoubleOracle:
 
             eq = self._run_restart(initial_profile, strategy_pool, restart_idx)
             results.append(eq)
+            completed_restarts.append(restart_idx)
 
             if self.verbose:
                 status = "CONVERGED" if eq.converged else "MAX_ITER"
@@ -358,6 +537,16 @@ class HeterogeneousDoubleOracle:
                     f"  → {status} in {eq.iterations} rounds, "
                     f"team_payoff={eq.team_payoff:.1f}",
                     flush=True,
+                )
+
+            # Persist progress after each completed restart so a crash here
+            # costs at most one restart of work.
+            if progress_path is not None:
+                self._write_progress(
+                    progress_path,
+                    completed_restarts,
+                    results,
+                    strategy_pool,
                 )
 
         return results
