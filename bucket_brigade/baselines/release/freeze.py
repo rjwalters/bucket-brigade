@@ -64,7 +64,7 @@ import argparse
 import datetime
 import hashlib
 import json
-import subprocess
+import subprocess  # nosec B404 (only used to stamp manifest with git short SHA; argv is hardcoded)
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -151,7 +151,7 @@ def _git_short_sha(repo_root: Path) -> str:
     produced it.
     """
     try:
-        out = subprocess.run(
+        out = subprocess.run(  # nosec B603 B607 (git rev-parse — argv is hardcoded, not user input)
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=str(repo_root),
             check=True,
