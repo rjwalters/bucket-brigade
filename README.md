@@ -43,6 +43,30 @@ pnpm install
 pnpm run dev   # http://localhost:5173
 ```
 
+### Five-minute "try it" — Gymnasium env
+
+The library ships a Gymnasium-compatible `make()` keyed on **versioned
+scenario IDs** (e.g. `minimal_specialization-v1`) so every paper result
+is reproducible by ID:
+
+```python
+import bucket_brigade
+
+print(bucket_brigade.list_envs())
+# ['chain_reaction-v1', 'default-v1', 'minimal_specialization-v1', ...]
+
+env = bucket_brigade.make("minimal_specialization-v1")
+obs, info = env.reset(seed=0)
+obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
+
+# Batched / vectorized:
+vec = bucket_brigade.make_vec("minimal_specialization-v1", num_envs=8)
+```
+
+Full env API reference (observation/action layout, registry policy,
+vectorized wrapper): [docs/ENV.md](docs/ENV.md). Formal mathematical
+spec from the paper: [paper/anvil_memo.env_spec.1/env_spec.md](paper/anvil_memo.env_spec.1/env_spec.md).
+
 Run a game, a batch, or Nash analysis:
 
 ```bash
@@ -58,6 +82,12 @@ uv run python -m experiments.p3_specialization.train --num-iterations 100 --roll
 ```
 
 See [docs/TRAINING_GUIDE.md](docs/TRAINING_GUIDE.md) for the full training workflow.
+
+### Paper artifacts
+
+For one-line reproduction commands per paper figure, ship-ready artifact
+paths, and the heterogeneous-Nash + phase-diagram + specialist
+exploitability writeups: [docs/PAPER_RESULTS.md](docs/PAPER_RESULTS.md).
 
 ## Repo layout
 
