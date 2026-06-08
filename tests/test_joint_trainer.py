@@ -1365,3 +1365,167 @@ class TestCommitmentModeTwoPhase:
             include_round1_signals=False,
         ).shape[0]
         assert with_r1 == without_r1 + NUM_AGENTS
+
+
+class TestAsymmetryAwareInit:
+    """Issue #386: per-agent init seed offset (HetGPPO-style symmetry break).
+
+    The trainer's ``per_agent_init_seed_offset`` knob reseeds the global
+    torch RNG to ``seed + i * offset`` before each :class:`PolicyNetwork`
+    is constructed. This produces maximally-distinct per-position parameter
+    inits — the symmetry-break that asymmetric_only phase-diagram cells
+    (e.g. rest_trap) need to converge to per-position-distinct equilibria.
+
+    Default (``None``) preserves bit-identical legacy single-stream init.
+    """
+
+    def _trainer(
+        self, *, seed: int = 0, per_agent_init_seed_offset=None
+    ) -> JointPPOTrainer:
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        return JointPPOTrainer(
+            env_fn=_env_fn,
+            num_agents=NUM_AGENTS,
+            obs_dim=obs_dim,
+            action_dims=ACTION_DIMS,
+            hidden_size=16,
+            minibatch_size=32,
+            ppo_epochs=1,
+            seed=seed,
+            per_agent_init_seed_offset=per_agent_init_seed_offset,
+        )
+
+    @staticmethod
+    def _param_signature(policy) -> torch.Tensor:
+        """Concatenate all flattened policy params into a single 1-D tensor."""
+        return torch.cat([p.detach().flatten() for p in policy.parameters()])
+
+    def test_default_none_preserves_legacy_init(self):
+        """``per_agent_init_seed_offset=None`` (default) is bit-identical
+        to constructing without the kwarg at all — the legacy single-stream
+        init path is unchanged."""
+        t_default = self._trainer(seed=42)
+        t_explicit_none = self._trainer(seed=42, per_agent_init_seed_offset=None)
+        for i in range(NUM_AGENTS):
+            sig_a = self._param_signature(t_default.policies[i])
+            sig_b = self._param_signature(t_explicit_none.policies[i])
+            assert torch.allclose(sig_a, sig_b, atol=0.0), (
+                f"agent {i}: explicit None changed init — the default-None "
+                "path must be a true no-op"
+            )
+
+    def test_offset_produces_distinct_per_agent_params(self):
+        """With the offset on, every pair of agents has visibly different
+        parameter tensors (not just different identity tails in obs)."""
+        trainer = self._trainer(seed=42, per_agent_init_seed_offset=1000)
+        sigs = [self._param_signature(p) for p in trainer.policies]
+        for i in range(NUM_AGENTS):
+            for j in range(i + 1, NUM_AGENTS):
+                # L2 distance over flattened params; with disjoint RNG
+                # streams these should be O(1) units apart, well above
+                # any floating-point tolerance.
+                dist = float((sigs[i] - sigs[j]).norm().item())
+                assert dist > 1.0, (
+                    f"agents {i} and {j} have param distance {dist:.6f} — "
+                    "per-agent seed offset did not break init symmetry "
+                    "(expected at least ~1.0 between disjoint RNG streams)"
+                )
+
+    def test_offset_init_is_reproducible(self):
+        """Two trainers built with the same (seed, offset) pair must
+        produce bit-identical per-agent params. Reproducibility is the
+        whole point of the knob — it must not depend on hidden RNG state."""
+        t1 = self._trainer(seed=7, per_agent_init_seed_offset=1000)
+        t2 = self._trainer(seed=7, per_agent_init_seed_offset=1000)
+        for i in range(NUM_AGENTS):
+            sig_a = self._param_signature(t1.policies[i])
+            sig_b = self._param_signature(t2.policies[i])
+            assert torch.allclose(sig_a, sig_b, atol=0.0), (
+                f"agent {i}: same (seed, offset) produced different params — "
+                "the offset path is not reproducible"
+            )
+
+    def test_offset_changes_init_vs_default(self):
+        """Same ``seed`` with offset on vs off produces at least one agent
+        whose params differ. (Legacy single-stream still produces distinct
+        per-agent params via sequential RNG consumption, but the *first*
+        agent always reads the same prefix of the stream, so it is the
+        agents with i > 0 that are guaranteed to shift.)"""
+        t_off = self._trainer(seed=99, per_agent_init_seed_offset=None)
+        t_on = self._trainer(seed=99, per_agent_init_seed_offset=1000)
+        any_diff = False
+        for i in range(NUM_AGENTS):
+            sig_off = self._param_signature(t_off.policies[i])
+            sig_on = self._param_signature(t_on.policies[i])
+            if not torch.allclose(sig_off, sig_on, atol=0.0):
+                any_diff = True
+                break
+        assert any_diff, (
+            "no agent's init changed between offset=None and offset=1000 — "
+            "the offset path is silently a no-op"
+        )
+
+    def test_offset_requires_seed(self):
+        """``per_agent_init_seed_offset`` without an explicit ``seed`` is
+        a misconfiguration: offsetting a non-deterministic seed yields a
+        non-reproducible trainer. Surface the error at construction."""
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        with pytest.raises(ValueError, match="seed"):
+            JointPPOTrainer(
+                env_fn=_env_fn,
+                num_agents=NUM_AGENTS,
+                obs_dim=obs_dim,
+                action_dims=ACTION_DIMS,
+                hidden_size=16,
+                seed=None,
+                per_agent_init_seed_offset=1000,
+            )
+
+    def test_offset_rejects_non_positive(self):
+        """Offset must be a positive integer. Zero or negative values are
+        misconfigurations (zero gives all agents the same seed; negative
+        is meaningless)."""
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        for bad in (0, -1, -1000):
+            with pytest.raises(ValueError, match="must be > 0"):
+                JointPPOTrainer(
+                    env_fn=_env_fn,
+                    num_agents=NUM_AGENTS,
+                    obs_dim=obs_dim,
+                    action_dims=ACTION_DIMS,
+                    hidden_size=16,
+                    seed=0,
+                    per_agent_init_seed_offset=bad,
+                )
+
+    def test_offset_rejects_non_int(self):
+        env = _env_fn()
+        obs = env.reset(seed=0)
+        obs_dim = flatten_dict_obs(obs, agent_id=0, num_agents=NUM_AGENTS).shape[0]
+        with pytest.raises(TypeError, match="must be an int"):
+            JointPPOTrainer(
+                env_fn=_env_fn,
+                num_agents=NUM_AGENTS,
+                obs_dim=obs_dim,
+                action_dims=ACTION_DIMS,
+                hidden_size=16,
+                seed=0,
+                per_agent_init_seed_offset=1.5,  # type: ignore[arg-type]
+            )
+
+    def test_offset_trainer_runs_one_update(self):
+        """Smoke test: a trainer with the offset on still completes a full
+        collect_rollout + update cycle with finite losses. Catches any
+        subtle wiring break (e.g. accidentally re-initializing the
+        optimizers off the wrong policy params)."""
+        trainer = self._trainer(seed=11, per_agent_init_seed_offset=1000)
+        rollout = trainer.collect_rollout(ROLLOUT_STEPS)
+        stats = trainer.update(rollout)
+        for k, v in stats.items():
+            assert np.isfinite(v), f"non-finite stat {k}={v} under het_ppo init"

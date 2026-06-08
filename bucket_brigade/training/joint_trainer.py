@@ -289,6 +289,29 @@ class JointPPOTrainer:
             estimate the counterfactual marginal
             ``E_{a'_i ~ pi_i} [pi_j(. | obs_j_cf(a'_i))]``. Default 4
             matches the Jaques paper. Ignored when ``influence_coef == 0``.
+        per_agent_init_seed_offset: Issue #386 — asymmetry-aware ("HetGPPO"
+            style) init. When ``None`` (default), the legacy code path is
+            preserved bit-for-bit: ``torch.manual_seed(seed)`` is called once
+            and all N :class:`PolicyNetwork` instances are constructed off
+            the same RNG stream — they end up with *different* parameter
+            tensors (each ``nn.Linear`` consumes RNG state in order) but
+            their starting points are correlated through that shared stream.
+            When set to a positive integer ``K``, each agent ``i`` is
+            initialized under its own seed ``seed + i * K`` so per-position
+            policies start from maximally-distinct random inits. This is the
+            architectural commitment to per-position parameter heterogeneity
+            that HetGPPO (Bettini et al. AAMAS 2023, arXiv:2301.07137)
+            recommends as the simplest "drop parameter sharing" baseline:
+            the trainer *already* maintains N independent policies + N
+            independent optimizers (see ``self.policies`` and
+            ``self.optimizers`` below), but a shared RNG stream at init can
+            still bias the basin found by SGD. ``per_agent_init_seed_offset``
+            forces the basin choice to be position-dependent from step 0 by
+            removing the shared-stream coupling. Requires ``seed is not None``
+            — raises ``ValueError`` otherwise (offsetting a non-deterministic
+            seed produces a non-reproducible trainer). Recommended value:
+            ``1000`` (large enough that the per-agent RNG streams do not
+            overlap for any reasonable ``num_agents``).
     """
 
     def __init__(
@@ -320,6 +343,7 @@ class JointPPOTrainer:
         hindsight_ratio_clip: float = 10.0,
         influence_coef: float = 0.0,
         influence_mc_samples: int = 4,
+        per_agent_init_seed_offset: Optional[int] = None,
         obs_auditor: Optional[ObsAuditor] = None,
     ):
         self.env_fn = env_fn
@@ -455,20 +479,68 @@ class JointPPOTrainer:
 
         self.device = torch.device(device)
 
+        # Issue #386 — asymmetry-aware ("HetGPPO") init. Validate the
+        # offset knob before consuming RNG state so a misconfigured cell
+        # fails fast (rather than silently producing a non-reproducible
+        # trainer that happens to "work" on the first seed). Stored on
+        # ``self`` so downstream code paths (e.g. tests, save/load) can
+        # surface the configuration.
+        if per_agent_init_seed_offset is not None:
+            if seed is None:
+                raise ValueError(
+                    "per_agent_init_seed_offset requires seed to be set: "
+                    "offsetting a non-deterministic seed produces a "
+                    "non-reproducible trainer. Pass seed=<int> alongside."
+                )
+            if not isinstance(per_agent_init_seed_offset, int):
+                raise TypeError(
+                    "per_agent_init_seed_offset must be an int, got "
+                    f"{type(per_agent_init_seed_offset).__name__}"
+                )
+            if per_agent_init_seed_offset <= 0:
+                raise ValueError(
+                    "per_agent_init_seed_offset must be > 0, got "
+                    f"{per_agent_init_seed_offset!r}. Use None to disable."
+                )
+        self.per_agent_init_seed_offset = per_agent_init_seed_offset
+
         if seed is not None:
             torch.manual_seed(seed)
             np.random.seed(seed)
 
-        self.policies = nn.ModuleList(
-            [
-                PolicyNetwork(
-                    obs_dim=obs_dim,
-                    action_dims=action_dims,
-                    hidden_size=hidden_size,
+        # Issue #386: when ``per_agent_init_seed_offset`` is set, reseed the
+        # global torch RNG to ``seed + i * offset`` *before* each policy is
+        # constructed so the per-position parameter draws are independent.
+        # When ``None`` (default), this loop preserves the legacy single-
+        # stream behavior bit-for-bit (one shared RNG state across all N
+        # PolicyNetwork constructions).
+        if per_agent_init_seed_offset is None:
+            self.policies = nn.ModuleList(
+                [
+                    PolicyNetwork(
+                        obs_dim=obs_dim,
+                        action_dims=action_dims,
+                        hidden_size=hidden_size,
+                    )
+                    for _ in range(num_agents)
+                ]
+            ).to(self.device)
+        else:
+            policy_list: List[PolicyNetwork] = []
+            for i in range(num_agents):
+                agent_seed = int(seed) + i * int(per_agent_init_seed_offset)
+                torch.manual_seed(agent_seed)
+                policy_list.append(
+                    PolicyNetwork(
+                        obs_dim=obs_dim,
+                        action_dims=action_dims,
+                        hidden_size=hidden_size,
+                    )
                 )
-                for _ in range(num_agents)
-            ]
-        ).to(self.device)
+            self.policies = nn.ModuleList(policy_list).to(self.device)
+            # Restore the global RNG to the original seed-derived stream so
+            # downstream init (centralized critic, HCA, etc.) is unaffected.
+            torch.manual_seed(int(seed))
 
         # Per-agent optimizers. Each only updates its own params, but
         # ``total_loss.backward()`` is called once across all of them so the

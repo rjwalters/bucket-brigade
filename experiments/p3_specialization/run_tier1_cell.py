@@ -203,6 +203,18 @@ TRAINERS: dict[str, TrainerSpec] = {
         description="Independent PPO baseline (--algorithm ppo, no extras).",
         train_extra=("--algorithm", "ppo"),
     ),
+    "het_ppo": TrainerSpec(
+        name="het_ppo",
+        description=(
+            "HetGPPO-style asymmetry-aware PPO (issue #386): IPPO with "
+            "--per-agent-init-seed-offset 1000 so each per-position policy "
+            "is initialized from a maximally-distinct RNG stream. Designed "
+            "for asymmetric_only phase-diagram cells (e.g. rest_trap) where "
+            "the Nash equilibrium is per-position-distinct and shared-stream "
+            "init can trap SGD in a symmetric basin."
+        ),
+        train_extra=("--algorithm", "ppo", "--per-agent-init-seed-offset", "1000"),
+    ),
     "mappo": TrainerSpec(
         name="mappo",
         description="MAPPO: centralized critic, decentralized actors.",
