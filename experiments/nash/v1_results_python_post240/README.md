@@ -10,7 +10,9 @@ landed in PR #245 (issue #240).
 `equilibrium.json` write step on 2026-05-16, almost certainly the
 ENOSPC-on-write incident documented in #269 (now fixed by the
 `df`-precheck in PR #315). Re-running `rest_trap` alone is cheap and is
-left as a follow-up.
+tracked by issue #349 — see [`RERUN_RUNBOOK.md`](./RERUN_RUNBOOK.md) and
+[`experiments/scripts/launch_rest_trap_rerun.sh`](../../scripts/launch_rest_trap_rerun.sh)
+for the operator launch procedure.
 
 Sweep was launched in tmux session `nash256` on `COMPUTE_HOST_PRIMARY`
 (Mac Studio, M-series; ~16 performance cores) as part of issue #256.
