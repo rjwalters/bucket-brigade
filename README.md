@@ -27,13 +27,16 @@ The full rules live in [docs/game_mechanics.md](docs/game_mechanics.md). Design 
 
 ## Quickstart
 
-### As an end-user (env + frozen baselines only)
+### As an end-user (env + frozen baselines)
 
-The lightweight install — pure Python, no Rust toolchain, no GPU stack
-— suitable for reproducing paper results from a notebook:
+Once on PyPI a single `pip install` ships everything: the Python env,
+the frozen-baseline loader, and a per-platform pre-built Rust speedup
+wheel (issue #404 — no manual Rust toolchain step required):
 
 ```bash
 # Not yet on PyPI; install from the GitHub repo until the paper lands.
+# Source install requires a Rust toolchain to compile the bucket-brigade-core
+# dep — `pip install bucket-brigade` from PyPI uses the pre-built wheel.
 pip install "git+https://github.com/rjwalters/bucket-brigade.git"
 
 python -c "
@@ -47,7 +50,8 @@ print(env, obs.shape)
 Optional install extras: `pip install '<spec>[rl]'` for PPO training,
 `[research]` for pandas/matplotlib analysis, `[huggingface]` for the
 frozen-baselines downloader, `[all]` for everything. See
-[docs/RELEASE.md](docs/RELEASE.md) for the full distribution layout.
+[docs/RELEASE.md](docs/RELEASE.md) for the full distribution layout
+and the cibuildwheel build matrix.
 
 ### As a developer (full repo)
 
@@ -59,7 +63,8 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 # Python deps
 uv sync
 
-# Rust core (required for performant work — gives ~100x speedup)
+# Build the Rust core into the dev venv (release mode, ~100x speedup).
+# Needed for live development — end users get a pre-built wheel via pip.
 cd bucket-brigade-core && ./build.sh && cd ..
 
 # Frontend deps + dev server
