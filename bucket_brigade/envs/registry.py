@@ -76,6 +76,7 @@ from .scenarios_generated import (
     minimal_specialization_scenario,
     mixed_motivation_scenario,
     overcrowding_scenario,
+    positional_default_scenario,
     rest_trap_scenario,
     sparse_heroics_scenario,
     trivial_cooperation_scenario,
@@ -137,6 +138,9 @@ SCENARIO_VERSIONS: Dict[str, _ScenarioFactory] = {
     "minimal_specialization-v1": minimal_specialization_scenario,
     # 2-house topology for PPO learnability diagnostics (#254).
     "v2_minimal-v1": v2_minimal_scenario,
+    # Positional-reward variant of default — frozen baseline for PPO
+    # training (#384) and frozen-baseline release manifest (#371). See #403.
+    "positional_default-v1": positional_default_scenario,
 }
 
 

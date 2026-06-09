@@ -59,6 +59,7 @@ for the full version-bump policy and the live registry table.
 | `mixed_motivation-v1` | Mixed individual + team incentives |
 | `minimal_specialization-v1` | P3 specialization diagnostic — symmetric all-Hero NE ([see PAPER_RESULTS.md](PAPER_RESULTS.md#3-heterogeneous-nash-equilibria)) |
 | `v2_minimal-v1` | 2-house topology, PPO learnability diagnostic (#254) |
+| `positional_default-v1` | Positional-reward variant of `default` — PPO baseline (#384) + frozen-baseline release (#371) |
 
 `bucket_brigade.list_envs()` returns the live sorted list. The default
 number of agents for every frozen ID is **4**
