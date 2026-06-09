@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "thread": "ne_structure",
+  "phases": {
+    "draft": {
+      "state": "done",
+      "started": "2026-06-08T00:00:00Z",
+      "completed": "2026-06-08T00:00:00Z"
+    }
+  },
+  "metadata": {
+    "iteration": 1,
+    "max_iterations": 4,
+    "artifact_type": "descriptive-thesis",
+    "issue": "rjwalters/bucket-brigade#359",
+    "target_length_resolved": {
+      "source": "default",
+      "min_words": 3000,
+      "max_words": 5000
+    }
+  }
+}
