@@ -453,17 +453,15 @@ def test_launcher_trainer_name_matches_driver() -> None:
     """The launcher hardcodes ``--trainer ippo``. If the driver renames
     or removes the ippo entry from TRAINERS, the launcher silently
     produces a command that will error out on the remote host. Catch
-    drift here, locally, before consuming compute."""
-    out = subprocess.run(
-        [
-            "python",
-            "-c",
-            (
-                "import sys; sys.path.insert(0, '.'); "
-                "from experiments.p3_specialization.run_tier1_cell import TRAINERS; "
-                "print('ippo' if 'ippo' in TRAINERS else 'MISSING')"
-            ),
-        ],
+    drift here, locally, before consuming compute.
+
+    Uses the same ``--list-trainers`` introspection surface that the Tier-1
+    launcher consumes for its trainer-set validation (issue #405) so both
+    launchers exercise the same canonical contract.
+    """
+    driver = REPO_ROOT / "experiments" / "p3_specialization" / "run_tier1_cell.py"
+    out = subprocess.run(  # nosec B603 B607 (argv is hardcoded, no shell)
+        ["python", str(driver), "--list-trainers"],
         cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
@@ -471,10 +469,12 @@ def test_launcher_trainer_name_matches_driver() -> None:
     )
     if out.returncode != 0:
         pytest.skip(
-            f"cannot import run_tier1_cell.TRAINERS in test env "
+            f"cannot invoke run_tier1_cell.py --list-trainers in test env "
             f"(stderr: {out.stderr.strip()}); skipping drift check"
         )
-    assert out.stdout.strip() == "ippo", (
-        "launcher hardcodes --trainer ippo but driver does not expose it. "
-        "Either restore the ippo entry in TRAINERS or update the launcher."
+    trainers = {line.strip() for line in out.stdout.splitlines() if line.strip()}
+    assert "ippo" in trainers, (
+        "launcher hardcodes --trainer ippo but driver does not expose it via "
+        "--list-trainers. Either restore the ippo entry in TRAINERS or "
+        "update the launcher."
     )

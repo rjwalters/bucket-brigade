@@ -673,9 +673,13 @@ def run_cell(
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
+    # ``--trainer`` is required for the normal dispatch path, but the
+    # ``--list-trainers`` introspection short-circuit (used by operator-launch
+    # shell wrappers to source the trainer set without duplicating it) does
+    # not need it. We therefore mark ``--trainer`` as not-required at the
+    # argparse layer and enforce its presence below, after the short-circuit.
     p.add_argument(
         "--trainer",
-        required=True,
         choices=sorted(TRAINERS),
         help="Trainer name (one of the #343 matrix arms).",
     )
@@ -704,7 +708,28 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Skip the disk-space precheck (use for tests).",
     )
+    p.add_argument(
+        "--list-trainers",
+        action="store_true",
+        help=(
+            "Print the known trainer names (one per line) to stdout and exit. "
+            "Used by the operator-launch shell wrappers (e.g. "
+            "launch_tier1_sweep.sh) to validate operator-supplied trainer "
+            "names against this dispatch table without duplicating it."
+        ),
+    )
     args = p.parse_args(argv)
+
+    # Introspection short-circuit: print the known trainer names and exit.
+    # Consumed by the operator-launch shell wrappers so they can fail-fast on
+    # a typo against the canonical TRAINERS dict instead of a hand-maintained
+    # duplicate (issue #405).
+    if args.list_trainers:
+        print("\n".join(sorted(TRAINERS)))
+        return 0
+
+    if args.trainer is None:
+        p.error("the following arguments are required: --trainer")
 
     summary = run_cell(
         trainer=args.trainer,
