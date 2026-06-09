@@ -64,6 +64,7 @@ sys.path.insert(0, str(_LIB))
 from project_brief import (  # noqa: E402
     ArtifactType,
     BriefDocument,
+    DEFAULT_MAX_ITERATIONS,
     ProjectBrief,
     REGISTERED_ARTIFACT_TYPES,
     TargetLengthRange,
@@ -929,6 +930,576 @@ class TestUnknownDocumentKeys(_TmpProjectBase):
             load_project_brief_strict(self.project_dir)
         msg = str(cm.exception)
         self.assertIn("max_iterations", msg)
+
+
+# ---------------------------------------------------------------------------
+# Per-document render_engine override (issue #320)
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentRenderEngine(_TmpProjectBase):
+    """Per-document ``render_engine`` knob (issue #320).
+
+    The BRIEF parser enforces a closed allowlist of three values
+    (``"weasyprint"``, ``"xelatex"``, ``"wkhtmltopdf"``). The actual
+    runtime fallthrough (requested-but-unavailable-on-PATH) lives in
+    ``anvil.lib.render_gate._select_memo_engine`` — these tests pin
+    the parse-time contract only.
+    """
+
+    def test_brief_document_accepts_render_engine_weasyprint(self) -> None:
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: weasyprint
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(len(brief.documents), 1)
+        self.assertEqual(brief.documents[0].render_engine, "weasyprint")
+
+    def test_brief_document_accepts_render_engine_xelatex(self) -> None:
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: xelatex
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(brief.documents[0].render_engine, "xelatex")
+
+    def test_brief_document_accepts_render_engine_wkhtmltopdf(self) -> None:
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: wkhtmltopdf
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(brief.documents[0].render_engine, "wkhtmltopdf")
+
+    def test_brief_document_rejects_invalid_render_engine(self) -> None:
+        """Unknown engine value → ``ValueError`` listing the valid set."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: foo
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        # Error must name the offending value AND surface the valid set
+        # so the operator can self-correct without reading source.
+        self.assertIn("render_engine", msg)
+        self.assertIn("foo", msg)
+        self.assertIn("weasyprint", msg)
+        self.assertIn("xelatex", msg)
+        self.assertIn("wkhtmltopdf", msg)
+
+    def test_brief_document_render_engine_optional(self) -> None:
+        """Entries without ``render_engine:`` parse cleanly (back-compat).
+
+        Every existing BRIEF in the canary continues to load without
+        change after #320 — the field is purely additive.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertIsNone(brief.documents[0].render_engine)
+
+    def test_brief_document_render_engine_persists_to_model(self) -> None:
+        """Round-trip: ``render_engine: xelatex`` in YAML frontmatter →
+        ``BriefDocument.render_engine == 'xelatex'`` on the parsed model.
+
+        Regression anchor for the plumbing into
+        ``_progress.json.metadata.render_engine_requested`` at draft and
+        revise time: the value the drafter / reviser reads off the
+        BRIEF document model must equal the value the operator wrote
+        in the BRIEF frontmatter (no normalization, no coercion).
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: xelatex
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        doc = brief.document_for_slug("doc")
+        self.assertIsNotNone(doc)
+        assert doc is not None  # type narrowing
+        self.assertEqual(doc.render_engine, "xelatex")
+
+
+# ---------------------------------------------------------------------------
+# Per-document latex_header_includes override (issue #347)
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentLatexHeaderIncludes(_TmpProjectBase):
+    """Per-document ``latex_header_includes`` knob (issue #347).
+
+    The BRIEF parser only enforces type (string-or-None) and normalizes
+    empty / whitespace-only inputs to ``None``. The contents are opaque
+    LaTeX — no value-shape enforcement, no engine-conditional gating at
+    parse time. The runtime engine-scoping
+    (xelatex-only ``--include-in-header`` injection) lives in
+    ``anvil.lib.render_gate._render_memo_source`` — these tests pin
+    the parse-time contract only.
+    """
+
+    def test_brief_document_accepts_latex_header_includes_multiline(self) -> None:
+        """A YAML block-literal preamble parses verbatim onto the model."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: xelatex
+                latex_header_includes: |
+                  \\usepackage{xcolor}
+                  \\definecolor{green}{HTML}{059669}
+                  \\usepackage{tabularx}
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(len(brief.documents), 1)
+        value = brief.documents[0].latex_header_includes
+        self.assertIsNotNone(value)
+        assert value is not None  # type narrowing
+        # Every load-bearing token survives the round-trip verbatim.
+        self.assertIn("\\usepackage{xcolor}", value)
+        self.assertIn("\\definecolor{green}{HTML}{059669}", value)
+        self.assertIn("\\usepackage{tabularx}", value)
+
+    def test_brief_document_accepts_latex_header_includes_single_line(self) -> None:
+        """A single-line quoted preamble parses as a flat string."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                latex_header_includes: "\\\\usepackage{xcolor}"
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(
+            brief.documents[0].latex_header_includes, "\\usepackage{xcolor}"
+        )
+
+    def test_brief_document_rejects_non_string_latex_header_includes(self) -> None:
+        """Non-string types (lists, dicts, ints) raise with a clear path."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                latex_header_includes:
+                  - "\\\\usepackage{xcolor}"
+                  - "\\\\usepackage{tabularx}"
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("latex_header_includes", msg)
+        self.assertIn("must be a string", msg)
+
+    def test_brief_document_treats_empty_latex_header_includes_as_none(self) -> None:
+        """Empty / whitespace-only values normalize to ``None`` so a YAML
+        author can write the key with no value and get back-compat behavior
+        (no preamble include, identical to the absence-of-key case).
+        """
+        # Whitespace-only (multi-line of spaces).
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                latex_header_includes: "   "
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertIsNone(brief.documents[0].latex_header_includes)
+
+    def test_brief_document_latex_header_includes_optional(self) -> None:
+        """Entries without ``latex_header_includes:`` parse cleanly.
+
+        Every existing BRIEF in the canary continues to load without
+        change after #347 — the field is purely additive.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertIsNone(brief.documents[0].latex_header_includes)
+
+    def test_brief_document_latex_header_includes_persists_to_model(self) -> None:
+        """Round-trip: ``latex_header_includes`` in YAML frontmatter →
+        ``BriefDocument.latex_header_includes`` on the parsed model
+        (no normalization beyond whitespace-only → ``None``).
+
+        Regression anchor for the plumbing into
+        ``_progress.json.metadata.latex_header_includes_resolved`` at
+        draft and revise time: the value the drafter / reviser reads
+        off the BRIEF document model must equal the value the operator
+        wrote in the BRIEF frontmatter, byte for byte.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                render_engine: xelatex
+                latex_header_includes: |
+                  \\usepackage{xcolor}
+                  \\definecolor{ink}{HTML}{0f172a}
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        doc = brief.document_for_slug("doc")
+        self.assertIsNotNone(doc)
+        assert doc is not None  # type narrowing
+        value = doc.latex_header_includes
+        self.assertIsNotNone(value)
+        assert value is not None
+        # The block-literal preserves every line and only strips the
+        # last trailing newline; the assertion targets specific
+        # substrings to avoid a brittle whitespace match while still
+        # pinning the verbatim-preservation contract.
+        self.assertIn("\\usepackage{xcolor}", value)
+        self.assertIn("\\definecolor{ink}{HTML}{0f172a}", value)
+
+
+# ---------------------------------------------------------------------------
+# Per-document iteration-cap override (issue #349)
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentIterationCapOverride(_TmpProjectBase):
+    """Per-document ``max_iterations`` + ``iteration_cap_rationale`` paired
+    override (issue #349).
+
+    The override is **paired**: both keys must be present and well-formed
+    for the override to take effect, OR both must be absent. Setting one
+    without the other is a schema violation at parse time.
+
+    Validation contract (mirrors the deck skill's `.anvil.json` precedent
+    documented at ``anvil/skills/deck/SKILL.md`` §"Per-thread override
+    contract"):
+
+    - ``max_iterations`` set with a non-empty ``iteration_cap_rationale``
+      → honor the override.
+    - ``max_iterations`` set WITHOUT a valid rationale (missing, empty,
+      whitespace-only) → ``ValueError``.
+    - ``iteration_cap_rationale`` set WITHOUT a ``max_iterations`` value
+      → ``ValueError``.
+    - ``max_iterations < DEFAULT_MAX_ITERATIONS`` (with or without
+      rationale) → ``ValueError``. The override may raise the cap but not
+      lower it below the principled default.
+    - Both keys absent → no override, default cap applies.
+    """
+
+    def test_paired_override_parses(self) -> None:
+        """Both keys present + well-formed → override honored."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: aldus
+                artifact_type: investment-memo
+                max_iterations: 5
+                iteration_cap_rationale: |
+                  Operator-extended to 5 on 2026-06-08. Reason: v4 verdict
+                  34/44 vs floor 35, gap is design-side; reviewer
+                  identified memo-revise can close it.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        self.assertEqual(len(brief.documents), 1)
+        doc = brief.documents[0]
+        self.assertEqual(doc.max_iterations, 5)
+        self.assertIsNotNone(doc.iteration_cap_rationale)
+        assert doc.iteration_cap_rationale is not None  # type narrowing
+        # The rationale's load-bearing tokens survive verbatim.
+        self.assertIn("Operator-extended to 5", doc.iteration_cap_rationale)
+        self.assertIn("design-side", doc.iteration_cap_rationale)
+
+    def test_override_both_keys_absent_yields_none(self) -> None:
+        """Default cap path: neither key on the document entry.
+
+        Every legacy BRIEF (pre-#349) lands here. The default cap of 4
+        applies at the consumer side (drafter / reviser default).
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        doc = brief.documents[0]
+        self.assertIsNone(doc.max_iterations)
+        self.assertIsNone(doc.iteration_cap_rationale)
+
+    def test_max_iterations_without_rationale_raises(self) -> None:
+        """The paired-override contract rejects unjustified raises."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: 5
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+        self.assertIn("iteration_cap_rationale", msg)
+        # The error names BOTH fields and the load-bearing rationale.
+        self.assertIn("paired-override", msg)
+
+    def test_max_iterations_with_empty_rationale_raises(self) -> None:
+        """Whitespace-only rationale normalizes to ``None`` → paired-
+        validator rejects the now-orphaned ``max_iterations``.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: 5
+                iteration_cap_rationale: "   "
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+        self.assertIn("iteration_cap_rationale", msg)
+
+    def test_rationale_without_max_iterations_raises(self) -> None:
+        """Rationale alone is also an unbalanced paired override."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                iteration_cap_rationale: |
+                  Stale rationale left over from a prior override.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+        self.assertIn("iteration_cap_rationale", msg)
+
+    def test_max_iterations_below_default_raises(self) -> None:
+        """The override may raise the cap but not lower it below the
+        principled default (4)."""
+        fm = textwrap.dedent(
+            f"""\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: 3
+                iteration_cap_rationale: |
+                  Trying to lower the cap is rejected even with a rationale.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+        # The error names the floor explicitly so the operator can
+        # self-correct without grepping the codebase.
+        self.assertIn(str(DEFAULT_MAX_ITERATIONS), msg)
+
+    def test_max_iterations_at_default_is_accepted(self) -> None:
+        """The default value itself is allowed (no-op raise but still
+        records the rationale in BRIEF.md for the audit trail).
+        """
+        fm = textwrap.dedent(
+            f"""\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: {DEFAULT_MAX_ITERATIONS}
+                iteration_cap_rationale: |
+                  Explicit acknowledgement that the default cap applies
+                  to this thread — used to silence the discoverability
+                  pointer.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        doc = brief.documents[0]
+        self.assertEqual(doc.max_iterations, DEFAULT_MAX_ITERATIONS)
+        self.assertIsNotNone(doc.iteration_cap_rationale)
+
+    def test_max_iterations_non_integer_raises(self) -> None:
+        """Non-integer types are rejected at parse time."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: "five"
+                iteration_cap_rationale: |
+                  Trying to slip a string past the validator.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+        self.assertIn("integer", msg)
+
+    def test_max_iterations_bool_rejected(self) -> None:
+        """Booleans masquerade as integers in YAML — reject explicitly so
+        a stray ``true`` / ``false`` never silently degrades the override.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: true
+                iteration_cap_rationale: |
+                  Boolean snuck in for max_iterations.
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("max_iterations", msg)
+
+    def test_rationale_non_string_raises(self) -> None:
+        """Non-string rationale types (lists, dicts, ints) are rejected."""
+        fm = textwrap.dedent(
+            """\
+            project: tiny
+            documents:
+              - slug: doc
+                artifact_type: investment-memo
+                max_iterations: 5
+                iteration_cap_rationale:
+                  - "Multiple reasons"
+                  - "Crammed into a list"
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        with self.assertRaises(ValueError) as cm:
+            load_project_brief_strict(self.project_dir)
+        msg = str(cm.exception)
+        self.assertIn("iteration_cap_rationale", msg)
+        self.assertIn("must be a string", msg)
+
+    def test_override_persists_to_document_for_slug(self) -> None:
+        """The lookup helper surfaces the elevated cap + rationale.
+
+        Regression anchor for the plumbing into
+        ``_progress.json.metadata.max_iterations`` and
+        ``_progress.json.metadata.iteration_cap_rationale`` at draft and
+        revise time: the values the drafter / reviser reads off the
+        BRIEF document model must equal the values the operator wrote
+        in the BRIEF frontmatter, byte for byte.
+        """
+        fm = textwrap.dedent(
+            """\
+            project: aldus-portfolio
+            documents:
+              - slug: aldus
+                artifact_type: investment-memo
+                max_iterations: 6
+                iteration_cap_rationale: |
+                  Well-conditioned thread: v1=27, v2=29, v3=31, v4=34.
+                  Monotonic improvement, 0-critical first at v4. One extra
+                  pass to land Sphere outcome detail.
+              - slug: other
+                artifact_type: position-paper
+            """
+        ).rstrip()
+        _write_brief(self.project_dir, fm)
+        brief = load_project_brief_strict(self.project_dir)
+        doc = brief.document_for_slug("aldus")
+        self.assertIsNotNone(doc)
+        assert doc is not None  # type narrowing
+        self.assertEqual(doc.max_iterations, 6)
+        self.assertIsNotNone(doc.iteration_cap_rationale)
+        assert doc.iteration_cap_rationale is not None
+        self.assertIn("Well-conditioned thread", doc.iteration_cap_rationale)
+        self.assertIn("Sphere outcome detail", doc.iteration_cap_rationale)
+
+        # Sibling doc with no override carries both fields as None — the
+        # override is per-document, not per-project.
+        other = brief.document_for_slug("other")
+        self.assertIsNotNone(other)
+        assert other is not None
+        self.assertIsNone(other.max_iterations)
+        self.assertIsNone(other.iteration_cap_rationale)
 
 
 # ---------------------------------------------------------------------------

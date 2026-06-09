@@ -73,8 +73,12 @@ Typical source-of-truth materials:
 - `email-*.md` — explicit-permission email or letter excerpts (LOIs, design-partner intent); load-bearing for traction claims.
 - `image-*.{png,jpg}` — cleared-for-the-memo imagery (logos, product shots).
 - `prior/<vN>.{pdf,md}` — prior versions of this memo (e.g., a pre-anvil LaTeX memo migrating in); load-bearing for "what's changed across the revision arc."
+- `strongman-for.md` — best-possible case **for** a named thesis or research question; advocacy-shaped (not balance-shaped). Load-bearing substrate for dim 2 *Thesis coherence* calibration — the reviewer reads the file when present and checks that the memo's thesis aligns with the strongest version of its own argument. Studio canary practice (3+ active threads across `brasidas-licensing`, `brains-for-robots/investment-memo`, `brains-for-robots/broadcom-thesis`).
+- `strongman-against.md` — hardest-possible case **against** a named thesis or research question; adversarial-shaped (not balance-shaped). Load-bearing substrate for dim 3 *Evidence quality* back-check — the reviewer enumerates the named load-bearing objections and classifies how the memo addresses each (`ADDRESSED` / `PARTIALLY_ADDRESSED` / `NOT_ADDRESSED`). Studio canary practice (same three threads).
 
-The list is illustrative, not exhaustive. The contract is: *"if a claim's evidentiary basis lives in a file, that file goes in `<thread>/refs/`."* Source-of-truth materials are typically named for their **content** (`cv.pdf`, `filing-s1.pdf`); citation stubs (above) are typically named for their **citation key** (`<key>.md`) and carry a `# TODO: source for <claim>` placeholder. The disambiguation is left to filename convention — a markdown file matching the TODO-stub shape is a stub; a markdown file named for its content (`cv.md`, `transcript-foo.md`, `email-loi-bigcorp.md`) is a source-of-truth material.
+The list is illustrative, not exhaustive. The contract is: *"if a claim's evidentiary basis lives in a file, that file goes in `<thread>/refs/`."* Source-of-truth materials are typically named for their **content** (`cv.pdf`, `filing-s1.pdf`); citation stubs (above) are typically named for their **citation key** (`<key>.md`) and carry a `# TODO: source for <claim>` placeholder. The disambiguation is left to filename convention — a markdown file matching the TODO-stub shape is a stub; a markdown file named for its content (`cv.md`, `transcript-foo.md`, `email-loi-bigcorp.md`, `strongman-for.md`, `strongman-against.md`) is a source-of-truth material.
+
+**Strongman scoping convention.** A `strongman-for.md` / `strongman-against.md` pair is scoped to **one named thesis or research question** — a vertical, an analogy, a strategic bet — NOT to the memo artifact as a whole. Multiple pairs may exist per thread root, typically organized into `refs/<topic>/` (single-thesis memo shape, where the strongman pair sits alongside the rest of `refs/`) or a companion `research/<topic>-analysis/` directory at the portfolio level (multi-vertical memo shape, mirrors the portfolio-level `research/` extension from issue #280 — each vertical's `research/<vertical>-analysis/` directory carries its own `strongman-for.md` / `strongman-against.md` pair scoped to that vertical's research question). Strongman files live in the **research/input layer** (`refs/` or `research/<topic>-analysis/`), **NOT** as a critic sibling of a versioned memo dir. They are author-supplied substrate, not critique output — the strongman author is the operator (or an external substrate-gathering pass), not a reviewer; the files predate `<thread>.{N}/` and feed the drafter / reviewer as authoritative input. See `commands/memo-draft.md` §Procedure step 3 for the drafter contract (the drafter reads strongman files when present and addresses or explicitly scopes out the named counter-arguments), `commands/memo-review.md` §Procedure step 4g for the reviewer-side strongman back-check classifier, and `rubric.md` §"Refs back-check (dim 3)" for the dim 3 strongman sub-rule (dim 2 calibration is documented at `rubric.md` §"Refs back-check (dim 3)" §"Strongman back-check (dim 3)" with the dim 2 cross-reference).
 
 Accepted file shapes for source-of-truth materials in v0: markdown (`.md`), plain text (`.txt`), JSON (`.json`), PDFs (`.pdf`), images (`.png`, `.jpg`, `.jpeg`). The drafter **reads text-readable files** (markdown, text, JSON) into context as authoritative. **When `pdftotext` is available** (preflighted via `anvil/skills/memo/lib/refs_pdf.py::check_pdftotext_available()` — issue #167), the drafter ALSO extracts PDF text via `extract_pdf_text(...)` and reads it as authoritative source-of-truth content alongside the text-readable path; see `commands/memo-draft.md` step 3 for the drafter contract and `commands/memo-review.md` step 5 for the reviewer-side back-check. When `pdftotext` is absent, PDFs degrade to **presence-only signals** — the drafter is aware they exist by filename and respects the rule that claims about the subject of the file SHOULD NOT be made unless backed by content the drafter can verify; the reviewer records an info-level lint entry in `_summary.md.lint.refs_pdf_extraction` with the install story so the consumer sees how to enable the opt-in path. Images (`.png`, `.jpg`, `.jpeg`) remain presence-only in all v0 paths — OCR / vision back-check is deferred.
 
@@ -234,7 +238,48 @@ Thresholds: ≥35/44 advances. <35/44 requires revision. Any critical flag short
 
 **Plan siblings do NOT advance state.** A `<thread>.{N+1}.plan/` directory (written by `memo-revise <thread> --plan` — see §"Operator-confirmable change-set preview" below) is a critic-sibling-shaped artifact, NOT a version dir. Its presence does NOT advance the thread to `REVISED`: the state stays `REVIEWED` until `memo-revise <thread> --apply` writes the matching `<thread>.{N+1}/<thread>.md` body file. The state-machine derivation table above continues to use `<thread>.{N+1}/` presence as the `REVISED` evidence; plan siblings are invisible to it. This preserves the existing immutability contract (a half-built version dir without a body markdown file is never `REVISED`) and keeps the two-phase flow audit-trailable on disk.
 
-Iteration cap: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Consumer overrides land via a future BRIEF.md project-level knob (not yet schema-formalized; the prior `<thread>/.anvil.json` carrier was retired under issue #296). Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
+Iteration cap: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Consumer overrides land via the **per-document iteration-cap paired override** on the project BRIEF (issue #349 — `BriefDocument.max_iterations` + `BriefDocument.iteration_cap_rationale`); see "Per-document override contract" below for the full spec. Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
+
+### Per-document override contract
+
+The cap exists for principled reasons — prevent infinite revision loops, force the operator to confront foundational thesis problems instead of polishing forever — so the override is deliberately friction-ful: it requires a paired rationale that documents *why* this thread deserves more passes. The carrier is the project BRIEF (the post-#296 single-source-of-truth for project / per-doc anvil-config knobs); the schema is `BriefDocument.max_iterations` + `BriefDocument.iteration_cap_rationale` in `anvil/skills/memo/lib/project_brief.py`.
+
+The canonical BRIEF.md shape, applied per-document:
+
+```yaml
+documents:
+  - slug: aldus
+    artifact_type: investment-memo
+    max_iterations: 5
+    iteration_cap_rationale: |
+      Operator-extended to 5 on 2026-06-08. Reason: v4 verdict 34/44 vs
+      floor 35, gap is design-side (slide 7 figsize + slide 4 preamble
+      drop), reviewer identified memo-revise can close it; founder
+      follow-ups for source-side lift (Dims 3/5/6) are tracked separately
+      at issue X.
+```
+
+**Validation contract** (the BRIEF parser enforces this at parse time; see `anvil/skills/memo/lib/project_brief.py` `_validate_max_iterations` and `_validate_paired_iteration_cap_override`):
+
+- `max_iterations` set with a non-empty `iteration_cap_rationale` → honor the override.
+- `max_iterations` set WITHOUT `iteration_cap_rationale` (or with an empty / whitespace-only rationale) → **`ValueError`** at parse time. The rationale is what makes the override principled; an unjustified override does NOT silently degrade — it is rejected with a clear field-path message naming both keys.
+- `iteration_cap_rationale` set WITHOUT `max_iterations` → **`ValueError`** at parse time (the unbalanced paired override). Suggests adding `max_iterations:` or removing the stale rationale.
+- `max_iterations < 4` (the principled default) → **`ValueError`** at parse time. The override may raise the cap but not lower it below the default. The floor is `project_brief.DEFAULT_MAX_ITERATIONS`.
+- Both keys absent → no override, default cap applies (no warning; this is the legacy case).
+
+The BRIEF parser is **STRICT** — a malformed paired override is rejected at parse time, NOT silently degraded to default. This is the load-bearing change from the deck precedent (`<thread>/.anvil.json`, which uses lenient fallback): the BRIEF-side surface is the schema-of-record, so silent drops would confuse the operator.
+
+**Sticky-raise semantics.** Setting `max_iterations: 5` raises the cap to 5 until the BRIEF is edited again. This is NOT single-use ("unlock one more iteration"); the required-rationale contract is what prevents abuse, not single-use semantics. An operator who writes a substantive rationale gets the same affordance whether they get 1 or 2 extra iterations under the elevated cap. The override may not lower the cap below the principled default; only raise it.
+
+**Audit trail.** Three writes per pass:
+
+1. **BRIEF.md `documents:` entry** — the authoring surface; operator writes `max_iterations` + `iteration_cap_rationale` here, git tracks history. This is the durable record of *why* the cap was elevated.
+2. **`<thread>.{N+1}/_progress.json.metadata.max_iterations` + `.iteration_cap_rationale`** — mirrored at drafter (step 4 of `memo-draft.md`) and reviser (step 5 of `memo-revise.md`) write-time. Every version dir carries the cap + rationale that were in effect when it was produced.
+3. **`memo-revise` BLOCKED notice when the elevated cap is hit** — surfaces the rationale verbatim so the operator sees the prior authorization at the moment they need it (see `commands/memo-revise.md` §"BLOCKED notice").
+
+No upper bound is enforced — if an operator sets `max_iterations: 99` with a rationale, the rationale itself is the audit trail. Per-version overrides (e.g., `max_iterations.overrides.v{N}`) are intentionally not supported in v1 — the cheap path is the sticky raise; per-version granularity can land later if the canary surfaces a need.
+
+**Relationship to the deck precedent.** The deck skill ships a structurally identical paired-override at `<thread>/.anvil.json` (see `anvil/skills/deck/SKILL.md` §"Per-thread override contract" for the deck-side spec). The two contracts agree on every load-bearing rule (paired keys required, `>=4` floor, sticky raise, rationale verbatim in BLOCKED notice). The only divergence is the carrier: deck uses `.anvil.json` (the per-thread carrier that predates the #296 consolidation); memo uses BRIEF.md (the post-#296 single-source-of-truth). v2 may converge the two skills on a single carrier; v1 keeps both working in parallel.
 
 ### Operator-initiated polish passes
 
@@ -517,7 +562,7 @@ See the `raytheon-pitch-strategy` entry in `templates/BRIEF.rubric-overrides.md.
 
 ### Unstructured fallback: `BRIEF.md` "Critical reviewer guidance" prose (Option A)
 
-Before the structured config shipped, the two canary threads carried per-dimension reviewer guidance as a prose section inside `BRIEF.md` (the free body below the frontmatter) — a section titled something like "Critical reviewer guidance" or "Reviewer guidance" telling the reviewer how to interpret specific dimensions for the non-standard shape. The convention works because the reviewer is briefed to read `BRIEF.md` early in `memo-review` and respects the guidance inline. Reviewer's `commands/memo-review.md` step 4g §"Reader dispatch order" formalizes this fallback: when the matching `documents:` entry carries no `rubric_overrides:` block (or no project BRIEF is found at all), the reviewer reads any `BRIEF.md` reviewer-guidance prose and respects it inline in its `scoring.md` justifications — no suffix mechanism is applied because the prose is author-written prose, not loader-typed data. When **both** sources are present, the structured config wins and the `BRIEF.md` guidance is treated as documented fallback / context only (the reviewer does NOT re-apply its prose as a suffix — that would double-count the calibration in the audit trail).
+Before the structured config shipped, the two canary threads carried per-dimension reviewer guidance as a prose section inside `BRIEF.md` (the free body below the frontmatter) — a section titled something like "Critical reviewer guidance" or "Reviewer guidance" telling the reviewer how to interpret specific dimensions for the non-standard shape. The convention works because the reviewer is briefed to read `BRIEF.md` early in `memo-review` and respects the guidance inline. Reviewer's `commands/memo-review.md` step 4h §"Reader dispatch order" formalizes this fallback: when the matching `documents:` entry carries no `rubric_overrides:` block (or no project BRIEF is found at all), the reviewer reads any `BRIEF.md` reviewer-guidance prose and respects it inline in its `scoring.md` justifications — no suffix mechanism is applied because the prose is author-written prose, not loader-typed data. When **both** sources are present, the structured config wins and the `BRIEF.md` guidance is treated as documented fallback / context only (the reviewer does NOT re-apply its prose as a suffix — that would double-count the calibration in the audit trail).
 
 Typical `BRIEF.md` prose guidance shape (verbatim from the studio canary):
 

@@ -20,6 +20,7 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
 - **`customer_kind`**: read from the brief frontmatter (or `<thread>/.anvil.json`); default `external`. Reframes how dimension 7 is read (see below).
 - **Rubric**: `anvil/skills/proposal/rubric.md` (9 dimensions, /44, ≥35 threshold, critical flags).
 - **Optional consumer override**: `.anvil/skills/proposal/rubric.overrides.md` (additional critical-flag examples; never reduces the base rubric).
+- **Optional `--rescore-mode <rescore-id>` flag** (issue #368): when set, the reviewer re-routes its staged_sidecar output from `<thread>.{N}.review/` to `<thread>.{N}.review.rescore-<rescore-id>/`, re-targets the prior-review lookup to `<thread>.{N}.review/` (NOT `<thread>.{N-1}.review/`) since the current version's legacy review IS the prior review for a rescore pass, and stamps `_meta.json` with `rescore_state: "completed"` + `rescore_id: "<rescore-id>"` (overwriting any placeholder `rescore_state: "scheduled"` left behind by `anvil:rubric-rebackport --rescore --apply`). When the flag is unset, behavior is byte-identical to the default review path. See step 3 for the full re-routing contract.
 
 ## Outputs
 
@@ -28,15 +29,25 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
   verdict.md       Top-level decision + total /44 + critical flags + top revision priorities
   scoring.md       Per-dimension score (0–weight) + 1–3 sentence justification each
   comments.md      Line-level comments keyed to proposal.tex sections or excerpts
-  _meta.json       { critic, scorecard_kind: "human-verdict", started, finished, model, schema_version }
+  _summary.md      Top-level `rubric` block (rubric the reviewer scored against) + (optionally) other machine-readable scorecard fields — see step 9b
+  _meta.json       { critic, scorecard_kind: "human-verdict", started, finished, model, schema_version, rubric_id, rubric_total, advance_threshold }
   _progress.json   Phase state for the reviewer (phase: review)
 ```
 
+**Atomicity** (issue #350): the review sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The required files (`verdict.md`, `scoring.md`, `comments.md`, `_summary.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.review.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.review/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.review.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob. The optional `_gate.json` is written inside the staging dir but is NOT in the required-files manifest.
+
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex`. If `<thread>.{N}.review/_progress.json.review.state == done` and `verdict.md` exists, the review is complete — exit early with a notice (idempotent).
-2. **Resume check**: if a prior crashed review exists (`review.state == in_progress` without `verdict.md`), delete the partial output and re-review.
-3. **Initialize `_progress.json`** for the review dir: `phases.review.state = in_progress`, `phases.review.started = <ISO>`, `for_version = N` (per `anvil/lib/snippets/progress.md`). Also initialize `_meta.json` with `scorecard_kind: human-verdict` (see `anvil/lib/snippets/scorecard_kind.md`).
+1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.review.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed reviewer session (issue #350). If `<thread>.{N}.review/` exists (the atomic-rename contract guarantees the dir only exists when complete), the review is complete — exit early with a notice (idempotent).
+2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial review left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.review.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.{N}.review/` exists WITHOUT `verdict.md`, delete the dir and re-review.
+3. **Open the staged sidecar** for the review dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.review, required_files=["verdict.md", "scoring.md", "comments.md", "_summary.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.review.tmp/`), NOT inside the final `<thread>.{N}.review/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json` for the review dir: `phases.review.state = in_progress`, `phases.review.started = <ISO>`, `for_version = N` (per `anvil/lib/snippets/progress.md`). Also initialize `_meta.json` with `scorecard_kind: human-verdict`, `rubric_id: "anvil-proposal-v2"`, `rubric_total: 44`, and `advance_threshold: 35` (see `anvil/lib/snippets/scorecard_kind.md` §"The discriminator" — the three rubric-stamping fields are required for new reviews per issue #346; `"anvil-proposal-v2"` is the proposal skill's current /44 rubric identifier per `anvil/skills/proposal/rubric.md` line 3). The rubric-stamping fields let downstream consumers compare scores apples-to-apples across the `/40 → /44` migration without re-reading the skill's current `rubric.md`. Also load the **prior review sibling** at `<thread>.{N-1}.review/_meta.json` when present and cache its `rubric_id` value as `prior_rubric_id` (or `None` when the prior sibling is absent — first iteration — or lacks the field — legacy pre-#346 review). The cached `prior_rubric_id` feeds the new top-level `rubric` block in the review sibling's metadata and the rubric-transition surfacing in `findings.md` / `comments.md` when the prior rubric differs from the current `"anvil-proposal-v2"`.
+
+   **When `--rescore-mode <rescore-id>` is set** (issue #368) — the rebackport reviewer-hook contract:
+   - **Re-derive `final_dir`** from `<thread>.{N}.review` to `<thread>.{N}.review.rescore-<rescore-id>`. The staging directory derived by `anvil/lib/sidecar.py::staging_path_for(final_dir)` correspondingly becomes `.<thread>.{N}.review.rescore-<rescore-id>.tmp/` — no separate code path is needed; the same `staged_sidecar(final_dir=...)` call works with the rescore sidecar path.
+   - **Re-target the prior-review lookup to `<thread>.{N}.review/_meta.json`** (NOT `<thread>.{N-1}.review/_meta.json`). Under rescore mode, the legacy review at `<thread>.{N}.review/` IS the prior review — the rescore is re-scoring the SAME version's body against an updated rubric, not advancing to a new version. Cache its `rubric_id` value as `prior_rubric_id` (or fall back to `--legacy-rubric` from the rebackport tool when the legacy review lacks the field — pre-#346).
+   - **Stamp `_meta.json` with `rescore_state: "completed"` and `rescore_id: "<rescore-id>"`** in addition to the standard rubric-stamping fields. The placeholder `_meta.json` left behind by `anvil:rubric-rebackport --rescore --apply` carries `rescore_state: "scheduled"`; this reviewer overwrites it with `"completed"` once the full review (verdict.md / scoring.md / comments.md / _summary.md) has landed inside the staging dir. The `rescore_source: "anvil:rubric-rebackport"` field from the placeholder is preserved (or added if absent).
+   - **All other behavior is unchanged** — same scoring, same verdict, same `comments.md` emission, same `_summary.md.rubric` block (now carrying the legacy review's rubric as `prior_rubric_id`). The legacy `<thread>.{N}.review/` dir is NEVER mutated — the rescore is a side-car write only.
+   - **When `--rescore-mode` is unset**, the steps above DO NOT fire and the review path is byte-identical to the default behavior documented in the rest of this step.
 4. **Read inputs**: load `<thread>.{N}/proposal.tex`, enumerate `figures/`, read `customer_kind`, load `rubric.md` and any consumer override. **Source-of-truth materials note (issue #166)**: enumerate `<thread>/refs/` and identify any **source-of-truth materials** present per SKILL.md §"Source-of-truth materials" (files named for their content — `quote-<vendor>.{pdf,md}`, `datasheet-<part>.pdf`, `sow-*.md`, `comparables/<project>.md`, `cv-<lead>.{pdf,md}`, `site-plan-*.pdf`). The reviewer's job here is to **note their presence**, not to walk them — the per-claim refs back-check is **audit-owned** and lives in `proposal-audit` step 7 (extended to non-cost claims per the same issue). The reviewer's dim 4 (Scope completeness) justification SHOULD acknowledge that audit handles the per-claim back-check when source-of-truth materials are present (e.g., "Scope completeness scored as written; refs/sow-bigcorp.md is on-disk for audit-side scope back-check per SKILL.md §'Source-of-truth materials'"). The reviewer MUST NOT duplicate the per-claim refs back-check on the review side — the deduction lives in the audit's dim 6 sub-rule per `rubric.md` §"Refs back-check (dim 6 + dim 4)". When `refs/` contains no source-of-truth materials (or is empty), this step is a no-op and the reviewer scores dim 4 as today.
 4b. **Run render-gate (pre-flight)** — mirrors `deck-review.md` step 5b:
    - Invoke `anvil/lib/render_gate.py`'s `compile_and_gate(...)` against `<thread>.{N}/proposal.tex` with `engine="xelatex"`. Mirror the `marp_lint.py` integration shape used in `deck-review.md` step 5b (a deterministic pre-flight that emits a typed `Review` with `kind=tool_evidence` plus a sibling `_gate.json` for CI inspection — see `anvil/lib/render_gate.py` module docstring).
@@ -50,13 +61,26 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
    - Write the `GateResult.to_json()` payload to `<thread>.{N}.review/_gate.json` for CI inspection.
    - On failure, the gate's `to_review(...)` Review carries one `CriticalFlag` per failed gate dimension (type prefix: `render_gate_<dim>`); the aggregator (`anvil/lib/critics.py::compute_verdict`) treats this as `BLOCK` per the standard path. No schema change needed.
 
+4j. **Load `recommendation_target` from the thread-level `<thread>/BRIEF.md`** — issue #356:
+   - Invoke `anvil/skills/proposal/lib/project_brief.py::load_recommendation_target(<thread_dir>)`. The thread dir is the **directory containing `BRIEF.md` and the `<thread>.{N}/` version dirs**, NOT a version subdirectory. The proposal thread-level BRIEF is freeform prose with optional informal YAML frontmatter (`title`, `subtitle`, `studio`, `customer_kind`, `orientation`, and now `recommendation_target` per this issue). This step reads ONLY the thread-level BRIEF.
+   - The loader returns one of:
+     - `"undecided"` — the operator has explicitly declared the thread is in **pre-decision / concept-stage mode** (the documented fresh-thread default per `templates/BRIEF.md.example`: *"the job of v1 is to resolve the open architectural / scope / cost decisions, not to defend a pre-committed recommendation"*). The dim 8 scoring at step 5 applies the open-decision-framing calibration documented in `rubric.md` §"Dim 8 — `recommendation_target: undecided` calibration".
+     - `"invest"` / `"pass"` / `"conditional"` — the operator has declared a decided posture; dim 8 scores against the standard "are open decisions tracked honestly" calibration verbatim (byte-identical to pre-#356 behavior).
+     - `None` — the field is absent, malformed, or set to an unrecognized value (a typo like `Undecided`, `tbd`, `?`); the calibration does not fire; dim 8 scores against the standard calibration verbatim.
+   - **Lenient by design**: the loader never raises. Every absence / malformed path resolves to `None`. This is the load-bearing backwards-compat: a thread with no BRIEF, no frontmatter, no `recommendation_target` key, or a typo in the value behaves byte-identically to a thread that pre-dates this helper.
+   - **Why dim 8, NOT dim 1**: the curator's note on issue #356 explicitly calls out the dimension-mapping difference between the two skills' rubrics. Memo dim 1 is *Recommendation clarity* (about the memo author's invest/pass recommendation); proposal dim 1 is *Intent / requirements clarity* (about what the customer/sponsor needs the system to do). A pre-decision proposal does not penalize on proposal dim 1 — the customer's hard constraints are the customer's hard constraints regardless of whether the proposer has committed to a single topology. The closest conceptual analog in the proposal rubric is dim 8 *Open decisions* (weight 4), which is the "unresolved engineering choices tracked honestly" dim. See `rubric.md` §"Dim 8 — `recommendation_target: undecided` calibration" for the full rationale and the verbatim five-point ladder.
+   - **Cache the resolved value** as `recommendation_target_resolved` for the dim 8 scoring at step 5 and the `_summary.md` write at step 9b. The cached value is one of `"undecided"` / `"invest"` / `"pass"` / `"conditional"` / `None`.
+
 5. **Score each dimension** (1–9 per rubric):
    - Assign an integer between 0 and the dimension's weight.
    - Write a 1–3 sentence justification citing specific evidence (section heading, excerpt, figure) from the proposal.
    - Record per-dimension result in `scoring.md` as a markdown table with columns `# | Dimension | Weight | Score | Justification`.
    - **Dimension 7 (persuasiveness / value proposition) is read through `customer_kind`**: for `external`, score "does this give the client a reason to commit money?"; for `internal`, score "does this justify the budget allocation against the alternative?" Same weight (4), reframed prompt. Note the framing you used in the justification.
+   - **Dim 8 (Open decisions) `recommendation_target: undecided` calibration sub-step** (issue #356): when the cached `recommendation_target_resolved` from step 4j equals `"undecided"`, the reviewer applies the **open-decision-framing scoring posture** documented in `rubric.md` §"Dim 8 — `recommendation_target: undecided` calibration" verbatim. Specifically: dim 8 scores on (a) whether the proposal enumerates the open architectural / scope / cost decisions, (b) whether each open decision is named with stakes (what depends on it; what scope / cost implication each branch carries), and (c) whether falsifiability is stated (what specific evidence — a pilot, a vendor quote, a site survey, a permit ruling, a load test — would settle each open decision). The five-point ladder (5/5 → 0/5 shape, mapped to the dim 8 weight cap of 4) is documented verbatim in `rubric.md` and SHOULD be cited in the reviewer's scoring rationale. The reviewer MUST append the verbatim suffix `"recommendation_target: undecided — scoring dim 8 on open-decision framing clarity"` to the dim 8 `scoring.md` justification so the audit trail records why the calibration fired. **Suffix order** (when multiple surfaces fire on dim 8): base reviewer-prose justification → `recommendation_target: undecided` suffix (this sub-step) → any future per-doc `dim_8_calibration` suffix (out of scope today — the proposal skill does not currently ship a per-doc `rubric_overrides` surface analogous to memo's, but the ordering is documented for future readers). **Inert when not triggered**: when `recommendation_target_resolved` is `None`, `"invest"`, `"pass"`, or `"conditional"`, this sub-step does NOT fire — no suffix is appended, no calibration is applied, and dim 8 scores against the standard "are open decisions tracked honestly" calibration in the rubric table at the top of `rubric.md` (byte-identical to pre-#356 behavior). The `_summary.md.recommendation_target_resolved.applied` field (see step 9b) records whether the calibration fired so the audit trail is reproducible.
 6. **Identify critical flags**: review the proposal against the rubric's four named flags AND the open-ended "any issue that means the proposal cannot proceed as specified" instruction. The reviewer **owns flag 1** (*misses a stated hard constraint*) and shares flag 3 (*not deliverable as resourced*) with the auditor; flags 2 (*cost not credible/sourceable*) and 4 (*internal inconsistency*) are primarily audit-owned but flag them here too if obvious from the text alone. For each flag set, write a one-paragraph justification in `verdict.md`.
 7. **Compute total**: sum all dimension scores. `advance = (total >= 35) AND (no critical flags)`.
+
+   **Append `score_history` row with `rubric_id` (issue #346)**: the orchestrator (the command that drives review→revise iterations) appends one row to `<thread>.{N}/_progress.json.metadata.score_history` per finished review iteration. Per `anvil/lib/snippets/progress.md` §"Convergence fields → score_history", the canonical row shape is `{iteration, total, threshold, rubric_id}` — for the proposal skill at /44, that's `{iteration: <N>, total: <computed-total>, threshold: 35, rubric_id: "anvil-proposal-v2"}`. A thread that spans the `/40 → /44` migration records different `rubric_id` values across its rows; readers tolerate rows missing `rubric_id` per the backwards-compat contract (treat as `"unknown/legacy"`).
 8. **Write line-level comments**: in `comments.md`, list specific feedback keyed to proposal sections — heading reference + short excerpt + comment. Group by severity (`blocker` / `major` / `minor` / `nit`).
 9. **Write `verdict.md`** in the format specified in `rubric.md`:
    - Total: `XX / 44`
@@ -64,8 +88,55 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
    - Critical flags (if any)
    - Dimension summary table (per-dim scores; full justifications in `scoring.md`)
    - Top 3 revision priorities (if `advance: false`)
-10. **Update `_progress.json`**: `phases.review.state = done`, `phases.review.completed = <ISO>`.
-11. **Report**: print the path to the review dir and a one-line status (e.g., `Reviewed gossamer-lan.1 → gossamer-lan.1.review/ (32/44, advance: false, 0 critical flags)`).
+9b. **Write `_summary.md` with the top-level `rubric` block (issue #346)**: emit a JSON-in-markdown `_summary.md` carrying at minimum the `rubric` block — the rubric the reviewer scored against, so a downstream consumer aggregating across versions does not need to walk back to `anvil/skills/proposal/rubric.md` (which may have changed between v3 and v5 of a long thread that spanned the `/40 → /44` migration). Shape:
+
+    ```markdown
+    # Review summary
+
+    ```json
+    {
+      "critic": "review",
+      "for_version": <N>,
+      "rubric": {
+        "id": "anvil-proposal-v2",
+        "total": 44,
+        "advance_threshold": 35,
+        "dimensions": 9,
+        "prior_rubric_id": "anvil-proposal-v1"
+      },
+      "recommendation_target_resolved": {
+        "value": "undecided",
+        "applied": true
+      }
+    }
+    ```
+    ```
+
+    The `rubric` block fields:
+    - `id` (`str`): the rubric identifier — `"anvil-proposal-v2"` for the current /44 rubric. Mirrors `_meta.json.rubric_id`.
+    - `total` (`int`): the rubric's declared `total` — `44`.
+    - `advance_threshold` (`int`): the rubric's declared advance threshold — `35`.
+    - `dimensions` (`int`): the count of weighted dimensions — `9`.
+    - `prior_rubric_id` (`str | null`, conditional): present when the prior review sibling at `<thread>.{N-1}.review/` exists. Value is the prior `_meta.json.rubric_id` when present, or `null` when the prior sibling lacks the field (legacy pre-#346 review). **Omitted entirely** on the first iteration (no prior review sibling exists).
+    - `prior_rubric_inferred` (`str`, conditional): present when `prior_rubric_id == null` AND a prior review sibling exists. Value is `"/40-legacy"` to signal "this thread's prior iteration was scored against the pre-#346 /40 rubric (whatever the skill shipped at the time)".
+
+    The `recommendation_target_resolved` block (issue #356) is populated from the cached `recommendation_target_resolved` value from step 4j. The block lives at the **top level** of `_summary.md` (sibling to the existing `rubric` top-level block), **NOT nested under `rubric`** — rationale: the `rubric` block is rubric-version metadata, and `recommendation_target_resolved` is **operator-declared posture metadata** that triggers a dim 8 calibration. The block exists so the operator and downstream consumers can see at a glance WHETHER the calibration fired and WHAT value the thread-level BRIEF carried, with the audit trail recording why dim 8 was (or was not) calibrated on open-decision framing clarity. Shape:
+    - `value` (`str | null`): the verbatim `recommendation_target` value from `<thread>/BRIEF.md`'s YAML frontmatter when present and in the closed set (one of `"invest"` / `"pass"` / `"conditional"` / `"undecided"`); `null` when the field was absent, malformed, or set to an unrecognized value.
+    - `applied` (`bool`): `true` if and only if `value == "undecided"` and the reviewer applied the open-decision-framing calibration to dim 8 per step 5's `recommendation_target: undecided` calibration sub-step (and `rubric.md` §"Dim 8 — `recommendation_target: undecided` calibration"). `false` for every other path — including `value: "invest"` / `"pass"` / `"conditional"` (decided posture; standard dim 8 calibration applies) and `value: null` (no posture declared; standard dim 8 calibration applies). The `applied` field is the load-bearing signal a downstream consumer (a test, a CI hook, an operator audit) can check to verify the calibration fired without re-deriving the trigger logic.
+
+    **The `recommendation_target_resolved` block does NOT participate in `critical_flag`**. This is by design: the field is operator-declared posture metadata that triggers a per-dimension calibration, not a check result. The load-bearing surfacing of the calibration itself is the `scoring.md` suffix (per step 5's `recommendation_target: undecided` calibration sub-step). The `_summary.md` block is the structured shadow / audit trail.
+
+    **Backwards-compat — `recommendation_target_resolved`**: a legacy review sibling produced before this block shipped MAY omit `recommendation_target_resolved` entirely. Downstream consumers MUST tolerate the absence by treating it as `{value: null, applied: false}`. New reviews produced after this contract ships SHOULD emit the block on every review run (with `value: null, applied: false` when the field was not declared or the BRIEF was missing).
+
+    The block is **observational only** — it does NOT affect verdict, critical flags, or `advance`. Backwards-compat: a legacy review sibling produced before issue #346 MAY omit `_summary.md` entirely; downstream consumers MUST tolerate the absence.
+
+    **Mixed-rubric thread surfacing in `comments.md` (or `findings.md` if emitted)**: when `prior_rubric_id` is present AND differs from `"anvil-proposal-v2"`, OR when `prior_rubric_id == null` AND a prior review sibling exists, the reviewer SHOULD append a `## Rubric version transition` subsection at the bottom of `comments.md` (or in a new `findings.md` if the reviewer chooses to emit one) noting the change, e.g.:
+
+    > **Rubric version transition.** This iteration was scored against `anvil-proposal-v2` (/44, ≥35); the prior iteration at `<thread>.{N-1}.review/` was scored against `anvil-proposal-v1` (/40, ≥32) [or `/40-legacy` for unstamped legacy]. The score delta `<prior_total>/40 → <current_total>/44` is NOT directly comparable — the threshold pool, dimension count, and weighted contributions all changed. A downstream consumer reading the delta SHOULD treat the prior score as advisory only and re-anchor on the current iteration's `<current_total>/44` against the `≥35/44` threshold.
+
+    The subsection is purely audit-trail prose so the operator's mental model stays calibrated across a rubric migration. When the prior rubric matches the current rubric (the steady-state case), the subsection is omitted entirely.
+10. **Update `_progress.json`** inside the staging dir: `phases.review.state = done`, `phases.review.completed = <ISO>`. This is the LAST file write before the context manager exits — the manifest verification + atomic rename at exit (issue #350) requires `_progress.json` to be present. Then **exit the `staged_sidecar` context block**: the primitive verifies every name in the required-files manifest exists in the staging dir, then atomically renames `.<thread>.{N}.review.tmp/` → `<thread>.{N}.review/`. The final-named dir only ever exists in **complete** form.
+11. **Report**: print the path to the (now-renamed) review dir and a one-line status (e.g., `Reviewed gossamer-lan.1 → gossamer-lan.1.review/ (32/44, advance: false, 0 critical flags)`).
 
 ## Idempotence and resumability
 
@@ -95,7 +166,7 @@ This command writes the critic-sibling shape documented in `anvil/lib/snippets/p
 }
 ```
 
-And the companion `_meta.json` declaring the scorecard kind (see `anvil/lib/snippets/scorecard_kind.md`):
+And the companion `_meta.json` declaring the scorecard kind and the rubric the reviewer scored against (see `anvil/lib/snippets/scorecard_kind.md` §"The discriminator"):
 
 ```json
 {
@@ -105,8 +176,13 @@ And the companion `_meta.json` declaring the scorecard kind (see `anvil/lib/snip
   "finished": "<ISO>",
   "model": "<model-id>",
   "schema_version": 1,
-  "scorecard_kind": "human-verdict"
+  "scorecard_kind": "human-verdict",
+  "rubric_id": "anvil-proposal-v2",
+  "rubric_total": 44,
+  "advance_threshold": 35
 }
 ```
+
+The three `rubric_*` / `advance_threshold` fields are required for new reviews (post-issue #346) and absent-tolerated for legacy reviews. They let downstream consumers compare scores apples-to-apples across rubric migrations without re-reading the skill's current `rubric.md`.
 
 Merge rule (shallow): preserve fields not touched by this command. Use ISO-8601 UTC timestamps per `anvil/lib/snippets/timestamp.md`.

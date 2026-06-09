@@ -1,9 +1,9 @@
 {
-  "anvil_version": "0.3.1",
+  "anvil_version": "0.4.0",
   "anvil_source": "/Users/rwalters/GitHub/anvil",
-  "install_date": "2026-06-05",
+  "install_date": "2026-06-08",
   "layout_version": 2,
-  "installed_skills": ["deck", "installation", "ip-uspto", "memo", "project-migrate", "proposal", "pub", "report", "slides"],
+  "installed_skills": ["deck", "installation", "ip-uspto", "memo", "project-migrate", "proposal", "pub", "report", "rubric-rebackport", "slides"],
   "skipped_overrides": [],
-  "skill_hashes": {"deck": "9090daa3209b8f564cacfe9c52512802fc941d60a39ebbd2ce033abf34db2fc8", "installation": "decd037afea7021e2365de8a3b4d09bb36483848eda3a77a46e800166ba911f6", "ip-uspto": "ca9ca56adf8aeb0494b3265b449c1bdc930ec42a32a6d6c66e71d7bcc61aea63", "memo": "b2f152191b75cc6ceab9ecf25656d46a55f3c72da39727658fb0ce750d3fde4f", "project-migrate": "624ae4af653cc33eeb11328ba4c0a95a3623e3f1c9bc15b76a3b13a28c1fcd92", "proposal": "8d8ba93adab5b18eb9114bf4ae06efed84507e49e98b049c016e3a0ee4638206", "pub": "e72895d77a69d3333f37df46c9aac33bfc5decffe291f931b77dff5311ddffad", "report": "c291ccfe3731446f23029b8466c0f377c0db6d6fa149a257536abd15794a441a", "slides": "168154fa09d25d2c149eb652ba6883ee7aedd0ee1ed16cc408137c4fdbfb6f2a"}
+  "skill_hashes": {"deck": "bdbc93706d625d68f7fc86d0a50e37b91ac66b989f53de01aa0f19f6027d781f", "installation": "9031e5cd8570f175052efb7775daa4ec63f04ea8eb41b2a552405c17e6ed59ae", "ip-uspto": "f4b8e0919e3288e0987fd98de606da683ceac6685b3cef04ed0a1ff56917ec2a", "memo": "5b8c2c6fdcf787f2c7a4e2a94fcd7a72ab273689b367628a759e73289f222a56", "project-migrate": "2a8d59acbfad460b0ecc8ee94099e18f7343d2f442f936233aefa27b35bd5ea4", "proposal": "833fc1b63ed0677757b341bdd58e11bfc5b190914d1e7b9bd24bfd60e9605300", "pub": "0af93152848ec72963c975fa47f9603603485799a34133d76ded0e5d9f535d8e", "report": "20901f33856cfa71e125cd5e96cfa44f439e8e1fc3a906ebb14fab3bbc3485c6", "rubric-rebackport": "69ddf387a68563d596ad0e510ed564d7540cfa4e6604c775a48f4a3958cbd130", "slides": "e7074f6cd7d2937f6f0ce60de31b55f7a7a7bf48e626febddd099434f50fa81d"}
 }
