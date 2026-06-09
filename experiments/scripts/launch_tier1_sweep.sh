@@ -180,26 +180,22 @@ done
 # Validate trainer list against the driver's known names
 # ---------------------------------------------------------------------------
 
-# Source of truth: experiments/p3_specialization/run_tier1_cell.py TRAINERS
-# table. Listed here verbatim so the launcher can fail fast on a typo
-# before consuming any remote compute. Keep in sync with that file.
-KNOWN_TRAINERS=(
-    ippo
-    mappo
-    high_lambda
-    bc_init_continuation
-    bc_init_high_lambda
-    lola
-    coma
-    hca
-    influence
-    nhr
-    progress
-    macro_actions
-    reinforce
-    pbt
-    het_ppo
-)
+# Source the trainer set from the driver itself (issue #405 — DRY the
+# launcher KNOWN_TRAINERS): the previous design kept a hand-maintained bash
+# array in lockstep with run_tier1_cell.py's TRAINERS dict, which drifted
+# (see PR #398). Calling --list-trainers on the driver eliminates the
+# duplicate at a ~200ms startup cost, paid once per launch.
+KNOWN_TRAINERS=()
+while IFS= read -r line; do
+    [[ -n "$line" ]] && KNOWN_TRAINERS+=("$line")
+done < <(uv run --quiet python "$REPO_ROOT/experiments/p3_specialization/run_tier1_cell.py" --list-trainers 2>/dev/null)
+
+if [[ "${#KNOWN_TRAINERS[@]}" -eq 0 ]]; then
+    echo "ERROR: could not enumerate trainers from run_tier1_cell.py --list-trainers" >&2
+    echo "       (is the local Python env / Rust extension set up?)" >&2
+    echo "       Try: uv sync && bash bucket-brigade-core/build.sh" >&2
+    exit 6
+fi
 
 is_known_trainer() {
     local name="$1"

@@ -17,10 +17,13 @@ These tests cover:
 * --skip-aggregate
 * canonical runbook invocations from TIER1_LAUNCH_RUNBOOK.md
 
-We also assert that the launcher's KNOWN_TRAINERS list stays in sync with
-the driver's TRAINERS dict in ``run_tier1_cell.py``. A drift between the
-two would mean a typo in the launcher silently rejects (or accepts) a
-trainer the driver knows about.
+We also assert that the launcher sources its trainer set from the driver
+(issue #405 / PR #405): there is no longer a hand-maintained KNOWN_TRAINERS
+bash array. Instead, the launcher calls
+``run_tier1_cell.py --list-trainers`` at startup. The drift-test surface
+collapses to "the launcher actually wires --list-trainers through" plus
+a contract check that the driver's --list-trainers output matches the
+TRAINERS dict.
 """
 
 from __future__ import annotations
@@ -395,35 +398,31 @@ def test_runbook_canonical_invocations(
 
 
 # ---------------------------------------------------------------------------
-# Drift check: launcher's KNOWN_TRAINERS == driver's TRAINERS keys
+# DRY contract: launcher sources its trainer set from the driver
+# (issue #405). The old hand-maintained KNOWN_TRAINERS bash array is gone;
+# the launcher now calls run_tier1_cell.py --list-trainers at startup. The
+# fail-fast on a typoed --trainers is still exercised by
+# test_unknown_trainer_exits_with_clear_error above; what we need to lock
+# down here is (1) the launcher actually uses --list-trainers and (2) the
+# driver's --list-trainers output matches its TRAINERS dispatch table.
 # ---------------------------------------------------------------------------
 
 
-def _launcher_known_trainers() -> set[str]:
-    """Parse the KNOWN_TRAINERS bash array out of the launch script.
+def test_driver_list_trainers_matches_dispatch_table() -> None:
+    """``--list-trainers`` must enumerate the driver's full TRAINERS dict.
 
-    We do this with a regex rather than execing bash because the value is
-    a small literal list and we want a hermetic test that doesn't depend
-    on the bash version.
+    The launcher trusts this output as the single source of truth for
+    trainer validation. A regression that drops a trainer from the
+    printed list would silently break the launcher's fail-fast guard.
     """
-    text = SCRIPT.read_text()
-    m = re.search(r"KNOWN_TRAINERS=\(\s*([^)]+)\s*\)", text, re.DOTALL)
-    assert m is not None, "could not find KNOWN_TRAINERS array in launcher"
-    block = m.group(1)
-    # Strip comments and whitespace, split into tokens.
-    tokens = [
-        line.split("#", 1)[0].strip()
-        for line in block.splitlines()
-        if line.strip() and not line.strip().startswith("#")
-    ]
-    # Each non-empty token is one trainer name.
-    return {t for t in tokens if t}
-
-
-def _driver_trainers() -> set[str]:
-    """Import the driver's TRAINERS dict via a subprocess so we don't need
-    numpy / torch in the test interpreter."""
-    out = subprocess.run(
+    listed = subprocess.run(  # nosec B603 B607 (argv is hardcoded, no shell)
+        ["python", str(DRIVER), "--list-trainers"],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    dispatch = subprocess.run(  # nosec B603 B607 (argv is hardcoded, no shell)
         [
             "python",
             "-c",
@@ -438,22 +437,37 @@ def _driver_trainers() -> set[str]:
         text=True,
         check=False,
     )
-    if out.returncode != 0:
+    if listed.returncode != 0 or dispatch.returncode != 0:
         pytest.skip(
-            f"cannot import run_tier1_cell.TRAINERS in test env "
-            f"(stderr: {out.stderr.strip()}); skipping drift check"
+            "cannot invoke run_tier1_cell.py in test env "
+            f"(stderr: {listed.stderr.strip() or dispatch.stderr.strip()}); "
+            "skipping contract check"
         )
-    return {line.strip() for line in out.stdout.splitlines() if line.strip()}
+    listed_set = {line.strip() for line in listed.stdout.splitlines() if line.strip()}
+    dispatch_set = {
+        line.strip() for line in dispatch.stdout.splitlines() if line.strip()
+    }
+    assert listed_set == dispatch_set, (
+        f"--list-trainers output drifted from TRAINERS dict:\n"
+        f"  in --list-trainers but not TRAINERS: {listed_set - dispatch_set}\n"
+        f"  in TRAINERS but not --list-trainers: {dispatch_set - listed_set}"
+    )
 
 
-def test_launcher_known_trainers_matches_driver_trainers() -> None:
-    """The launcher's KNOWN_TRAINERS validation list must match the
-    driver's TRAINERS dict exactly. Drift means either a typo in the
-    launcher silently rejects a real trainer, or accepts a fake one."""
-    launcher = _launcher_known_trainers()
-    driver = _driver_trainers()
-    assert launcher == driver, (
-        f"KNOWN_TRAINERS drift detected:\n"
-        f"  in launcher but not driver: {launcher - driver}\n"
-        f"  in driver but not launcher: {driver - launcher}"
+def test_launcher_sources_trainer_set_from_driver() -> None:
+    """The launcher must call ``run_tier1_cell.py --list-trainers`` rather
+    than hard-coding a KNOWN_TRAINERS bash array. Any future revert that
+    re-adds a static array will trip this assertion.
+    """
+    text = SCRIPT.read_text()
+    assert "--list-trainers" in text, (
+        "launcher must source the trainer set via run_tier1_cell.py "
+        "--list-trainers (issue #405); did the DRY fix get reverted?"
+    )
+    # Reject re-emergence of a populated list-of-names form. We still allow
+    # the empty initializer KNOWN_TRAINERS=() that holds the parsed output.
+    assert not re.search(r"KNOWN_TRAINERS=\(\s*[A-Za-z]", text), (
+        "launcher appears to have re-introduced a hand-maintained "
+        "KNOWN_TRAINERS bash array; source it from --list-trainers instead "
+        "(issue #405)."
     )
