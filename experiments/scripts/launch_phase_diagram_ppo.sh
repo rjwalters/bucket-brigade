@@ -66,6 +66,14 @@ DEFAULT_HOST="alc-2"
 
 DEFAULT_CELLS_SOURCE="experiments/nash/phase_diagram/results.json"
 DEFAULT_SCENARIO="minimal_specialization"
+# The gap_closed metric is calibrated against the MINSPEC_RANDOM /
+# MINSPEC_SPECIALIST baselines in bucket_brigade.baselines (see
+# run_tier1_cell.py:306-312 and run_phase_diagram_ppo.py:334-335). Running
+# the sweep on any other scenario produces uncalibrated gap_closed numbers
+# — we lock the scenario at the CLI to prevent the silent-garbage failure
+# mode. Operators who know what they're doing can opt out with
+# --allow-non-minspec-gap.
+MINSPEC_LOCKED_SCENARIO="minimal_specialization"
 DEFAULT_SEEDS="42 43 44 45"
 # Mirror launch_tier1_sweep.sh's budget — 50 PPO iterations × 2048 rollout
 # steps is the Tier-1 baseline gap_closed measurement budget.
@@ -85,9 +93,10 @@ SESSION_NAME=""
 LIMIT_CELLS=""
 DRY_RUN=0
 SKIP_CONNECTIVITY_CHECK=0
+ALLOW_NON_MINSPEC_GAP=0
 
 print_usage() {
-    sed -n '2,52p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '2,46p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 # Resolve a host alias from .env using the documented priority order.
@@ -170,6 +179,14 @@ while [[ $# -gt 0 ]]; do
             SKIP_CONNECTIVITY_CHECK=1
             shift
             ;;
+        --allow-non-minspec-gap)
+            # Escape hatch for an operator who knows the gap_closed metric
+            # will be uncalibrated and wants to run the sweep anyway (e.g.
+            # for raw trajectory inspection). See MINSPEC_LOCKED_SCENARIO
+            # comment above.
+            ALLOW_NON_MINSPEC_GAP=1
+            shift
+            ;;
         -h|--help)
             print_usage
             exit 0
@@ -181,6 +198,25 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# ---------------------------------------------------------------------------
+# Validate scenario (gap_closed lock)
+# ---------------------------------------------------------------------------
+#
+# The gap_closed metric written by run_phase_diagram_ppo.py is hard-coded to
+# the MINSPEC_RANDOM / MINSPEC_SPECIALIST baselines. Running with any other
+# --scenario produces summary.json / cell_summary.json files whose
+# gap_closed numbers are not comparable to anything — the operator concern
+# from PR #410's review is that this fails silently. Reject non-minspec
+# scenarios at the CLI unless --allow-non-minspec-gap is set.
+
+if [[ "$SCENARIO" != "$MINSPEC_LOCKED_SCENARIO" && "$ALLOW_NON_MINSPEC_GAP" -eq 0 ]]; then
+    echo "ERROR: --scenario '$SCENARIO' rejected." >&2
+    echo "       gap_closed metric is calibrated only for minimal_specialization;" >&2
+    echo "       other scenarios will produce uncalibrated gap_closed values." >&2
+    echo "       Re-run with --allow-non-minspec-gap to override." >&2
+    exit 5
+fi
 
 # ---------------------------------------------------------------------------
 # Resolve host
@@ -245,6 +281,11 @@ DRIVER_CMD+=" --rollout-steps $ROLLOUT_STEPS"
 DRIVER_CMD+=" --output-root '$OUTPUT_ROOT'"
 if [[ -n "$LIMIT_CELLS" ]]; then
     DRIVER_CMD+=" --limit-cells $LIMIT_CELLS"
+fi
+if [[ "$ALLOW_NON_MINSPEC_GAP" -eq 1 ]]; then
+    # Forward the opt-out so the driver's own scenario lock also lets it
+    # through. (We've already passed the launcher-side lock above.)
+    DRIVER_CMD+=" --allow-non-minspec-gap"
 fi
 
 # Remote bootstrap: try canonical repo paths, pull, build Rust ext, run.

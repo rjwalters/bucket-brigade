@@ -90,6 +90,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 P3_DIR = REPO_ROOT / "experiments" / "p3_specialization"
 TRAIN_PY_MODULE = "experiments.p3_specialization.train"
 
+# The gap_closed metric written below is hard-coded to the MINSPEC_RANDOM /
+# MINSPEC_SPECIALIST baselines (see write_seed_summary and the analogous
+# run_tier1_cell.gap_closed). Running on any other scenario silently
+# produces uncalibrated numbers. We lock the scenario at the CLI and offer
+# an explicit opt-out (--allow-non-minspec-gap) so the failure mode is loud,
+# not silent. See PR #410 review feedback.
+MINSPEC_LOCKED_SCENARIO = "minimal_specialization"
+
 # Default NE phase-diagram results file (7 cells as of #358's partial
 # aggregate). The driver also accepts the freqtest variant or any other
 # results.json with the same schema.
@@ -559,7 +567,30 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "plan summary."
         ),
     )
+    p.add_argument(
+        "--allow-non-minspec-gap",
+        action="store_true",
+        help=(
+            "Opt out of the scenario lock that restricts --scenario to "
+            "minimal_specialization. gap_closed values written by this "
+            "driver are calibrated only against the MINSPEC_RANDOM / "
+            "MINSPEC_SPECIALIST baselines; any other scenario yields "
+            "uncalibrated numbers. Set this flag only if you know you want "
+            "raw trajectories without a comparable gap_closed."
+        ),
+    )
     args = p.parse_args(argv)
+
+    if args.scenario != MINSPEC_LOCKED_SCENARIO and not args.allow_non_minspec_gap:
+        print(
+            f"ERROR: --scenario '{args.scenario}' rejected.\n"
+            "       gap_closed metric is calibrated only for "
+            "minimal_specialization; other scenarios will produce "
+            "uncalibrated gap_closed values.\n"
+            "       Re-run with --allow-non-minspec-gap to override.",
+            file=sys.stderr,
+        )
+        return 5
 
     cells = load_cells(args.cells_source)
     if args.limit_cells is not None:
