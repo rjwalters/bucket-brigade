@@ -37,6 +37,15 @@ dependencies = [
     "typer>=0.4.0",
     "rich>=10.0.0",
     "tqdm>=4.64.0",
+    # Compiled Rust speedup (PyO3). Shipped as per-platform wheels built by
+    # ``.github/workflows/wheels.yml`` (issue #404). Listing it as a hard dep
+    # means ``pip install bucket-brigade`` pulls a working Rust ext on any
+    # supported platform — no separate ``cd bucket-brigade-core && pip
+    # install .`` step required. End users without a matching wheel (e.g.
+    # exotic arch) need a Rust toolchain to compile from sdist; in code
+    # paths that don't hard-depend on the ``.so`` we still degrade
+    # gracefully to a pure-Python fallback.
+    "bucket-brigade-core>=0.1.0",
 ]
 
 [project.urls]
@@ -80,6 +89,17 @@ huggingface = [
 all = [
     "bucket-brigade[rl,research,huggingface]",
 ]
+
+# uv workspace: lets ``uv sync`` / ``uv run`` resolve the
+# ``bucket-brigade-core`` runtime dep from the local ``bucket-brigade-core/``
+# directory instead of looking it up on PyPI (where it is not yet
+# published). Released wheels (built by .github/workflows/wheels.yml) do
+# not consult this section — it only affects ``uv``'s in-repo resolution.
+[tool.uv.workspace]
+members = ["bucket-brigade-core"]
+
+[tool.uv.sources]
+bucket-brigade-core = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["bucket_brigade"]

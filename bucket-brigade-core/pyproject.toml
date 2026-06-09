@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-rust>=1.9.0"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "bucket-brigade-core"
@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Rust core for Bucket Brigade multi-agent cooperation simulation"
 readme = "README.md"
 requires-python = ">=3.9,<3.14"  # PyO3 0.22.6 requires Python <=3.13
+license = {text = "MIT"}
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -22,14 +23,27 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-[tool.setuptools]
-packages = ["bucket_brigade_core"]
+[project.urls]
+Homepage = "https://github.com/rjwalters/bucket-brigade"
+Repository = "https://github.com/rjwalters/bucket-brigade"
+Issues = "https://github.com/rjwalters/bucket-brigade/issues"
 
-[tool.setuptools-rust]
+# Maturin configuration (issue #404).
+#
+# We use the mixed Python/Rust layout: the Python package source lives under
+# ``bucket_brigade_core/`` and the compiled Rust extension is built as a
+# submodule ``bucket_brigade_core.bucket_brigade_core``. The
+# ``python-source`` key tells maturin where the Python source tree lives;
+# ``module-name`` is the dotted name of the compiled module within the
+# package.
+#
+# ``features = ["python"]`` enables the PyO3 bindings (the crate defaults to
+# no pyo3 features so the same source tree can also be compiled as a
+# pure-Rust library or to wasm).
+#
+# ``strip = true`` shrinks release wheels.
+[tool.maturin]
+python-source = "."
+module-name = "bucket_brigade_core.bucket_brigade_core"
 features = ["python"]
-
-[[tool.setuptools-rust.ext-modules]]
-target = "bucket_brigade_core.bucket_brigade_core"
-path = "Cargo.toml"
-binding = "PyO3"
-features = ["python"]
+strip = true
