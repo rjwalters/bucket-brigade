@@ -120,6 +120,18 @@ class CellConfig:
     # the ``--action-shaping-alpha`` / ``--action-shaping-beta`` flags.
     action_shaping_alpha: float = 0.0
     action_shaping_beta: float = 0.0
+    # Issue #360: per-cell (β, κ, c) overrides for the NE phase-diagram sweep.
+    # ``None`` (default) preserves whatever values the base scenario shipped
+    # with — bit-identical to pre-#360 behavior. When set, the loaded
+    # ``Scenario`` instance is mutated in ``train_one_cell`` so per-step
+    # rewards and fire dynamics match the cell's NE search. Mirrors the
+    # ``compute_nash_phase_diagram._make_scenario`` wiring (β ->
+    # ``prob_fire_spreads_to_neighbor``, κ ->
+    # ``prob_solo_agent_extinguishes_fire``, c ->
+    # ``cost_to_work_one_night``).
+    prob_fire_spreads_to_neighbor: Optional[float] = None
+    prob_solo_agent_extinguishes_fire: Optional[float] = None
+    cost_to_work_one_night: Optional[float] = None
     # Issue #265: dense progress shaping coefficient. Mutated onto the loaded
     # ``Scenario`` instance in ``train_one_cell`` so the per-cell knob takes
     # effect inside ``_compute_rewards``. Default ``0.0`` matches the
@@ -926,6 +938,23 @@ def train_one_cell(cfg: CellConfig, output_dir: Path) -> None:
     scenario.action_shaping_alpha = float(cfg.action_shaping_alpha)
     scenario.action_shaping_beta = float(cfg.action_shaping_beta)
 
+    # Issue #360: per-cell (β, κ, c) overrides for the NE phase-diagram sweep.
+    # ``None`` leaves the scenario's shipped value untouched (bit-identical
+    # pre-#360 behavior); a float mutates the loaded ``Scenario`` instance
+    # so the env's rollout uses the cell's reward params. Mirrors the
+    # ``compute_nash_phase_diagram._make_scenario`` mapping so the NE
+    # phase-diagram cells are reward-comparable to PPO training cells.
+    if cfg.prob_fire_spreads_to_neighbor is not None:
+        scenario.prob_fire_spreads_to_neighbor = float(
+            cfg.prob_fire_spreads_to_neighbor
+        )
+    if cfg.prob_solo_agent_extinguishes_fire is not None:
+        scenario.prob_solo_agent_extinguishes_fire = float(
+            cfg.prob_solo_agent_extinguishes_fire
+        )
+    if cfg.cost_to_work_one_night is not None:
+        scenario.cost_to_work_one_night = float(cfg.cost_to_work_one_night)
+
     # Issue #265: mutate the dense progress shaping coefficient. Default
     # ``0.0`` keeps the env fast-path skip and bit-identical pre-#265
     # behavior; the #265 sweep driver passes per-cell values.
@@ -1322,6 +1351,37 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--prob-fire-spreads-to-neighbor",
+        type=float,
+        default=None,
+        help=(
+            "Issue #360: per-cell β override for the NE phase-diagram sweep "
+            "(mutates Scenario.prob_fire_spreads_to_neighbor). Default None "
+            "leaves the base scenario's value untouched. Matches the "
+            "compute_nash_phase_diagram._make_scenario wiring."
+        ),
+    )
+    p.add_argument(
+        "--prob-solo-agent-extinguishes-fire",
+        type=float,
+        default=None,
+        help=(
+            "Issue #360: per-cell κ override for the NE phase-diagram sweep "
+            "(mutates Scenario.prob_solo_agent_extinguishes_fire). Default "
+            "None leaves the base scenario's value untouched."
+        ),
+    )
+    p.add_argument(
+        "--cost-to-work-one-night",
+        type=float,
+        default=None,
+        help=(
+            "Issue #360: per-cell c override for the NE phase-diagram sweep "
+            "(mutates Scenario.cost_to_work_one_night). Default None leaves "
+            "the base scenario's value untouched."
+        ),
+    )
+    p.add_argument(
         "--progress-shaping-coef",
         type=float,
         default=CellConfig.__dataclass_fields__["progress_shaping_coef"].default,
@@ -1660,6 +1720,9 @@ def main() -> None:
         curriculum=args.curriculum,
         action_shaping_alpha=args.action_shaping_alpha,
         action_shaping_beta=args.action_shaping_beta,
+        prob_fire_spreads_to_neighbor=args.prob_fire_spreads_to_neighbor,
+        prob_solo_agent_extinguishes_fire=args.prob_solo_agent_extinguishes_fire,
+        cost_to_work_one_night=args.cost_to_work_one_night,
         progress_shaping_coef=args.progress_shaping_coef,
         team_welfare_lambda=args.team_welfare_lambda,
         team_welfare_gamma=args.team_welfare_gamma,
