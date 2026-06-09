@@ -1,0 +1,213 @@
+{
+  "n_episodes": 10000,
+  "n_boot": 1000,
+  "seed": 0,
+  "n_cells_processed": 4,
+  "n_cells_skipped": 3,
+  "skipped_cells": [
+    {
+      "cell_tag": "b0.10_k0.10_c0.50",
+      "host": "alc-4",
+      "beta": 0.1,
+      "kappa": 0.1,
+      "c": 0.5,
+      "verdict": "no_convergence",
+      "reason": "No converged NE in this cell's results.json."
+    },
+    {
+      "cell_tag": "b0.50_k0.10_c0.50",
+      "host": "alc-2",
+      "beta": 0.5,
+      "kappa": 0.1,
+      "c": 0.5,
+      "verdict": "no_convergence",
+      "reason": "No converged NE in this cell's results.json."
+    },
+    {
+      "cell_tag": "b0.90_k0.10_c0.50",
+      "host": "alc-6",
+      "beta": 0.9,
+      "kappa": 0.1,
+      "c": 0.5,
+      "verdict": "no_convergence",
+      "reason": "No converged NE in this cell's results.json."
+    }
+  ],
+  "units": "bits (Miller-Madow corrected plug-in)",
+  "ci_method": "episode-level bootstrap, 95%",
+  "cells": [
+    {
+      "cell_tag": "b0.50_k0.50_c0.50",
+      "beta": 0.5,
+      "kappa": 0.5,
+      "c": 0.5,
+      "verdict": "symmetric_only",
+      "n_episodes": 10000,
+      "n_steps_total": 131753,
+      "positions": [
+        {
+          "position": 0,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.956871573900425,
+          "h_cond": 1.912097776210194,
+          "h_cond_ci_lo": 1.817838238019296,
+          "h_cond_ci_hi": 1.8732933696466614
+        },
+        {
+          "position": 1,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.687654676972237,
+          "h_cond": 2.181314673138383,
+          "h_cond_ci_lo": 2.0887802585384643,
+          "h_cond_ci_hi": 2.139079293347502
+        },
+        {
+          "position": 2,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.675353600151047,
+          "h_cond": 2.193615749959572,
+          "h_cond_ci_lo": 2.100662390129498,
+          "h_cond_ci_hi": 2.1486977760332753
+        },
+        {
+          "position": 3,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.667162929112787,
+          "h_cond": 2.2018064209978325,
+          "h_cond_ci_lo": 2.110100723724942,
+          "h_cond_ci_hi": 2.158321639694694
+        }
+      ]
+    },
+    {
+      "cell_tag": "b0.50_k0.90_c0.50",
+      "beta": 0.5,
+      "kappa": 0.9,
+      "c": 0.5,
+      "verdict": "asymmetric_only",
+      "n_episodes": 10000,
+      "n_steps_total": 132094,
+      "positions": [
+        {
+          "position": 0,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.603577992196103,
+          "h_cond": 1.9747144989470726,
+          "h_cond_ci_lo": 1.891254840422841,
+          "h_cond_ci_hi": 1.9480319393439878
+        },
+        {
+          "position": 1,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.137962223971824,
+          "h_cond": 2.440330267171351,
+          "h_cond_ci_lo": 2.363849088462587,
+          "h_cond_ci_hi": 2.387769669155015
+        },
+        {
+          "position": 2,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.147949441329445,
+          "h_cond": 2.4303430498137306,
+          "h_cond_ci_lo": 2.354178048114994,
+          "h_cond_ci_hi": 2.3777867713413463
+        },
+        {
+          "position": 3,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.132963049818888,
+          "h_cond": 2.4453294413242874,
+          "h_cond_ci_lo": 2.369687641844054,
+          "h_cond_ci_hi": 2.392380463917627
+        }
+      ]
+    },
+    {
+      "cell_tag": "b0.90_k0.50_c0.50",
+      "beta": 0.9,
+      "kappa": 0.5,
+      "c": 0.5,
+      "verdict": "symmetric_only",
+      "n_episodes": 10000,
+      "n_steps_total": 131753,
+      "positions": [
+        {
+          "position": 0,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.956871573900425,
+          "h_cond": 1.912097776210194,
+          "h_cond_ci_lo": 1.817838238019296,
+          "h_cond_ci_hi": 1.8732933696466614
+        },
+        {
+          "position": 1,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.687654676972237,
+          "h_cond": 2.181314673138383,
+          "h_cond_ci_lo": 2.0887802585384643,
+          "h_cond_ci_hi": 2.139079293347502
+        },
+        {
+          "position": 2,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.675353600151047,
+          "h_cond": 2.193615749959572,
+          "h_cond_ci_lo": 2.100662390129498,
+          "h_cond_ci_hi": 2.1486977760332753
+        },
+        {
+          "position": 3,
+          "h_joint": 8.86896935011062,
+          "h_minus_i": 6.667162929112787,
+          "h_cond": 2.2018064209978325,
+          "h_cond_ci_lo": 2.110100723724942,
+          "h_cond_ci_hi": 2.158321639694694
+        }
+      ]
+    },
+    {
+      "cell_tag": "b0.90_k0.90_c0.50",
+      "beta": 0.9,
+      "kappa": 0.9,
+      "c": 0.5,
+      "verdict": "asymmetric_only",
+      "n_episodes": 10000,
+      "n_steps_total": 132094,
+      "positions": [
+        {
+          "position": 0,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.603577992196103,
+          "h_cond": 1.9747144989470726,
+          "h_cond_ci_lo": 1.891254840422841,
+          "h_cond_ci_hi": 1.9480319393439878
+        },
+        {
+          "position": 1,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.137962223971824,
+          "h_cond": 2.440330267171351,
+          "h_cond_ci_lo": 2.363849088462587,
+          "h_cond_ci_hi": 2.387769669155015
+        },
+        {
+          "position": 2,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.147949441329445,
+          "h_cond": 2.4303430498137306,
+          "h_cond_ci_lo": 2.354178048114994,
+          "h_cond_ci_hi": 2.3777867713413463
+        },
+        {
+          "position": 3,
+          "h_joint": 9.578292491143175,
+          "h_minus_i": 7.132963049818888,
+          "h_cond": 2.4453294413242874,
+          "h_cond_ci_lo": 2.369687641844054,
+          "h_cond_ci_hi": 2.392380463917627
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 617.166253566742
+}
