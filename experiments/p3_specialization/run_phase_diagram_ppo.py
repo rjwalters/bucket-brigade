@@ -105,6 +105,16 @@ DEFAULT_CELLS_SOURCE = (
     REPO_ROOT / "experiments" / "nash" / "phase_diagram" / "results.json"
 )
 
+# Per-cell baselines table (issue #413). When present, ``gap_closed`` is
+# computed against the cell's homogeneous SpecialistPolicy baseline
+# (apples-to-apples drop-in for MINSPEC_SPECIALIST) and ``gap_closed_ne``
+# is computed against the cell's 1×Hero+3×Firefighter NE profile baseline.
+# When absent (or when a cell is missing), we fall back to the global
+# MINSPEC constants and warn loudly.
+DEFAULT_PER_CELL_BASELINES = (
+    REPO_ROOT / "experiments" / "nash" / "phase_diagram" / "per_cell_baselines.json"
+)
+
 
 # ---------------------------------------------------------------------------
 # Cell loading
@@ -290,6 +300,90 @@ def _verdict_for(gap_closed_value: float) -> tuple[str, str]:
     return "insufficient", f"gap_closed = {gap_closed_value:.3f} < {low}"
 
 
+# ---------------------------------------------------------------------------
+# Per-cell baselines lookup (issue #413)
+# ---------------------------------------------------------------------------
+
+
+def _load_per_cell_baselines(path: Path) -> Optional[dict[str, dict]]:
+    """Read ``per_cell_baselines.json`` and index it by ``cell_tag``.
+
+    Returns ``None`` if the file is missing — callers fall back to
+    ``MINSPEC_*`` constants. Returns ``dict[cell_tag] -> cell_dict`` otherwise.
+    """
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    rows = data.get("cells")
+    if not isinstance(rows, list):
+        return None
+    return {row["cell_tag"]: row for row in rows if "cell_tag" in row}
+
+
+def _compute_gap_closed_dual(
+    trailing5: float,
+    cell_tag: str,
+    per_cell_table: Optional[dict[str, dict]],
+) -> tuple[Optional[float], Optional[float], Optional[float], str]:
+    """Return ``(gap_closed_homogeneous, gap_closed_ne, gap_closed_legacy, source)``.
+
+    * ``gap_closed_homogeneous``: ``(trailing5 - cell_random) /
+      (cell_specialist_homogeneous - cell_random)``. The drop-in replacement
+      for the old single-column gap_closed.
+    * ``gap_closed_ne``: ``(trailing5 - cell_random) / (cell_specialist_ne -
+      cell_random)``. The NE-baseline metric for the paper §3/§4 hypothesis.
+      ``None`` if the cell has no NE-genome data (e.g. no-convergence cells).
+    * ``gap_closed_legacy``: kept for backward compatibility; equals
+      ``gap_closed_homogeneous`` when per-cell baselines exist, otherwise
+      falls back to ``(trailing5 - MINSPEC_RANDOM) / (MINSPEC_SPECIALIST -
+      MINSPEC_RANDOM)``.
+    * ``source``: ``"per_cell"`` or ``"minspec_fallback"``; embedded in the
+      summary for downstream audit.
+
+    Issue #413: stop scoring every (β, κ, c) cell against the
+    canonical-cell MINSPEC constants. When the per-cell table is missing or
+    omits this cell, we warn loudly to stderr and fall back to MINSPEC so
+    the driver still produces a number.
+    """
+    # Lazy import — keeps this module import-cheap.
+    from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
+    cell_row = None
+    if per_cell_table is not None:
+        cell_row = per_cell_table.get(cell_tag)
+
+    if cell_row is None:
+        # Fall back, loudly.
+        print(
+            f"WARN: per_cell_baselines.json missing cell '{cell_tag}'; falling "
+            "back to MINSPEC_RANDOM / MINSPEC_SPECIALIST. gap_closed for this "
+            "cell will be uncalibrated for cross-cell comparison. "
+            "Regenerate with experiments/scripts/measure_per_cell_baselines.py.",
+            file=sys.stderr,
+        )
+        denom = MINSPEC_SPECIALIST - MINSPEC_RANDOM
+        legacy = (trailing5 - MINSPEC_RANDOM) / denom if denom != 0 else 0.0
+        return legacy, None, legacy, "minspec_fallback"
+
+    cell_random = float(cell_row["random_baseline"]["mean"])
+    cell_homo = float(cell_row["specialist_homogeneous"]["mean"])
+    denom_homo = cell_homo - cell_random
+    gc_homo = (trailing5 - cell_random) / denom_homo if denom_homo != 0 else 0.0
+
+    ne_row = cell_row.get("specialist_ne")
+    if ne_row is None:
+        gc_ne: Optional[float] = None
+    else:
+        cell_ne = float(ne_row["mean"])
+        denom_ne = cell_ne - cell_random
+        gc_ne = (trailing5 - cell_random) / denom_ne if denom_ne != 0 else 0.0
+
+    return gc_homo, gc_ne, gc_homo, "per_cell"
+
+
 def write_seed_summary(
     *,
     cell: dict,
@@ -299,25 +393,36 @@ def write_seed_summary(
     wall_seconds: float,
     command_invoked: str,
     git_sha: str,
+    per_cell_baselines_path: Optional[Path] = None,
 ) -> dict:
     """Compute the per-seed ``summary.json`` payload and write it to disk.
 
-    Schema (matches issue #360's "at minimum" list, plus NE-search context):
+    Schema (matches issue #360's "at minimum" list, plus NE-search context,
+    plus dual-column gap_closed from issue #413):
+
         cell:                   {beta, kappa, c, tag, ne_verdict?, ne_verdict_detail?}
         scenario:               base scenario name (defaults to minimal_specialization)
         seed:                   int
-        gap_closed:             trailing-5 mean_step_reward_team mapped via MINSPEC baselines
+        gap_closed:             trailing-5 mean_step_reward_team mapped via the
+                                cell's HOMOGENEOUS specialist baseline (drop-in
+                                replacement; falls back to MINSPEC constants if
+                                per_cell_baselines.json is missing).
+        gap_closed_homogeneous: explicit homogeneous-baseline column (== gap_closed
+                                when per-cell baselines are available).
+        gap_closed_ne:          NE-baseline column (1×Hero+3×Firefighter); None
+                                when the cell has no DO-NE genome file.
+        baseline_source:        "per_cell" or "minspec_fallback".
         verdict:                tier name from the run_tier1_cell ladder
+                                (computed from gap_closed_homogeneous).
         verdict_reason:         human-readable threshold string
         final_episode_return:   last iteration's mean episode return (per-agent average)
         trailing5_team_mean:    trailing-5 mean_step_reward_team (raw, pre-gap-closed)
-        wall_seconds:           subprocess wall time
-        command_invoked, git_sha
+        wall_seconds, command_invoked, git_sha
         n_iterations_completed: how many iterations metrics.json actually has
     """
-    # Lazy import — keeps the driver importable in environments without the
-    # Rust extension built (e.g. for CLI introspection / --help).
-    from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+    if per_cell_baselines_path is None:
+        per_cell_baselines_path = DEFAULT_PER_CELL_BASELINES
+    per_cell_table = _load_per_cell_baselines(per_cell_baselines_path)
 
     metrics = _load_metrics(seed_dir)
     if metrics is None or len(metrics) == 0:
@@ -326,6 +431,9 @@ def write_seed_summary(
             "scenario": scenario,
             "seed": seed,
             "gap_closed": None,
+            "gap_closed_homogeneous": None,
+            "gap_closed_ne": None,
+            "baseline_source": "no_data",
             "verdict": "no_data",
             "verdict_reason": "metrics.json missing or empty",
             "final_episode_return": None,
@@ -339,11 +447,14 @@ def write_seed_summary(
         trajectory = [float(row["mean_step_reward_team"]) for row in metrics]
         trail = trajectory[-5:] if len(trajectory) >= 5 else trajectory
         trailing5 = sum(trail) / len(trail)
-        denom = MINSPEC_SPECIALIST - MINSPEC_RANDOM
-        gap_closed_val = (trailing5 - MINSPEC_RANDOM) / denom if denom != 0 else 0.0
-        verdict, reason = _verdict_for(gap_closed_val)
-        # ``mean_episode_return`` is the canonical per-iteration team-return
-        # metric that ``train.py`` writes; we just expose the final one here.
+        gc_homo, gc_ne, gc_legacy, src = _compute_gap_closed_dual(
+            trailing5=trailing5,
+            cell_tag=cell.get("tag", ""),
+            per_cell_table=per_cell_table,
+        )
+        # Verdict ladder is unchanged; it consumes the homogeneous-baseline
+        # column (== legacy gap_closed by construction).
+        verdict, reason = _verdict_for(gc_legacy if gc_legacy is not None else 0.0)
         final_ret_key = (
             "mean_episode_return"
             if "mean_episode_return" in metrics[-1]
@@ -354,7 +465,10 @@ def write_seed_summary(
             "cell": cell,
             "scenario": scenario,
             "seed": seed,
-            "gap_closed": gap_closed_val,
+            "gap_closed": gc_legacy,
+            "gap_closed_homogeneous": gc_homo,
+            "gap_closed_ne": gc_ne,
+            "baseline_source": src,
             "verdict": verdict,
             "verdict_reason": reason,
             "final_episode_return": final_ret,
@@ -385,15 +499,21 @@ def build_cell_summary_for_phase_diagram(
     command_invoked: str,
     git_sha: str,
     wall_clock_seconds: float,
+    per_cell_baselines_path: Optional[Path] = None,
 ) -> dict:
     """Aggregate per-seed metrics for one (β, κ, c) cell.
 
-    Delegates the gap_closed / verdict ladder math to
+    Delegates the legacy gap_closed / verdict ladder math to
     ``run_tier1_cell.build_cell_summary`` so the output is schema-compatible
     with ``aggregate_tier1.py``. Adds the (β, κ, c) cell context as an
     extra top-level field so the cross-tab figure / Spearman correlation
     in #360's acceptance criteria can pivot on it without re-reading the
     NE-search results.json.
+
+    Issue #413: also reads each seed's ``summary.json`` (already written by
+    ``write_seed_summary`` with dual-column gap_closed) and aggregates
+    ``gap_closed_homogeneous`` and ``gap_closed_ne`` across seeds, so the
+    per-cell ``cell_summary.json`` exposes both calibration regimes.
     """
     # Lazy import — run_tier1_cell imports the baselines and other modules
     # that need the Rust extension built; lifting that to driver import-time
@@ -414,6 +534,39 @@ def build_cell_summary_for_phase_diagram(
     tier1_like["cell"] = cell
     tier1_like["rollout_steps"] = rollout_steps
     tier1_like["sweep"] = "phase_diagram_ppo"
+
+    # Aggregate dual-column gap_closed across seeds by reading each seed's
+    # summary.json (written by write_seed_summary with #413's dual columns).
+    homos: list[float] = []
+    nes: list[float] = []
+    sources: set[str] = set()
+    for sdir in seed_dirs:
+        sf = sdir / "summary.json"
+        if not sf.exists():
+            continue
+        try:
+            sd = json.loads(sf.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        gh = sd.get("gap_closed_homogeneous")
+        gn = sd.get("gap_closed_ne")
+        if gh is not None and not (isinstance(gh, float) and math.isnan(gh)):
+            homos.append(float(gh))
+        if gn is not None and not (isinstance(gn, float) and math.isnan(gn)):
+            nes.append(float(gn))
+        if sd.get("baseline_source"):
+            sources.add(str(sd["baseline_source"]))
+
+    def _mean(xs: list[float]) -> Optional[float]:
+        return float(sum(xs) / len(xs)) if xs else None
+
+    tier1_like["gap_closed_homogeneous_mean"] = _mean(homos)
+    tier1_like["gap_closed_homogeneous_per_seed"] = homos
+    tier1_like["gap_closed_ne_mean"] = _mean(nes)
+    tier1_like["gap_closed_ne_per_seed"] = nes
+    tier1_like["baseline_source"] = (
+        sorted(sources)[0] if len(sources) == 1 else (sorted(sources) or ["unknown"])
+    )
     return tier1_like
 
 
