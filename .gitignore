@@ -294,3 +294,9 @@ experiments/hyperparameter_tuning/
 .loom/usage-cache.json
 .loom/claude-config/
 .loom/logs/
+
+# PPO policy checkpoints from phase-diagram sweeps (#360 onward).
+# Per-cell summaries + the aggregator output are committed; .pt files
+# are regenerable from the same seed + cell params and would otherwise
+# bloat the repo (8+ MB per 7-cell sweep).
+experiments/p3_specialization/phase_diagram_ppo/**/policies/*.pt
