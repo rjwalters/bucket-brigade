@@ -290,7 +290,8 @@ fi
 
 # Remote bootstrap: try canonical repo paths, pull, build Rust ext, run.
 # Notes on the remote env (see CLAUDE.md):
-#   - PATH is bare under non-interactive SSH on macOS; prepend Homebrew + cargo.
+#   - PATH is bare under non-interactive SSH; prepend Homebrew (macOS),
+#     $HOME/.local/bin (Linux — uv installer's default), and $HOME/.cargo/bin.
 #   - PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 + unset RUSTC_WRAPPER for the build.
 #   - bucket-brigade-core/build.sh uses `python -m pip install -e .`, so the
 #     venv must have pip; uv ships venvs without pip by default. (See
@@ -298,7 +299,7 @@ fi
 #     before the editable install of bucket-brigade-core.)
 read -r -d '' REMOTE_BOOTSTRAP <<REMOTE_SCRIPT || true
 set -euo pipefail
-export PATH="/opt/homebrew/bin:\$HOME/.cargo/bin:\$PATH"
+export PATH="/opt/homebrew/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH"
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 unset RUSTC_WRAPPER || true
 
@@ -327,7 +328,14 @@ else
     uv venv
     uv pip install pip
 fi
-uv sync
+# --extra rl is mandatory for this sweep: experiments/p3_specialization/train.py
+# imports torch unconditionally. A bare `uv sync` produces a venv without
+# torch, every cell × seed crashes immediately at import, and the launcher
+# reports "0/7 cells produced metrics" after a few seconds. See
+# launch_ppo_baselines.sh:309 for the matching precedent (PPO baselines also
+# need --extra rl); launch_tier1_sweep.sh does NOT pass --extra rl because
+# its Rust-only trainers don't import torch.
+uv sync --extra rl
 
 # Build Rust extension (idempotent — skipped if .so is fresh).
 bash bucket-brigade-core/build.sh

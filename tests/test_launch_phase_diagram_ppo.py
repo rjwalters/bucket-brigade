@@ -160,3 +160,46 @@ def test_unknown_flag_exits_nonzero_with_message() -> None:
     result = _run(["--not-a-flag", "y", "--dry-run", "--skip-connectivity-check"])
     assert result.returncode != 0
     assert "unknown argument" in result.stderr.lower()
+
+
+def test_remote_bootstrap_installs_rl_extra() -> None:
+    """The remote bootstrap heredoc must invoke ``uv sync --extra rl``.
+
+    The first #360 alc-2 launch shipped with bare ``uv sync``, which
+    builds a venv without torch. Every (cell × seed) crashed at
+    ``import torch`` and the launcher reported "0/7 cells produced
+    metrics" after a few seconds of pure setup time. ``experiments/
+    p3_specialization/train.py`` imports torch unconditionally so the
+    ``rl`` extra is mandatory for this sweep — see launch_ppo_baselines.sh
+    for the matching precedent.
+    """
+    text = SCRIPT.read_text()
+    assert "uv sync --extra rl" in text, (
+        "remote bootstrap must use `uv sync --extra rl` — "
+        "bare `uv sync` produces a venv without torch and every "
+        "cell × seed crashes at import."
+    )
+    # And specifically NOT bare `uv sync` (which would mean the line was
+    # added without removing the bug).
+    lines = [ln.strip() for ln in text.splitlines()]
+    assert "uv sync" not in lines, (
+        "remote bootstrap still contains a bare `uv sync` line — "
+        "every `uv sync` invocation needs `--extra rl` for this sweep."
+    )
+
+
+def test_remote_bootstrap_path_includes_local_bin() -> None:
+    """The remote bootstrap PATH must include ``$HOME/.local/bin``.
+
+    Linux installs of uv land in ``$HOME/.local/bin/uv``. The previous
+    PATH export only listed ``/opt/homebrew/bin`` (macOS) and
+    ``$HOME/.cargo/bin`` (rustup), so the bootstrap would fail with
+    ``uv: command not found`` on Linux remotes (e.g. alc-2). The fix is
+    to insert ``$HOME/.local/bin`` between Homebrew and cargo.
+    """
+    text = SCRIPT.read_text()
+    assert "$HOME/.local/bin" in text, (
+        "remote bootstrap PATH is missing $HOME/.local/bin — "
+        "Linux installs of uv live there and the bootstrap will "
+        "fail with `uv: command not found` on alc-* / Linux remotes."
+    )

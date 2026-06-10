@@ -210,7 +210,7 @@ DRIVER_CMD="uv run python experiments/scripts/compute_nash_phase_diagram.py --ou
 #     venv must have pip; uv ships venvs without pip by default.
 read -r -d '' REMOTE_BOOTSTRAP <<REMOTE_SCRIPT || true
 set -euo pipefail
-export PATH="/opt/homebrew/bin:\$HOME/.cargo/bin:\$PATH"
+export PATH="/opt/homebrew/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH"
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 unset RUSTC_WRAPPER || true
 
