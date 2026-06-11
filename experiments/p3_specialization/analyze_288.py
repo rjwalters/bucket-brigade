@@ -39,8 +39,12 @@ try:
         gap_closed,
     )
 except ImportError:  # pragma: no cover
+    # Frozen-at-derivation fallback if analyze_270 is refactored. The
+    # ``MINSPEC_SPECIALIST`` value is updated under issue #416 to track
+    # the n=10k re-derivation in ``bucket_brigade/baselines/__init__.py`` —
+    # keep in sync with that file's ``MINSPEC_SPECIALIST``.
     MINSPEC_RANDOM = -96.07
-    MINSPEC_SPECIALIST = -22.07
+    MINSPEC_SPECIALIST = -28.38
     TRAILING_N = 5
 
     def gap_closed(per_step_team: float) -> float:

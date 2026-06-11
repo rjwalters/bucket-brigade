@@ -36,10 +36,13 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-# Hardcoded references (mirror analyze_270.py:39-40 — same scenario, so
-# the same random/specialist baselines apply).
+# Hardcoded references (frozen-at-derivation; ``MINSPEC_RANDOM = -96.07``
+# is the pre-#246 sampler-bug value kept frozen for compatibility with the
+# existing #291 results table). ``MINSPEC_SPECIALIST`` is updated under
+# issue #416 to the n=10k per-cell calibration value — keep in sync with
+# ``bucket_brigade/baselines/__init__.py``'s ``MINSPEC_SPECIALIST``.
 MINSPEC_RANDOM = -96.07
-MINSPEC_SPECIALIST = -22.07
+MINSPEC_SPECIALIST = -28.38
 TRAILING_N = 5
 
 # Verdict thresholds (curator-enhanced issue body):

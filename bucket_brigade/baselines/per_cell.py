@@ -1,6 +1,6 @@
 """Per-cell baseline measurement for the phase-diagram (β, κ, c) grid.
 
-Issue #413: ``MINSPEC_RANDOM = -87.72`` / ``MINSPEC_SPECIALIST = -22.07``
+Issue #413: ``MINSPEC_RANDOM = -87.72`` / ``MINSPEC_SPECIALIST = -28.38``
 are calibrated at a single point in the (β, κ, c) parameter space (the
 canonical ``minimal_specialization`` scenario, β=0.25 κ=0.5 c=0.5). The
 #360 phase-diagram PPO sweep scores every cell against that one yardstick,
@@ -294,7 +294,7 @@ def measure_specialist_homogeneous(
     """Measure per-step team reward for ``SpecialistPolicy ×4`` at (β, κ, c).
 
     This is the apples-to-apples per-cell drop-in for the
-    ``MINSPEC_SPECIALIST = -22.07`` constant from ``bucket_brigade.baselines``.
+    ``MINSPEC_SPECIALIST = -28.38`` constant from ``bucket_brigade.baselines``.
     """
     scenario = make_phase_diagram_scenario(beta, kappa, cost, base_scenario_name)
     seeds = _seeds_for(seed, n_episodes)

@@ -11,9 +11,12 @@ documented in that module's docstring:
   42..46), commit ``dffe1060``. Issue #237 / PR #244.
 
 * ``MINSPEC_SPECIALIST`` — hand-coded ``SpecialistPolicy`` per-step team
-  reward on the same scenario. Re-derived post-#236 under issue #238 /
-  PR #243; specialist policies signal honestly so the value is unchanged
-  from pre-#236 at the precision of the n=50 sampler.
+  reward on the same scenario. Re-derived under issue #416 from the
+  n=10k per-cell calibration landed in issue #413 / PR #415. The
+  canonical cell (β=0.25, κ=0.50, c=0.50) yields mean ``-28.376``,
+  CI95 [-29.748, -26.987] at n=10000 episodes (seed=0). Historical
+  n=50 value was ``-22.07`` (PR #243); the shift is a precision
+  correction, not a sampler-bug correction.
 
 * ``SCENARIO_RANDOM_BASELINES`` — value-only mirror of the ``random``
   column of ``random_baseline.SCENARIO_CITED_VALUES`` (issue #323). The
@@ -64,10 +67,11 @@ def test_minspec_random_is_canonical() -> None:
 
 
 def test_minspec_specialist_is_canonical() -> None:
-    """Canonical specialist per-step team reward (n=50, seed 42)."""
-    assert MINSPEC_SPECIALIST == -22.07, (
-        f"MINSPEC_SPECIALIST = {MINSPEC_SPECIALIST!r}; expected -22.07 "
-        "(issue #238 / PR #243 post-#236 re-derivation, n=50)."
+    """Canonical specialist per-step team reward (n=10000, seed 0)."""
+    assert MINSPEC_SPECIALIST == -28.38, (
+        f"MINSPEC_SPECIALIST = {MINSPEC_SPECIALIST!r}; expected -28.38 "
+        "(issue #416 re-derivation from the issue #413 / PR #415 per-cell "
+        "calibration, n=10000 at the canonical cell β=0.25 κ=0.50 c=0.50)."
     )
 
 

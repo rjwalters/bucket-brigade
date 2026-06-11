@@ -10,9 +10,9 @@ Covers:
 3. NE-genomes loader: round-trip a real phase-diagram NE-genome JSON.
 4. Acceptance criterion: ``specialist_homogeneous`` at the canonical
    calibration cell (β=0.25, κ=0.5, c=0.5) matches
-   ``MINSPEC_SPECIALIST = -22.07`` within bootstrap CI. Marked ``slow``
-   because it requires ~5k episodes for the CI to be tight enough to
-   detect the constant.
+   ``MINSPEC_SPECIALIST = -28.38`` within bootstrap CI. The tolerance
+   is tight (±2.0 nat, ~3 SE generous on the n=10k CI half-width of
+   ~1.4) now that both sides reflect n=10k precision (issue #416).
 """
 
 from __future__ import annotations
@@ -279,7 +279,7 @@ def _canonical_baselines_row() -> dict | None:
 class TestHomogeneousMatchesMinspecAtCanonicalCell:
     """The β=0.25, κ=0.5, c=0.5 canonical row in ``per_cell_baselines.json``
     should reproduce ``MINSPEC_RANDOM = -87.72`` and
-    ``MINSPEC_SPECIALIST = -22.07`` within bootstrap CI.
+    ``MINSPEC_SPECIALIST = -28.38`` within bootstrap CI.
 
     If ``per_cell_baselines.json`` has not yet been generated (e.g. before
     the remote sweep finishes), the test is skipped rather than failing,
@@ -288,20 +288,16 @@ class TestHomogeneousMatchesMinspecAtCanonicalCell:
 
     def test_homogeneous_matches_minspec_at_canonical_cell(self):
         """At the canonical cell (β=0.25 κ=0.5 c=0.5), the per-cell homogeneous
-        specialist baseline should match ``MINSPEC_SPECIALIST = -22.07``
-        within the original n=50 measurement's bootstrap CI (the issue #238
-        provenance window). The new n=10k measurement is tighter and may
-        land outside the new tight CI while still being inside the
-        original wide CI — that's expected and is the documented finding
-        of issue #413.
+        specialist baseline must match ``MINSPEC_SPECIALIST = -28.38``
+        within ±2.0 nat. After issue #416 both sides reflect the n=10k
+        calibration so the original 20.0 nat tolerance (needed to accommodate
+        the n=50 → n=10k bias jump from -22.07 → -28.38) is no longer
+        appropriate.
 
-        Issue #238 provenance (n=50 ``experiments/p3_specialization/
-        diagnostics/results/issue238_post236_minspec/baselines.json``):
-        specialist per_step CI95 = [-41.65, -3.20], mean -22.07.
-
-        If MINSPEC_SPECIALIST drifts outside ±20.0 of the new tight n=10k
-        center, that's a real regression — fire the alarm. Otherwise the
-        ~5-10 unit gap is just the n=50→n=10k bias correction.
+        The n=10k CI half-width at this cell is ~1.4; ±2.0 is approximately
+        3 SE generous so deterministic seed jitter doesn't trip the
+        guard, while still catching any real drift (a single-digit-nat
+        movement at n=10k is unambiguously a regression).
         """
         row = _canonical_baselines_row()
         if row is None:
@@ -310,15 +306,15 @@ class TestHomogeneousMatchesMinspecAtCanonicalCell:
                 "experiments/scripts/measure_per_cell_baselines.py on a remote host."
             )
         homo = row["specialist_homogeneous"]
-        # Original n=50 CI half-width from #238 baselines.json: ~19.2 units.
-        # We use 20.0 as the tolerance: any measurement within 20 units of
-        # MINSPEC_SPECIALIST is consistent with the original constant.
-        ORIGINAL_N50_HALF_WIDTH = 20.0
+        # Tightened in issue #416: both sides now n=10k; CI half-width ~1.4.
+        # ±2.0 ≈ 3 SE generous, will not flake on seed variation but still
+        # catches any silent re-derivation drift.
+        N10K_TOLERANCE = 2.0
         delta = abs(MINSPEC_SPECIALIST - homo["mean"])
-        assert delta < ORIGINAL_N50_HALF_WIDTH, (
+        assert delta < N10K_TOLERANCE, (
             f"canonical-cell homogeneous specialist mean={homo['mean']:.3f} "
             f"differs from MINSPEC_SPECIALIST={MINSPEC_SPECIALIST} by "
-            f"{delta:.3f} > {ORIGINAL_N50_HALF_WIDTH} (original n=50 CI half-width). "
+            f"{delta:.3f} > {N10K_TOLERANCE} (n=10k drift guard). "
             f"Tight CI=[{homo['ci95_lo']:.3f},{homo['ci95_hi']:.3f}]. "
             "MINSPEC_SPECIALIST may need re-derivation."
         )
