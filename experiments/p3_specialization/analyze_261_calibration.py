@@ -50,8 +50,11 @@ from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
 # Pre-registered references (per-step mean team reward) imported from the
 # canonical ``bucket_brigade.baselines`` constants (issue #293). See that
 # module's docstring for derivation provenance (random from PR #244 / issue
-# #237 post-#236; specialist from PR #243 / issue #238 post-#236).
-# Denominator: ``MINSPEC_SPECIALIST - MINSPEC_RANDOM ≈ 65.65``.
+# #237 post-#236; specialist re-derived under issue #416 from the n=10k
+# per-cell calibration in PR #415).
+# Denominator: ``MINSPEC_SPECIALIST - MINSPEC_RANDOM ≈ 59.34``
+# (= -28.38 - (-87.72)). Prior denominator was ≈ 65.65 under the n=50
+# ``MINSPEC_SPECIALIST = -22.07`` value (PR #243).
 
 SEEDS = [42, 43, 44]
 TRAILING_N = 5

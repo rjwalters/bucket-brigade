@@ -6,7 +6,8 @@ measures three per-step team-reward baselines:
 
 * ``random_baseline``: 4 uniform-random agents.
 * ``specialist_homogeneous``: :class:`SpecialistPolicy` ×4 (the
-  apples-to-apples per-cell drop-in for ``MINSPEC_SPECIALIST = -22.07``).
+  apples-to-apples per-cell drop-in for ``MINSPEC_SPECIALIST = -28.38``;
+  this driver was the source of the n=10k re-derivation under issue #416).
 * ``specialist_ne``: 1×Hero + 3×Firefighter heterogeneous-NE profile from
   the phase-diagram DO search (per-cell genomes under
   ``bucket_brigade/baselines/release/local/nash/phase_diagram/<tag>.json``).

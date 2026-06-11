@@ -175,9 +175,11 @@ class TestSpecialistCeilingSmoke:
                 wrapper.reset()
                 episodes_done += 1
         mean_team = float(np.mean(per_step_team_rewards))
-        # Random baseline on minimal_specialization is -96.07; specialist
-        # is -22.07 (analyze_270.py:39-40). Specialist should clear the
-        # random floor by a wide margin even on a tiny sample.
+        # Random baseline on minimal_specialization is -87.72 (or -96.07
+        # under the pre-#246 frozen analyzers); specialist is -28.38
+        # (canonical n=10k value from issue #416; was -22.07 under PR #243
+        # n=50). Specialist should clear the random floor by a wide margin
+        # even on a tiny sample.
         assert mean_team > -60.0, (
             f"specialist mean per-step team reward = {mean_team:.2f} did "
             "not clear -60 (random floor is -96.07). Either the wrapper "

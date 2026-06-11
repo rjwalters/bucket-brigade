@@ -42,9 +42,15 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-# Hardcoded references (mirror analyze_270.py:39-40).
+# Hardcoded references (mirror the frozen-at-derivation values used by the
+# original analyze_270 pre-#293 promotion). ``MINSPEC_RANDOM = -96.07`` is
+# the pre-#246 sampler-bug value deliberately kept frozen for compatibility
+# with the existing #282 results table; do not touch without re-running
+# the sweep. ``MINSPEC_SPECIALIST`` is updated under issue #416 to the
+# n=10k per-cell calibration value — keep in sync with
+# ``bucket_brigade/baselines/__init__.py``'s ``MINSPEC_SPECIALIST``.
 MINSPEC_RANDOM = -96.07
-MINSPEC_SPECIALIST = -22.07
+MINSPEC_SPECIALIST = -28.38
 TRAILING_N = 5
 
 # Tier thresholds (issue #282 curator spec).

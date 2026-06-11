@@ -50,13 +50,26 @@ from bucket_brigade.baselines.specialist import (
 #     ``experiments/p3_specialization/diagnostics/random_baseline.py``'s
 #     ``SCENARIO_CITED_VALUES["minimal_specialization"]["random"]``.
 #
-#   MINSPEC_SPECIALIST = -22.07
+#   MINSPEC_SPECIALIST = -28.38
 #     Hand-coded ``SpecialistPolicy`` per-step team reward on the same
-#     scenario. Re-derived post-#236 under issue #238 / PR #243; specialist
-#     policies signal honestly (``signal == mode``) so the team-reward
-#     distribution is unchanged from pre-#236 at n=50 precision.
-#     Logs: ``experiments/p3_specialization/diagnostics/results/
-#     issue238_post236_minspec/baselines.json``.
+#     scenario. Re-derived under issue #416 from the n=10k per-cell
+#     calibration sweep landed in issue #413 / PR #415; n=10000 episodes
+#     at the canonical cell (β=0.25, κ=0.50, c=0.50), seed=0,
+#     ``bucket_brigade.baselines.per_cell.measure_specialist_homogeneous``.
+#     Bootstrap 95% CI = [-29.748, -26.987].
+#     Source: ``experiments/nash/phase_diagram/per_cell_baselines.json``
+#     (first cell entry, ``cell_tag: canonical_b0.25_k0.50_c0.50``,
+#     measured at commit ``12a9ba6a`` on alc-9). The same value was
+#     reproduced under issue #416 at commit ``a476dc4e`` on alc-9 (seed=0,
+#     n=10000) for ground-truth verification.
+#
+#     Historical n=50 value: ``-22.0717`` (issue #238 / PR #243), measured
+#     with std 70.18 at n=50 from ``experiments/p3_specialization/
+#     diagnostics/results/issue238_post236_minspec/baselines.json``. The
+#     old mean was within ~0.64 SE of the new tight mean (delta 6.31 vs
+#     SE 9.93) but outside the new n=10k 95% CI. The shift is a sampling-
+#     precision correction, not a sampler-bug correction (cf. the #246
+#     ``MINSPEC_RANDOM`` history below).
 #
 # Historical note (issue #293): prior to this constant being promoted to
 # ``bucket_brigade.baselines``, three different MINSPEC_RANDOM values
@@ -64,9 +77,12 @@ from bucket_brigade.baselines.specialist import (
 # #243), ``-92.92`` (n=50 corrected sampler, intermediate), and the canonical
 # ``-87.72`` (n=1000 × 5 seeds, post-#246, PR #244). PR #250 fixed the sampler
 # but didn't propagate the new value through all consumers; issue #293
-# unified them on -87.72.
+# unified them on -87.72. The n=10k recalibration in PR #415 produced
+# ``-87.93`` for ``random_homogeneous`` at the canonical cell (delta 0.21,
+# inside even the tight CI); ``MINSPEC_RANDOM`` is intentionally left at
+# the n=1000 × 5-seeds value because the shift is below measurement noise.
 MINSPEC_RANDOM: float = -87.72
-MINSPEC_SPECIALIST: float = -22.07
+MINSPEC_SPECIALIST: float = -28.38
 
 # ---------------------------------------------------------------------------
 # Canonical per-step uniform-random team-reward references (all scenarios)
