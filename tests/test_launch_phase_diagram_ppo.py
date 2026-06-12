@@ -205,6 +205,49 @@ def test_remote_bootstrap_path_includes_local_bin() -> None:
     )
 
 
+def test_remote_bootstrap_has_pre_pull_untracked_guard() -> None:
+    """The remote bootstrap must check for untracked sweep-output files
+    BEFORE ``git pull --ff-only`` (issue #419).
+
+    After PR #414 some sweep-output paths that were untracked on the
+    cluster hosts got committed to main. The next bootstrap then aborts
+    at ``git pull --ff-only origin main`` with::
+
+        error: The following untracked working tree files would be
+        overwritten by merge:
+            experiments/p3_specialization/phase_diagram_ppo/...
+        Aborting
+
+    Hit on alc-2, alc-4, alc-6 on 2026-06-11 during the 27-cell
+    phase-diagram fill. The fix is a defensive pre-pull guard that
+    detects untracked files under the known sweep-output dirs and bails
+    loudly with the exact cleanup command pasted in the error message,
+    so the operator can fix it in one paste. Auto-delete and
+    stash-and-pop were both rejected as too aggressive / data-lossy on
+    a research cluster.
+
+    The guard lives between ``git fetch origin`` and the ``git checkout
+    main && git pull`` lines inside the REMOTE_BOOTSTRAP heredoc.
+    """
+    text = SCRIPT.read_text()
+    assert "STALE_PATHS=(" in text, (
+        "remote bootstrap must include the pre-pull untracked-files guard — "
+        "without it, `git pull` aborts on stale sweep outputs (#419)."
+    )
+    assert "git ls-files --others --exclude-standard" in text, (
+        "pre-pull guard must use `git ls-files --others --exclude-standard` "
+        "to detect untracked sweep outputs (the canonical 'untracked-but-not-"
+        "ignored' query)."
+    )
+    # And the message must hand the operator the exact cleanup command,
+    # because that's the whole reason we picked the bail-loudly option
+    # over the alternatives (silent auto-delete / stash-and-pop).
+    assert "rm -rf experiments/p3_specialization/phase_diagram_ppo" in text, (
+        "guard error message must paste the canonical `rm -rf` cleanup "
+        "command so the operator can fix it in one paste."
+    )
+
+
 def test_remote_bootstrap_sources_venv() -> None:
     """The remote bootstrap heredoc must invoke ``source .venv/bin/activate``
     after the venv exists, before ``uv sync`` and ``bash build.sh``.

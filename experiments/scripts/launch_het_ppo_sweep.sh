@@ -255,6 +255,52 @@ cd "\$REPO"
 echo "Remote repo: \$REPO"
 
 git fetch origin
+
+# Pre-pull guard (#419): detect untracked sweep-output files that would
+# block \`git pull --ff-only origin main\`. After PR #414 some sweep paths
+# that were untracked on the hosts got committed to main; the next pull
+# then aborts because git refuses to overwrite the host's untracked file
+# with the now-tracked version. Bail loudly with the exact cleanup command
+# pasted in the message — silent auto-delete on a research cluster could
+# erase work-in-progress, and stash-and-pop can drop data if a later step
+# fails. The operator workaround (\`rm -rf <path> && git pull\`) is what
+# this guard prints, so the fix is one paste away.
+STALE_PATHS=(
+    "experiments/p3_specialization/phase_diagram_ppo/"
+    "experiments/p3_specialization/phase_diagram_ppo_v2/"
+    "experiments/p3_specialization/phase_diagram_ppo_longbudget/"
+    "experiments/p3_specialization/tier1_runs/"
+    "experiments/nash/phase_diagram/preview/"
+)
+UNTRACKED_BLOCKERS=()
+for path in "\${STALE_PATHS[@]}"; do
+    if [[ -e "\$path" ]]; then
+        # \`git ls-files --others --exclude-standard\` lists ONLY untracked
+        # files (not ignored, not tracked). Empty output = nothing to clean.
+        while IFS= read -r f; do
+            UNTRACKED_BLOCKERS+=("\$f")
+        done < <(git ls-files --others --exclude-standard -- "\$path")
+    fi
+done
+if [[ \${#UNTRACKED_BLOCKERS[@]} -gt 0 ]]; then
+    echo "ERROR: Found \${#UNTRACKED_BLOCKERS[@]} untracked sweep-output file(s) that may block git pull (#419)." >&2
+    echo "These paths exist locally but were also committed to main; pulling will abort." >&2
+    echo "" >&2
+    echo "Offending files (first 20):" >&2
+    printf "  %s\n" "\${UNTRACKED_BLOCKERS[@]:0:20}" >&2
+    if [[ \${#UNTRACKED_BLOCKERS[@]} -gt 20 ]]; then
+        echo "  ... (\$(( \${#UNTRACKED_BLOCKERS[@]} - 20 )) more)" >&2
+    fi
+    echo "" >&2
+    echo "To proceed, remove the offending sweep-output dirs on this host and re-run:" >&2
+    echo "  rm -rf experiments/p3_specialization/phase_diagram_ppo*" >&2
+    echo "  rm -rf experiments/p3_specialization/tier1_runs" >&2
+    echo "  rm -rf experiments/nash/phase_diagram/preview" >&2
+    echo "" >&2
+    echo "These are gitignored sweep outputs; the .pt + per-cell summaries are already in main." >&2
+    exit 12
+fi
+
 git checkout main
 git pull --ff-only origin main
 
