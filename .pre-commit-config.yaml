@@ -22,9 +22,9 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$
+        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$|^paper/anvil_pub\..*\.audit/compile-log\.txt$
       - id: end-of-file-fixer
-        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$
+        exclude: ^experiments/(scenarios|nash|p3_specialization)/.*\.json$|^paper/anvil_pub\..*\.audit/compile-log\.txt$
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict

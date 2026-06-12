@@ -36,9 +36,9 @@ from matplotlib.colors import TwoSlopeNorm
 
 SCRIPT_PATH = Path(__file__).resolve()
 FIG_DIR = SCRIPT_PATH.parent.parent  # .../figures/
-VERSION_DIR = FIG_DIR.parent          # .../anvil_pub.bb-workshop.4/
-PAPER_DIR = VERSION_DIR.parent        # .../paper/
-REPO_ROOT = PAPER_DIR.parent          # .../bucket-brigade/
+VERSION_DIR = FIG_DIR.parent  # .../anvil_pub.bb-workshop.4/
+PAPER_DIR = VERSION_DIR.parent  # .../paper/
+REPO_ROOT = PAPER_DIR.parent  # .../bucket-brigade/
 
 DATA_PATH = (
     REPO_ROOT
@@ -54,9 +54,9 @@ OUTPUT_PATH = FIG_DIR / "recalibrated_heatmap.pdf"
 # Grid layout
 # ----------------------------------------------------------------------------
 
-BETAS = [0.1, 0.5, 0.9]            # columns left-to-right
+BETAS = [0.1, 0.5, 0.9]  # columns left-to-right
 KAPPAS = [0.1, 0.3, 0.5, 0.7, 0.9]  # rows bottom-to-top (kappa-low at bottom)
-CS = [0.5, 1.0, 2.0]                # three panels
+CS = [0.5, 1.0, 2.0]  # three panels
 
 
 def load_cells() -> dict[tuple[float, float, float], dict]:
@@ -99,16 +99,12 @@ def main() -> None:
 
     # 3 panels (one per c), each 3x5 cells. Anvil-paper is single-column;
     # ~6.5in wide accommodates three panels at a readable cell pitch.
-    fig, axes = plt.subplots(
-        1, 3, figsize=(6.5, 2.9), gridspec_kw={"wspace": 0.18}
-    )
+    fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.9), gridspec_kw={"wspace": 0.18})
 
     cmap = mpl.colormaps["RdYlGn"]
     norm = TwoSlopeNorm(vmin=-0.40, vcenter=0.0, vmax=0.40)
 
-    max_std = max(
-        (cell_metric(c)[1] or 0.0) for c in cells.values()
-    )
+    max_std = max((cell_metric(c)[1] or 0.0) for c in cells.values())
 
     for panel_idx, c_val in enumerate(CS):
         ax = axes[panel_idx]
@@ -121,7 +117,9 @@ def main() -> None:
                 if cell is None:
                     ax.add_patch(
                         mpatches.Rectangle(
-                            (x0, y0), 1, 1,
+                            (x0, y0),
+                            1,
+                            1,
                             facecolor="#ececec",
                             edgecolor="#999",
                             linewidth=0.5,
@@ -129,9 +127,14 @@ def main() -> None:
                         )
                     )
                     ax.text(
-                        cx, cy, "n/a",
-                        ha="center", va="center",
-                        fontsize=7, color="#666", style="italic",
+                        cx,
+                        cy,
+                        "n/a",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color="#666",
+                        style="italic",
                     )
                     continue
 
@@ -140,7 +143,9 @@ def main() -> None:
                 color = cmap(norm(mean))
                 ax.add_patch(
                     mpatches.Rectangle(
-                        (x0, y0), 1, 1,
+                        (x0, y0),
+                        1,
+                        1,
                         facecolor=color,
                         edgecolor="#444",
                         linewidth=0.5,
@@ -150,7 +155,9 @@ def main() -> None:
                 if is_fallback:
                     ax.add_patch(
                         mpatches.Rectangle(
-                            (x0, y0), 1, 1,
+                            (x0, y0),
+                            1,
+                            1,
                             facecolor="none",
                             edgecolor="#a33",
                             linewidth=0.0,
@@ -163,9 +170,13 @@ def main() -> None:
                 if is_fallback:
                     label = label + r"$^{\dagger}$"
                 ax.text(
-                    cx, cy + 0.18, label,
-                    ha="center", va="center",
-                    fontsize=7, fontweight="bold",
+                    cx,
+                    cy + 0.18,
+                    label,
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    fontweight="bold",
                     color="#1a1a1a",
                 )
 
@@ -173,22 +184,32 @@ def main() -> None:
                 bar_y = cy - 0.18
                 half = (std / max_std) * 0.40 if max_std > 0 else 0.0
                 ax.plot(
-                    [cx - half, cx + half], [bar_y, bar_y],
-                    color="#1a1a1a", linewidth=0.9, solid_capstyle="butt",
+                    [cx - half, cx + half],
+                    [bar_y, bar_y],
+                    color="#1a1a1a",
+                    linewidth=0.9,
+                    solid_capstyle="butt",
                 )
                 cap_h = 0.04
                 ax.plot(
-                    [cx - half, cx - half], [bar_y - cap_h, bar_y + cap_h],
-                    color="#1a1a1a", linewidth=0.8,
+                    [cx - half, cx - half],
+                    [bar_y - cap_h, bar_y + cap_h],
+                    color="#1a1a1a",
+                    linewidth=0.8,
                 )
                 ax.plot(
-                    [cx + half, cx + half], [bar_y - cap_h, bar_y + cap_h],
-                    color="#1a1a1a", linewidth=0.8,
+                    [cx + half, cx + half],
+                    [bar_y - cap_h, bar_y + cap_h],
+                    color="#1a1a1a",
+                    linewidth=0.8,
                 )
                 ax.plot(
-                    [cx], [bar_y],
-                    marker="o", markersize=2.5,
-                    color="#1a1a1a", markeredgecolor="white",
+                    [cx],
+                    [bar_y],
+                    marker="o",
+                    markersize=2.5,
+                    color="#1a1a1a",
+                    markeredgecolor="white",
                     markeredgewidth=0.3,
                 )
 
@@ -211,11 +232,15 @@ def main() -> None:
 
     legend_handles = [
         mpatches.Patch(
-            facecolor=cmap(norm(0.30)), edgecolor="#444", linewidth=0.5,
+            facecolor=cmap(norm(0.30)),
+            edgecolor="#444",
+            linewidth=0.5,
             label=r"NE-anchored $\mathtt{gap\_closed\_ne}$",
         ),
         mpatches.Patch(
-            facecolor=cmap(norm(-0.10)), edgecolor="#a33", linewidth=0.5,
+            facecolor=cmap(norm(-0.10)),
+            edgecolor="#a33",
+            linewidth=0.5,
             hatch="///",
             label=(
                 r"fallback $\mathtt{gap\_closed\_homogeneous}$ "
@@ -223,7 +248,9 @@ def main() -> None:
             ),
         ),
         mpatches.Patch(
-            facecolor="#ececec", edgecolor="#999", linewidth=0.5,
+            facecolor="#ececec",
+            edgecolor="#999",
+            linewidth=0.5,
             hatch="xxx",
             label=r"cell not sampled (n/a)",
         ),
