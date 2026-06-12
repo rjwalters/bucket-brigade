@@ -328,6 +328,12 @@ else
     uv venv
     uv pip install pip
 fi
+# Activate the venv so subsequent `uv pip install` and `bash build.sh` see
+# VIRTUAL_ENV and write to .venv/bin (issue #418). Without this, `uv pip
+# install maturin` inside build.sh has occasionally landed in a different
+# location and the subsequent bare `maturin develop` call fails with
+# "Failed to spawn: maturin — No such file or directory".
+source .venv/bin/activate
 # --extra rl is mandatory for this sweep: experiments/p3_specialization/train.py
 # imports torch unconditionally. A bare `uv sync` produces a venv without
 # torch, every cell × seed crashes immediately at import, and the launcher

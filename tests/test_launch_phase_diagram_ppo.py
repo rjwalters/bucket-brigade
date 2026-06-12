@@ -203,3 +203,32 @@ def test_remote_bootstrap_path_includes_local_bin() -> None:
         "Linux installs of uv live there and the bootstrap will "
         "fail with `uv: command not found` on alc-* / Linux remotes."
     )
+
+
+def test_remote_bootstrap_sources_venv() -> None:
+    """The remote bootstrap heredoc must invoke ``source .venv/bin/activate``
+    after the venv exists, before ``uv sync`` and ``bash build.sh``.
+
+    Without an explicit activation, the bootstrap can intermittently hit
+    the issue-#418 failure mode: ``bucket-brigade-core/build.sh`` runs
+    ``uv pip install maturin`` followed by a bare ``maturin develop``
+    invocation, and when ``VIRTUAL_ENV`` is not exported the install
+    sometimes lands in a location that isn't on PATH and isn't
+    ``.venv/bin``. The bare ``maturin develop`` then fails to spawn:
+
+        error: Failed to spawn: `maturin`
+          Caused by: No such file or directory (os error 2)
+
+    Sourcing the venv before ``uv sync``/``build.sh`` exports
+    ``VIRTUAL_ENV`` and puts ``.venv/bin`` on PATH, so the install
+    location is unambiguous and ``maturin`` resolves on the very next
+    line. This was observed twice in a row on alc-9 during the
+    2026-06-11 phase-diagram fill (other hosts in the same batch were
+    unaffected).
+    """
+    text = SCRIPT.read_text()
+    assert "source .venv/bin/activate" in text, (
+        "remote bootstrap must source the venv before uv sync — "
+        "build.sh's `uv pip install maturin` writes to a different "
+        "location and `maturin develop` then fails to spawn (issue #418)."
+    )
