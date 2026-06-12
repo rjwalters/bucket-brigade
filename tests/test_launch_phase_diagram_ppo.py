@@ -248,6 +248,37 @@ def test_remote_bootstrap_has_pre_pull_untracked_guard() -> None:
     )
 
 
+def test_dry_run_does_not_execute_heredoc_backticks_locally() -> None:
+    """Unescaped backticks in REMOTE_BOOTSTRAP comments execute locally at
+    heredoc-read time, leaking pip/maturin output before the plan prints (#425).
+
+    The REMOTE_BOOTSTRAP heredoc opens with ``<<REMOTE_SCRIPT`` (unquoted),
+    so bash command-substitutes backtick content while READING the heredoc
+    on the local machine. The heredoc comments mention shell hints like
+    ``\\`uv pip install pip\\``` to point operators at the right fix — but
+    without escaping, bash actually runs those commands locally as the
+    launcher starts up, polluting --dry-run output with pip/maturin/uv
+    progress before the documented plan banner ever prints.
+
+    This test fails on the buggy state because the leaked pip-install
+    output appears before the plan banner. After escaping the backticks
+    (``\\`uv pip install pip\\```), the dry-run is silent except for the
+    plan.
+    """
+    result = _run(["--dry-run", "--skip-connectivity-check"])
+    assert result.returncode == 0
+    plan_marker = "Phase-diagram PPO sweep launch"
+    plan_start = result.stdout.find(plan_marker)
+    assert plan_start >= 0, f"plan banner not found; stdout={result.stdout!r}"
+    pre_plan = result.stdout[:plan_start] + result.stderr
+    for needle in ("Installed", "Resolved", "maturin", "from bucket_brigade_core"):
+        assert needle not in pre_plan, (
+            f"dry-run leaked {needle!r} before the plan banner — "
+            f"likely an unescaped backtick in REMOTE_BOOTSTRAP (#425).\n"
+            f"pre-plan output:\n{pre_plan[:1000]}"
+        )
+
+
 def test_remote_bootstrap_sources_venv() -> None:
     """The remote bootstrap heredoc must invoke ``source .venv/bin/activate``
     after the venv exists, before ``uv sync`` and ``bash build.sh``.
