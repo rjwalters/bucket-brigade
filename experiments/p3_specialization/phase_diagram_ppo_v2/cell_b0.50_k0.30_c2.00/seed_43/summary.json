@@ -1,0 +1,24 @@
+{
+  "cell": {
+    "beta": 0.5,
+    "kappa": 0.3,
+    "c": 2.0,
+    "tag": "b0.50_k0.30_c2.00",
+    "ne_verdict": "symmetric_only",
+    "ne_verdict_detail": "All 1 converged restarts produced symmetric profiles; best symmetric team payoff = -3538.30."
+  },
+  "scenario": "minimal_specialization",
+  "seed": 43,
+  "gap_closed": 0.3096651287367273,
+  "gap_closed_homogeneous": 0.3096651287367273,
+  "gap_closed_ne": 1.4615290195152888,
+  "baseline_source": "per_cell",
+  "verdict": "partial_lower",
+  "verdict_reason": "0.2 <= gap_closed < 0.49",
+  "final_episode_return": -79.6455078125,
+  "trailing5_team_mean": -84.48935546875,
+  "wall_seconds": 121.12615057895891,
+  "command_invoked": "/home/sphere/GitHub/bucket-brigade/.venv/bin/python3 -m experiments.p3_specialization.train --scenario minimal_specialization --algorithm ppo --lambda-red 0.0 --seed 43 --output-dir experiments/p3_specialization/phase_diagram_ppo_v2/cell_b0.50_k0.30_c2.00/seed_43 --num-iterations 50 --rollout-steps 2048 --prob-fire-spreads-to-neighbor 0.5 --prob-solo-agent-extinguishes-fire 0.3 --cost-to-work-one-night 2.0",
+  "git_sha": "0a9448d7",
+  "n_iterations_completed": 50
+}

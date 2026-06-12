@@ -1,0 +1,24 @@
+{
+  "cell": {
+    "beta": 0.5,
+    "kappa": 0.5,
+    "c": 0.5,
+    "tag": "b0.50_k0.50_c0.50",
+    "ne_verdict": "symmetric_only",
+    "ne_verdict_detail": "Symmetric NE (-821.68) dominates best asymmetric NE (-876.56) by gap=54.88 > epsilon=50.0."
+  },
+  "scenario": "minimal_specialization",
+  "seed": 42,
+  "gap_closed": 0.15529977160678185,
+  "gap_closed_homogeneous": 0.15529977160678185,
+  "gap_closed_ne": 0.4888266879059418,
+  "baseline_source": "per_cell",
+  "verdict": "insufficient",
+  "verdict_reason": "gap_closed = 0.155 < 0.2",
+  "final_episode_return": -74.84326171875,
+  "trailing5_team_mean": -78.6806640625,
+  "wall_seconds": 118.6366219939664,
+  "command_invoked": "/home/sphere/GitHub/bucket-brigade/.venv/bin/python3 -m experiments.p3_specialization.train --scenario minimal_specialization --algorithm ppo --lambda-red 0.0 --seed 42 --output-dir experiments/p3_specialization/phase_diagram_ppo_v2/cell_b0.50_k0.50_c0.50/seed_42 --num-iterations 50 --rollout-steps 2048 --prob-fire-spreads-to-neighbor 0.5 --prob-solo-agent-extinguishes-fire 0.5 --cost-to-work-one-night 0.5",
+  "git_sha": "0a9448d7",
+  "n_iterations_completed": 50
+}

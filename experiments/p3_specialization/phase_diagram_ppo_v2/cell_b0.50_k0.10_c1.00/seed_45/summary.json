@@ -1,0 +1,24 @@
+{
+  "cell": {
+    "beta": 0.5,
+    "kappa": 0.1,
+    "c": 1.0,
+    "tag": "b0.50_k0.10_c1.00",
+    "ne_verdict": "asymmetric_only",
+    "ne_verdict_detail": "All 1 converged restarts produced asymmetric profiles; best asymmetric team payoff = -9975.64."
+  },
+  "scenario": "minimal_specialization",
+  "seed": 45,
+  "gap_closed": -0.05088785600988786,
+  "gap_closed_homogeneous": -0.05088785600988786,
+  "gap_closed_ne": -0.18365558542600968,
+  "baseline_source": "per_cell",
+  "verdict": "insufficient",
+  "verdict_reason": "gap_closed = -0.051 < 0.2",
+  "final_episode_return": -111.1201171875,
+  "trailing5_team_mean": -100.555078125,
+  "wall_seconds": 118.11997047299519,
+  "command_invoked": "/home/sphere/GitHub/bucket-brigade/.venv/bin/python3 -m experiments.p3_specialization.train --scenario minimal_specialization --algorithm ppo --lambda-red 0.0 --seed 45 --output-dir experiments/p3_specialization/phase_diagram_ppo_v2/cell_b0.50_k0.10_c1.00/seed_45 --num-iterations 50 --rollout-steps 2048 --prob-fire-spreads-to-neighbor 0.5 --prob-solo-agent-extinguishes-fire 0.1 --cost-to-work-one-night 1.0",
+  "git_sha": "0a9448d7",
+  "n_iterations_completed": 50
+}

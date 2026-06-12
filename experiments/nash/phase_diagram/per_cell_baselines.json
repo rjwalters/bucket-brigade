@@ -25,6 +25,315 @@
       "ne_profile_label": null
     },
     {
+      "cell_tag": "b0.10_k0.10_c0.50",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.1,
+        "cost_to_work": 0.5
+      },
+      "random_baseline": {
+        "mean": -98.87102877693385,
+        "ci95_lo": -100.70658808760909,
+        "ci95_hi": -97.02759133244452,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.3310368872549,
+        "ci95_lo": -87.98911366481495,
+        "ci95_hi": -84.54757155903225,
+        "n_episodes": 10000
+      },
+      "specialist_ne": null,
+      "ne_genomes_path": null,
+      "ne_verdict": "no_convergence",
+      "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.10_c1.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.1,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -99.87079853466386,
+        "ci95_lo": -101.70678160757716,
+        "ci95_hi": -98.02788597133564,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.42398343985673,
+        "ci95_lo": -88.08305814667838,
+        "ci95_hi": -84.63987123851608,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -96.14491353776127,
+        "ci95_lo": -97.90043255081407,
+        "ci95_hi": -94.19680257743481,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.10_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.10_c2.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.1,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -101.87033805012389,
+        "ci95_lo": -103.70716864751334,
+        "ci95_hi": -100.02847524911792,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.60987654506033,
+        "ci95_lo": -88.27094711040522,
+        "ci95_hi": -84.82447059748371,
+        "n_episodes": 10000
+      },
+      "specialist_ne": null,
+      "ne_genomes_path": null,
+      "ne_verdict": "no_convergence",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.30_c1.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.3,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -94.19900550393234,
+        "ci95_lo": -96.00605690149953,
+        "ci95_hi": -92.39541143832821,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.19587160552682,
+        "ci95_lo": -59.76700904340727,
+        "ci95_hi": -56.59689549688241,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -84.18690555160526,
+        "ci95_lo": -85.80996663511364,
+        "ci95_hi": -82.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.30_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.30_c2.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.3,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -96.19842796191553,
+        "ci95_lo": -98.00154197080708,
+        "ci95_hi": -94.3950989114617,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.386380667690155,
+        "ci95_lo": -59.95925461499072,
+        "ci95_hi": -56.786514034199264,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -88.18690555160526,
+        "ci95_lo": -89.80996663511364,
+        "ci95_hi": -86.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.30_c2.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.50_c1.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -88.92891827407887,
+        "ci95_lo": -90.67358661814197,
+        "ci95_hi": -87.18644957454954,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.473691066580482,
+        "ci95_lo": -29.845674783424908,
+        "ci95_hi": -27.085565549578487,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -71.00925641672053,
+        "ci95_lo": -72.60024986176201,
+        "ci95_hi": -69.28426121073043,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.50_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.50_c2.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.5,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -90.92820841521223,
+        "ci95_lo": -92.66864735104569,
+        "ci95_hi": -89.18504485797781,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.669065653953886,
+        "ci95_lo": -30.041811661360697,
+        "ci95_hi": -27.281796246370668,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -66.0815004270362,
+        "ci95_lo": -67.64900563842652,
+        "ci95_hi": -64.29117068644622,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.50_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.70_c1.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.7,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -83.60077580559147,
+        "ci95_lo": -85.33640808573381,
+        "ci95_hi": -81.84856602017683,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 1.0086547765837097,
+        "ci95_lo": -0.12101155080060907,
+        "ci95_hi": 2.1509749379780745,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -47.90270584478022,
+        "ci95_lo": -49.454195619003855,
+        "ci95_hi": -46.323095797265545,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.70_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.70_c2.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.7,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -85.59999569300798,
+        "ci95_lo": -87.33371405954739,
+        "ci95_hi": -83.84744139273931,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 0.8088565410202543,
+        "ci95_lo": -0.3208410316169734,
+        "ci95_hi": 1.9527006728547185,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -52.60082072532859,
+        "ci95_lo": -54.16734684790118,
+        "ci95_hi": -51.10112549339448,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.70_c2.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.90_c1.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.9,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -78.58663184496876,
+        "ci95_lo": -80.35350372336579,
+        "ci95_hi": -76.8232619868563,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 31.87204035175608,
+        "ci95_lo": 31.16148138418107,
+        "ci95_hi": 32.575419516678785,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -23.920905459491486,
+        "ci95_lo": -25.33151181899106,
+        "ci95_hi": -22.61732245106793,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.90_c1.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.10_k0.90_c2.00",
+      "params": {
+        "beta": 0.1,
+        "kappa": 0.9,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -80.58571412249515,
+        "ci95_lo": -82.35359795763641,
+        "ci95_hi": -78.82235165365762,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 31.667018115169146,
+        "ci95_lo": 30.956010392429565,
+        "ci95_hi": 32.37050616865304,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -27.8213470453566,
+        "ci95_lo": -29.23157292470642,
+        "ci95_hi": -26.516594215221666,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.90_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
       "cell_tag": "b0.50_k0.10_c0.50",
       "params": {
         "beta": 0.5,
@@ -47,6 +356,117 @@
       "ne_genomes_path": null,
       "ne_verdict": "no_convergence",
       "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.10_c1.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.1,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -99.87079853466386,
+        "ci95_lo": -101.70678160757716,
+        "ci95_hi": -98.02788597133564,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.42398343985673,
+        "ci95_lo": -88.08305814667838,
+        "ci95_hi": -84.63987123851608,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -96.14491353776127,
+        "ci95_lo": -97.90043255081407,
+        "ci95_hi": -94.19680257743481,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.10_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.10_c2.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.1,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -101.87033805012389,
+        "ci95_lo": -103.70716864751334,
+        "ci95_hi": -100.02847524911792,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.60987654506033,
+        "ci95_lo": -88.27094711040522,
+        "ci95_hi": -84.82447059748371,
+        "n_episodes": 10000
+      },
+      "specialist_ne": null,
+      "ne_genomes_path": null,
+      "ne_verdict": "no_convergence",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.30_c1.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.3,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -94.19900550393234,
+        "ci95_lo": -96.00605690149953,
+        "ci95_hi": -92.39541143832821,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.19587160552682,
+        "ci95_lo": -59.76700904340727,
+        "ci95_hi": -56.59689549688241,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -84.18690555160526,
+        "ci95_lo": -85.80996663511364,
+        "ci95_hi": -82.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.30_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.30_c2.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.3,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -96.19842796191553,
+        "ci95_lo": -98.00154197080708,
+        "ci95_hi": -94.3950989114617,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.386380667690155,
+        "ci95_lo": -59.95925461499072,
+        "ci95_hi": -56.786514034199264,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -88.18690555160526,
+        "ci95_lo": -89.80996663511364,
+        "ci95_hi": -86.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.30_c2.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
     },
     {
       "cell_tag": "b0.50_k0.50_c0.50",
@@ -75,6 +495,122 @@
       },
       "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.50_c0.50.json",
       "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.50_c1.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.5,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -88.92891827407887,
+        "ci95_lo": -90.67358661814197,
+        "ci95_hi": -87.18644957454954,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.473691066580482,
+        "ci95_lo": -29.845674783424908,
+        "ci95_hi": -27.085565549578487,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -71.00925641672053,
+        "ci95_lo": -72.60024986176201,
+        "ci95_hi": -69.28426121073043,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.50_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.50_c2.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.5,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -90.92820841521223,
+        "ci95_lo": -92.66864735104569,
+        "ci95_hi": -89.18504485797781,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.669065653953886,
+        "ci95_lo": -30.041811661360697,
+        "ci95_hi": -27.281796246370668,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -66.0815004270362,
+        "ci95_lo": -67.64900563842652,
+        "ci95_hi": -64.29117068644622,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.50_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.70_c1.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.7,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -83.60077580559147,
+        "ci95_lo": -85.33640808573381,
+        "ci95_hi": -81.84856602017683,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 1.0086547765837097,
+        "ci95_lo": -0.12101155080060907,
+        "ci95_hi": 2.1509749379780745,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -47.90270584478022,
+        "ci95_lo": -49.454195619003855,
+        "ci95_hi": -46.323095797265545,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.70_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.70_c2.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.7,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -85.59999569300798,
+        "ci95_lo": -87.33371405954739,
+        "ci95_hi": -83.84744139273931,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 0.8088565410202543,
+        "ci95_lo": -0.3208410316169734,
+        "ci95_hi": 1.9527006728547185,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -52.60082072532859,
+        "ci95_lo": -54.16734684790118,
+        "ci95_hi": -51.10112549339448,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.70_c2.00.json",
+      "ne_verdict": "asymmetric_only",
       "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
     },
     {
@@ -107,28 +643,62 @@
       "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)"
     },
     {
-      "cell_tag": "b0.10_k0.10_c0.50",
+      "cell_tag": "b0.50_k0.90_c1.00",
       "params": {
-        "beta": 0.1,
-        "kappa": 0.1,
-        "cost_to_work": 0.5
+        "beta": 0.5,
+        "kappa": 0.9,
+        "cost_to_work": 1.0
       },
       "random_baseline": {
-        "mean": -98.87102877693385,
-        "ci95_lo": -100.70658808760909,
-        "ci95_hi": -97.02759133244452,
+        "mean": -78.58663184496876,
+        "ci95_lo": -80.35350372336579,
+        "ci95_hi": -76.8232619868563,
         "n_episodes": 10000
       },
       "specialist_homogeneous": {
-        "mean": -86.3310368872549,
-        "ci95_lo": -87.98911366481495,
-        "ci95_hi": -84.54757155903225,
+        "mean": 31.87204035175608,
+        "ci95_lo": 31.16148138418107,
+        "ci95_hi": 32.575419516678785,
         "n_episodes": 10000
       },
-      "specialist_ne": null,
-      "ne_genomes_path": null,
-      "ne_verdict": "no_convergence",
-      "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+      "specialist_ne": {
+        "mean": -23.920905459491486,
+        "ci95_lo": -25.33151181899106,
+        "ci95_hi": -22.61732245106793,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.90_c1.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.50_k0.90_c2.00",
+      "params": {
+        "beta": 0.5,
+        "kappa": 0.9,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -80.58571412249515,
+        "ci95_lo": -82.35359795763641,
+        "ci95_hi": -78.82235165365762,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 31.667018115169146,
+        "ci95_lo": 30.956010392429565,
+        "ci95_hi": 32.37050616865304,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -27.8213470453566,
+        "ci95_lo": -29.23157292470642,
+        "ci95_hi": -26.516594215221666,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.90_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
     },
     {
       "cell_tag": "b0.90_k0.10_c0.50",
@@ -153,6 +723,117 @@
       "ne_genomes_path": null,
       "ne_verdict": "no_convergence",
       "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.10_c1.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.1,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -99.87079853466386,
+        "ci95_lo": -101.70678160757716,
+        "ci95_hi": -98.02788597133564,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.42398343985673,
+        "ci95_lo": -88.08305814667838,
+        "ci95_hi": -84.63987123851608,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -96.14491353776127,
+        "ci95_lo": -97.90043255081407,
+        "ci95_hi": -94.19680257743481,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.10_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.10_c2.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.1,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -101.87033805012389,
+        "ci95_lo": -103.70716864751334,
+        "ci95_hi": -100.02847524911792,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -86.60987654506033,
+        "ci95_lo": -88.27094711040522,
+        "ci95_hi": -84.82447059748371,
+        "n_episodes": 10000
+      },
+      "specialist_ne": null,
+      "ne_genomes_path": null,
+      "ne_verdict": "no_convergence",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.30_c1.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.3,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -94.19900550393234,
+        "ci95_lo": -96.00605690149953,
+        "ci95_hi": -92.39541143832821,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.19587160552682,
+        "ci95_lo": -59.76700904340727,
+        "ci95_hi": -56.59689549688241,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -84.18690555160526,
+        "ci95_lo": -85.80996663511364,
+        "ci95_hi": -82.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.30_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.30_c2.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.3,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -96.19842796191553,
+        "ci95_lo": -98.00154197080708,
+        "ci95_hi": -94.3950989114617,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -58.386380667690155,
+        "ci95_lo": -59.95925461499072,
+        "ci95_hi": -56.786514034199264,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -88.18690555160526,
+        "ci95_lo": -89.80996663511364,
+        "ci95_hi": -86.36600390465418,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.30_c2.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
     },
     {
       "cell_tag": "b0.90_k0.50_c0.50",
@@ -184,6 +865,122 @@
       "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
     },
     {
+      "cell_tag": "b0.90_k0.50_c1.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.5,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -88.92891827407887,
+        "ci95_lo": -90.67358661814197,
+        "ci95_hi": -87.18644957454954,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.473691066580482,
+        "ci95_lo": -29.845674783424908,
+        "ci95_hi": -27.085565549578487,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -71.00925641672053,
+        "ci95_lo": -72.60024986176201,
+        "ci95_hi": -69.28426121073043,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.50_c1.00.json",
+      "ne_verdict": "symmetric_only",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.50_c2.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.5,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -90.92820841521223,
+        "ci95_lo": -92.66864735104569,
+        "ci95_hi": -89.18504485797781,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": -28.669065653953886,
+        "ci95_lo": -30.041811661360697,
+        "ci95_hi": -27.281796246370668,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -66.0815004270362,
+        "ci95_lo": -67.64900563842652,
+        "ci95_hi": -64.29117068644622,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.50_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.70_c1.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.7,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -83.60077580559147,
+        "ci95_lo": -85.33640808573381,
+        "ci95_hi": -81.84856602017683,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 1.0086547765837097,
+        "ci95_lo": -0.12101155080060907,
+        "ci95_hi": 2.1509749379780745,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -47.90270584478022,
+        "ci95_lo": -49.454195619003855,
+        "ci95_hi": -46.323095797265545,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.70_c1.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.70_c2.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.7,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -85.59999569300798,
+        "ci95_lo": -87.33371405954739,
+        "ci95_hi": -83.84744139273931,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 0.8088565410202543,
+        "ci95_lo": -0.3208410316169734,
+        "ci95_hi": 1.9527006728547185,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -52.60082072532859,
+        "ci95_lo": -54.16734684790118,
+        "ci95_hi": -51.10112549339448,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.70_c2.00.json",
+      "ne_verdict": "asymmetric_only",
+      "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00)"
+    },
+    {
       "cell_tag": "b0.90_k0.90_c0.50",
       "params": {
         "beta": 0.9,
@@ -211,6 +1008,64 @@
       "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.90_c0.50.json",
       "ne_verdict": "asymmetric_only",
       "ne_profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.90_c1.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.9,
+        "cost_to_work": 1.0
+      },
+      "random_baseline": {
+        "mean": -78.58663184496876,
+        "ci95_lo": -80.35350372336579,
+        "ci95_hi": -76.8232619868563,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 31.87204035175608,
+        "ci95_lo": 31.16148138418107,
+        "ci95_hi": 32.575419516678785,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -23.920905459491486,
+        "ci95_lo": -25.33151181899106,
+        "ci95_hi": -22.61732245106793,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.90_c1.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+    },
+    {
+      "cell_tag": "b0.90_k0.90_c2.00",
+      "params": {
+        "beta": 0.9,
+        "kappa": 0.9,
+        "cost_to_work": 2.0
+      },
+      "random_baseline": {
+        "mean": -80.58571412249515,
+        "ci95_lo": -82.35359795763641,
+        "ci95_hi": -78.82235165365762,
+        "n_episodes": 10000
+      },
+      "specialist_homogeneous": {
+        "mean": 31.667018115169146,
+        "ci95_lo": 30.956010392429565,
+        "ci95_hi": 32.37050616865304,
+        "n_episodes": 10000
+      },
+      "specialist_ne": {
+        "mean": -27.8213470453566,
+        "ci95_lo": -29.23157292470642,
+        "ci95_hi": -26.516594215221666,
+        "n_episodes": 10000
+      },
+      "ne_genomes_path": "bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.90_c2.00.json",
+      "ne_verdict": "mixed",
+      "ne_profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
     }
   ],
   "metadata": {
@@ -218,13 +1073,16 @@
     "seed": 0,
     "n_boot": 1000,
     "base_scenario": "minimal_specialization",
-    "git_sha": "12a9ba6a",
-    "measured_at": "2026-06-10T19:21:25Z",
-    "wall_seconds": 44.43808896117844,
+    "git_sha": "0a9448d7",
+    "measured_at": "2026-06-11T23:09:42Z",
+    "wall_seconds": 289.12035922985524,
     "missing_ne_genomes": [
-      "b0.50_k0.10_c0.50",
       "b0.10_k0.10_c0.50",
-      "b0.90_k0.10_c0.50"
+      "b0.10_k0.10_c2.00",
+      "b0.50_k0.10_c0.50",
+      "b0.50_k0.10_c2.00",
+      "b0.90_k0.10_c0.50",
+      "b0.90_k0.10_c2.00"
     ],
     "cells_source": "experiments/nash/phase_diagram/results.json"
   }

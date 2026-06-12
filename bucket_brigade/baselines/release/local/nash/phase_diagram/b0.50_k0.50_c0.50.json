@@ -88,18 +88,5 @@
         1.0
       ]
     }
-  ],
-  "source_parameters": {
-    "num_simulations": 1000,
-    "opt_simulations": 300,
-    "max_iterations": 25,
-    "epsilon": 50.0,
-    "num_restarts": 20,
-    "seed": 1051
-  },
-  "swept_parameters": {
-    "beta": 0.5,
-    "kappa": 0.5,
-    "c": 0.5
-  }
+  ]
 }
