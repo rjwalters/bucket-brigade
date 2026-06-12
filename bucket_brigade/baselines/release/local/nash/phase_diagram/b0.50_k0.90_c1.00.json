@@ -1,0 +1,92 @@
+{
+  "scenario_id": "minimal_specialization-v1",
+  "algorithm": "heterogeneous_double_oracle",
+  "param_names": [
+    "honesty_bias",
+    "work_tendency",
+    "neighbor_help_bias",
+    "own_house_priority",
+    "risk_aversion",
+    "coordination_weight",
+    "exploration_rate",
+    "fatigue_memory",
+    "rest_reward_bias",
+    "altruism_factor"
+  ],
+  "team_payoff": 66.273,
+  "per_position_payoffs": [
+    26.035,
+    83.65,
+    86.335,
+    69.072
+  ],
+  "symmetric_profile": false,
+  "profile_label": "hero(d=0.00) | firefighter(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+  "iterations": 6,
+  "positions": [
+    {
+      "position": 0,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        0.9999992672269092,
+        0.9999992852403243,
+        0.9999992612473217,
+        0.5000003863588822,
+        0.10000059208241512,
+        0.500000336416408,
+        6.631391979896092e-07,
+        0.9000000365346814,
+        6.867868206128921e-07,
+        0.9999992424115276
+      ]
+    },
+    {
+      "position": 1,
+      "closest_archetype": "firefighter(d=0.00)",
+      "genome": [
+        1.0,
+        0.9,
+        0.5,
+        0.8,
+        0.5,
+        0.7,
+        0.1,
+        0.0,
+        0.0,
+        0.8
+      ]
+    },
+    {
+      "position": 2,
+      "closest_archetype": "hero(d=0.00)",
+      "genome": [
+        0.999999564468289,
+        0.9999995767842125,
+        0.9999995715335512,
+        0.5000001975531305,
+        0.10000038882377432,
+        0.5000002258516576,
+        4.233722339363352e-07,
+        0.9000000253565487,
+        4.0805698071601285e-07,
+        0.9999995798916007
+      ]
+    },
+    {
+      "position": 3,
+      "closest_archetype": "firefighter(d=0.00)",
+      "genome": [
+        1.0,
+        0.9,
+        0.5,
+        0.8,
+        0.5,
+        0.7,
+        0.1,
+        0.0,
+        0.0,
+        0.8
+      ]
+    }
+  ]
+}

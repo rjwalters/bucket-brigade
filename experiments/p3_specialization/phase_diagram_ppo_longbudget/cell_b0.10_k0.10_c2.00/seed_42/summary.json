@@ -1,0 +1,24 @@
+{
+  "cell": {
+    "beta": 0.1,
+    "kappa": 0.1,
+    "c": 2.0,
+    "tag": "b0.10_k0.10_c2.00",
+    "ne_verdict": "no_convergence",
+    "ne_verdict_detail": "No restart converged within max_iterations (20 attempted). Likely needs more iterations or a tighter epsilon. Compute budget?"
+  },
+  "scenario": "minimal_specialization",
+  "seed": 42,
+  "gap_closed": 0.10127057467174923,
+  "gap_closed_homogeneous": 0.10127057467174923,
+  "gap_closed_ne": null,
+  "baseline_source": "per_cell",
+  "verdict": "insufficient",
+  "verdict_reason": "gap_closed = 0.101 < 0.2",
+  "final_episode_return": -100.25,
+  "trailing5_team_mean": -100.32490234375,
+  "wall_seconds": 930.8930508941412,
+  "command_invoked": "/home/sphere/GitHub/bucket-brigade/.venv/bin/python3 -m experiments.p3_specialization.train --scenario minimal_specialization --algorithm ppo --lambda-red 0.0 --seed 42 --output-dir experiments/p3_specialization/phase_diagram_ppo_longbudget/cell_b0.10_k0.10_c2.00/seed_42 --num-iterations 200 --rollout-steps 4096 --prob-fire-spreads-to-neighbor 0.1 --prob-solo-agent-extinguishes-fire 0.1 --cost-to-work-one-night 2.0",
+  "git_sha": "0a9448d7",
+  "n_iterations_completed": 200
+}

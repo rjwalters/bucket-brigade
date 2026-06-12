@@ -1,0 +1,24 @@
+{
+  "cell": {
+    "beta": 0.9,
+    "kappa": 0.9,
+    "c": 1.0,
+    "tag": "b0.90_k0.90_c1.00",
+    "ne_verdict": "mixed",
+    "ne_verdict_detail": "Symmetric NE (67.37) and asymmetric NE (66.27) both converge within epsilon=50.0 (|gap|=1.10)."
+  },
+  "scenario": "minimal_specialization",
+  "seed": 45,
+  "gap_closed": -0.10730857832326626,
+  "gap_closed_homogeneous": -0.10730857832326626,
+  "gap_closed_ne": -0.2168298833774429,
+  "baseline_source": "per_cell",
+  "verdict": "insufficient",
+  "verdict_reason": "gap_closed = -0.107 < 0.2",
+  "final_episode_return": -93.396240234375,
+  "trailing5_team_mean": -90.439794921875,
+  "wall_seconds": 118.28339348000009,
+  "command_invoked": "/home/sphere/GitHub/bucket-brigade/.venv/bin/python3 -m experiments.p3_specialization.train --scenario minimal_specialization --algorithm ppo --lambda-red 0.0 --seed 45 --output-dir experiments/p3_specialization/phase_diagram_ppo_v2/cell_b0.90_k0.90_c1.00/seed_45 --num-iterations 50 --rollout-steps 2048 --prob-fire-spreads-to-neighbor 0.9 --prob-solo-agent-extinguishes-fire 0.9 --cost-to-work-one-night 1.0",
+  "git_sha": "0a9448d7",
+  "n_iterations_completed": 50
+}
