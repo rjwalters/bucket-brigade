@@ -20,6 +20,7 @@ caveats. All commands assume:
 3. [Heterogeneous Nash equilibria (paper §3)](#3-heterogeneous-nash-equilibria)
 4. [Nash phase diagram across (β, κ, c)](#4-nash-phase-diagram-across-β-κ-c)
 5. [Specialist exploitability harness](#5-specialist-exploitability-harness)
+6. [PPO trainability sweep across NE-class cells (paper §4)](#6-ppo-trainability-sweep-across-ne-class-cells-paper-4)
 
 ---
 
@@ -223,6 +224,108 @@ against the `minimal_specialization` specialist baseline.
 
 **Source**: PRs #376 (per-position exploitability harness), #378
 (symmetric specialist Nash chain).
+
+---
+
+## 6. PPO trainability sweep across NE-class cells (paper §4)
+
+**Result**: Per-cell PPO trainability scan over the same $(\beta, \kappa, c)$
+grid as §4. The headline finding ordered by NE class is
+$\textsf{symmetric\_only}~(+0.180; n{=}11)$ $>$
+$\textsf{mixed}~(+0.107; n{=}9)$ $>$
+$\textsf{asymmetric\_only}~(+0.059; n{=}11)$ $>$
+$\textsf{no\_convergence}~(-0.049; n{=}6)$ on the
+`gap_closed_ne` metric (Random$\to$1$\times$Hero$+$3$\times$Firefighter
+recalibrated baseline). A targeted 4$\times$-budget rerun on the 6
+`no_convergence` cells worsens the verdict from $-0.049$ to $-0.108$,
+ruling out under-training as the cause of PPO's collapse on those cells.
+This is the trainability evidence the workshop paper's §4 finding rests on.
+
+**Artifacts**:
+- Original-budget sweep: `experiments/p3_specialization/phase_diagram_ppo_v2/cell_<tag>/cell_summary.json` (37 cells × 4 seeds)
+- 4×-budget rerun: `experiments/p3_specialization/phase_diagram_ppo_longbudget/cell_<tag>/cell_summary.json` (6 no_convergence cells × 4 seeds)
+- Recalibrated verdict tables: [`experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.md`](../experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.md), [`experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.md`](../experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.md)
+- Per-cell baselines consumed by the recalibrator: [`experiments/nash/phase_diagram/per_cell_baselines.json`](../experiments/nash/phase_diagram/per_cell_baselines.json)
+- Figure 2 source (per-cell heatmap): [`paper/anvil_pub.bb-workshop.4/figures/src/recalibrated_heatmap.py`](../paper/anvil_pub.bb-workshop.4/figures/src/recalibrated_heatmap.py)
+- Published paper: [`paper/anvil_pub.bb-workshop.4/main.tex`](../paper/anvil_pub.bb-workshop.4/main.tex)
+
+### 6a. PPO sweep at original budget (37 cells × 4 seeds)
+
+**Reproduce** **`[remote]`** — ~6h on a 32-core host (the canonical run was
+on alc-2). The launcher resolves a target host from `.env`, SSHes in,
+pulls latest main, rebuilds the Rust extension, and starts a detached
+tmux session that drives `run_phase_diagram_ppo.py` cell by cell. Per-cell
+summaries land at `cell_<tag>/cell_summary.json`:
+
+```bash
+./experiments/scripts/launch_phase_diagram_ppo.sh
+```
+
+### 6b. PPO sweep at 4× budget on no_convergence cells (6 cells × 4 seeds)
+
+**Reproduce** **`[remote]`** — ~6h on a 32-core host (the canonical run was
+on alc-6). There is no dedicated launcher yet; invoke the driver directly
+inside a remote tmux session, after constructing a 6-cell subset of
+`experiments/nash/phase_diagram/results.json` containing only cells with
+`verdict == "no_convergence"`:
+
+```bash
+python3 experiments/p3_specialization/run_phase_diagram_ppo.py \
+    --cells-source /tmp/no_conv_only.json \
+    --scenario minimal_specialization \
+    --seeds 42 43 44 45 \
+    --num-iterations 200 --rollout-steps 4096 \
+    --output-root experiments/p3_specialization/phase_diagram_ppo_longbudget
+```
+
+### 6c. Recalibration (no compute)
+
+The raw `cell_summary.json` files use a single canonical
+MINSPEC_RANDOM / MINSPEC_SPECIALIST pair across all cells. The
+recalibrator re-aggregates against per-cell Random and per-cell
+1$\times$Hero$+$3$\times$Firefighter baselines, producing the
+`gap_closed_homogeneous` and `gap_closed_ne` columns the paper reports.
+Run once per sweep:
+
+```bash
+uv run python experiments/scripts/recalibrate_phase_diagram_ppo.py \
+    --ppo-root experiments/p3_specialization/phase_diagram_ppo_v2 \
+    --output-md experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.md \
+    --output-json experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.json
+
+uv run python experiments/scripts/recalibrate_phase_diagram_ppo.py \
+    --ppo-root experiments/p3_specialization/phase_diagram_ppo_longbudget \
+    --output-md experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.md \
+    --output-json experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.json
+```
+
+### 6d. Headline-table and Figure 2 generation (no compute)
+
+The §4 heatmap (Figure 2) reads `recalibrated_verdict.json` from the
+original-budget sweep and renders a 3-panel 3×5 grid (β × κ across
+$c \in \{0.5, 1.0, 2.0\}$) per-cell `gap_closed_ne` heatmap to vector PDF:
+
+```bash
+uv run --with matplotlib python \
+    paper/anvil_pub.bb-workshop.4/figures/src/recalibrated_heatmap.py
+```
+
+The 4-class ordering summary printed at the bottom of each
+`recalibrated_verdict.md` is the textual headline that grounds the paper's
+§4 prose.
+
+### 6e. Workshop paper cross-link
+
+For the surrounding argument — the closed-form bound that predicts
+collapse $\to$ symmetric $\to$ asymmetric, how the empirical
+`mixed` class sits between symmetric and asymmetric, and the
+trainability-vs-NE-structure framing — see
+[`paper/anvil_pub.bb-workshop.4/main.tex`](../paper/anvil_pub.bb-workshop.4/main.tex)
+§4.
+
+**Source**: PR #420 (sweep results + per-cell baselines + recalibrator),
+PR #421 (workshop paper that uses this data), parent #357 (M4 release-
+infra tracker).
 
 ---
 
