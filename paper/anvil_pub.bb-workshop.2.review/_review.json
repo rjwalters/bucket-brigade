@@ -1,0 +1,126 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.2",
+  "critic_id": "pub-review",
+  "rubric": "anvil-pub-v2",
+  "scores": [
+    {
+      "id": "rigor",
+      "name": "Rigor of method / argument",
+      "score": 5,
+      "max": 6,
+      "justification": "Single-house mean-field reduction is derived in closed form with explicit eqs. (S)/(A)/(C). The 3-10x quantitative gap against the empirical solver is owned with three named systematic biases. PPO protocol pins hyperparameters and uses in-repo JointPPOTrainer. The one rigor weakness is the beta-independence claim at the PPO layer is sourced from 2 cells with std (~0.33) larger than the cell-to-cell difference (0.017)."
+    },
+    {
+      "id": "evidence",
+      "name": "Evidence sufficiency",
+      "score": 4,
+      "max": 6,
+      "justification": "7 cells x 4 seeds = 28 runs; n=2/2/3 per NE class. Within-class std is comparable to cross-class means. The ordering is supported but within-class differences are not statistically separable; the paper survives by claiming the ordering, not significance, and by reporting the same qualitative ordering under the homogeneous-baseline fallback metric."
+    },
+    {
+      "id": "clarity",
+      "name": "Clarity of contribution",
+      "score": 5,
+      "max": 5,
+      "justification": "Abstract and Section 1 enumerate 4 contributions cleanly. The methodological inversion is now named as a contribution. Methodological-complement framing is consistent across abstract, Section 1, Section 5, Section 6, and Conclusion."
+    },
+    {
+      "id": "related_work",
+      "name": "Related-work positioning",
+      "score": 4,
+      "max": 5,
+      "justification": "Section 5 + Table 1 cover the six canonical MARL benchmarks honestly. Forbidden phrases appear only in explicit negation. No close prior work is obviously omitted in the reviewer's judgment. The legacy baseline applies because no pub-litsearch sibling was run, so dim 4 cannot collect the substrate-backed bonus from the rubric perspective subsection."
+    },
+    {
+      "id": "reproducibility",
+      "name": "Reproducibility",
+      "score": 4,
+      "max": 5,
+      "justification": "Section 6 names pip install, docs/PAPER_RESULTS.md, bucket_brigade/baselines/per_cell.py, per_cell_baselines.json, JointPPOTrainer, and GitHub URL. HuggingFace baselines explicitly disclosed as in progress. Compute disclosure ('single 16-core host, approximately two hours') is vague but workshop-acceptable. Specific seed values are not enumerated in the paper itself."
+    },
+    {
+      "id": "figures_tables",
+      "name": "Figure & table quality",
+      "score": 3,
+      "max": 4,
+      "justification": "Figure 1 caption is self-contained. Table 1 is clean. Figure 2 hatches no-NE cells with dagger marker for the metric switch. Two concerns: (a) std values reported as text labels rather than visual error indicators, hiding the signal-to-noise ratio; (b) hand-built TikZ layout fragile vs. a matplotlib render (which the figure's own header comment names as planned)."
+    },
+    {
+      "id": "prose",
+      "name": "Prose & structural quality",
+      "score": 3,
+      "max": 4,
+      "justification": "LaTeX compiles cleanly in source; section flow is canonical; tense/voice consistent. Page-fit risk: at 3705 words, the paper is at the high end of the 3000-4000 target for a 4-page workshop format. Render-gate at audit time will confirm or refute the page-fit concern."
+    },
+    {
+      "id": "citations",
+      "name": "Citation hygiene",
+      "score": 4,
+      "max": 5,
+      "justification": "All 11 cite keys resolve to refs.bib entries. Every bib entry has full author/title/venue/year/arXiv ID. Two internal-memo cites (bbenvspec, bbnestructure) are @misc with note fields flagging the arXiv-replacement work item before submission. Claim-vs-cite audit is pub-audit's job."
+    },
+    {
+      "id": "economy",
+      "name": "Rhetorical economy",
+      "score": 3,
+      "max": 4,
+      "justification": "Abstract and Section 3's headline-finding paragraph are tight. Section 4's methodological-observation paragraph is load-bearing. Cost-additions: (a) Section 6's (a)/(b)/(c) and analytical-threats paragraphs overlap on 'size as cost of transparency'; (b) the triple 'we do not claim' in Section 5 hits the BRIEF's wording rule but is repetitive; (c) Section 3's predicted-vs-observed paragraph re-states the three-bias trio after the (i)/(ii)/(iii) enumeration."
+    }
+  ],
+  "findings": [
+    {
+      "section": "abstract",
+      "severity": "minor",
+      "text": "Numeric '0.326' is a row mean; clarify with 'mean across the symmetric-only row' so a reader does not confuse it with a cell value seen later in Figure 2."
+    },
+    {
+      "section": "section_1_introduction",
+      "severity": "major",
+      "text": "Contributions list folds the per-cell-baseline methodological inversion into contribution (3) as a sub-clause. Conclusion correctly names it as a standalone contribution; Section 1 should mirror that. Consider splitting (3) into 3a (protocol + first results) and 3b (per-cell baseline methodology)."
+    },
+    {
+      "section": "section_3_ne",
+      "severity": "major",
+      "text": "The 3-10x quantitative threshold gap is owned, but a skeptical reviewer may still wonder what value the closed-form derivation adds. Add a sentence explicitly: 'the value of the closed-form derivation is the structural prediction (which axis controls the transition), not the quantitative thresholds; the residual identifies where the corrections must enter.'"
+    },
+    {
+      "section": "section_4_trainability",
+      "severity": "major",
+      "text": "Within-class sample size (n=2/2/3) is small enough that a classical statistical test would not reject the null of equal class means. The paper claims ordering rather than significance, which is honest, but should name this directly: 'we report the ordering, not significance; the 75-cell sweep is the significance test.'"
+    },
+    {
+      "section": "section_4_trainability",
+      "severity": "major",
+      "text": "Line ~349: 'confirming the beta-independence prediction' overclaims by one degree. The data (0.017 cell-to-cell diff, std ~0.33) is consistent with beta-independence but does not confirm it. One-word edit: 'consistent with the beta-independence prediction' or 'does not reject the beta-independence prediction at the PPO layer.'"
+    },
+    {
+      "section": "section_4_trainability",
+      "severity": "major",
+      "text": "Compute disclosure ('single 16-core host, ~2h') omits CPU model and memory footprint. Workshop-acceptable but workshop-minimally. A reviewer caring about reproducibility (NeurIPS overlay dim 5) would want a sentence on the host class."
+    },
+    {
+      "section": "section_5_related",
+      "severity": "minor",
+      "text": "Triple 'we do not claim' satisfies the BRIEF's negation requirement but is rhetorically heavy. A single sentence with three direct negations ('does not scale...does not test...is not a general-purpose...') would be equally compliant and tighter."
+    },
+    {
+      "section": "section_6_discussion",
+      "severity": "minor",
+      "text": "Threats-to-analytical and threats-to-empirical paragraphs both end with 'the 75-cell sweep is the gate' framing. Merging into one paragraph would save ~80 words against the page budget."
+    },
+    {
+      "section": "figure_2",
+      "severity": "major",
+      "text": "Std values (e.g., +/-0.331) reported as text rather than visual error indicators. The std is comparable to the mean for the symmetric cells; the at-a-glance read misses the signal-vs-noise ratio. The planned matplotlib replacement (named in the figure's header comment) should visualize the uncertainty."
+    },
+    {
+      "section": "refs_bib",
+      "severity": "major",
+      "text": "bbenvspec and bbnestructure remain as @misc internal-memo cites. The note fields flag the arXiv-replacement work item; pub-audit should re-evaluate whether the env-spec and NE-structure memos are or will be preprinted before submission."
+    }
+  ],
+  "critical_flags": [],
+  "total": 35,
+  "threshold": 35,
+  "verdict": "advance"
+}

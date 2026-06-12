@@ -1,0 +1,38 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.3",
+  "critic_id": "pub-audit",
+  "kind": "tool_evidence",
+  "scorecard_kind": "human-verdict",
+  "verdict": "pass",
+  "block": false,
+  "summary": "Compile clean (3 pdflatex + bibtex passes all exit 0). 11/11 citations resolve. 31/31 prose numerical claims reconcile to source. Two MAJOR flags: 10-page PDF vs 4-page workshop budget (M1) and two internal-memo cites needing arXiv replacement (M2). One minor citation-dimensionality nit (M3). No critical flags.",
+  "total_flags": 5,
+  "critical_flags": 0,
+  "major_flags": 3,
+  "minor_flags": 2,
+  "page_count": 10,
+  "compile_status": "ok",
+  "compile_passes": {
+    "pdflatex_pass1_exit": 0,
+    "bibtex_exit": 0,
+    "pdflatex_pass2_exit": 0,
+    "pdflatex_pass3_exit": 0
+  },
+  "citation_audit": {
+    "total_cites": 11,
+    "resolved": 11,
+    "unresolved": 0,
+    "claim_support_obvious_mismatch": 0,
+    "internal_memo_cites_needing_arxiv": 2
+  },
+  "numerical_audit": {
+    "claims_checked": 31,
+    "disagreements": 0,
+    "load_bearing_disagreements": 0,
+    "minor_nits": 1,
+    "figure2_spot_check_match": "3/3 cells match recalibrated_verdict.json"
+  },
+  "most_important_flag": "M1: PDF is 10 pages versus a typical NeurIPS-workshop 4-page budget — content compression required before submission.",
+  "model": "claude-opus-4-7[1m]",
+  "schema_version": 1
+}

@@ -1,0 +1,61 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.2",
+  "critic_id": "pub-review-venue",
+  "rubric": "anvil-pub-neurips-v1",
+  "scores": [
+    {
+      "id": "soundness",
+      "name": "Technical soundness",
+      "score": 3,
+      "max": 4,
+      "justification": "Methodology is rigorous: closed-form NE inequalities, in-repo JointPPOTrainer with pinned hyperparameters, per-cell NE-anchored metric with named calibration code path. The one specific weakness that materially affects a load-bearing claim is the beta-independence assertion at the PPO layer, which is derived from a 2-cell, 0.017-difference observation against seed std ~0.33. The paper acknowledges 'well within seed variance' but the language 'confirming' overclaims by one degree relative to the evidence."
+    },
+    {
+      "id": "presentation",
+      "name": "Quality of presentation",
+      "score": 2,
+      "max": 2,
+      "justification": "Well-organized; abstract, sections, figures, and references in canonical workshop layout. Figures self-contained; no broken cross-references at the source level. Tense and voice consistent throughout."
+    },
+    {
+      "id": "contribution",
+      "name": "Significance of contribution",
+      "score": 3,
+      "max": 4,
+      "justification": "Solid contribution: a parametric MARL benchmark with closed-form NE characterization across a smooth (beta,kappa,c) family does not exist in the surveyed canonical set. The methodological per-cell baseline finding is a second smaller contribution applicable to cross-cell PPO sweeps more broadly. The contribution falls short of '4/4 advances the field in a way the program committee would recognize as important' primarily because the empirical demonstration is on 7 cells; the full 75-cell sweep is the strength-of-result gate."
+    },
+    {
+      "id": "novelty",
+      "name": "Originality vs. prior work",
+      "score": 3,
+      "max": 3,
+      "justification": "Clearly new. The six surveyed MARL benchmarks (Overcooked, Hanabi, SMAC/SMACv2, Melting Pot, MAgent, PettingZoo) are engaged on their actual merits in Section 5 + Table 1; the NE-characterizability axis is correctly identified as the dimension on which Bucket Brigade dominates and on which the surveyed benchmarks all do not. No close prior result is omitted in the reviewer's judgment."
+    },
+    {
+      "id": "reproducibility",
+      "name": "Reproducibility",
+      "score": 2,
+      "max": 3,
+      "justification": "Section 6 names pip install bucket-brigade, docs/PAPER_RESULTS.md, bucket_brigade/baselines/per_cell.py, per_cell_baselines.json, and the GitHub URL. JointPPOTrainer hyperparameters are pinned in experiments/p3_specialization/. HuggingFace baselines are explicitly disclosed as in-progress at draft time. Two reproducibility weaknesses: (a) specific seed values are not enumerated in the paper itself; (b) compute disclosure ('single 16-core host, ~2h') omits CPU model and memory footprint. Both are workshop-acceptable but block a 3/3 score."
+    }
+  ],
+  "findings": [
+    {
+      "section": "section_4_trainability",
+      "severity": "major",
+      "text": "NeurIPS reproducibility checklist standard would expect specific seed values (or a seed-generation scheme) named in the paper. Currently only '4 random seeds per cell' is stated; the actual seeds live in experiments/p3_specialization/. Naming them inline (e.g., 'seeds 0,1,2,3') is a one-line fix."
+    },
+    {
+      "section": "section_4_trainability",
+      "severity": "major",
+      "text": "Compute disclosure could be sharpened: the host class (CPU model, memory) would let an independent group estimate whether 'approximately two hours' extends substantially on different hardware."
+    },
+    {
+      "section": "section_6_discussion",
+      "severity": "minor",
+      "text": "HuggingFace baseline language ('publication pathway in progress and not yet complete at the time of this draft') is honest disclosure. The auditor should confirm before submission that the language still reads as honest, or that the baselines have landed."
+    }
+  ],
+  "critical_flags": [],
+  "total": 13
+}

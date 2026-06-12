@@ -1,0 +1,498 @@
+%% main.tex --- Bucket Brigade workshop paper (v1 draft)
+%%
+%% Authored via anvil:pub. Compiles with pdflatex + bibtex against the
+%% anvil-paper class shipped at .anvil/skills/pub/templates/anvil-paper.cls.
+%% The TikZ placeholder in figures/ppo_heatmap_placeholder.tex requires the
+%% tikz package, which is loaded below alongside the class defaults.
+
+\documentclass{anvil-paper}
+
+% Extra packages used by this paper specifically.
+\usepackage{tikz}
+\usepackage{array}
+
+\title{Bucket Brigade: A Parametric Cooperative-Competitive Benchmark with
+Computable Nash Equilibrium Structure}
+\author{Robb Walters \\ 2AM Logic}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Canonical cooperative-MARL benchmarks (Overcooked, Hanabi, SMAC, Melting Pot,
+MAgent, PettingZoo) trade equilibrium transparency for environment richness:
+their state spaces are large enough that no Nash equilibrium is computable, so
+when a new algorithm beats PPO on Overcooked the reader cannot tell whether
+the algorithm has converged to the ``right'' joint policy or merely to a
+Pareto-different one. \emph{Bucket Brigade} inverts this trade. It is a finite
+parametric cooperative-competitive stochastic game on a ring of houses whose
+per-agent action space at the minimal parameterization is~$8$, whose state
+space is~$2304$ states, and whose three load-bearing scalars~$(\beta,\kappa,c)$
+control equilibrium structure continuously across cells. We give the
+environment specification, derive closed-form boundary inequalities for the
+three Nash-equilibrium regimes (symmetric all-Work, asymmetric 1-Worker,
+no-pure-NE collapse) via a single-house mean-field reduction, and report the
+agreement between predicted and empirically-sampled equilibrium verdicts on a
+seven-cell preview of the phase diagram. The analytical reduction correctly
+predicts the qualitative phase order (collapse~$\to$~symmetric~$\to$~mixed
+~$\to$~asymmetric) and $\beta$-independence at $c{=}0.5$, but the quantitative
+$\kappa$-thresholds disagree with empirics by 3--10$\times$; we own this gap
+and attribute it to ring-locality, per-agent ownership rewards, and the
+heuristic-strategy approximation. We position Bucket Brigade as a
+\emph{methodological complement} to the surveyed benchmarks, not a
+replacement: it is the only published parametric MARL game where the question
+``did the algorithm converge to the right equilibrium?'' admits a ground-truth
+answer.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Multi-agent reinforcement learning evaluates new algorithms against benchmarks
+whose Nash-equilibrium structure is not characterizable in closed form.
+Overcooked-AI~\citep{overcooked2019}, DeepMind's Melting
+Pot~\citep{meltingpot2021}, the Hanabi
+Challenge~\citep{hanabi2020}, SMAC and SMACv2~\citep{smac2019,smacv2_2023},
+MAgent~\citep{magent2018}, and the PettingZoo MPE
+suite~\citep{pettingzoo2021} between them cover small cooperative
+coordination, partial observability, scripted-opponent micromanagement, and
+population-scale competition. None of them ship with a method that produces
+the equilibrium strategy profile of the as-designed environment. When PPO
+fails to learn a coordinated policy on Overcooked, the community is left to
+debate whether the failure is the algorithm or the absence of a clean
+attractor for self-play; neither hypothesis can be rejected because no oracle
+exists for ``what should the learned policy look like.''
+
+We introduce \emph{Bucket Brigade}, a finite parametric cooperative-competitive
+stochastic game designed to invert this trade. At its minimal parameterization
+the state space is $2304$~states and the per-agent action space is~$8$, so the
+one-shot stage game is enumerable and standard equilibrium-computation tools
+actually run. Across a smooth three-scalar parameter family~$(\beta,\kappa,c)$
+the equilibrium structure transitions from symmetric all-Work to asymmetric
+1-Worker (the textbook free-rider problem) to no-pure-NE collapse. The
+ground-truth target for each parameter cell is known, so a failed PPO run is
+attributable to the algorithm rather than to ambiguity about what convergence
+would mean. The pitch is exactly a \emph{methodological complement} to the
+six canonical benchmarks above: those exist for studying open-ended
+cooperation, generalization, and scale; Bucket Brigade exists for studying
+equilibrium-convergence quality on a controlled grid.
+
+\paragraph{Contributions.} (1)~A self-contained formal specification of the
+Bucket Brigade game~(\S\ref{sec:env}), recovering Volunteer's Dilemma, the
+$N$-player Public Goods game, and Stag Hunt as named limits.
+(2)~Closed-form boundary inequalities~(\S\ref{sec:ne}) for the three NE
+regimes via a single-house mean-field reduction, together with an explicit
+accounting of where the closed-form thresholds disagree with empirics.
+(3)~A protocol and falsifiable hypothesis~(\S\ref{sec:trainability}) for
+testing PPO trainability against the NE phase diagram; \emph{empirical
+results are pending and will land in v2 once the sweep completes}. (4)~An
+honest positioning~(\S\ref{sec:related},~\S\ref{sec:discussion}) against the
+canonical benchmarks: Bucket Brigade is small and artificial by design, and
+is not a substitute for any of them.
+
+We treat the analytical NE characterization as ground truth and the PPO
+trainability sweep as a falsification test, in that order. The empirical
+hypothesis the paper will defend once~\S\ref{sec:trainability} lands data is:
+\emph{PPO success correlates with NE structure}---symmetric-NE cells should
+converge reliably; asymmetric-only cells should cycle or settle into
+low-payoff mixed strategies; no-pure-NE cells should fail outright.
+
+\section{The Bucket Brigade environment}
+\label{sec:env}
+
+\paragraph{Players and topology.}
+A finite set of agents $\mathcal{I}{=}\{1,\ldots,N\}$ inhabits a cycle graph
+$\mathcal{H}{=}\mathbb{Z}/H\mathbb{Z}$ of $H$ houses with neighbour edges. Each
+house has status $h_h\in\{\textsc{Safe},\textsc{Burning},\textsc{Ruined}\}$;
+\textsc{Ruined} is absorbing. The default ``10-house'' scenario fixes
+$H{=}10,N{=}4,T_{\min}{=}12$; the minimal scenario fixes $H{=}2,N{=}4$.
+
+\paragraph{Action and observation.}
+Each agent $i$ chooses
+$a_{t,i}{=}(a^{\text{house}},a^{\text{mode}},a^{\text{sig}})\in
+\mathcal{H}\times\{0,1\}\times\{0,1\}$: a target house, a
+\textsc{Work}/\textsc{Rest} bit, and a one-bit broadcast signal observable to
+all agents on the next night. Per-agent action cardinality is $4H$ ($8$ at
+$H{=}2$; $40$ at $H{=}10$). Joint-action cardinality at the minimal
+parameterization is $8^4{=}4096$. Observation is symmetric perfect monitoring
+with one-step signal delay: every agent observes the full state plus the
+previous joint $(\ell_{t-1},\alpha_{t-1},\zeta_{t-1})$. There is no partial
+observability of houses or agent positions; the signal channel is
+non-binding cheap talk.
+
+\paragraph{Transition dynamics.}
+A single night consists of seven sequential phases applied in a fixed,
+load-bearing order: (1)~signal write, (2)~location/mode write,
+(3)~extinguish, (4)~burn-out, (5)~spread, (6)~spontaneous ignition,
+(7)~reward and termination check. In the extinguish phase, if $w_h(a)$
+agents \textsc{Work} at a \textsc{Burning} house, the house transitions to
+\textsc{Safe} with probability $1-(1-\kappa)^{w_h(a)}$ (independent-workers
+model). Every \textsc{Burning} house that survives the extinguish phase
+transitions deterministically to \textsc{Ruined} in the burn-out phase. The
+spread phase then ignites \textsc{Safe} neighbours of \textsc{Burning}
+houses with probability $\beta$ per edge; under the canonical order, the
+burn-out phase has already cleared all \textsc{Burning} sources, so spread is
+inert in the within-night dynamics and contagion enters only via the
+spontaneous-ignition phase~6 at rate $\rho$. (A contagion-active variant
+that swaps phases 4 and 5 is available; the phase-diagram analysis below
+uses the canonical order.)
+
+\paragraph{Reward structure.}
+The per-agent reward decomposes into three independently-parameterised terms:
+a private work/rest cost ($-c$ for \textsc{Work}, $+c_{\text{rest}}{=}0.5$
+for \textsc{Rest}; the free-rider gradient is the $c{+}c_{\text{rest}}$
+asymmetry), a per-house ownership term ($r_{\text{own}}$ paid on save,
+$p_{\text{own}}$ recurring on every \textsc{Ruined} night), and a team
+welfare term proportional to the fraction of \textsc{Safe} and
+\textsc{Ruined} houses. Ownership is assigned round-robin
+($\text{owner}(h){=}h\bmod N$). The asymmetric reward variants in the
+calibrated family let $r_{\text{own}},r_{\text{other}},p_{\text{own}},
+p_{\text{other}}$ be set per-agent, breaking exchangeability.
+
+\paragraph{Relationship to canonical templates.}
+Bucket Brigade recovers, as named limits or restrictions, several textbook
+templates: the $N$-player Volunteer's Dilemma at $H{=}1$; the $N$-player
+Public Goods game when ownership weights collapse to uniform; Stag Hunt in
+the $\kappa{\to}1$ limit; and a free-rider problem at the parameter cells
+where the only NE is asymmetric (the ``rest-trap''). Formal proofs and a
+complete notation table are deferred to the env-spec memo~\citep{bbenvspec};
+\S\ref{sec:env} above is the minimal contract a reader needs to follow
+\S\ref{sec:ne}.
+
+\section{Equilibrium structure: closed-form boundaries}
+\label{sec:ne}
+
+The central contribution of this paper is a closed-form characterisation of
+which Nash-equilibrium structure appears as a function of $(\beta,\kappa,c)$
+in the 4-agent game. We derive it via a single-house mean-field reduction
+that collapses the $H{=}10$ ring to a representative single house with all
+$N{=}4$ agents present, absorbs multi-step contagion and ignition dynamics
+into a per-night survival coefficient, and reads off the NE candidates as
+algebraic inequalities.
+
+\paragraph{Reduction.}
+Fix the \texttt{minimal\_specialization} reward tuple
+$W{=}(R_{\text{team}},P_{\text{team}},r_{\text{own}},r_{\text{other}},
+p_{\text{own}},p_{\text{other}}){=}(10,10,50,0,100,0)$ and $\rho{=}0.02,
+T_{\min}{=}12$. With $k$ workers at the house on a given night, the per-night
+ruin probability for an initially-\textsc{Safe} house is
+$q(k){=}\rho(1-\kappa)^k$ (under the canonical phase order, where $\beta$
+does not enter the leading-order single-night payoff). Integrating the lost
+per-house reward stream over $T_{\min}{=}12$ nights and collecting terms
+yields
+\[
+  \mathbb{E}[\text{per-house reward loss}\mid k] = A\cdot\rho\cdot(1-\kappa)^k,
+\]
+with $A{=}r_{\text{own}}T_{\min}+p_{\text{own}}T_{\min}+P_{\text{team}}
+T_{\min}/H{=}1812$ and survival coefficient
+$\tilde A{:=}A\rho{=}36.24$. The marginal benefit of adding the $k$-th
+worker is $\Delta(k){=}\tilde A\cdot\kappa\cdot(1-\kappa)^k$.
+
+\paragraph{The three NE candidates.}
+Writing $c_{\text{gap}}{:=}c+c_{\text{rest}}$ (so $c_{\text{gap}}{=}1.0$ when
+the driver sets $c{=}0.5$), the deviation comparisons against the per-night
+stage game under stationary opponent policies yield three inequalities.
+
+The \emph{symmetric all-Work} NE exists iff a unilateral deviation from
+$k{=}4$ to $k_{-i}{=}3$ does not pay:
+\begin{equation}
+  \tilde A\cdot\kappa\cdot(1-\kappa)^{3}\;\geq\;c_{\text{gap}}.
+  \tag{S}\label{eq:S}
+\end{equation}
+
+The \emph{asymmetric 1-Worker} NE exists iff the lone worker prefers
+\textsc{Work} ($k_{-i}{=}0$ deviation) and each free-rider prefers
+\textsc{Rest} ($k_{-i}{=}1$ deviation):
+\begin{equation}
+  \tilde A\cdot\kappa\;\geq\;c_{\text{gap}}
+  \quad\text{AND}\quad
+  \tilde A\cdot\kappa\cdot(1-\kappa)\;<\;c_{\text{gap}}.
+  \tag{A}\label{eq:A}
+\end{equation}
+
+The \emph{no-pure-NE collapse} regime holds whenever even a lone worker
+cannot recover their cost, so neither~\eqref{eq:S} nor~\eqref{eq:A} can be
+satisfied:
+\begin{equation}
+  \tilde A\cdot\kappa\;<\;c_{\text{gap}}.
+  \tag{C}\label{eq:C}
+\end{equation}
+
+\paragraph{Predicted thresholds.}
+Substituting $\tilde A{=}36.24,c_{\text{gap}}{=}1.0$ into~\eqref{eq:S}--%
+\eqref{eq:C}: the collapse boundary~\eqref{eq:C} sits at
+$\kappa\approx 0.028$; the symmetric NE exists on
+$\kappa\in[0.030,0.65]$ via~\eqref{eq:S}; the asymmetric NE exists for
+$\kappa\gtrsim 0.972$ via~\eqref{eq:A}. The qualitative phase order
+$\kappa$-small$\to$$\kappa$-large is
+\textsf{collapse}~$\to$~\textsf{symmetric\_only}~$\to$~\textsf{mixed}~$\to$~%
+\textsf{asymmetric\_only}, and the derivation is structurally
+$\beta$-independent under the canonical phase order.
+
+\paragraph{Predicted vs. observed thresholds.}
+A 7-cell preview of the empirical phase diagram (computed by a heterogeneous
+Double-Oracle solver over continuous heuristic-parameter
+strategies; $c{=}0.5,\rho{=}0.02$; Figure~\ref{fig:phase}) recovers the
+qualitative phase order and the $\beta$-independence at $c{=}0.5$
+(3/3 $\kappa$-rows show identical verdicts across $\beta$). However, the
+\emph{quantitative} $\kappa$-thresholds disagree with the predictions: the
+empirically-observed collapse boundary sits near $\kappa\approx 0.3$ (3--10$\times$
+above the predicted~$0.028$), and the empirically-observed
+asymmetric-NE onset sits near $\kappa\approx 0.7$ (below the predicted~$0.972$).
+Only 2 of 7 cells (both at $\kappa{=}0.5$) achieve exact verdict agreement.
+
+We \emph{own} this gap. The mean-field reduction has three identifiable
+systematic biases. (i)~\emph{Ring locality}: the derivation puts all four
+agents at one house, but empirically four agents distribute across ten
+houses, so the effective per-house defence is $1{-}(1{-}\kappa)^{0.4}$ rather
+than $1{-}(1{-}\kappa)^4$---roughly a $4\times$ weaker defence at $\kappa{=}0.5$,
+which shifts the collapse boundary substantially upward into the
+empirically-observed range $\kappa\in[0.1,0.3]$. (ii)~\emph{Per-agent
+ownership rewards}: the analytical $A$ coefficient lumps $r_{\text{own}}$
+and $p_{\text{own}}$ into the survival term, but the per-agent ownership
+reward only fires on the agent's own house, scaling the off-own-house
+contribution down by a factor of roughly $1/H$. (iii)~\emph{Heuristic
+strategy space}: the empirical solver's ``free-riders'' are
+\texttt{Firefighter} agents at \texttt{work\_tendency}${=}0.9$, not literal
+\textsc{Rest} agents, so the effective $k_{-i}$ in the lone-worker's
+deviation comparison is closer to $3.7$ than to~$1$. None of these
+corrections are derivable in closed form without losing the algebraic
+tractability that motivated the reduction; we report the discrepancy openly
+and name the analytical extensions (ring-Markov refinement; per-agent
+ownership in the survival coefficient) as the natural follow-on work in
+\S\ref{sec:discussion}.
+
+\paragraph{Headline finding.}
+The mean-field reduction correctly predicts \emph{three} structural
+properties of the empirical phase diagram---the qualitative phase order,
+$\beta$-independence under the canonical phase order, and the existence of a
+no-pure-NE collapse regime at small~$\kappa$---all of which are
+non-trivially observable in the 7-cell preview and none of which would be
+derivable without the closed-form derivation. The quantitative
+$\kappa$-thresholds are off by $3$--$10\times$. Honest disagreement at this
+boundary is the paper's claim, not a weakness we hide. Detailed derivations,
+the $7\times 4$ predicted-vs-empirical table, and the five sources of
+systematic bias appear in~\citep{bbnestructure}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/phase_diagram.png}
+  \caption{Empirical NE phase diagram for 4-agent Bucket Brigade across
+  $(\beta,\kappa)$ at $c{=}0.5,\rho{=}0.02,T_{\min}{=}12$ under the
+  \texttt{minimal\_specialization} reward tuple. Each cell is the verdict of
+  a heterogeneous Double-Oracle solver over the continuous
+  heuristic-parameter strategy space (Hero, Firefighter, FreeRider, $\ldots$).
+  Three regimes appear: \textsf{no\_convergence} at $\kappa{=}0.1$ (collapse),
+  \textsf{symmetric\_only} at $\kappa{=}0.5$ (Hero NE dominates), and
+  \textsf{asymmetric\_only} at $\kappa{=}0.9$ (1 Hero + 3 Firefighters; the
+  rest-trap). The grid is $\beta$-independent at $c{=}0.5$, matching the
+  prediction in~\eqref{eq:S}--\eqref{eq:C} but at substantially different
+  $\kappa$ thresholds than the closed-form derivation places them.}
+  \label{fig:phase}
+\end{figure}
+
+\section{Trainability: empirical protocol and the analytical hypothesis}
+\label{sec:trainability}
+
+\textbf{Data status.} The PPO trainability sweep is in progress at the time
+of this v1 draft (Bucket Brigade issue~\#360). \emph{This section reports the
+experimental protocol we will run and the analytical hypothesis the run will
+test; no empirical PPO numbers appear in v1.} v2 of the paper will land the
+empirical heatmap once the sweep completes; in the interim,
+Figure~\ref{fig:ppo} is the labelled placeholder that the figurer will
+replace.
+
+\paragraph{Protocol.}
+We train independent runs at each of the 7 phase-diagram cells from
+Figure~\ref{fig:phase}, using the \texttt{JointPPOTrainer} default budget
+($4$ seeds per cell, default rollout length and update count). The PPO
+implementation follows the standard recipe of~\citet{ppo2017}; the
+joint-action multi-agent formulation follows the
+MAPPO-style centralised-critic setup of~\citet{mappo2022}. The headline
+metric is $\texttt{gap\_closed}$ against the analytically-derived
+\texttt{Hero} baseline: a run \emph{succeeds} on a cell if it achieves
+$\texttt{gap\_closed}\geq 0.20$ within the budget. The reported per-cell
+score is the mean success rate over the 4 seeds. Hyper-parameters and the
+budget definition are pinned in the in-repo
+\texttt{experiments/p3\_specialization} configs.
+
+\paragraph{Analytical hypothesis.}
+The closed-form characterisation in~\S\ref{sec:ne} makes a sharp,
+falsifiable prediction about which cells PPO will succeed on:
+
+\begin{itemize}
+  \item \textsf{symmetric\_only} cells (a single coordinated profile to
+  find): PPO should converge reliably (high success rate);
+  \item \textsf{asymmetric\_only} cells (the rest-trap; the only NE is
+  symmetry-breaking): PPO should struggle---we expect either
+  cycle-and-fail or convergence to low-payoff mixed strategies---because
+  self-play with symmetric initialisation has no clean attractor toward the
+  asymmetric profile;
+  \item \textsf{no\_convergence} (collapse) cells: PPO should fail
+  outright, because no pure-strategy NE exists for policy iteration to
+  converge to.
+\end{itemize}
+
+If the empirical PPO success rate per cell matches this ordering---
+\textsf{symmetric\_only}~$>$~\textsf{asymmetric\_only}~$>$~%
+\textsf{no\_convergence}---the analytical characterisation has predictive
+content for algorithm design. If the ordering is violated (e.g.\ PPO succeeds
+on collapse cells), that is itself a positive paper result: it would mean
+PPO has converged to a non-NE attractor that the analytical reduction does
+not see, which would constrain future characterisations.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/ppo_heatmap_placeholder.tex}
+  \caption{\textbf{Placeholder.} PPO per-cell success rate
+  ($\texttt{gap\_closed}\geq 0.20$, mean over 4 seeds) across the same
+  $(\beta,\kappa)$ grid as Figure~\ref{fig:phase}. \emph{Data pending Bucket
+  Brigade issue \#360}; v2 of this paper will replace this stub with the
+  rendered heatmap. The analytical prediction is
+  \textsf{symmetric}~$>$~\textsf{asymmetric}~$>$~\textsf{collapse}.}
+  \label{fig:ppo}
+\end{figure}
+
+\section{Related work}
+\label{sec:related}
+
+The MARL community has converged on a handful of canonical benchmarks that
+trade equilibrium transparency for environment richness.
+Overcooked-AI~\citep{overcooked2019} is a fully cooperative coordination
+game on small grid layouts: every Pareto-optimal joint policy is a Nash
+equilibrium and ``the'' target is therefore not unique. Melting
+Pot~\citep{meltingpot2021} exposes 88$\times$88$\times$3 RGB observations
+across more than 50 substrates; its design explicitly does not solve for
+equilibrium structure on individual substrates. The Hanabi
+Challenge~\citep{hanabi2020} has near-optimal hat-guessing strategies known
+at 2 players, but the 4--5 player game is open and no algorithm reaches the
+equilibrium from learning. SMAC and SMACv2~\citep{smac2019,smacv2_2023} are
+cooperative micromanagement against a scripted opponent and ``NE'' is not a
+design target. MAgent~\citep{magent2018} hosts thousand-agent battles on
+grids and no published equilibrium analysis exists at scale.
+PettingZoo's MPE suite~\citep{pettingzoo2021} is the canonical small
+multi-agent baseline with no equilibrium characterisation across scenarios.
+
+Table~\ref{tab:bench} compares Bucket Brigade against these on six axes.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{lrrrcl}
+    \toprule
+    Benchmark & Year & Agents & Per-agent $|\mathcal{A}|$ & NE characterisable? & Coop/comp \\
+    \midrule
+    Overcooked-AI~\citep{overcooked2019}      & 2019      & 2        & 6          & No (any Pareto-opt.) & coop \\
+    Melting Pot~\citep{meltingpot2021}        & 2021      & 2--16    & 8          & No (intractable)     & mixed \\
+    Hanabi~\citep{hanabi2020}                 & 2020      & 2--5     & $\leq 20$  & Partial (2P only)    & coop \\
+    SMAC/SMACv2~\citep{smac2019,smacv2_2023}  & 2019/23   & 2--27    & 6+$n_e$    & No                   & vs.\ scripted \\
+    MAgent~\citep{magent2018}                 & 2018      & 64--$10^3$ & 21       & No (population)      & mixed \\
+    PettingZoo MPE~\citep{pettingzoo2021}     & 2021      & 2--6     & 3--5       & No                   & per-scenario \\
+    \textbf{Bucket Brigade (this work)}       & 2026      & 4 (def.) & 8 / 40     & \textbf{Yes (closed-form)} & \textbf{mixed within cell} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Bucket Brigade against the six most-cited canonical MARL
+  benchmarks. The right-most column ``NE characterisable?'' is the only
+  axis on which Bucket Brigade dominates; on every other axis the
+  surveyed benchmarks are richer, more cited, or larger in scope. This is
+  the entire pitch: Bucket Brigade is a \emph{methodological complement},
+  not a replacement. Per-agent action sizes for Bucket Brigade are
+  $8$ at the $H{=}2$ minimal scenario and $40$ at the $H{=}10$ default.}
+  \label{tab:bench}
+\end{table}
+
+The honest comparison is that Bucket Brigade dominates on exactly one
+column---NE characterisability---and loses on every other (citation
+footprint, agent count, environment richness, generality). The paper's job
+is to argue that the NE-characterisability column matters enough to be worth
+introducing a new benchmark despite the trade. We do not claim Bucket
+Brigade scales to large populations; we do not claim it tests
+``emergent cooperation'' in any general sense; we do not claim it is a
+general-purpose MARL benchmark. It is none of these things. The niche it
+fills is the specific question of \emph{equilibrium-convergence quality}.
+
+\section{Discussion and limitations}
+\label{sec:discussion}
+
+\paragraph{Bucket Brigade is intentionally small and artificial.}
+The state space is~$2304$ at the minimal scenario and $\sim\!10^{10}$ at the
+default 10-house scenario, the geometry is a 1-D ring, and the environment
+ships from a single research repository with no community adoption. We
+acknowledge each point head-on and defend it as the cost of the
+equilibrium-transparency property:
+(a)~\emph{Size is the cost of NE transparency.} A richer game with realistic
+observations, partial observability across many channels, and complex spatial
+dynamics would lose the property that motivated the work; the state-space
+cardinality is what makes the analytical reduction in~\S\ref{sec:ne}
+algebraically tractable. Trading richness for tractability is the deliberate
+design choice.
+(b)~\emph{A custom benchmark is acceptable given the methodological niche.}
+The question we want to answer---``did this MARL algorithm converge to the
+analytically-characterised NE?''---cannot be asked of any of the six
+canonical benchmarks in Table~\ref{tab:bench}. A benchmark designed for this
+question is therefore a methodological contribution distinct from the
+contributions those benchmarks make, even if it does not inherit their scale
+or citation impact.
+(c)~\emph{Bucket Brigade is not a substitute for any of the six.} It does
+not replace Overcooked for human-AI coordination, Melting Pot for
+generalisation across substrates, Hanabi for partial-observability
+cooperation, SMAC for micromanagement against scripted opponents, MAgent
+for population-scale phenomena, or PettingZoo for the small-multi-agent
+baseline role. A researcher choosing a benchmark for any of those purposes
+should not pick Bucket Brigade.
+
+\paragraph{Threats to the analytical contribution.}
+The closed-form thresholds disagree with empirics by 3--10$\times$
+(\S\ref{sec:ne}). The three identified systematic biases---ring locality,
+per-agent ownership rewards, and the heuristic-strategy approximation---are
+not fully separated by the 7-cell preview; rigorous separation requires the
+full 75-cell grid (in progress) and at least one $\rho$-sweep to falsify the
+$\beta$-independence prediction outside the small-$\beta\rho$ regime. The
+mean-field reduction is the load-bearing simplification that buys
+tractability; tightening it without losing tractability (e.g.\ via a
+ring-Markov refinement of the survival coefficient $A$) is the natural
+extension. The empirical contribution is also contingent: if the full phase
+diagram turns out to be uninteresting (one NE structure dominates
+everywhere), the workshop pitch weakens substantially. The 7-cell preview
+already shows non-trivial structure, but the full-grid result is the gate.
+
+\paragraph{Threats to the empirical contribution.}
+The PPO trainability data is pending~(\S\ref{sec:trainability}). If the
+empirical PPO success rate violates the predicted ordering
+\textsf{symmetric}~$>$~\textsf{asymmetric}~$>$~\textsf{collapse}, the
+analytical hypothesis is falsified; we have committed to reporting this
+falsification rather than suppressing it.
+
+\paragraph{Reproducibility.}
+The environment is shipped as a pip-installable Python package
+(\texttt{pip install bucket-brigade}); the figure-by-figure reproduction
+recipe lives in the in-repo \texttt{docs/PAPER\_RESULTS.md}.
+Frozen baseline checkpoints (the analytical \texttt{Hero}, \texttt{Firefighter},
+and \texttt{FreeRider} agents used to anchor the phase-diagram solver and
+the PPO \texttt{gap\_closed} metric) will be hosted on the HuggingFace Hub;
+the publication pathway for the baselines is in progress and not yet
+complete at the time of this draft. The source repository is at
+\url{https://github.com/rjwalters/bucket-brigade}.
+
+\section*{Conclusion}
+
+We presented Bucket Brigade, a parametric cooperative-competitive MARL
+benchmark whose Nash-equilibrium structure is characterisable in closed form
+across a smooth three-scalar parameter family. A single-house mean-field
+reduction yields algebraic boundary inequalities~\eqref{eq:S}--\eqref{eq:C}
+that correctly predict the qualitative phase order and the
+$\beta$-independence under the canonical phase order, while disagreeing with
+empirics on the quantitative $\kappa$-thresholds by 3--10$\times$---a
+disagreement we own and attribute to three named systematic biases. The
+empirical PPO trainability test is in progress; the analytical hypothesis is
+\textsf{symmetric}~$>$~\textsf{asymmetric}~$>$~\textsf{collapse}. Bucket
+Brigade is positioned as a methodological complement to the canonical MARL
+benchmarks for the specific question of equilibrium-convergence quality, not
+as a replacement for any of them.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

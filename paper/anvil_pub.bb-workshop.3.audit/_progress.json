@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "thread": "anvil_pub.bb-workshop",
+  "for_version": 3,
+  "phases": {
+    "audit": {
+      "state": "done",
+      "started": "2026-06-11T00:00:00Z",
+      "completed": "2026-06-11T00:00:00Z"
+    }
+  },
+  "metadata": {
+    "iteration": 3,
+    "max_iterations": 4,
+    "audit_summary": {
+      "critical_flags": 0,
+      "major_flags": 3,
+      "minor_flags": 2,
+      "unresolved_citations": 0,
+      "claim_support_failures": 0,
+      "numerical_inconsistencies": 0,
+      "unverified_citations": 9,
+      "stale_figures": 0,
+      "build_status": "ok",
+      "page_count": 10
+    }
+  }
+}
