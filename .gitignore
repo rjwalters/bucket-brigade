@@ -300,3 +300,14 @@ experiments/hyperparameter_tuning/
 # are regenerable from the same seed + cell params and would otherwise
 # bloat the repo (8+ MB per 7-cell sweep).
 experiments/p3_specialization/phase_diagram_ppo/**/policies/*.pt
+
+# Paper LaTeX build byproducts (Anvil pub skill regenerates from main.tex+refs.bib)
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.log
+paper/**/*.out
+paper/**/*.toc
+paper/**/*.fls
+paper/**/*.synctex.gz
+paper/**/_archive/

@@ -1,0 +1,41 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.4",
+  "critic_id": "pub-audit",
+  "kind": "tool_evidence",
+  "scorecard_kind": "human-verdict",
+  "verdict": "pass",
+  "block": false,
+  "summary": "Compile clean (3 pdflatex + bibtex passes all exit 0). 11/11 citations resolve. Every load-bearing v4 prose number reconciles to source: §4 4-class ordering (symmetric +0.180 > mixed +0.107 > asymmetric +0.059 > no_convergence -0.049 on gap_closed_ne / gap_closed_homogeneous), the 4x-budget structural-failure claim (-0.049 -> -0.108 on no_convergence cells, confirmed worse), the Nash 39-cell verdict_counts (12/11/10/6), and the analytical kappa-thresholds (0.028 / 0.65 / 0.972). Three MAJOR flags: M1 internal-memo cites needing arXiv (carried over from v3), M2 11-page PDF (user opted out of workshop budget), and M3 beta-independence stated as 13/13 in three locations should be 12/13 on the Nash 39-cell grid (cell kappa=0.9, c=0.5 has beta=0.1 -> mixed vs beta in {0.5, 0.9} -> asymmetric_only). M3 is a one-token revisor fix and does not shift any conclusion. v3 M3 (7x4 vs 7x6 table-dim nit) is resolved in v4.",
+  "total_flags": 8,
+  "critical_flags": 0,
+  "major_flags": 3,
+  "minor_flags": 5,
+  "page_count": 11,
+  "compile_status": "ok",
+  "compile_passes": {
+    "pdflatex_pass1_exit": 0,
+    "bibtex_exit": 0,
+    "pdflatex_pass2_exit": 0,
+    "pdflatex_pass3_exit": 0
+  },
+  "citation_audit": {
+    "total_cites": 11,
+    "resolved": 11,
+    "unresolved": 0,
+    "claim_support_obvious_mismatch": 0,
+    "internal_memo_cites_needing_arxiv": 2
+  },
+  "numerical_audit": {
+    "claims_checked": 27,
+    "disagreements": 1,
+    "load_bearing_disagreements": 0,
+    "minor_nits": 0,
+    "class_ordering_match": "4/4 classes match recalibrated_verdict.json (symmetric +0.180, mixed +0.107, asymmetric +0.059, no_convergence -0.049)",
+    "four_x_budget_match": "structural-failure claim verified: -0.049 -> -0.108 on 6 no_convergence cells (worsening)",
+    "beta_independence_actual": "12/13 (not 13/13) on Nash 39-cell grid; cell (kappa=0.9, c=0.5) splits across beta",
+    "figure2_spot_check_match": "5/5 cells match recalibrated_verdict.json to 5 d.p."
+  },
+  "most_important_flag": "M3: beta-independence count is 12/13, not 13/13 as stated in main.tex L262, L394, and Figure 1 caption L332. The cell (kappa=0.9, c=0.5) has beta=0.1 -> mixed but beta in {0.5, 0.9} -> asymmetric_only. The qualitative beta-independence picture survives at 12/13, and no conclusion shifts, but the claim should not ship at 13/13. One-token revisor fix.",
+  "model": "claude-opus-4-7[1m]",
+  "schema_version": 1
+}
