@@ -332,8 +332,8 @@ single agent facing 3 frozen uniform-random opponents has essentially no
 improvable gap ($\leq +0.01\%$ team-return headroom, achieved by resting).
 The repo-native k = 1 oracle does **not** reproduce this on the repo's
 `minimal_specialization`-based phase-diagram cells: a deterministic
-any-house firefighter beats the all-uniform baseline by **+15.3%** on
-per-step team return (paired 95% CI on the delta $[+11.1, +17.7]$ per
+any-house firefighter beats the all-uniform baseline by **+14.4%** on
+per-step team return (paired 95% CI on the delta $[+10.5, +16.6]$ per
 step, n = 400 paired episodes), and the hand-coded specialist is
 significantly *better* than uniform ($+4.7$ per step), not worse. The
 scale mismatch in the report ($\approx 7\times$ larger return magnitudes)
@@ -345,7 +345,7 @@ $c = 0.5$ `no_convergence` cells cannot be read as "no single-agent gap
 exists, so flat is correct" — a scripted k = 1 best response finds a
 statistically decisive team-return improvement that PPO does not. The
 trainability failure on these cells therefore remains unexplained by this
-oracle (as it is by NE conditional entropy, §430 Task 1); the
+oracle (as it is by NE conditional entropy, #430 Task 1); the
 coordination-threshold account ($k^* > 1$, issue #430 / thrust#259) and
 plain exploration failure remain the live hypotheses. The three
 $c = 2.0$ `no_convergence` cells are not yet characterized (run the
