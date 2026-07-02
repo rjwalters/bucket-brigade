@@ -504,6 +504,36 @@ def test_aggregator_verdict_for_nan_is_no_data():
     assert tier == "no_data"
 
 
+def test_aggregator_appends_notes_file(tmp_path):
+    """tier1_verdict_notes.md (if present) is appended to the generated md."""
+    root = tmp_path / "tier1_runs"
+    _make_cell_summary(
+        root / "ippo_minimal_specialization", "ippo", "minimal_specialization", 0.40
+    )
+    notes = "## Notes\n\nrest_trap gap_closed is a scale artifact.\n"
+    (root / aggregate_tier1.NOTES_FILENAME).write_text(notes)
+
+    rc = aggregate_tier1.main(["--tier1-root", str(root)])
+    assert rc == 0
+    md = (root / "tier1_verdict.md").read_text()
+    assert "## Notes" in md
+    assert "scale artifact" in md
+    # Table still present, notes appended after it.
+    assert md.index("| Trainer |") < md.index("## Notes")
+
+
+def test_aggregator_no_notes_file_leaves_md_unchanged(tmp_path):
+    """Without a notes file the markdown has no Notes section."""
+    root = tmp_path / "tier1_runs"
+    _make_cell_summary(
+        root / "ippo_minimal_specialization", "ippo", "minimal_specialization", 0.40
+    )
+    rc = aggregate_tier1.main(["--tier1-root", str(root)])
+    assert rc == 0
+    md = (root / "tier1_verdict.md").read_text()
+    assert "## Notes" not in md
+
+
 # ---------------------------------------------------------------------------
 # Dispatch-table sanity
 # ---------------------------------------------------------------------------

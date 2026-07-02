@@ -20,6 +20,11 @@ historical 4-tier ladder from
 Cells with ``n_seeds_completed == 0`` (or missing ``cell_summary.json``)
 are reported as ``no_data`` and sorted to the bottom.
 
+If ``<tier1-root>/tier1_verdict_notes.md`` exists, its contents are appended
+verbatim to the generated markdown. This lets caveats about specific rows
+(e.g. metric-scale artifacts) survive regeneration instead of being wiped
+every time the aggregator reruns.
+
 Usage:
 
     uv run python experiments/p3_specialization/aggregate_tier1.py \\
@@ -38,6 +43,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TIER1_ROOT = REPO_ROOT / "experiments" / "p3_specialization" / "tier1_runs"
 
 VERDICT_THRESHOLDS = (0.20, 0.49, 0.88)
+
+# Optional operator-maintained notes appended to the generated markdown
+# (relative to --tier1-root). Survives regeneration by construction.
+NOTES_FILENAME = "tier1_verdict_notes.md"
 
 
 def verdict_for(mean) -> tuple[str, str]:
@@ -135,7 +144,7 @@ def _fmt(value: object) -> str:
     return str(value)
 
 
-def build_markdown(rows: Sequence[dict]) -> str:
+def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
     sorted_rows = sorted(rows, key=_sort_key)
     lines = [
         "# Tier-1 sweep verdict",
@@ -167,6 +176,9 @@ def build_markdown(rows: Sequence[dict]) -> str:
             )
         )
     lines.append("")
+    if notes:
+        lines.append(notes.rstrip("\n"))
+        lines.append("")
     return "\n".join(lines)
 
 
@@ -243,8 +255,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     md_path = args.output_md or (args.tier1_root / "tier1_verdict.md")
     json_path = args.output_json or (args.tier1_root / "tier1_verdict.json")
 
+    notes_path = args.tier1_root / NOTES_FILENAME
+    notes = notes_path.read_text() if notes_path.exists() else None
+
     args.tier1_root.mkdir(parents=True, exist_ok=True)
-    md_path.write_text(build_markdown(rows))
+    md_path.write_text(build_markdown(rows, notes=notes))
     json_path.write_text(_safe_json_dump(build_json(rows)))
 
     print(f"Wrote {md_path} ({len(rows)} cells)")
