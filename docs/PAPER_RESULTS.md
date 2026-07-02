@@ -323,9 +323,49 @@ trainability-vs-NE-structure framing — see
 [`paper/anvil_pub.bb-workshop.4/main.tex`](../paper/anvil_pub.bb-workshop.4/main.tex)
 §4.
 
+### 6f. k = 1 improvability oracle on the `no_convergence` cells (issue #428)
+
+**Result**: A downstream consumer (issue #428, via the `rjwalters/thrust`
+harness) reported that the $\kappa = 0.1$ / $c = 0.5$ `no_convergence`
+cells are *degenerate for single-best-response learning* — i.e. that a
+single agent facing 3 frozen uniform-random opponents has essentially no
+improvable gap ($\leq +0.01\%$ team-return headroom, achieved by resting).
+The repo-native k = 1 oracle does **not** reproduce this on the repo's
+`minimal_specialization`-based phase-diagram cells: a deterministic
+any-house firefighter beats the all-uniform baseline by **+14.4%** on
+per-step team return (paired 95% CI on the delta $[+10.5, +16.6]$ per
+step, n = 400 paired episodes), and the hand-coded specialist is
+significantly *better* than uniform ($+4.7$ per step), not worse. The
+scale mismatch in the report ($\approx 7\times$ larger return magnitudes)
+indicates the downstream harness evaluated a differently-weighted reward
+configuration; see the non-reproduction note in the committed artifact.
+
+**Interpretation for §4/§6**: flat PPO returns on the three
+$c = 0.5$ `no_convergence` cells cannot be read as "no single-agent gap
+exists, so flat is correct" — a scripted k = 1 best response finds a
+statistically decisive team-return improvement that PPO does not. The
+trainability failure on these cells therefore remains unexplained by this
+oracle (as it is by NE conditional entropy, #430 Task 1); the
+coordination-threshold account ($k^* > 1$, issue #430 / thrust#259) and
+plain exploration failure remain the live hypotheses. The three
+$c = 2.0$ `no_convergence` cells are not yet characterized (run the
+oracle with `--cells b0.10_k0.10_c2.00 b0.50_k0.10_c2.00
+b0.90_k0.10_c2.00` in a follow-up).
+
+**Artifacts**:
+- Oracle script: [`experiments/nash/phase_diagram/improvability_oracle.py`](../experiments/nash/phase_diagram/improvability_oracle.py)
+- Committed results: [`experiments/nash/phase_diagram/improvability_oracle.json`](../experiments/nash/phase_diagram/improvability_oracle.json), [`experiments/nash/phase_diagram/improvability_oracle.md`](../experiments/nash/phase_diagram/improvability_oracle.md)
+
+**Reproduce** (scripted policies only — no training; safe locally, ~20 s
+on a multi-core machine):
+
+```bash
+uv run python experiments/nash/phase_diagram/improvability_oracle.py --random-search 64
+```
+
 **Source**: PR #420 (sweep results + per-cell baselines + recalibrator),
 PR #421 (workshop paper that uses this data), parent #357 (M4 release-
-infra tracker).
+infra tracker), issue #428 (k = 1 oracle, §6f).
 
 ---
 
