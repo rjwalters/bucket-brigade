@@ -79,6 +79,7 @@ quantitative threshold claims.
 
 - Entropy cells: 31; verdict cells: 37; joined: 31.
 - Verdict cells without entropy (all `no_convergence`, no NE profile): b0.10_k0.10_c0.50, b0.10_k0.10_c2.00, b0.50_k0.10_c0.50, b0.50_k0.10_c2.00, b0.90_k0.10_c0.50, b0.90_k0.10_c2.00.
+- The three `c0.50` no-convergence cells nonetheless carry a significant k = 1 improvable gap against frozen uniform opponents — see [`improvability_oracle.md`](improvability_oracle.md) (issue #428); their trainability failure is not explained by a missing single-BR gap.
 
 Reproduce with:
 
