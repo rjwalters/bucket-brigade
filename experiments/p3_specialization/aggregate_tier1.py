@@ -17,6 +17,13 @@ historical 4-tier ladder from
 * ``0.20 <= gap_closed_mean < 0.49`` -> ``partial_lower`` (basin-trap consistent)
 * ``gap_closed_mean < 0.20`` -> ``insufficient`` (random-play basin)
 
+Since #434 ``gap_closed_mean`` may be null: scenarios whose reference pair
+is degenerate (``verdict_tier = "not_scored_degenerate_reference"``, e.g.
+rest_trap's NE-below-random social trap) or missing
+(``verdict_tier = "not_scored"``) are never classified on the fraction
+ladder. Such rows sort between ``insufficient`` and ``no_data`` and report
+the scenario-scale ``uplift_over_random`` column instead.
+
 Cells with ``n_seeds_completed == 0`` (or missing ``cell_summary.json``)
 are reported as ``no_data`` and sorted to the bottom.
 
@@ -50,6 +57,12 @@ NOTES_FILENAME = "tier1_verdict_notes.md"
 
 
 def verdict_for(mean) -> tuple[str, str]:
+    """Classify a scored ``gap_closed_mean`` on the fraction ladder.
+
+    Null/NaN means are never classified on the ladder (#434): rows carrying
+    their own ``not_scored*`` verdict keep it (see :func:`_sort_key`); this
+    fallback classifier maps null to ``no_data``.
+    """
     if mean is None or (isinstance(mean, float) and math.isnan(mean)):
         return "no_data", "no completed seeds"
     low, mid, high = VERDICT_THRESHOLDS
@@ -63,13 +76,18 @@ def verdict_for(mean) -> tuple[str, str]:
 
 
 def _verdict_rank(tier: str) -> int:
+    # ``not_scored*`` tiers (#434: degenerate/missing reference pair) sort
+    # between ``insufficient`` and ``no_data`` — they have data, just no
+    # meaningful fraction.
     return {
         "closed": 0,
         "partial_upper": 1,
         "partial_lower": 2,
         "insufficient": 3,
-        "no_data": 4,
-    }.get(tier, 5)
+        "not_scored_degenerate_reference": 4,
+        "not_scored": 5,
+        "no_data": 6,
+    }.get(tier, 7)
 
 
 def load_cells(tier1_root: Path) -> list[dict]:
@@ -121,15 +139,21 @@ def load_cells(tier1_root: Path) -> list[dict]:
 
 
 def _sort_key(row: dict) -> tuple[int, float]:
-    """Sort closed > partial > insufficient > no_data; within tier, by mean
-    desc.
+    """Sort closed > partial > insufficient > not_scored* > no_data; within
+    a tier, by mean desc.
 
-    ``no_data`` rows (NaN or null mean) fall to the bottom.
+    Null/NaN-mean rows sort by their own ``verdict_tier`` rank (#434:
+    ``not_scored*`` rows carry data but no fraction, so they must not be
+    conflated with ``no_data``), using ``-uplift_over_random_mean`` as the
+    within-tier secondary key when present.
     """
     tier = row.get("verdict_tier", "no_data")
     mean = row.get("gap_closed_mean", None)
     if mean is None or (isinstance(mean, float) and math.isnan(mean)):
-        return (_verdict_rank("no_data"), 0.0)
+        uplift = row.get("uplift_over_random_mean", None)
+        if uplift is None or (isinstance(uplift, float) and math.isnan(uplift)):
+            uplift = 0.0
+        return (_verdict_rank(tier), -float(uplift))
     # Negate for descending sort.
     return (_verdict_rank(tier), -float(mean))
 
@@ -144,6 +168,20 @@ def _fmt(value: object) -> str:
     return str(value)
 
 
+def _fmt_uplift(mean: object, std: object) -> str:
+    """Format ``uplift_over_random`` as ``+m.mmm ± s.sss`` (or ``n/a``).
+
+    Pre-#434 (schema v1) summaries carry no uplift fields; those rows render
+    ``n/a`` rather than crashing.
+    """
+    if mean is None or (isinstance(mean, float) and math.isnan(mean)):
+        return "n/a"
+    out = f"{float(mean):+.3f}"
+    if std is not None and not (isinstance(std, float) and math.isnan(std)):
+        out += f" ± {float(std):.3f}"
+    return out
+
+
 def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
     sorted_rows = sorted(rows, key=_sort_key)
     lines = [
@@ -152,25 +190,35 @@ def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
         "Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; "
         "`0.49 <= mean < 0.88` -> **partial_upper**; "
         "`0.20 <= mean < 0.49` -> **partial_lower**; "
-        "`mean < 0.20` -> **insufficient**.",
+        "`mean < 0.20` -> **insufficient**. "
+        "Rows with a null `gap_closed` (**not_scored** / "
+        "**not_scored_degenerate_reference**, #434) are never classified on "
+        "the ladder; read their `uplift_over_random` (per-step, scenario "
+        "scale) instead.",
         "",
-        "| Trainer | Scenario | gap_closed (mean ± std) | n_seeds | Verdict |",
-        "|---------|----------|--------------------------|---------|---------|",
+        "| Trainer | Scenario | gap_closed (mean ± std) | "
+        "uplift_over_random (mean ± std) | n_seeds | Verdict |",
+        "|---------|----------|--------------------------|"
+        "---------------------------------|---------|---------|",
     ]
     for row in sorted_rows:
         mean = row.get("gap_closed_mean", float("nan"))
         std = row.get("gap_closed_std", 0.0)
+        uplift_mean = row.get("uplift_over_random_mean", None)
+        uplift_std = row.get("uplift_over_random_std", None)
         n_ok = row.get("n_seeds_completed", 0)
         n_fail = row.get("n_seeds_failed", 0)
         n_str = f"{n_ok} ok"
         if n_fail:
             n_str += f", {n_fail} failed"
+        gap_str = "n/a" if _fmt(mean) == "n/a" else f"{_fmt(mean)} ± {_fmt(std)}"
         lines.append(
-            "| {trainer} | {scenario} | {mean} ± {std} | {n_str} | {verdict} |".format(
+            "| {trainer} | {scenario} | {gap} | {uplift} | "
+            "{n_str} | {verdict} |".format(
                 trainer=row.get("trainer", "?"),
                 scenario=row.get("scenario", "?"),
-                mean=_fmt(mean),
-                std=_fmt(std),
+                gap=gap_str,
+                uplift=_fmt_uplift(uplift_mean, uplift_std),
                 n_str=n_str,
                 verdict=row.get("verdict_tier", "no_data"),
             )
@@ -185,7 +233,10 @@ def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
 def build_json(rows: Sequence[dict]) -> dict:
     sorted_rows = sorted(rows, key=_sort_key)
     return {
-        "schema_version": 1,
+        # v2 (#434): added gap_source, uplift_over_random_* and
+        # gap_closed_minspec_legacy_mean; gap_closed_mean may be null for
+        # not_scored* rows (degenerate/missing reference pair).
+        "schema_version": 2,
         "thresholds": {
             "partial_lower": VERDICT_THRESHOLDS[0],
             "partial_upper": VERDICT_THRESHOLDS[1],
@@ -198,6 +249,12 @@ def build_json(rows: Sequence[dict]) -> dict:
                 "gap_closed_mean": r.get("gap_closed_mean", float("nan")),
                 "gap_closed_std": r.get("gap_closed_std", 0.0),
                 "gap_closed_per_seed": r.get("gap_closed_per_seed", []),
+                "gap_source": r.get("gap_source"),
+                "uplift_over_random_mean": r.get("uplift_over_random_mean"),
+                "uplift_over_random_std": r.get("uplift_over_random_std"),
+                "gap_closed_minspec_legacy_mean": r.get(
+                    "gap_closed_minspec_legacy_mean"
+                ),
                 "n_seeds_completed": r.get("n_seeds_completed", 0),
                 "n_seeds_failed": r.get("n_seeds_failed", 0),
                 "verdict_tier": r.get("verdict_tier", "no_data"),

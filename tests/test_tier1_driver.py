@@ -535,6 +535,354 @@ def test_aggregator_no_notes_file_leaves_md_unchanged(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Scenario-aware gap_closed (#434): three resolution outcomes
+# ---------------------------------------------------------------------------
+
+
+def _write_team_metrics(seed_dir: Path, values: list[float]) -> None:
+    """Write a ``metrics.json`` with explicit per-iteration team rewards."""
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"iter": i, "mean_step_reward_team": float(v)} for i, v in enumerate(values)
+    ]
+    (seed_dir / "metrics.json").write_text(json.dumps(rows))
+
+
+def _summary_for(tmp_path: Path, scenario: str, per_seed_values) -> dict:
+    """Build a cell summary from synthetic per-seed trajectories."""
+    seeds = list(range(42, 42 + len(per_seed_values)))
+    seed_dirs = []
+    for seed, values in zip(seeds, per_seed_values):
+        sdir = tmp_path / f"seed_{seed}"
+        _write_team_metrics(sdir, values)
+        seed_dirs.append(sdir)
+    return run_tier1_cell.build_cell_summary(
+        trainer="ippo",
+        scenario=scenario,
+        seeds=seeds,
+        seed_dirs=seed_dirs,
+        num_iterations=len(per_seed_values[0]),
+        command_invoked="fake",
+        git_sha="deadbeef",
+        wall_clock_seconds=1.0,
+    )
+
+
+def test_rest_trap_is_degenerate_reference_not_ladder(tmp_path):
+    """rest_trap must not be classified on the fraction ladder (#434)."""
+    from bucket_brigade.baselines import SCENARIO_RANDOM_BASELINES
+
+    rest_trap_random = SCENARIO_RANDOM_BASELINES["rest_trap"]  # 302.87
+    # 10 iterations flat at 306.26/step (the het_ppo trailing-5 headline).
+    summary = _summary_for(tmp_path, "rest_trap", [[306.26] * 10] * 3)
+
+    assert summary["gap_closed_mean"] is None
+    assert summary["gap_closed_std"] is None
+    assert summary["gap_closed_per_seed"] is None
+    assert summary["iter0_gap_closed_mean"] is None
+    assert summary["min_iter_gap_closed_mean"] is None
+    assert summary["mean_traj_gap_closed"] is None
+    assert summary["gap_source"] == "degenerate_reference"
+    assert summary["verdict_tier"] == "not_scored_degenerate_reference"
+    assert summary["scenario_random_baseline"] == rest_trap_random
+    assert summary["scenario_reference"]["value"] is None
+    assert summary["scenario_reference"]["reason"] == "social_trap_ne_below_random"
+    # Scenario-scale headline: uplift over uniform random, per-step.
+    assert summary["uplift_over_random_mean"] == pytest.approx(
+        306.26 - rest_trap_random
+    )
+    # Legacy MINSPEC-scale audit column still carries the historical value.
+    assert summary["gap_closed_minspec_legacy_mean"] == pytest.approx(
+        (306.26 - (-87.72)) / (-28.38 - (-87.72))
+    )
+
+
+def test_minimal_specialization_numerics_unchanged(tmp_path):
+    """minspec gap values are bit-identical to the historical MINSPEC formula."""
+    from bucket_brigade.baselines import MINSPEC_RANDOM, MINSPEC_SPECIALIST
+
+    reward = 0.35 * (MINSPEC_SPECIALIST - MINSPEC_RANDOM) + MINSPEC_RANDOM
+    summary = _summary_for(tmp_path, "minimal_specialization", [[reward] * 10] * 3)
+
+    assert summary["gap_source"] == "scenario"
+    assert summary["gap_closed_mean"] == pytest.approx(0.35, abs=1e-9)
+    assert summary["verdict_tier"] == "partial_lower"
+    assert summary["scenario_random_baseline"] == MINSPEC_RANDOM
+    assert summary["scenario_reference"]["value"] == MINSPEC_SPECIALIST
+    assert summary["scenario_reference"]["kind"] == "specialist_homogeneous"
+    # Legacy audit column equals the scored value on minspec.
+    assert summary["gap_closed_minspec_legacy_mean"] == pytest.approx(
+        summary["gap_closed_mean"]
+    )
+    # Point-value equivalence of the scenario-aware and legacy formulas.
+    assert run_tier1_cell.gap_closed(
+        reward, "minimal_specialization"
+    ) == run_tier1_cell.gap_closed_minspec_legacy(reward)
+
+
+def test_unknown_scenario_not_scored_with_warning(tmp_path, capsys):
+    """Unknown scenarios: null gap + loud stderr warning, never MINSPEC."""
+    summary = _summary_for(tmp_path, "definitely_not_a_scenario", [[1.0] * 10] * 2)
+    captured = capsys.readouterr()
+
+    assert "SCENARIO_GAP_REFERENCES" in captured.err
+    assert "definitely_not_a_scenario" in captured.err
+    assert summary["gap_closed_mean"] is None
+    assert summary["gap_source"] == "missing_reference"
+    assert summary["verdict_tier"] == "not_scored"
+    # No random baseline either -> no uplift.
+    assert summary["scenario_random_baseline"] is None
+    assert summary["uplift_over_random_mean"] is None
+    # Audit column still records the (meaningless off-minspec) legacy value.
+    assert summary["gap_closed_minspec_legacy_mean"] is not None
+
+
+def test_gap_closed_returns_none_off_scenario_table():
+    assert run_tier1_cell.gap_closed(100.0, "rest_trap") is None
+    assert run_tier1_cell.gap_closed(100.0, "definitely_not_a_scenario") is None
+
+
+def test_zero_denominator_reference_treated_as_degenerate(tmp_path):
+    """reference == random must resolve as degenerate, not ZeroDivisionError."""
+    import bucket_brigade.baselines as baselines
+
+    with patch.dict(
+        baselines.SCENARIO_GAP_REFERENCES,
+        {"zero_denom": {"random": 5.0, "reference": 5.0}},
+    ):
+        refs = run_tier1_cell.resolve_scenario_references("zero_denom", warn=False)
+        assert refs["source"] == "degenerate_reference"
+        assert run_tier1_cell.gap_closed(10.0, "zero_denom") is None
+        summary = _summary_for(tmp_path, "zero_denom", [[10.0] * 6] * 2)
+        assert summary["verdict_tier"] == "not_scored_degenerate_reference"
+        assert summary["uplift_over_random_mean"] == pytest.approx(5.0)
+
+
+def test_all_seeds_failed_is_no_data_not_not_scored(tmp_path):
+    """An empty cell yields no_data even on a degenerate-reference scenario."""
+    summary = run_tier1_cell.build_cell_summary(
+        trainer="het_ppo",
+        scenario="rest_trap",
+        seeds=[42, 43],
+        seed_dirs=[tmp_path / "seed_42", tmp_path / "seed_43"],
+        num_iterations=5,
+        command_invoked="fake",
+        git_sha="deadbeef",
+        wall_clock_seconds=1.0,
+    )
+    assert summary["verdict_tier"] == "no_data"
+    assert summary["n_seeds_completed"] == 0
+    assert summary["uplift_over_random_mean"] is None
+    # NaN-safe JSON round-trip with the new null fields.
+    parsed = json.loads(run_tier1_cell._safe_json_dump(summary))
+    assert parsed["gap_closed_mean"] is None
+    assert parsed["gap_closed_minspec_legacy_mean"] is None
+
+
+def test_summary_schema_version_bumped(tmp_path):
+    summary = _summary_for(tmp_path, "minimal_specialization", [[-80.0] * 6])
+    assert summary["schema_version"] == run_tier1_cell.SUMMARY_SCHEMA_VERSION
+    assert run_tier1_cell.SUMMARY_SCHEMA_VERSION >= 2
+
+
+# ---------------------------------------------------------------------------
+# --summarize-only recompute mode (#434)
+# ---------------------------------------------------------------------------
+
+
+def test_summarize_only_does_not_dispatch_training(tmp_path):
+    """--summarize-only rebuilds cell_summary.json without any trainer run."""
+    output_root = tmp_path / "tier1_runs"
+    cell_dir = output_root / "het_ppo_rest_trap"
+    for seed in (42, 43):
+        _write_team_metrics(cell_dir / f"seed_{seed}", [300.0] * 6 + [306.26] * 5)
+
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("--summarize-only must not dispatch subprocesses")
+
+    with patch.object(run_tier1_cell, "_run_subprocess", side_effect=_boom):
+        summary = run_tier1_cell.run_cell(
+            trainer="het_ppo",
+            scenario="rest_trap",
+            seeds=[42, 43],
+            num_iterations=11,
+            rollout_steps=64,
+            output_root=output_root,
+            summarize_only=True,
+        )
+
+    assert summary["n_seeds_completed"] == 2
+    assert summary["verdict_tier"] == "not_scored_degenerate_reference"
+    assert summary["uplift_over_random_mean"] == pytest.approx(306.26 - 302.87)
+    parsed = json.loads((cell_dir / "cell_summary.json").read_text())
+    assert parsed["gap_closed_mean"] is None
+    assert parsed["gap_source"] == "degenerate_reference"
+
+
+def test_summarize_only_preserves_prior_provenance(tmp_path):
+    """Recompute carries forward the original training-run provenance."""
+    output_root = tmp_path / "tier1_runs"
+    cell_dir = output_root / "ippo_minimal_specialization"
+    _write_team_metrics(cell_dir / "seed_42", [-80.0] * 6)
+    (cell_dir / "cell_summary.json").write_text(
+        json.dumps(
+            {
+                "command_invoked": "original-training-command",
+                "git_sha": "0ldsha00",
+                "wall_clock_seconds": 1234.5,
+            }
+        )
+    )
+
+    with patch.object(
+        run_tier1_cell,
+        "_run_subprocess",
+        side_effect=AssertionError("no dispatch"),
+    ):
+        summary = run_tier1_cell.run_cell(
+            trainer="ippo",
+            scenario="minimal_specialization",
+            seeds=[42],
+            num_iterations=6,
+            rollout_steps=64,
+            output_root=output_root,
+            summarize_only=True,
+        )
+
+    assert summary["command_invoked"] == "original-training-command"
+    assert summary["git_sha"] == "0ldsha00"
+    assert summary["wall_clock_seconds"] == 1234.5
+
+
+def test_summarize_only_cli_flag(tmp_path):
+    """main() accepts --summarize-only and skips trainer dispatch."""
+    output_root = tmp_path / "tier1_runs"
+    _write_team_metrics(
+        output_root / "ippo_minimal_specialization" / "seed_42", [-80.0] * 6
+    )
+
+    with patch.object(
+        run_tier1_cell,
+        "_run_subprocess",
+        side_effect=AssertionError("no dispatch"),
+    ):
+        rc = run_tier1_cell.main(
+            [
+                "--trainer",
+                "ippo",
+                "--scenario",
+                "minimal_specialization",
+                "--seeds",
+                "42",
+                "--summarize-only",
+                "--output-root",
+                str(output_root),
+            ]
+        )
+    assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# Aggregator null-gap handling (#434)
+# ---------------------------------------------------------------------------
+
+
+def _make_not_scored_cell_summary(cell_dir: Path) -> None:
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 2,
+        "trainer": "het_ppo",
+        "scenario": "rest_trap",
+        "seeds": [42, 43],
+        "num_iterations": 50,
+        "n_seeds_completed": 2,
+        "n_seeds_failed": 0,
+        "failed_seeds": [],
+        "gap_closed_mean": None,
+        "gap_closed_std": None,
+        "gap_closed_per_seed": None,
+        "gap_source": "degenerate_reference",
+        "scenario_random_baseline": 302.87,
+        "scenario_reference": {
+            "value": None,
+            "kind": None,
+            "reason": "social_trap_ne_below_random",
+            "provenance": "test",
+        },
+        "uplift_over_random_mean": 3.39,
+        "uplift_over_random_std": 7.53,
+        "uplift_over_random_per_seed": [3.0, 3.78],
+        "gap_closed_minspec_legacy_mean": 6.639,
+        "trailing5_team_mean": 306.26,
+        "iter0_gap_closed_mean": None,
+        "min_iter_gap_closed_mean": None,
+        "mean_traj_gap_closed": None,
+        "verdict_tier": "not_scored_degenerate_reference",
+        "verdict_reason": "reference pair degenerate",
+        "command_invoked": "fake",
+        "git_sha": "deadbeef",
+        "wall_clock_seconds": 100.0,
+    }
+    (cell_dir / "cell_summary.json").write_text(json.dumps(payload))
+
+
+def test_aggregator_renders_null_gap_row(tmp_path):
+    """A not_scored* row renders with uplift, sorts below scored tiers, and
+    never crashes on the null gap columns."""
+    root = tmp_path / "tier1_runs"
+    _make_cell_summary(
+        root / "ippo_minimal_specialization", "ippo", "minimal_specialization", 0.10
+    )
+    _make_not_scored_cell_summary(root / "het_ppo_rest_trap")
+    (root / "abandoned_minimal_specialization").mkdir(parents=True)  # no_data row
+
+    rows = aggregate_tier1.load_cells(root)
+    md = aggregate_tier1.build_markdown(rows)
+
+    assert "uplift_over_random" in md
+    assert "not_scored_degenerate_reference" in md
+    assert "+3.390 ± 7.530" in md
+    assert "nan" not in md.lower().replace("n/a", "")
+    # Sort: scored (even insufficient) above not_scored, no_data last.
+    ippo_idx = md.index("| ippo |")
+    het_idx = md.index("| het_ppo |")
+    assert ippo_idx < het_idx, "insufficient must sort above not_scored*"
+    no_data_line = [line for line in md.splitlines() if "no_data" in line]
+    assert no_data_line, "missing-summary cell should surface as no_data"
+    assert md.index(no_data_line[0]) > het_idx, "no_data must sort last"
+
+    # JSON side: null gap round-trips, uplift + gap_source columns present.
+    out = aggregate_tier1.build_json(rows)
+    by_trainer = {c["trainer"]: c for c in out["cells"]}
+    het = by_trainer["het_ppo"]
+    assert het["gap_closed_mean"] is None
+    assert het["gap_source"] == "degenerate_reference"
+    assert het["uplift_over_random_mean"] == pytest.approx(3.39)
+    assert het["gap_closed_minspec_legacy_mean"] == pytest.approx(6.639)
+    assert het["verdict_tier"] == "not_scored_degenerate_reference"
+    # Whole payload dumps to valid JSON (no NaN tokens).
+    json.loads(aggregate_tier1._safe_json_dump(out))
+
+
+def test_aggregator_verdict_rank_ordering():
+    """not_scored* tiers sit between insufficient and no_data."""
+    ranks = [
+        aggregate_tier1._verdict_rank(t)
+        for t in (
+            "closed",
+            "partial_upper",
+            "partial_lower",
+            "insufficient",
+            "not_scored_degenerate_reference",
+            "not_scored",
+            "no_data",
+        )
+    ]
+    assert ranks == sorted(ranks)
+    assert len(set(ranks)) == len(ranks)
+
+
+# ---------------------------------------------------------------------------
 # Dispatch-table sanity
 # ---------------------------------------------------------------------------
 

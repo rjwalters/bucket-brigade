@@ -16,8 +16,30 @@ The dispatcher knows about 14 trainer names (see :data:`TRAINERS`):
 * ``pbt`` is the only trainer that doesn't go through ``train.py``; it
   shells out to ``experiments/p3_specialization/run_issue288_pbt.py``.
 
-``gap_closed`` is computed via ``bucket_brigade.baselines.MINSPEC_RANDOM`` /
-``MINSPEC_SPECIALIST`` (same formula as ``analyze_270.py:45-46``).
+``gap_closed`` is **scenario-aware** (issue #434): each scenario resolves a
+``(random, reference)`` pair from
+``bucket_brigade.baselines.SCENARIO_GAP_REFERENCES`` with three outcomes:
+
+* valid pair (``reference > random``) -> ``gap = (x - random) / (reference -
+  random)`` and the #343 verdict ladder applies (``gap_source = "scenario"``).
+  For ``minimal_specialization`` this is numerically identical to the
+  historical MINSPEC formula (``analyze_270.py:45-46``).
+* degenerate reference (no upper reference beats random, e.g. ``rest_trap``'s
+  NE-below-random social trap) -> ``gap_closed = null``, the ladder is NOT
+  applied (``verdict_tier = "not_scored_degenerate_reference"``), and the
+  scenario-scale ``uplift_over_random`` is reported instead.
+* unknown scenario (no table entry) -> ``gap_closed = null``, loud stderr
+  warning, ``verdict_tier = "not_scored"``. There is deliberately no MINSPEC
+  fallback — that silent fallback produced the vacuous ``gap ~ 6.6`` on
+  rest_trap (#434).
+
+The MINSPEC-scale value is always kept as the clearly-labeled
+``gap_closed_minspec_legacy_mean`` audit column for continuity with
+pre-recalibration summaries.
+
+``--summarize-only`` rebuilds ``cell_summary.json`` from existing
+``seed_*/metrics.json`` without dispatching any training subprocess (used to
+regenerate committed artifacts after metric changes).
 
 Usage:
 
@@ -288,8 +310,17 @@ TRAINERS: dict[str, TrainerSpec] = {
 }
 
 
+# Schema version for ``cell_summary.json``. Version 2 (issue #434) added
+# scenario-aware gap references: ``gap_source``, ``scenario_random_baseline``,
+# ``scenario_reference``, ``uplift_over_random_*`` and
+# ``gap_closed_minspec_legacy_mean``. Version-1 summaries (implicit, no
+# ``schema_version`` key) scored every scenario against the MINSPEC constants.
+SUMMARY_SCHEMA_VERSION = 2
+
+
 # ---------------------------------------------------------------------------
-# gap_closed helpers (mirrors analyze_270.py for the Tier-1 schema)
+# gap_closed helpers (scenario-aware since #434; minspec branch mirrors
+# analyze_270.py for the Tier-1 schema)
 # ---------------------------------------------------------------------------
 
 
@@ -303,8 +334,99 @@ def _import_baselines() -> tuple[float, float]:
     return MINSPEC_RANDOM, MINSPEC_SPECIALIST
 
 
-def gap_closed(per_step_team: float) -> float:
-    """Canonical Tier-1 gap_closed (same formula as analyze_270.py:45-46)."""
+def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
+    """Resolve the per-scenario ``(random, reference)`` gap pair (issue #434).
+
+    Returns a dict with keys:
+
+    * ``source`` -- ``"scenario"`` (valid pair, ladder applies),
+      ``"degenerate_reference"`` (no upper reference beats random; ladder
+      must NOT be applied), or ``"missing_reference"`` (scenario absent from
+      ``SCENARIO_GAP_REFERENCES``; not scorable).
+    * ``random`` -- per-step uniform-random team reward, or ``None`` if the
+      scenario is absent from ``SCENARIO_RANDOM_BASELINES`` too.
+    * ``reference`` -- per-step upper-reference team reward, or ``None``.
+    * ``reference_kind`` / ``reason`` / ``provenance`` -- audit metadata.
+
+    A degenerate pair includes ``reference <= random`` (zero or negative
+    denominator), not just a missing upper reference.
+
+    There is deliberately **no MINSPEC fallback** for unknown scenarios:
+    named scenarios differ by ~400 per-step reward units, so a MINSPEC-scale
+    fraction is never meaningful off ``minimal_specialization``. That silent
+    fallback was exactly the #434 bug (vacuous ``gap ~ 6.6`` on rest_trap).
+    """
+    from bucket_brigade.baselines import (
+        SCENARIO_GAP_REFERENCES,
+        SCENARIO_RANDOM_BASELINES,
+    )
+
+    entry = SCENARIO_GAP_REFERENCES.get(scenario)
+    if entry is None:
+        if warn:
+            print(
+                f"WARNING: scenario {scenario!r} has no entry in "
+                "bucket_brigade.baselines.SCENARIO_GAP_REFERENCES; "
+                "gap_closed will be null and the cell will be reported as "
+                "'not_scored'. Measure a (random, reference) pair and add it "
+                "to the table before applying the verdict ladder. "
+                "(No MINSPEC fallback — see issue #434.)",
+                file=sys.stderr,
+                flush=True,
+            )
+        return {
+            "source": "missing_reference",
+            "random": SCENARIO_RANDOM_BASELINES.get(scenario),
+            "reference": None,
+            "reference_kind": None,
+            "reason": "missing_reference",
+            "provenance": None,
+        }
+
+    random_ = entry["random"]
+    reference = entry.get("reference")
+    if reference is None or float(reference) - float(random_) <= 0:
+        return {
+            "source": "degenerate_reference",
+            "random": float(random_),
+            "reference": float(reference) if reference is not None else None,
+            "reference_kind": entry.get("reference_kind"),
+            "reason": entry.get("degenerate_reason", "reference_not_above_random"),
+            "provenance": entry.get("provenance"),
+        }
+
+    return {
+        "source": "scenario",
+        "random": float(random_),
+        "reference": float(reference),
+        "reference_kind": entry.get("reference_kind"),
+        "reason": None,
+        "provenance": entry.get("provenance"),
+    }
+
+
+def gap_closed(per_step_team: float, scenario: str) -> Optional[float]:
+    """Scenario-aware Tier-1 gap_closed (issue #434).
+
+    Returns ``None`` when the scenario's reference pair is degenerate or
+    missing — the fraction ladder must not be applied to such cells. For
+    ``minimal_specialization`` this reproduces the historical MINSPEC
+    formula (``analyze_270.py:45-46``) bit-for-bit.
+    """
+    refs = resolve_scenario_references(scenario, warn=False)
+    if refs["source"] != "scenario":
+        return None
+    return (per_step_team - refs["random"]) / (refs["reference"] - refs["random"])
+
+
+def gap_closed_minspec_legacy(per_step_team: float) -> float:
+    """The pre-#434 MINSPEC-scale gap (audit column only).
+
+    Kept so recalibrated summaries stay comparable with historical
+    version-1 summaries that scored every scenario against the MINSPEC
+    constants. Never feed this into the verdict ladder off
+    ``minimal_specialization``.
+    """
     random_, specialist_ = _import_baselines()
     denom = specialist_ - random_
     if denom == 0:
@@ -369,8 +491,20 @@ def build_cell_summary(
     git_sha: str,
     wall_clock_seconds: float,
 ) -> dict:
-    """Aggregate per-seed metrics into the curator-defined schema."""
+    """Aggregate per-seed metrics into the curator-defined schema.
+
+    Scenario-aware since #434 (``SUMMARY_SCHEMA_VERSION = 2``): the gap
+    columns are only populated when the scenario resolves a valid
+    ``(random, reference)`` pair. Degenerate/missing references produce
+    null gap columns, a ``not_scored*`` verdict tier and (when the random
+    baseline is known) the scenario-scale ``uplift_over_random`` columns.
+    The MINSPEC-scale value is always kept as the
+    ``gap_closed_minspec_legacy_mean`` audit column.
+    """
     import statistics
+
+    refs = resolve_scenario_references(scenario, warn=True)
+    scored = refs["source"] == "scenario"
 
     completed: list[tuple[int, list[float]]] = []
     failed: list[int] = []
@@ -385,44 +519,88 @@ def build_cell_summary(
     iter0_gaps: list[float] = []
     min_gaps: list[float] = []
     trailing5_teams: list[float] = []
-    aligned_trajs: list[list[float]] = []
+    legacy_gaps: list[float] = []
     for _seed, traj in completed:
         trail = traj[-TRAILING_N:] if len(traj) >= TRAILING_N else traj
         trailing5_team = sum(trail) / len(trail)
         trailing5_teams.append(trailing5_team)
-        per_seed_gap.append(gap_closed(trailing5_team))
-        iter0_gaps.append(gap_closed(traj[0]))
-        min_gaps.append(min(gap_closed(x) for x in traj))
-        aligned_trajs.append(traj)
+        legacy_gaps.append(gap_closed_minspec_legacy(trailing5_team))
+        if scored:
+            per_seed_gap.append(gap_closed(trailing5_team, scenario))
+            iter0_gaps.append(gap_closed(traj[0], scenario))
+            min_gaps.append(min(gap_closed(x, scenario) for x in traj))
+
+    # Gap columns: populated only for scored scenarios; null otherwise so the
+    # fraction ladder can never be applied to a mismatched reward scale.
+    gap_closed_mean: Optional[float] = None
+    gap_closed_std: Optional[float] = None
+    gap_closed_per_seed: Optional[list[float]] = None
+    iter0_gap_closed_mean: Optional[float] = None
+    min_iter_gap_closed_mean: Optional[float] = None
+    mean_traj_gc: Optional[list[float]] = None
 
     if completed:
-        min_len = min(len(t) for _, t in completed)
-        # Mean trajectory in gap_closed space, aligned to the shortest run.
-        mean_traj_step = [
-            sum(t[i] for _, t in completed) / len(completed) for i in range(min_len)
-        ]
-        mean_traj_gc = [gap_closed(x) for x in mean_traj_step]
-        gap_closed_mean = sum(per_seed_gap) / len(per_seed_gap)
-        gap_closed_std = (
-            statistics.pstdev(per_seed_gap) if len(per_seed_gap) > 1 else 0.0
-        )
         trailing5_team_mean = sum(trailing5_teams) / len(trailing5_teams)
-        iter0_gap_closed_mean = sum(iter0_gaps) / len(iter0_gaps)
-        min_iter_gap_closed_mean = sum(min_gaps) / len(min_gaps)
+        gap_closed_minspec_legacy_mean = sum(legacy_gaps) / len(legacy_gaps)
+        if scored:
+            min_len = min(len(t) for _, t in completed)
+            # Mean trajectory in gap_closed space, aligned to the shortest run.
+            mean_traj_step = [
+                sum(t[i] for _, t in completed) / len(completed) for i in range(min_len)
+            ]
+            mean_traj_gc = [gap_closed(x, scenario) for x in mean_traj_step]
+            gap_closed_per_seed = per_seed_gap
+            gap_closed_mean = sum(per_seed_gap) / len(per_seed_gap)
+            gap_closed_std = (
+                statistics.pstdev(per_seed_gap) if len(per_seed_gap) > 1 else 0.0
+            )
+            iter0_gap_closed_mean = sum(iter0_gaps) / len(iter0_gaps)
+            min_iter_gap_closed_mean = sum(min_gaps) / len(min_gaps)
     else:
-        mean_traj_gc = []
-        gap_closed_mean = float("nan")
-        gap_closed_std = 0.0
         trailing5_team_mean = float("nan")
-        iter0_gap_closed_mean = float("nan")
-        min_iter_gap_closed_mean = float("nan")
+        gap_closed_minspec_legacy_mean = float("nan")
+        if scored:
+            # Preserve the historical no-data encoding for scored scenarios
+            # (NaN -> null via _safe_json_dump, empty lists).
+            gap_closed_mean = float("nan")
+            gap_closed_std = 0.0
+            gap_closed_per_seed = []
+            iter0_gap_closed_mean = float("nan")
+            min_iter_gap_closed_mean = float("nan")
+            mean_traj_gc = []
 
-    if completed:
-        verdict, reason = _verdict_for(gap_closed_mean)
-    else:
+    # Scenario-scale uplift over the uniform-random baseline (per-step). This
+    # is the honest headline for degenerate-reference scenarios (rest_trap).
+    uplift_mean: Optional[float] = None
+    uplift_std: Optional[float] = None
+    uplift_per_seed: Optional[list[float]] = None
+    if refs["random"] is not None and completed:
+        uplift_per_seed = [t - refs["random"] for t in trailing5_teams]
+        uplift_mean = sum(uplift_per_seed) / len(uplift_per_seed)
+        uplift_std = (
+            statistics.pstdev(uplift_per_seed) if len(uplift_per_seed) > 1 else 0.0
+        )
+
+    if not completed:
         verdict, reason = "no_data", "no seeds produced metrics.json"
+    elif scored:
+        verdict, reason = _verdict_for(gap_closed_mean)
+    elif refs["source"] == "degenerate_reference":
+        verdict = "not_scored_degenerate_reference"
+        reason = (
+            f"reference pair degenerate ({refs['reason']}): fraction ladder "
+            f"not applicable; uplift_over_random = "
+            f"{uplift_mean:+.3f}/step vs random = {refs['random']:.2f}/step"
+        )
+    else:
+        verdict = "not_scored"
+        reason = (
+            f"scenario {scenario!r} has no entry in SCENARIO_GAP_REFERENCES; "
+            "fraction ladder not applicable (no MINSPEC fallback, #434)"
+        )
 
     return {
+        "schema_version": SUMMARY_SCHEMA_VERSION,
         "trainer": trainer,
         "scenario": scenario,
         "seeds": list(seeds),
@@ -432,7 +610,19 @@ def build_cell_summary(
         "failed_seeds": failed,
         "gap_closed_mean": gap_closed_mean,
         "gap_closed_std": gap_closed_std,
-        "gap_closed_per_seed": per_seed_gap,
+        "gap_closed_per_seed": gap_closed_per_seed,
+        "gap_source": refs["source"],
+        "scenario_random_baseline": refs["random"],
+        "scenario_reference": {
+            "value": refs["reference"],
+            "kind": refs["reference_kind"],
+            "reason": refs["reason"],
+            "provenance": refs["provenance"],
+        },
+        "uplift_over_random_mean": uplift_mean,
+        "uplift_over_random_std": uplift_std,
+        "uplift_over_random_per_seed": uplift_per_seed,
+        "gap_closed_minspec_legacy_mean": gap_closed_minspec_legacy_mean,
         "trailing5_team_mean": trailing5_team_mean,
         "iter0_gap_closed_mean": iter0_gap_closed_mean,
         "min_iter_gap_closed_mean": min_iter_gap_closed_mean,
@@ -584,22 +774,67 @@ def run_cell(
     output_root: Path,
     cwd: Path = REPO_ROOT,
     skip_precheck: bool = False,
+    summarize_only: bool = False,
 ) -> dict:
     """Run a full Tier-1 cell (trainer × scenario × seeds) and write
     ``cell_summary.json``. Returns the summary dict.
 
     All subprocesses run with ``cwd=cwd`` (default: repo root) so that
     ``-m experiments.p3_specialization.train`` resolves.
+
+    With ``summarize_only=True`` (issue #434) no training subprocess is
+    dispatched and the disk-space precheck is skipped: ``cell_summary.json``
+    is rebuilt from the existing ``seed_*/metrics.json`` files via the same
+    :func:`build_cell_summary`. The training-run provenance fields
+    (``command_invoked``, ``git_sha``, ``wall_clock_seconds``) are carried
+    forward from a pre-existing ``cell_summary.json`` when present, so a
+    recompute is an additive schema refresh rather than a provenance rewrite.
     """
     if trainer not in TRAINERS:
         raise SystemExit(f"unknown trainer: {trainer!r}. Known: {sorted(TRAINERS)}")
 
     cell_dir = output_root / f"{trainer}_{scenario}"
     cell_dir.mkdir(parents=True, exist_ok=True)
+
+    if summarize_only:
+        seed_dirs = [cell_dir / f"seed_{s}" for s in seeds]
+        command_invoked = f"summarize-only recompute (schema v{SUMMARY_SCHEMA_VERSION})"
+        git_sha = _git_sha(cwd)
+        wall_clock = 0.0
+        prior_path = cell_dir / "cell_summary.json"
+        if prior_path.exists():
+            try:
+                prior = json.loads(prior_path.read_text())
+                command_invoked = prior.get("command_invoked", command_invoked)
+                git_sha = prior.get("git_sha", git_sha)
+                wall_clock = prior.get("wall_clock_seconds", wall_clock)
+            except (OSError, json.JSONDecodeError):
+                pass  # fall back to the recompute provenance defaults
+
+        summary = build_cell_summary(
+            trainer=trainer,
+            scenario=scenario,
+            seeds=seeds,
+            seed_dirs=seed_dirs,
+            num_iterations=num_iterations,
+            command_invoked=command_invoked,
+            git_sha=git_sha,
+            wall_clock_seconds=wall_clock,
+        )
+        out_path = cell_dir / "cell_summary.json"
+        out_path.write_text(_safe_json_dump(summary))
+        print(
+            f"\n== cell {trainer}_{scenario} re-summarized (no training): "
+            f"verdict={summary['verdict_tier']} "
+            f"gap_closed_mean={summary['gap_closed_mean']!r} -> {out_path}",
+            flush=True,
+        )
+        return summary
+
     if not skip_precheck:
         _disk_precheck(cell_dir)
 
-    seed_dirs: list[Path] = []
+    seed_dirs = []
     invoked_commands: list[str] = []
 
     spec = TRAINERS[trainer]
@@ -709,6 +944,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Skip the disk-space precheck (use for tests).",
     )
     p.add_argument(
+        "--summarize-only",
+        action="store_true",
+        help=(
+            "Do not dispatch any training: rebuild cell_summary.json from "
+            "the existing seed_*/metrics.json files via build_cell_summary "
+            "(issue #434 recompute mode). Also skips the disk-space "
+            "precheck. Training provenance fields are carried forward from "
+            "a pre-existing cell_summary.json when present."
+        ),
+    )
+    p.add_argument(
         "--list-trainers",
         action="store_true",
         help=(
@@ -739,6 +985,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         rollout_steps=args.rollout_steps,
         output_root=args.output_root,
         skip_precheck=args.skip_precheck,
+        summarize_only=args.summarize_only,
     )
     # Exit non-zero if we got no seeds completed; otherwise success even if
     # partial (so a remote sweep harness can still aggregate).

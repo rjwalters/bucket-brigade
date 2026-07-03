@@ -44,6 +44,7 @@ from pathlib import Path
 from bucket_brigade.baselines import (
     MINSPEC_RANDOM,
     MINSPEC_SPECIALIST,
+    SCENARIO_GAP_REFERENCES,
     SCENARIO_RANDOM_BASELINES,
 )
 
@@ -151,3 +152,64 @@ def test_scenario_random_baselines_matches_measurement_table() -> None:
         f"(mirror, source): {mismatches}. Issue #323 requires these to stay "
         "aligned — update both tables together when re-deriving baselines."
     )
+
+
+# ---------------------------------------------------------------------------
+# SCENARIO_GAP_REFERENCES drift guards (issue #434)
+# ---------------------------------------------------------------------------
+
+
+def test_gap_references_random_side_matches_scenario_random_baselines() -> None:
+    """The ``random`` side of every gap-reference pair must match the
+    canonical ``SCENARIO_RANDOM_BASELINES`` entry — the two tables must not
+    silently diverge (same yardstick, two consumers)."""
+    for scenario, entry in SCENARIO_GAP_REFERENCES.items():
+        assert scenario in SCENARIO_RANDOM_BASELINES, (
+            f"SCENARIO_GAP_REFERENCES[{scenario!r}] has no matching "
+            "SCENARIO_RANDOM_BASELINES entry — gap references must be built "
+            "on the canonical random baselines."
+        )
+        assert entry["random"] == SCENARIO_RANDOM_BASELINES[scenario], (
+            f"SCENARIO_GAP_REFERENCES[{scenario!r}]['random'] = "
+            f"{entry['random']!r} disagrees with "
+            f"SCENARIO_RANDOM_BASELINES[{scenario!r}] = "
+            f"{SCENARIO_RANDOM_BASELINES[scenario]!r}."
+        )
+
+
+def test_gap_references_minspec_entry_matches_minspec_constants() -> None:
+    """The minimal_specialization pair must be exactly (MINSPEC_RANDOM,
+    MINSPEC_SPECIALIST) so recalibrated Tier-1 summaries stay bit-for-bit
+    compatible with the historical MINSPEC formula (#434)."""
+    entry = SCENARIO_GAP_REFERENCES["minimal_specialization"]
+    assert entry["random"] == MINSPEC_RANDOM
+    assert entry["reference"] == MINSPEC_SPECIALIST
+    assert entry["reference_kind"] == "specialist_homogeneous"
+
+
+def test_gap_references_rest_trap_is_degenerate() -> None:
+    """rest_trap must have NO upper reference (NE-below-random social trap):
+    the fraction ladder is not applicable there until a measured reference
+    that beats random exists (#434)."""
+    entry = SCENARIO_GAP_REFERENCES["rest_trap"]
+    assert entry["reference"] is None
+    assert entry["degenerate_reason"] == "social_trap_ne_below_random"
+    # The provenance must record the per-episode vs per-step unit caveat.
+    assert "PER EPISODE" in str(entry["provenance"])
+
+
+def test_gap_references_valid_pairs_have_positive_denominator() -> None:
+    """Any entry with a non-null reference must satisfy reference > random —
+    otherwise it belongs in the degenerate branch, not the ladder."""
+    for scenario, entry in SCENARIO_GAP_REFERENCES.items():
+        reference = entry.get("reference")
+        if reference is None:
+            assert "degenerate_reason" in entry, (
+                f"{scenario!r}: degenerate entries must document why "
+                "(degenerate_reason)."
+            )
+            continue
+        assert float(reference) > float(entry["random"]), (  # type: ignore[arg-type]
+            f"{scenario!r}: reference {reference!r} must exceed random "
+            f"{entry['random']!r} for the gap fraction to be meaningful."
+        )
