@@ -52,3 +52,31 @@ scenarios (`asym_b05_k05_c09`, `asym_b05_k09_c09`) are not registered in
 `bucket_brigade/envs` — they exist only in the runbook/launcher docs. Phase 2
 is blocked on the #358 cell-to-scenario follow-up (see
 `experiments/p3_specialization/het_ppo_runbook.md` and issue #429).
+
+### het_ppo / rest_trap (#436): trap-escape verdict — `escaped_trap` (marginal)
+
+Issue #436 added a measured upper anchor and a categorical four-way
+trap-escape verdict for degenerate-reference (social-trap) rows, computed by
+`run_tier1_cell.classify_trap_verdict` at re-summarization time
+(`--summarize-only`, no retraining):
+
+- **Anchors** (per-step team reward): NE bound ≤ 248.67 (frozen NE payoff
+  2984.04/episode ÷ min_nights = 12), random 302.87
+  (`SCENARIO_RANDOM_BASELINES`), and the measured `scripted_best` = 386.60
+  [386.17, 387.03] (homogeneous `specialist` team, n=10k, issue #436 Part A;
+  artifact `experiments/p3_specialization/scripted_battery/rest_trap.{json,md}`).
+- **Rule**: nested one-sided ladder on the lower bound of the seed-bootstrap
+  95% CI of the trailing-5 per-step team reward (10k resamples, fixed seed):
+  `lo > scripted_best_ci_hi` → `above_scripted_best`; `lo > random` →
+  `escaped_trap`; `lo > ne_bound` → `at_random`; else `trapped_at_ne`.
+- **het_ppo result (20 seeds)**: trailing-5 mean 306.26, CI [302.95, 309.33]
+  → **`escaped_trap`**, but *marginal*: the CI lower bound clears the random
+  anchor by only 0.08/step, and the #436 fresh n=10k re-measurement of the
+  uniform baseline (302.94 [301.46, 304.31]) sits essentially on that lower
+  bound. Read this as "statistically distinguishable from random under the
+  committed anchor, far below scripted_best (Δ ≈ −80/step)" — PPO escapes
+  the *resting* trap direction but captures almost none of the measurable
+  scripted headroom. The scripted battery also shows `always_rest` (288.55)
+  and the NE bound (≤ 248.67) are both *below* random: the trap is real, and
+  a fully-scripted specialist team demonstrates the scenario is not
+  reward-capped at random-level play.

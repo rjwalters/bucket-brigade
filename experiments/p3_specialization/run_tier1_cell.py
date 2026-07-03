@@ -27,7 +27,14 @@ The dispatcher knows about 14 trainer names (see :data:`TRAINERS`):
 * degenerate reference (no upper reference beats random, e.g. ``rest_trap``'s
   NE-below-random social trap) -> ``gap_closed = null``, the ladder is NOT
   applied (``verdict_tier = "not_scored_degenerate_reference"``), and the
-  scenario-scale ``uplift_over_random`` is reported instead.
+  scenario-scale ``uplift_over_random`` is reported instead. Additionally
+  (issue #436) such rows carry a categorical **trap-escape verdict**
+  (:func:`classify_trap_verdict`): the seed-bootstrap 95% CI of the
+  trailing-5 per-step team reward is classified against up to three anchors
+  from the reference table -- ``ne_per_step_bound`` (upper bound on the
+  frozen NE's per-step payoff), ``random``, and the measured
+  ``scripted_best`` -- into ``trapped_at_ne`` / ``at_random`` /
+  ``escaped_trap`` / ``above_scripted_best``.
 * unknown scenario (no table entry) -> ``gap_closed = null``, loud stderr
   warning, ``verdict_tier = "not_scored"``. There is deliberately no MINSPEC
   fallback — that silent fallback produced the vacuous ``gap ~ 6.6`` on
@@ -62,6 +69,7 @@ import argparse
 import importlib.util
 import json
 import math
+import random
 import subprocess  # nosec B404 (orchestrator spawns train.py with fixed argv)
 import sys
 import time
@@ -315,7 +323,18 @@ TRAINERS: dict[str, TrainerSpec] = {
 # ``scenario_reference``, ``uplift_over_random_*`` and
 # ``gap_closed_minspec_legacy_mean``. Version-1 summaries (implicit, no
 # ``schema_version`` key) scored every scenario against the MINSPEC constants.
-SUMMARY_SCHEMA_VERSION = 2
+# Version 3 (issue #436) added the trap-escape verdict fields for
+# degenerate-reference rows: ``trap_verdict``, ``trap_verdict_reason``,
+# ``trap_anchors`` and ``trailing5_team_ci95``.
+SUMMARY_SCHEMA_VERSION = 3
+
+# Trap-verdict bootstrap convention (issue #436): percentile bootstrap over
+# SEEDS of the mean trailing-5 per-step team reward, resampled
+# ``TRAP_N_BOOT`` times with a fixed stdlib RNG seed so re-summarization is
+# deterministic. Documented in the reference-table provenance and
+# docs/PAPER_RESULTS.md.
+TRAP_N_BOOT = 10_000
+TRAP_BOOT_SEED = 436
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +366,9 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
       scenario is absent from ``SCENARIO_RANDOM_BASELINES`` too.
     * ``reference`` -- per-step upper-reference team reward, or ``None``.
     * ``reference_kind`` / ``reason`` / ``provenance`` -- audit metadata.
+    * ``ne_per_step_bound`` / ``scripted_best`` -- trap-verdict anchors
+      (issue #436), passed through from the table entry when present
+      (``None`` otherwise). Only consumed on the degenerate-reference path.
 
     A degenerate pair includes ``reference <= random`` (zero or negative
     denominator), not just a missing upper reference.
@@ -381,10 +403,14 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
             "reference_kind": None,
             "reason": "missing_reference",
             "provenance": None,
+            "ne_per_step_bound": None,
+            "scripted_best": None,
         }
 
     random_ = entry["random"]
     reference = entry.get("reference")
+    ne_bound = entry.get("ne_per_step_bound")
+    scripted_best = entry.get("scripted_best")
     if reference is None or float(reference) - float(random_) <= 0:
         return {
             "source": "degenerate_reference",
@@ -393,6 +419,8 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
             "reference_kind": entry.get("reference_kind"),
             "reason": entry.get("degenerate_reason", "reference_not_above_random"),
             "provenance": entry.get("provenance"),
+            "ne_per_step_bound": float(ne_bound) if ne_bound is not None else None,
+            "scripted_best": scripted_best,
         }
 
     return {
@@ -402,6 +430,8 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
         "reference_kind": entry.get("reference_kind"),
         "reason": None,
         "provenance": entry.get("provenance"),
+        "ne_per_step_bound": float(ne_bound) if ne_bound is not None else None,
+        "scripted_best": scripted_best,
     }
 
 
@@ -432,6 +462,142 @@ def gap_closed_minspec_legacy(per_step_team: float) -> float:
     if denom == 0:
         return 0.0
     return (per_step_team - random_) / denom
+
+
+def _seed_bootstrap_ci(
+    values: Sequence[float],
+    *,
+    n_boot: int = TRAP_N_BOOT,
+    confidence: float = 0.95,
+    boot_seed: int = TRAP_BOOT_SEED,
+) -> tuple[float, float, float]:
+    """Percentile bootstrap 95% CI of the mean over per-seed values.
+
+    Seeds are the independent replication unit for a trained cell (each
+    seed's trailing-5 mean is one draw), so the bootstrap resamples seeds
+    with replacement. Stdlib-only (deliberately no numpy import: this
+    dispatcher stays importable from a stripped environment in unit tests)
+    and deterministic given ``boot_seed``. With a single seed the CI
+    degenerates to the point estimate — honest, since one seed carries no
+    between-seed uncertainty information.
+    """
+    vals = [float(v) for v in values]
+    if not vals:
+        raise ValueError("values must be non-empty")
+    n = len(vals)
+    point = sum(vals) / n
+    if n == 1:
+        return point, point, point
+    rng = random.Random(boot_seed)
+    boots = sorted(
+        sum(vals[rng.randrange(n)] for _ in range(n)) / n for _ in range(n_boot)
+    )
+    alpha = (1.0 - confidence) / 2.0
+    lo = boots[max(0, min(n_boot - 1, int(alpha * n_boot)))]
+    hi = boots[max(0, min(n_boot - 1, int((1.0 - alpha) * n_boot)))]
+    return point, lo, hi
+
+
+def classify_trap_verdict(
+    trailing5_teams: Sequence[float],
+    *,
+    random_baseline: float,
+    ne_per_step_bound: Optional[float],
+    scripted_best: Optional[dict],
+) -> tuple[str, str, dict]:
+    """Four-way trap-escape verdict for degenerate-reference cells (#436).
+
+    Classifies the seed-bootstrap 95% CI ``[lo, hi]`` of the mean trailing-5
+    per-step team reward against up to three per-step anchors, as a nested
+    one-sided ladder on the CI **lower bound** ("significantly above X" =
+    ``lo > X``):
+
+    * ``above_scripted_best`` -- ``lo`` clears the scripted_best anchor
+      (its ``ci95_hi`` when available — conservative — else its value).
+      Requires a usable scripted_best (present AND value > random; a
+      battery that fails to beat random is recorded but never anchors
+      this rung — issue #436's documented failure mode).
+    * ``escaped_trap``        -- ``lo > random`` (significantly above the
+      uniform-random baseline) but not above scripted_best.
+    * ``at_random``           -- not significantly above random, but ``lo``
+      clears the NE per-step bound (when recorded).
+    * ``trapped_at_ne``       -- cannot be ruled significantly above the NE
+      bound (CI overlaps or lies below it).
+
+    ``ne_per_step_bound`` is an UPPER bound on the NE per-step payoff
+    (per-episode payoff / min_nights), which is conservative in the right
+    direction for the "significantly above the NE" claim. Returns
+    ``(verdict, reason, details)`` where ``details`` carries the CI and the
+    anchors used.
+    """
+    mean, lo, hi = _seed_bootstrap_ci(trailing5_teams)
+
+    scripted_anchor: Optional[float] = None
+    scripted_note = "no scripted_best recorded"
+    if scripted_best is not None:
+        sb_value = float(scripted_best["value"])
+        if sb_value > random_baseline:
+            scripted_anchor = float(scripted_best.get("ci95_hi", sb_value))
+        else:
+            scripted_note = (
+                f"scripted_best = {sb_value:.2f} <= random "
+                f"{random_baseline:.2f}: not usable as an upper anchor "
+                "(#436 failure mode); classifying on NE + random anchors only"
+            )
+
+    details = {
+        "trailing5_ci95": [lo, hi],
+        "trailing5_mean": mean,
+        "n_seeds": len(trailing5_teams),
+        "n_boot": TRAP_N_BOOT,
+        "boot_seed": TRAP_BOOT_SEED,
+        "anchors": {
+            "ne_per_step_bound": ne_per_step_bound,
+            "random": random_baseline,
+            "scripted_best_anchor": scripted_anchor,
+        },
+    }
+
+    ci_str = (
+        f"trailing-5 mean {mean:.2f}/step, seed-bootstrap 95% CI [{lo:.2f}, {hi:.2f}]"
+    )
+    if scripted_anchor is not None and lo > scripted_anchor:
+        return (
+            "above_scripted_best",
+            f"{ci_str}: CI lower bound clears the scripted_best anchor "
+            f"{scripted_anchor:.2f}",
+            details,
+        )
+    if lo > random_baseline:
+        upper_note = (
+            f"below the scripted_best anchor {scripted_anchor:.2f}"
+            if scripted_anchor is not None
+            else scripted_note
+        )
+        return (
+            "escaped_trap",
+            f"{ci_str}: significantly above random {random_baseline:.2f}, {upper_note}",
+            details,
+        )
+    if ne_per_step_bound is not None and lo > ne_per_step_bound:
+        return (
+            "at_random",
+            f"{ci_str}: CI overlaps random {random_baseline:.2f} but clears "
+            f"the NE per-step bound {ne_per_step_bound:.2f}",
+            details,
+        )
+    if ne_per_step_bound is None:
+        return (
+            "at_random",
+            f"{ci_str}: CI overlaps random {random_baseline:.2f}; no NE "
+            "per-step bound recorded for this scenario",
+            details,
+        )
+    return (
+        "trapped_at_ne",
+        f"{ci_str}: CI does not clear the NE per-step bound {ne_per_step_bound:.2f}",
+        details,
+    )
 
 
 def _trajectory(metrics: list[dict]) -> list[float]:
@@ -500,6 +666,11 @@ def build_cell_summary(
     baseline is known) the scenario-scale ``uplift_over_random`` columns.
     The MINSPEC-scale value is always kept as the
     ``gap_closed_minspec_legacy_mean`` audit column.
+
+    Degenerate-reference cells additionally carry the four-way trap-escape
+    verdict (issue #436, schema v3): ``trap_verdict``,
+    ``trap_verdict_reason``, ``trap_anchors`` and ``trailing5_team_ci95``
+    (seed-bootstrap). These fields are ``None`` on every other path.
     """
     import statistics
 
@@ -581,6 +752,31 @@ def build_cell_summary(
             statistics.pstdev(uplift_per_seed) if len(uplift_per_seed) > 1 else 0.0
         )
 
+    # Trap-escape verdict (issue #436): only on the degenerate-reference
+    # path with completed seeds and a known random baseline.
+    trap_verdict: Optional[str] = None
+    trap_verdict_reason: Optional[str] = None
+    trap_anchors: Optional[dict] = None
+    trailing5_team_ci95: Optional[list[float]] = None
+    if (
+        completed
+        and refs["source"] == "degenerate_reference"
+        and refs["random"] is not None
+    ):
+        trap_verdict, trap_verdict_reason, trap_details = classify_trap_verdict(
+            trailing5_teams,
+            random_baseline=refs["random"],
+            ne_per_step_bound=refs.get("ne_per_step_bound"),
+            scripted_best=refs.get("scripted_best"),
+        )
+        sb = refs.get("scripted_best")
+        trap_anchors = {
+            **trap_details["anchors"],
+            "scripted_best_value": float(sb["value"]) if sb else None,
+            "scripted_best_kind": sb.get("kind") if sb else None,
+        }
+        trailing5_team_ci95 = trap_details["trailing5_ci95"]
+
     if not completed:
         verdict, reason = "no_data", "no seeds produced metrics.json"
     elif scored:
@@ -592,6 +788,8 @@ def build_cell_summary(
             f"not applicable; uplift_over_random = "
             f"{uplift_mean:+.3f}/step vs random = {refs['random']:.2f}/step"
         )
+        if trap_verdict is not None:
+            reason += f"; trap_verdict = {trap_verdict} ({trap_verdict_reason})"
     else:
         verdict = "not_scored"
         reason = (
@@ -622,6 +820,10 @@ def build_cell_summary(
         "uplift_over_random_mean": uplift_mean,
         "uplift_over_random_std": uplift_std,
         "uplift_over_random_per_seed": uplift_per_seed,
+        "trap_verdict": trap_verdict,
+        "trap_verdict_reason": trap_verdict_reason,
+        "trap_anchors": trap_anchors,
+        "trailing5_team_ci95": trailing5_team_ci95,
         "gap_closed_minspec_legacy_mean": gap_closed_minspec_legacy_mean,
         "trailing5_team_mean": trailing5_team_mean,
         "iter0_gap_closed_mean": iter0_gap_closed_mean,

@@ -22,7 +22,11 @@ Currently exports:
   reference)`` pairs for the Tier-1 ``gap_closed`` metric (issue #434). Only
   scenarios with hand-audited measurement provenance are listed; consumers
   must treat absent scenarios as *not scorable* rather than falling back to
-  the MINSPEC constants (that silent fallback was the #434 bug).
+  the MINSPEC constants (that silent fallback was the #434 bug). Degenerate
+  entries (e.g. ``rest_trap``) may additionally carry trap-verdict anchors
+  (``ne_per_step_bound``, ``scripted_best``) consumed by the four-way
+  trap-escape verdict rule (issue #436,
+  ``experiments/p3_specialization/run_tier1_cell.classify_trap_verdict``).
 
 For the **frozen baseline distribution** (archetype pickles, Nash vectors,
 PPO checkpoints shipped with the pip wheel + mirrored to HuggingFace), see
@@ -172,13 +176,27 @@ SCENARIO_RANDOM_BASELINES: dict[str, float] = {
 #     ``bucket_brigade/baselines/release/local/nash/rest_trap-v1.json``)
 #     has ``team_payoff = 2984.04`` **per episode** — a per-EPISODE quantity,
 #     while gap metrics are per-STEP. Do not divide by a guessed night count;
-#     the bound "<= 248.7/step at >= 12 nights" is sufficient to establish
-#     that the NE sits *below* the 302.87/step random baseline. rest_trap's
-#     equilibrium is team-suboptimal by construction (a social trap), so a
+#     the bound "<= 248.7/step at >= 12 nights" (``ne_per_step_bound``,
+#     min_nights = 12 for rest_trap) is sufficient to establish that the NE
+#     sits *below* the 302.87/step random baseline. rest_trap's equilibrium
+#     is team-suboptimal by construction (a social trap), so a
 #     ``(trained - random)/(NE - random)`` fraction has a negative/degenerate
-#     denominator, and no committed policy reference beats random there
-#     (het_ppo's trained trailing-5 is 306.26 vs 302.87, #429 / PR #433).
-#     Measuring a proper upper reference is a remote-compute follow-up.
+#     denominator. The entry therefore stays on the degenerate-reference
+#     path (``reference = None``; the fraction ladder never applies), and
+#     degenerate rows are instead classified by the four-way trap-escape
+#     verdict rule (issue #436, ``run_tier1_cell.classify_trap_verdict``)
+#     against three anchors: ``ne_per_step_bound``, ``random``, and the
+#     measured ``scripted_best`` below.
+#
+#     ``scripted_best`` (issue #436 Part A): best all-scripted team profile
+#     from ``experiments/p3_specialization/scripted_battery.py`` — the
+#     homogeneous ``specialist`` (owned-house firefighter ×4) at
+#     ``386.60/step`` (95% CI [386.17, 387.03], n=10000 episodes, seed=0,
+#     host studio, commit ee21e796; paired Δ vs uniform = +83.67/step
+#     [82.36, 84.89]). Committed artifact:
+#     ``experiments/p3_specialization/scripted_battery/rest_trap.{json,md}``.
+#     Drift guard: ``tests/test_baselines_constants.py`` asserts this block
+#     matches the committed measurement artifact.
 #
 # Drift guard: ``tests/test_baselines_constants.py`` asserts the ``random``
 # side of every entry matches ``SCENARIO_RANDOM_BASELINES`` and that the
@@ -199,14 +217,38 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
         "reference": None,
         "reference_kind": None,
         "degenerate_reason": "social_trap_ne_below_random",
+        # Upper bound on the frozen NE's per-step team payoff:
+        # team_payoff (per episode) / min_nights. Conservative in the right
+        # direction for the trap verdict ("significantly above the NE").
+        "ne_per_step_bound": 2984.043694076538 / 12.0,
+        # Measured all-scripted team upper anchor (issue #436 Part A). Used
+        # by the trap-escape verdict rule only — deliberately NOT promoted
+        # to ``reference``, so the gap_closed fraction ladder stays off for
+        # this social-trap scenario.
+        "scripted_best": {
+            "value": 386.60293309775534,
+            "ci95_lo": 386.1731053453639,
+            "ci95_hi": 387.0264070404707,
+            "kind": "scripted_battery:specialist",
+            "n_episodes": 10000,
+            "provenance": (
+                "experiments/p3_specialization/scripted_battery.py, "
+                "specialist (owned-house firefighter) x4, n=10000 episodes, "
+                "seed=0, host studio, commit ee21e796; paired delta vs "
+                "uniform = +83.67/step [82.36, 84.89]. Artifact: "
+                "experiments/p3_specialization/scripted_battery/"
+                "rest_trap.json"
+            ),
+        },
         "provenance": (
             "Frozen NE (rest_trap-v1.json, 3xfree_rider + 1xfirefighter) has "
             "team_payoff = 2984.04 PER EPISODE (<= 248.7/step at >= 12 "
             "nights), below the 302.87/step random baseline: rest_trap's "
             "equilibrium is team-suboptimal by construction (social trap). "
-            "No committed policy reference beats random on this scenario "
-            "(#429 / #434); report uplift_over_random instead of a gap "
-            "fraction."
+            "The gap fraction ladder is not applicable; degenerate rows are "
+            "classified by the four-way trap-escape verdict (#436) against "
+            "ne_per_step_bound / random / scripted_best, with "
+            "uplift_over_random as the quantitative headline."
         ),
     },
 }

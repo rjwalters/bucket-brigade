@@ -686,6 +686,184 @@ def test_summary_schema_version_bumped(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Trap-escape verdict rule (#436): four-way CI-based classification
+# ---------------------------------------------------------------------------
+
+
+_TRAP_RANDOM = 302.87
+_TRAP_NE_BOUND = 248.67
+_TRAP_SCRIPTED = {"value": 386.60, "ci95_lo": 386.17, "ci95_hi": 387.03}
+
+
+def _classify(values, *, ne=_TRAP_NE_BOUND, scripted=_TRAP_SCRIPTED):
+    return run_tier1_cell.classify_trap_verdict(
+        values,
+        random_baseline=_TRAP_RANDOM,
+        ne_per_step_bound=ne,
+        scripted_best=scripted,
+    )
+
+
+def test_trap_verdict_trapped_at_ne():
+    """CI overlapping/below the NE bound -> trapped_at_ne."""
+    verdict, reason, details = _classify([240.0, 245.0, 238.0, 250.0, 242.0])
+    assert verdict == "trapped_at_ne"
+    assert "NE per-step bound" in reason
+    lo, hi = details["trailing5_ci95"]
+    assert lo <= _TRAP_NE_BOUND
+
+
+def test_trap_verdict_at_random():
+    """CI above the NE bound but overlapping random -> at_random."""
+    verdict, reason, details = _classify([300.0, 302.0, 304.0, 301.0, 303.0])
+    assert verdict == "at_random"
+    lo, _hi = details["trailing5_ci95"]
+    assert _TRAP_NE_BOUND < lo <= _TRAP_RANDOM
+
+
+def test_trap_verdict_escaped_trap():
+    """CI significantly above random but below scripted_best -> escaped_trap."""
+    verdict, reason, details = _classify([320.0, 322.0, 318.0, 321.0, 319.0])
+    assert verdict == "escaped_trap"
+    lo, _hi = details["trailing5_ci95"]
+    assert lo > _TRAP_RANDOM
+    assert lo <= _TRAP_SCRIPTED["ci95_hi"]
+
+
+def test_trap_verdict_above_scripted_best():
+    """CI significantly above the scripted_best anchor -> above_scripted_best."""
+    verdict, reason, details = _classify([400.0, 402.0, 398.0, 401.0, 399.0])
+    assert verdict == "above_scripted_best"
+    lo, _hi = details["trailing5_ci95"]
+    assert lo > _TRAP_SCRIPTED["ci95_hi"]
+
+
+def test_trap_verdict_scripted_best_below_random_not_an_anchor():
+    """#436 failure mode: a battery that does not beat random is recorded
+    but never anchors the top rung — the rule works on NE + random alone."""
+    weak_scripted = {"value": 290.0, "ci95_lo": 289.0, "ci95_hi": 291.0}
+    verdict, reason, details = _classify(
+        [400.0, 402.0, 398.0, 401.0, 399.0], scripted=weak_scripted
+    )
+    assert verdict == "escaped_trap"  # top rung unreachable
+    assert "not usable as an upper anchor" in reason
+    assert details["anchors"]["scripted_best_anchor"] is None
+
+
+def test_trap_verdict_no_scripted_best_recorded():
+    """Missing scripted_best entirely: escaped_trap is the ceiling."""
+    verdict, reason, _details = _classify(
+        [400.0, 402.0, 398.0, 401.0, 399.0], scripted=None
+    )
+    assert verdict == "escaped_trap"
+    assert "no scripted_best recorded" in reason
+
+
+def test_trap_verdict_no_ne_bound_bottoms_out_at_at_random():
+    """Without an NE bound the bottom two rungs collapse into at_random."""
+    verdict, reason, _details = _classify([240.0, 245.0, 238.0, 250.0, 242.0], ne=None)
+    assert verdict == "at_random"
+    assert "no NE" in reason
+
+
+def test_trap_verdict_single_seed_degenerate_ci():
+    """One seed: the CI collapses to the point estimate (no between-seed
+    uncertainty), classification still works."""
+    verdict, _reason, details = _classify([320.0])
+    lo, hi = details["trailing5_ci95"]
+    assert lo == hi == 320.0
+    assert verdict == "escaped_trap"
+
+
+def test_trap_verdict_deterministic():
+    """Fixed bootstrap seed: identical inputs give identical CIs."""
+    a = _classify([300.0, 310.0, 295.0, 305.0])
+    b = _classify([300.0, 310.0, 295.0, 305.0])
+    assert a == b
+
+
+def test_seed_bootstrap_ci_rejects_empty():
+    with pytest.raises(ValueError):
+        run_tier1_cell._seed_bootstrap_ci([])
+
+
+def test_rest_trap_summary_carries_trap_verdict(tmp_path):
+    """Degenerate-reference cells surface the trap verdict + anchors in
+    cell_summary.json (integration through build_cell_summary)."""
+    summary = _summary_for(tmp_path, "rest_trap", [[306.26] * 10] * 3)
+    assert summary["schema_version"] >= 3
+    # Flat 306.26 across seeds -> degenerate CI at 306.26 > 302.87 random,
+    # far below the scripted_best anchor.
+    assert summary["trap_verdict"] == "escaped_trap"
+    assert "trap_verdict = escaped_trap" in summary["verdict_reason"]
+    lo, hi = summary["trailing5_team_ci95"]
+    assert lo == hi == pytest.approx(306.26)
+    anchors = summary["trap_anchors"]
+    assert anchors["random"] == pytest.approx(302.87)
+    assert anchors["ne_per_step_bound"] == pytest.approx(2984.043694076538 / 12.0)
+    assert anchors["scripted_best_kind"] == "scripted_battery:specialist"
+    assert anchors["scripted_best_value"] > anchors["random"]
+    # JSON round-trip with the new fields.
+    parsed = json.loads(run_tier1_cell._safe_json_dump(summary))
+    assert parsed["trap_verdict"] == "escaped_trap"
+
+
+def test_scored_scenario_has_null_trap_fields(tmp_path):
+    """Trap fields must stay null off the degenerate-reference path."""
+    summary = _summary_for(tmp_path, "minimal_specialization", [[-80.0] * 6] * 2)
+    assert summary["trap_verdict"] is None
+    assert summary["trap_verdict_reason"] is None
+    assert summary["trap_anchors"] is None
+    assert summary["trailing5_team_ci95"] is None
+
+
+def test_no_data_cell_has_null_trap_fields(tmp_path):
+    """An empty degenerate-reference cell has no trap verdict (no_data)."""
+    summary = run_tier1_cell.build_cell_summary(
+        trainer="het_ppo",
+        scenario="rest_trap",
+        seeds=[42],
+        seed_dirs=[tmp_path / "seed_42"],
+        num_iterations=5,
+        command_invoked="fake",
+        git_sha="deadbeef",
+        wall_clock_seconds=1.0,
+    )
+    assert summary["verdict_tier"] == "no_data"
+    assert summary["trap_verdict"] is None
+
+
+def test_trap_verdict_degenerate_entry_without_anchors(tmp_path):
+    """A degenerate entry lacking #436 anchors still classifies (rungs
+    collapse gracefully) rather than crashing."""
+    import bucket_brigade.baselines as baselines
+
+    with patch.dict(
+        baselines.SCENARIO_GAP_REFERENCES,
+        {"anchorless": {"random": 5.0, "reference": None, "degenerate_reason": "x"}},
+    ):
+        summary = _summary_for(tmp_path, "anchorless", [[10.0] * 6] * 2)
+        assert summary["verdict_tier"] == "not_scored_degenerate_reference"
+        assert summary["trap_verdict"] == "escaped_trap"
+        assert summary["trap_anchors"]["ne_per_step_bound"] is None
+        assert summary["trap_anchors"]["scripted_best_value"] is None
+
+
+def test_resolve_scenario_references_passes_trap_anchors():
+    refs = run_tier1_cell.resolve_scenario_references("rest_trap", warn=False)
+    assert refs["source"] == "degenerate_reference"
+    assert refs["ne_per_step_bound"] == pytest.approx(2984.043694076538 / 12.0)
+    assert refs["scripted_best"]["kind"] == "scripted_battery:specialist"
+    # Scored + missing scenarios expose the keys as None.
+    refs = run_tier1_cell.resolve_scenario_references(
+        "minimal_specialization", warn=False
+    )
+    assert refs["ne_per_step_bound"] is None and refs["scripted_best"] is None
+    refs = run_tier1_cell.resolve_scenario_references("nope_never", warn=False)
+    assert refs["ne_per_step_bound"] is None and refs["scripted_best"] is None
+
+
+# ---------------------------------------------------------------------------
 # --summarize-only recompute mode (#434)
 # ---------------------------------------------------------------------------
 
@@ -812,6 +990,16 @@ def _make_not_scored_cell_summary(cell_dir: Path) -> None:
         "uplift_over_random_mean": 3.39,
         "uplift_over_random_std": 7.53,
         "uplift_over_random_per_seed": [3.0, 3.78],
+        "trap_verdict": "escaped_trap",
+        "trap_verdict_reason": "CI above random, below scripted_best",
+        "trap_anchors": {
+            "ne_per_step_bound": 248.67,
+            "random": 302.87,
+            "scripted_best_anchor": 387.03,
+            "scripted_best_value": 386.60,
+            "scripted_best_kind": "scripted_battery:specialist",
+        },
+        "trailing5_team_ci95": [302.95, 309.33],
         "gap_closed_minspec_legacy_mean": 6.639,
         "trailing5_team_mean": 306.26,
         "iter0_gap_closed_mean": None,
@@ -842,6 +1030,12 @@ def test_aggregator_renders_null_gap_row(tmp_path):
     assert "uplift_over_random" in md
     assert "not_scored_degenerate_reference" in md
     assert "+3.390 ± 7.530" in md
+    # #436: trap verdict column present; degenerate row carries its verdict,
+    # scored rows render n/a.
+    assert "| Trap verdict |" in md
+    assert "| escaped_trap |" in md
+    ippo_line = next(line for line in md.splitlines() if "| ippo |" in line)
+    assert "| n/a |" in ippo_line
     assert "nan" not in md.lower().replace("n/a", "")
     # Sort: scored (even insufficient) above not_scored, no_data last.
     ippo_idx = md.index("| ippo |")
@@ -857,6 +1051,8 @@ def test_aggregator_renders_null_gap_row(tmp_path):
     het = by_trainer["het_ppo"]
     assert het["gap_closed_mean"] is None
     assert het["gap_source"] == "degenerate_reference"
+    assert het["trap_verdict"] == "escaped_trap"
+    assert by_trainer["ippo"]["trap_verdict"] is None
     assert het["uplift_over_random_mean"] == pytest.approx(3.39)
     assert het["gap_closed_minspec_legacy_mean"] == pytest.approx(6.639)
     assert het["verdict_tier"] == "not_scored_degenerate_reference"

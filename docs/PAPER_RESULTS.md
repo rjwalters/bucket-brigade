@@ -21,6 +21,7 @@ caveats. All commands assume:
 4. [Nash phase diagram across (β, κ, c)](#4-nash-phase-diagram-across-β-κ-c)
 5. [Specialist exploitability harness](#5-specialist-exploitability-harness)
 6. [PPO trainability sweep across NE-class cells (paper §4)](#6-ppo-trainability-sweep-across-ne-class-cells-paper-4)
+7. [Trap-escape verdict rule for social-trap scenarios (rest_trap first)](#7-trap-escape-verdict-rule-for-social-trap-scenarios-rest_trap-first)
 
 ---
 
@@ -366,6 +367,83 @@ uv run python experiments/nash/phase_diagram/improvability_oracle.py --random-se
 **Source**: PR #420 (sweep results + per-cell baselines + recalibrator),
 PR #421 (workshop paper that uses this data), parent #357 (M4 release-
 infra tracker), issue #428 (k = 1 oracle, §6f).
+
+---
+
+## 7. Trap-escape verdict rule for social-trap scenarios (rest_trap first)
+
+**Problem**: `rest_trap`'s frozen NE (3×free_rider + 1×firefighter,
+`bucket_brigade/baselines/release/local/nash/rest_trap-v1.json`, team payoff
+2984.04/episode ⇒ ≤ 248.67/step at min_nights = 12) sits *below* the
+uniform-random baseline (302.87/step) — the equilibrium is team-suboptimal by
+construction, so the `gap_closed` fraction ladder is degenerate there
+(issue #434). Issue #436 adds the missing pieces: a measured scripted upper
+anchor and a categorical verdict.
+
+**Measured anchors** (per-step team reward, `rest_trap`, 4 agents):
+
+| Anchor | Value | Provenance |
+|---|---|---|
+| NE per-step bound | ≤ 248.67 | frozen NE payoff / min_nights (upper bound; conservative for the "above NE" claim) |
+| `always_rest` ×4 | 288.55 [285.20, 291.65] | scripted battery screen, n=2000 |
+| uniform random | 302.87 (cited); 302.94 [301.46, 304.31] re-measured at n=10k | `SCENARIO_RANDOM_BASELINES` (#237); #436 final stage |
+| `scripted_best` = `specialist` ×4 | **386.60 [386.17, 387.03]** | all-scripted team battery, n=10000, seed=0, host studio, commit `ee21e796` |
+
+The battery (24 team profiles: uniform, always_rest, specialist, the
+firefighter `{scope, work_prob}` family homogeneous + NE-shaped
+k×firefighter+(4−k)×rest mixes + 16 random-search samples) decisively beats
+random: the winning homogeneous `specialist` team gains **+83.67/step**
+over uniform (paired 95% CI [+82.36, +84.89]). The trap structure is real —
+both full resting (288.55) and the NE bound (≤ 248.67) score *below*
+random play.
+
+**Verdict rule** (`run_tier1_cell.classify_trap_verdict`, applied only when
+`gap_source = "degenerate_reference"`): compute the percentile bootstrap 95%
+CI `[lo, hi]` over **seeds** of the trained trailing-5 per-step team reward
+(10,000 resamples, fixed RNG seed 436), then walk a nested one-sided ladder
+on `lo`:
+
+1. `lo > scripted_best.ci95_hi` → **`above_scripted_best`**
+2. `lo > random` → **`escaped_trap`**
+3. `lo > ne_per_step_bound` → **`at_random`**
+4. else → **`trapped_at_ne`**
+
+If a scenario's scripted battery fails to beat random (documented #436
+failure mode), `scripted_best` is recorded with provenance but rung 1 is
+disabled and the rule operates on the NE + random anchors alone. The
+anchors live in
+`bucket_brigade.baselines.SCENARIO_GAP_REFERENCES["rest_trap"]`
+(`ne_per_step_bound`, `scripted_best`); `reference` deliberately stays
+`None` so the fraction ladder remains off for social-trap scenarios.
+
+**het_ppo result (20 seeds, re-summarized without retraining)**: trailing-5
+mean 306.26, seed-bootstrap CI [302.95, 309.33] → **`escaped_trap`**, but
+marginal: the CI lower bound clears the random anchor by only 0.08/step
+while sitting ≈ 80/step below `scripted_best`. Honest reading: het_ppo is
+statistically distinguishable from random play (it does not fall into the
+resting trap), but captures essentially none of the measured scripted
+headroom on this scenario.
+
+**Artifacts**:
+- Battery script: [`experiments/p3_specialization/scripted_battery.py`](../experiments/p3_specialization/scripted_battery.py)
+- Committed measurement: [`experiments/p3_specialization/scripted_battery/rest_trap.json`](../experiments/p3_specialization/scripted_battery/rest_trap.json), [`experiments/p3_specialization/scripted_battery/rest_trap.md`](../experiments/p3_specialization/scripted_battery/rest_trap.md)
+- Verdict table with the `trap_verdict` column: [`experiments/p3_specialization/tier1_runs/tier1_verdict.md`](../experiments/p3_specialization/tier1_runs/tier1_verdict.md)
+
+**Reproduce** (scripted policies only — no training; ~20 s locally):
+
+```bash
+uv run python experiments/p3_specialization/scripted_battery.py --scenario rest_trap
+uv run python experiments/p3_specialization/run_tier1_cell.py \
+    --trainer het_ppo --scenario rest_trap \
+    --seeds 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 \
+    --num-iterations 50 --summarize-only
+uv run python experiments/p3_specialization/aggregate_tier1.py
+```
+
+**Source**: issue #436 (this rule), #434 / PR #438 (degenerate-reference
+mechanism), PR #433 (het_ppo Phase 1 run), PR #432 (oracle pattern), #356
+(why tier-1 trainers were expected to fail on rest_trap), #357 (paper
+tracker).
 
 ---
 

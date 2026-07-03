@@ -1,0 +1,422 @@
+{
+  "generated_by": "experiments/p3_specialization/scripted_battery.py",
+  "issue": 436,
+  "scenario": "rest_trap",
+  "config": {
+    "n_episodes": 2000,
+    "n_episodes_final": 10000,
+    "seed": 0,
+    "n_boot": 1000,
+    "random_search": 16,
+    "num_agents": 4
+  },
+  "provenance": {
+    "host": "studio",
+    "git_sha": "ee21e796"
+  },
+  "cited_random_baseline": 302.87,
+  "screen": {
+    "scenario": "rest_trap",
+    "policies": {
+      "uniform": {
+        "team": {
+          "mean": 305.5615322767816,
+          "ci95_lo": 302.33942361119523,
+          "ci95_hi": 308.9495472500707
+        },
+        "team_work_rate": 0.4989816923884939,
+        "n_episodes": 2000
+      },
+      "always_rest": {
+        "team": {
+          "mean": 288.5478663299936,
+          "ci95_lo": 285.19982708205396,
+          "ci95_hi": 291.64893180860804
+        },
+        "team_work_rate": 0.0,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": -17.013665946788027,
+          "ci95_lo": -18.473649385828477,
+          "ci95_hi": -15.661088196477104
+        }
+      },
+      "specialist": {
+        "team": {
+          "mean": 386.5281605241548,
+          "ci95_lo": 385.57790557313524,
+          "ci95_hi": 387.55141268403406
+        },
+        "team_work_rate": 0.051248758012820514,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 80.96662824737328,
+          "ci95_lo": 78.22379369097153,
+          "ci95_hi": 83.65241803357623
+        }
+      },
+      "firefighter[owned,work=1.00]x4": {
+        "team": {
+          "mean": 386.5281605241548,
+          "ci95_lo": 385.57213513293067,
+          "ci95_hi": 387.4460896126661
+        },
+        "team_work_rate": 0.051248758012820514,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 80.96662824737328,
+          "ci95_lo": 78.19886493973475,
+          "ci95_hi": 83.78989953661639
+        }
+      },
+      "firefighter[any,work=1.00]x4": {
+        "team": {
+          "mean": 384.1934036973566,
+          "ci95_lo": 382.95774866566745,
+          "ci95_hi": 385.34582584862414
+        },
+        "team_work_rate": 0.19088834706959706,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 78.63187142057498,
+          "ci95_lo": 75.84644761633218,
+          "ci95_hi": 81.24729895049424
+        }
+      },
+      "1xfirefighter[any]+3xrest": {
+        "team": {
+          "mean": 379.4038890582804,
+          "ci95_lo": 377.95438055995527,
+          "ci95_hi": 380.8151232506768
+        },
+        "team_work_rate": 0.04734856913919414,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 73.84235678149886,
+          "ci95_lo": 71.28252786009593,
+          "ci95_hi": 76.4613967322667
+        }
+      },
+      "2xfirefighter[any]+2xrest": {
+        "team": {
+          "mean": 384.01241641122795,
+          "ci95_lo": 382.7925109360877,
+          "ci95_hi": 385.0722798502288
+        },
+        "team_work_rate": 0.09537368360805862,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 78.45088413444641,
+          "ci95_lo": 75.76710488660291,
+          "ci95_hi": 80.95649620882492
+        }
+      },
+      "3xfirefighter[any]+1xrest": {
+        "team": {
+          "mean": 384.29229703058587,
+          "ci95_lo": 383.0838770531969,
+          "ci95_hi": 385.4526478159425
+        },
+        "team_work_rate": 0.14316626030219784,
+        "n_episodes": 2000,
+        "team_delta_vs_uniform_paired": {
+          "mean": 78.73076475380428,
+          "ci95_lo": 76.27908184760096,
+          "ci95_hi": 81.5404758003362
+        }
+      }
+    },
+    "screen_best": {
+      "name": "specialist",
+      "team_mean": 386.5281605241548,
+      "team_delta_vs_uniform": 80.96662824737325,
+      "team_delta_vs_uniform_paired_ci": {
+        "mean": 80.96662824737328,
+        "ci95_lo": 78.22379369097153,
+        "ci95_hi": 83.65241803357623
+      }
+    },
+    "random_search": {
+      "n_samples": 16,
+      "best_by_team": "search[any,work=0.702]x4",
+      "samples": [
+        {
+          "name": "search[owned,work=0.319]x4",
+          "team": {
+            "mean": 318.51916320514675,
+            "ci95_lo": 315.7124407837052,
+            "ci95_hi": 321.33655764136813
+          },
+          "team_work_rate": 0.015112954508726567,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 12.957630928365186,
+            "ci95_lo": 10.909653199494924,
+            "ci95_hi": 15.017240225304967
+          }
+        },
+        {
+          "name": "search[any,work=0.410]x4",
+          "team": {
+            "mean": 369.4383910363725,
+            "ci95_lo": 367.7122034565956,
+            "ci95_hi": 371.163509819199
+          },
+          "team_work_rate": 0.07704473443223443,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 63.87685875959092,
+            "ci95_lo": 61.39813032404612,
+            "ci95_hi": 66.28378336196066
+          }
+        },
+        {
+          "name": "search[owned,work=0.172]x4",
+          "team": {
+            "mean": 304.2884705292489,
+            "ci95_lo": 301.22655295562186,
+            "ci95_hi": 307.285168861
+          },
+          "team_work_rate": 0.007901211686597716,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": -1.273061747532638,
+            "ci95_lo": -3.0338310620014504,
+            "ci95_hi": 0.4229253847762918
+          }
+        },
+        {
+          "name": "search[any,work=0.171]x4",
+          "team": {
+            "mean": 336.16552674885224,
+            "ci95_lo": 333.71056503005116,
+            "ci95_hi": 338.82612239036666
+          },
+          "team_work_rate": 0.03134277836134453,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 30.603994472070614,
+            "ci95_lo": 28.49832236817013,
+            "ci95_hi": 32.79551063557046
+          }
+        },
+        {
+          "name": "search[owned,work=0.209]x4",
+          "team": {
+            "mean": 307.8476792229422,
+            "ci95_lo": 304.7450830200848,
+            "ci95_hi": 310.7405002917688
+          },
+          "team_work_rate": 0.009600278765352294,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 2.286146946160684,
+            "ci95_lo": 0.48185753238638196,
+            "ci95_hi": 4.139113584127095
+          }
+        },
+        {
+          "name": "search[any,work=0.081]x4",
+          "team": {
+            "mean": 313.4325948888348,
+            "ci95_lo": 310.2568590479469,
+            "ci95_hi": 316.2920818400582
+          },
+          "team_work_rate": 0.013900603318250377,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 7.87106261205322,
+            "ci95_lo": 6.042986669936688,
+            "ci95_hi": 9.858032607362588
+          }
+        },
+        {
+          "name": "search[any,work=0.599]x4",
+          "team": {
+            "mean": 380.9584757074192,
+            "ci95_lo": 379.70602648862666,
+            "ci95_hi": 382.24348404496004
+          },
+          "team_work_rate": 0.11439828869047619,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 75.39694343063762,
+            "ci95_lo": 72.7558045933013,
+            "ci95_hi": 78.08403581589734
+          }
+        },
+        {
+          "name": "search[owned,work=0.041]x4",
+          "team": {
+            "mean": 291.7390816157507,
+            "ci95_lo": 288.315182775395,
+            "ci95_hi": 295.16653507550205
+          },
+          "team_work_rate": 0.0016056874191984487,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": -13.822450661030858,
+            "ci95_lo": -15.23834492067572,
+            "ci95_hi": -12.429647768158299
+          }
+        },
+        {
+          "name": "search[owned,work=0.616]x4",
+          "team": {
+            "mean": 348.34304185988054,
+            "ci95_lo": 345.99798712667865,
+            "ci95_hi": 350.5587409749883
+          },
+          "team_work_rate": 0.030911692994505493,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 42.78150958309899,
+            "ci95_lo": 40.29965771937862,
+            "ci95_hi": 45.24936033461029
+          }
+        },
+        {
+          "name": "search[any,work=0.065]x4",
+          "team": {
+            "mean": 308.7598344287043,
+            "ci95_lo": 305.7571329627643,
+            "ci95_hi": 311.99768258117217
+          },
+          "team_work_rate": 0.011063566917151477,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 3.1983021519227584,
+            "ci95_lo": 1.3223895061006397,
+            "ci95_hi": 4.951894141882621
+          }
+        },
+        {
+          "name": "search[owned,work=0.429]x4",
+          "team": {
+            "mean": 329.6438882670874,
+            "ci95_lo": 326.8078972096982,
+            "ci95_hi": 332.2060266469879
+          },
+          "team_work_rate": 0.020803771749084248,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 24.08235599030585,
+            "ci95_lo": 21.91130912713269,
+            "ci95_hi": 26.329304990206946
+          }
+        },
+        {
+          "name": "search[owned,work=0.631]x4",
+          "team": {
+            "mean": 349.7580478931471,
+            "ci95_lo": 347.50049800931816,
+            "ci95_hi": 351.8054961301136
+          },
+          "team_work_rate": 0.03163362522893773,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 44.1965156163655,
+            "ci95_lo": 41.767250377664624,
+            "ci95_hi": 46.75472945501661
+          }
+        },
+        {
+          "name": "search[any,work=0.197]x4",
+          "team": {
+            "mean": 341.359835606135,
+            "ci95_lo": 338.7923772542546,
+            "ci95_hi": 343.70031951505706
+          },
+          "team_work_rate": 0.03635300851109675,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 35.79830332935344,
+            "ci95_lo": 33.65353049018143,
+            "ci95_hi": 37.94648714005953
+          }
+        },
+        {
+          "name": "search[any,work=0.702]x4",
+          "team": {
+            "mean": 382.92020379204524,
+            "ci95_lo": 381.63502400020235,
+            "ci95_hi": 384.0680499672446
+          },
+          "team_work_rate": 0.1346231112637363,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 77.35867151526368,
+            "ci95_lo": 74.9451847181993,
+            "ci95_hi": 80.09649008316879
+          }
+        },
+        {
+          "name": "search[owned,work=0.673]x4",
+          "team": {
+            "mean": 353.7302355927512,
+            "ci95_lo": 351.5758380059688,
+            "ci95_hi": 355.8068825781738
+          },
+          "team_work_rate": 0.033807188644688645,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 48.16870331596971,
+            "ci95_lo": 45.661291116202996,
+            "ci95_hi": 50.58764701609675
+          }
+        },
+        {
+          "name": "search[owned,work=0.618]x4",
+          "team": {
+            "mean": 348.6933959930338,
+            "ci95_lo": 346.367975640882,
+            "ci95_hi": 350.94640004638956
+          },
+          "team_work_rate": 0.031069751602564102,
+          "n_episodes": 2000,
+          "team_delta_vs_uniform_paired": {
+            "mean": 43.13186371625222,
+            "ci95_lo": 40.74047495836223,
+            "ci95_hi": 45.50837020769045
+          }
+        }
+      ]
+    }
+  },
+  "final": {
+    "stage_seed": 500009,
+    "n_episodes": 10000,
+    "uniform": {
+      "team": {
+        "mean": 302.93569726118903,
+        "ci95_lo": 301.4636949256536,
+        "ci95_hi": 304.3071270072002
+      },
+      "team_work_rate": 0.5002448610213317,
+      "n_episodes": 10000
+    },
+    "winner": {
+      "name": "specialist",
+      "team": {
+        "mean": 386.60293309775534,
+        "ci95_lo": 386.1731053453639,
+        "ci95_hi": 387.0264070404707
+      },
+      "team_work_rate": 0.052126615694354665,
+      "n_episodes": 10000
+    },
+    "winner_delta_vs_uniform_paired": {
+      "mean": 83.66723583656648,
+      "ci95_lo": 82.35480366329423,
+      "ci95_hi": 84.88578377565241
+    }
+  },
+  "scripted_best": {
+    "name": "specialist",
+    "value": 386.60293309775534,
+    "ci95_lo": 386.1731053453639,
+    "ci95_hi": 387.0264070404707,
+    "n_episodes": 10000,
+    "beats_random": true
+  }
+}
