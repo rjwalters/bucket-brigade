@@ -24,6 +24,13 @@ rest_trap's NE-below-random social trap) or missing
 ladder. Such rows sort between ``insufficient`` and ``no_data`` and report
 the scenario-scale ``uplift_over_random`` column instead.
 
+Since #436 degenerate-reference rows additionally carry a categorical
+``trap_verdict`` (``trapped_at_ne`` / ``at_random`` / ``escaped_trap`` /
+``above_scripted_best``, computed by ``run_tier1_cell.classify_trap_verdict``
+from the seed-bootstrap CI vs the NE / random-upper-bound /
+scripted_best anchors),
+rendered as its own table column (``n/a`` for every other row).
+
 Cells with ``n_seeds_completed == 0`` (or missing ``cell_summary.json``)
 are reported as ``no_data`` and sorted to the bottom.
 
@@ -194,12 +201,15 @@ def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
         "Rows with a null `gap_closed` (**not_scored** / "
         "**not_scored_degenerate_reference**, #434) are never classified on "
         "the ladder; read their `uplift_over_random` (per-step, scenario "
-        "scale) instead.",
+        "scale) and the categorical `trap_verdict` (#436: seed-bootstrap "
+        "95% CI vs NE / random-upper-bound / scripted_best anchors -> "
+        "`trapped_at_ne` / "
+        "`at_random` / `escaped_trap` / `above_scripted_best`) instead.",
         "",
         "| Trainer | Scenario | gap_closed (mean ± std) | "
-        "uplift_over_random (mean ± std) | n_seeds | Verdict |",
+        "uplift_over_random (mean ± std) | Trap verdict | n_seeds | Verdict |",
         "|---------|----------|--------------------------|"
-        "---------------------------------|---------|---------|",
+        "---------------------------------|--------------|---------|---------|",
     ]
     for row in sorted_rows:
         mean = row.get("gap_closed_mean", float("nan"))
@@ -213,12 +223,13 @@ def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
             n_str += f", {n_fail} failed"
         gap_str = "n/a" if _fmt(mean) == "n/a" else f"{_fmt(mean)} ± {_fmt(std)}"
         lines.append(
-            "| {trainer} | {scenario} | {gap} | {uplift} | "
+            "| {trainer} | {scenario} | {gap} | {uplift} | {trap} | "
             "{n_str} | {verdict} |".format(
                 trainer=row.get("trainer", "?"),
                 scenario=row.get("scenario", "?"),
                 gap=gap_str,
                 uplift=_fmt_uplift(uplift_mean, uplift_std),
+                trap=row.get("trap_verdict") or "n/a",
                 n_str=n_str,
                 verdict=row.get("verdict_tier", "no_data"),
             )
@@ -236,7 +247,9 @@ def build_json(rows: Sequence[dict]) -> dict:
         # v2 (#434): added gap_source, uplift_over_random_* and
         # gap_closed_minspec_legacy_mean; gap_closed_mean may be null for
         # not_scored* rows (degenerate/missing reference pair).
-        "schema_version": 2,
+        # v3 (#436): added trap_verdict / trap_verdict_reason for
+        # degenerate-reference rows (null everywhere else).
+        "schema_version": 3,
         "thresholds": {
             "partial_lower": VERDICT_THRESHOLDS[0],
             "partial_upper": VERDICT_THRESHOLDS[1],
@@ -252,6 +265,8 @@ def build_json(rows: Sequence[dict]) -> dict:
                 "gap_source": r.get("gap_source"),
                 "uplift_over_random_mean": r.get("uplift_over_random_mean"),
                 "uplift_over_random_std": r.get("uplift_over_random_std"),
+                "trap_verdict": r.get("trap_verdict"),
+                "trap_verdict_reason": r.get("trap_verdict_reason"),
                 "gap_closed_minspec_legacy_mean": r.get(
                     "gap_closed_minspec_legacy_mean"
                 ),

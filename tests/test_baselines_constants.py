@@ -38,6 +38,7 @@ pattern in :mod:`tests.test_issue199_baselines_sampler`.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -196,6 +197,71 @@ def test_gap_references_rest_trap_is_degenerate() -> None:
     assert entry["degenerate_reason"] == "social_trap_ne_below_random"
     # The provenance must record the per-episode vs per-step unit caveat.
     assert "PER EPISODE" in str(entry["provenance"])
+
+
+def test_gap_references_rest_trap_trap_anchors_match_committed_artifacts() -> None:
+    """The #436 trap-verdict anchors must stay in sync with their committed
+    measurement artifacts:
+
+    * ``ne_per_step_bound`` == frozen NE per-episode payoff / min_nights
+      (rest_trap-v1.json, min_nights = 12).
+    * ``scripted_best`` == the final-stage winner recorded by the scripted
+      battery run (scripted_battery/rest_trap.json), and it must actually
+      beat random (otherwise it must not be recorded as an anchor).
+    * ``random_ci95_hi`` == the battery's final-stage n=10k uniform
+      re-measurement CI upper bound (PR #440: the escaped_trap rung anchors
+      on this, not the bare random point).
+    """
+    entry = SCENARIO_GAP_REFERENCES["rest_trap"]
+
+    ne_path = (
+        _REPO_ROOT
+        / "bucket_brigade"
+        / "baselines"
+        / "release"
+        / "local"
+        / "nash"
+        / "rest_trap-v1.json"
+    )
+    ne = json.loads(ne_path.read_text())
+    from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+
+    min_nights = get_scenario_by_name("rest_trap", num_agents=4).min_nights
+    assert min_nights == 12
+    assert entry["ne_per_step_bound"] == ne["team_payoff"] / min_nights
+
+    battery_path = (
+        _REPO_ROOT
+        / "experiments"
+        / "p3_specialization"
+        / "scripted_battery"
+        / "rest_trap.json"
+    )
+    battery = json.loads(battery_path.read_text())
+    measured = battery["scripted_best"]
+    sb = entry["scripted_best"]
+    assert sb["value"] == measured["value"]
+    assert sb["ci95_lo"] == measured["ci95_lo"]
+    assert sb["ci95_hi"] == measured["ci95_hi"]
+    assert sb["n_episodes"] == measured["n_episodes"]
+    assert sb["kind"] == f"scripted_battery:{measured['name']}"
+    assert measured["beats_random"] is True
+    assert sb["value"] > entry["random"]
+    # random_ci95_hi drift guard (PR #440): must equal the battery's
+    # final-stage uniform re-measurement CI upper bound, and it must bracket
+    # the random point from above while staying below scripted_best's own
+    # CI lower bound (otherwise the rung ordering degenerates).
+    uniform_final = battery["final"]["uniform"]["team"]
+    assert entry["random_ci95_hi"] == uniform_final["ci95_hi"]
+    assert uniform_final["ci95_lo"] < entry["random"] < entry["random_ci95_hi"]
+    assert entry["random_ci95_hi"] < sb["ci95_lo"]
+    # Anchor ordering sanity: NE bound < random < random_ci95_hi < scripted_best.
+    assert (
+        entry["ne_per_step_bound"]
+        < entry["random"]
+        < entry["random_ci95_hi"]
+        < sb["value"]
+    )
 
 
 def test_gap_references_valid_pairs_have_positive_denominator() -> None:
