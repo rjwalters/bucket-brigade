@@ -334,7 +334,9 @@ class TestAsymPhaseDiagramCellParity:
         assert differing == {
             "prob_fire_spreads_to_neighbor",
             "prob_solo_agent_extinguishes_fire",
-        } | ({"cost_to_work_one_night"} if c != base["cost_to_work_one_night"] else set()), (
+        } | (
+            {"cost_to_work_one_night"} if c != base["cost_to_work_one_night"] else set()
+        ), (
             f"{name} differs from minimal_specialization in unexpected "
             f"fields: {sorted(differing)}"
         )

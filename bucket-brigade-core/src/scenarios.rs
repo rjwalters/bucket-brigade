@@ -1479,7 +1479,11 @@ mod tests {
         ] {
             let scenario = SCENARIOS.get(name).unwrap();
             assert_eq!(scenario.prob_fire_spreads_to_neighbor, beta, "{}", name);
-            assert_eq!(scenario.prob_solo_agent_extinguishes_fire, kappa, "{}", name);
+            assert_eq!(
+                scenario.prob_solo_agent_extinguishes_fire, kappa,
+                "{}",
+                name
+            );
             assert_eq!(scenario.cost_to_work_one_night, c, "{}", name);
             // Every non-overridden field matches the base cell family.
             let mut expected = base.clone();
@@ -1556,7 +1560,14 @@ mod tests {
             "Chain reaction should have very high spread rate"
         );
         for (name, other) in SCENARIOS.iter() {
-            if name != &"chain_reaction" {
+            // The asym_* phase-diagram cells (issue #435) are mechanical
+            // promotions of NE grid points, not hand-designed narratives:
+            // their beta comes from the #358 sweep grid (0.5 / 0.9, above
+            // chain_reaction's 0.45) and is inert in the bernoulli
+            // extinguish mode they use (burn_out ruins every burning house
+            // before the spread phase runs), so they don't participate in
+            // the "chain_reaction tells the highest-spread story" invariant.
+            if name != &"chain_reaction" && !name.starts_with("asym_") {
                 assert!(
                     scenario.prob_fire_spreads_to_neighbor >= other.prob_fire_spreads_to_neighbor,
                     "Chain reaction should have highest spread rate, but {} has higher",
@@ -1664,8 +1675,15 @@ mod tests {
         //   - "v2_minimal" (issue #254) mirrors `minimal_specialization`'s
         //     reward shape on a 2-house ring as a PPO learnability unit
         //     test (option E of architect proposal #234).
+        //   - "asym_*" (issue #435): NE phase-diagram cells promoted to
+        //     named scenarios; parameter-identical to the
+        //     `minimal_specialization` base (only beta/kappa/c overridden),
+        //     so they inherit its 10/10 team rewards by construction.
         for (name, scenario) in SCENARIOS.iter() {
-            if name == &"overcrowding" || name == &"minimal_specialization" || name == &"v2_minimal"
+            if name == &"overcrowding"
+                || name == &"minimal_specialization"
+                || name == &"v2_minimal"
+                || name.starts_with("asym_")
             {
                 continue;
             }

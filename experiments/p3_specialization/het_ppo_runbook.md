@@ -69,7 +69,18 @@ Issue #435 registered both as first-class named scenarios
 — so the NE artifacts above remain citable for the named scenarios. Random
 baselines + gap references are wired through
 `bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES` /
-`SCENARIO_GAP_REFERENCES`.
+`SCENARIO_GAP_REFERENCES` (measured under #435: -78.27/step, 95% CI
+[-83.88, -72.81], n=1000, #237 protocol).
+
+**Replication-pair caveat (found during the #435 baseline measurement)**: β
+(`prob_fire_spreads_to_neighbor`) is inert in the bernoulli extinguish mode
+these scenarios use — the engine step order is extinguish → burn_out →
+spread → spark, and burn_out ruins every still-burning house each night, so
+no house is ever BURNING when the spread phase runs. The two cells are
+therefore the *same effective environment*: identical NE payoffs in the
+committed phase diagram, bit-identical random baselines under the same
+seeds. Treat the Phase 2 pair as a replication pair (two names, one
+dynamics), not a β sweep dimension.
 
 ### Phase 3 (optional): `symmetric_only` sanity check
 

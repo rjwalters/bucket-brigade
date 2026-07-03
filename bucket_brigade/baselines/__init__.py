@@ -14,7 +14,8 @@ Currently exports:
 - :data:`MINSPEC_RANDOM`, :data:`MINSPEC_SPECIALIST` -- canonical per-step team
   reward references for the ``minimal_specialization`` scenario (see below).
 - :data:`SCENARIO_RANDOM_BASELINES` -- canonical per-step uniform-random team
-  reward references across all 14 named scenarios + ``positional_default``,
+  reward references across all named scenarios (13 originals +
+  ``positional_default`` + the two ``asym_*`` phase-diagram cells from #435),
   mirroring the value column of
   ``experiments/p3_specialization/diagnostics/random_baseline.py``'s
   ``SCENARIO_CITED_VALUES`` for non-torch consumers (issue #323).
@@ -121,6 +122,23 @@ MINSPEC_SPECIALIST: float = -28.38
 # issue237_postmerge/``. The ``minimal_specialization`` value here is the
 # same canonical -87.72 published in ``MINSPEC_RANDOM`` above.
 #
+# ``asym_*`` provenance (issue #435): the two asymmetric_only NE
+# phase-diagram cells promoted to named scenarios by #435 were measured
+# with the same #237 protocol (n=1000 episodes = 200 episodes x 5 seeds
+# 42..46, ``MultiDiscrete([10, 2, 2])`` uniform sampling, per-step =
+# episode team reward / nights) via ``experiments/p3_specialization/
+# diagnostics/random_baseline.py`` on host studio at commit ``866f43dd``.
+# Both cells measure -78.27/step (95% bootstrap CI [-83.88, -72.81]) —
+# **bit-identical**, not coincidentally close: in the bernoulli
+# extinguish mode used by these scenarios the engine step order is
+# extinguish -> burn_out -> spread -> spark, and burn_out ruins every
+# still-burning house each night, so no house is ever BURNING when the
+# spread phase runs and ``prob_fire_spreads_to_neighbor`` (beta) is inert.
+# The committed phase diagram shows the same equivalence (identical NE
+# payoffs across beta at fixed kappa in
+# ``experiments/nash/phase_diagram/results.json``), so the two cells are
+# a replication pair, not a sweep dimension.
+#
 # Drift guard: ``tests/test_baselines_constants.py`` asserts that every
 # entry here matches ``SCENARIO_CITED_VALUES[scenario]["random"]`` so the
 # two cannot silently diverge.
@@ -139,6 +157,8 @@ SCENARIO_RANDOM_BASELINES: dict[str, float] = {
     "mixed_motivation": 224.06,
     "minimal_specialization": -87.72,
     "positional_default": 250.73,
+    "asym_b05_k09_c05": -78.27,
+    "asym_b09_k09_c05": -78.27,
 }
 
 # ---------------------------------------------------------------------------
@@ -275,6 +295,55 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
             "ne_per_step_bound / random (via its measured 95% upper bound "
             "random_ci95_hi) / scripted_best, with uplift_over_random as "
             "the quantitative headline."
+        ),
+    },
+    # asymmetric_only NE phase-diagram cells (issue #435). Both entries are
+    # deliberately identical: beta is inert in bernoulli extinguish mode
+    # (see the SCENARIO_RANDOM_BASELINES provenance comment above), so the
+    # two cells are the same effective environment. ``reference`` stays
+    # None because the only committed upper anchor — the #358 double-oracle
+    # NE team payoff, 72.0095 — is a PER EPISODE quantity while gap metrics
+    # are per-STEP: the realized episode length under NE play is not
+    # committed, so no per-step reference can be pinned without a new
+    # measurement (positive payoff + min_nights = 12 only bounds it at
+    # <= 6.0/step). NOT a rest_trap-style social trap: the NE per-step
+    # value (positive) sits far above the -78.27/step random baseline, so
+    # the #436 trap anchors (whose rung ordering assumes NE below random)
+    # do not apply here either. Consumers report uplift_over_random.
+    "asym_b05_k09_c05": {
+        "random": SCENARIO_RANDOM_BASELINES["asym_b05_k09_c05"],
+        "reference": None,
+        "reference_kind": None,
+        "degenerate_reason": "ne_reference_per_episode_only",
+        "provenance": (
+            "Random: issue #435 measurement, n=1000 (200 episodes x 5 "
+            "seeds 42..46, #237 protocol), host studio, commit 866f43dd, "
+            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the #358 "
+            "double-oracle NE for this cell (1xhero + 3xfirefighter, "
+            "experiments/nash/phase_diagram/results.json, "
+            "b0.50_k0.90_c0.50) has team payoff = 72.0095 PER EPISODE "
+            "(<= 6.0/step at >= 12 nights) — per-episode vs per-step "
+            "units, so it cannot serve as the fraction-ladder reference. "
+            "Identical to asym_b09_k09_c05 by construction (beta inert in "
+            "bernoulli mode)."
+        ),
+    },
+    "asym_b09_k09_c05": {
+        "random": SCENARIO_RANDOM_BASELINES["asym_b09_k09_c05"],
+        "reference": None,
+        "reference_kind": None,
+        "degenerate_reason": "ne_reference_per_episode_only",
+        "provenance": (
+            "Random: issue #435 measurement, n=1000 (200 episodes x 5 "
+            "seeds 42..46, #237 protocol), host studio, commit 866f43dd, "
+            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the #358 "
+            "double-oracle NE for this cell (1xhero + 3xfirefighter, "
+            "experiments/nash/phase_diagram/results.json, "
+            "b0.90_k0.90_c0.50) has team payoff = 72.0095 PER EPISODE "
+            "(<= 6.0/step at >= 12 nights) — per-episode vs per-step "
+            "units, so it cannot serve as the fraction-ladder reference. "
+            "Identical to asym_b05_k09_c05 by construction (beta inert in "
+            "bernoulli mode)."
         ),
     },
 }

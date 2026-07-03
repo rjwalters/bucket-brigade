@@ -91,7 +91,12 @@ DEFAULT_SCENARIO_NAME = "default"
 # re-derived value against ``random`` (and, if non-None, against ``mlp_iter0``).
 # All 14 named scenarios from ``bucket-brigade-core/src/scenarios.rs`` are
 # present post-#237; the verdict comparison should never be suppressed for a
-# named scenario.
+# named scenario. Issue #435 added the two ``asym_*`` phase-diagram cells,
+# measured with the same protocol (n=1000, 200 episodes x 5 seeds 42..46)
+# on host studio at commit ``866f43dd``. Their values are bit-identical
+# because beta (``prob_fire_spreads_to_neighbor``) is inert in bernoulli
+# extinguish mode — see the provenance comments in
+# ``bucket_brigade/baselines/__init__.py``.
 #
 # Cross-reference (issue #323): a value-only mirror of the ``random`` column
 # below lives in :data:`bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES`
@@ -168,6 +173,16 @@ SCENARIO_CITED_VALUES: dict[str, dict[str, float | str | None]] = {
         "random": 250.73,
         "mlp_iter0": None,
         "note": "#237 post-#236 (n=1000, dffe1060); tracks default closely (alpha=0.1 spatial cost)",
+    },
+    "asym_b05_k09_c05": {
+        "random": -78.27,
+        "mlp_iter0": None,
+        "note": "#435 (n=1000, 866f43dd, host studio); asymmetric_only NE cell; bit-identical to asym_b09_k09_c05 (beta inert in bernoulli mode)",
+    },
+    "asym_b09_k09_c05": {
+        "random": -78.27,
+        "mlp_iter0": None,
+        "note": "#435 (n=1000, 866f43dd, host studio); asymmetric_only NE cell; bit-identical to asym_b05_k09_c05 (beta inert in bernoulli mode)",
     },
 }
 
