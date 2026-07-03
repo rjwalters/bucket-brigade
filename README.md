@@ -136,6 +136,8 @@ Architecture details: [docs/SIMPLIFIED_ARCHITECTURE.md](docs/SIMPLIFIED_ARCHITEC
 
 Fourteen named scenarios live in `bucket-brigade-core/src/scenarios.rs` (the canonical source): `default`, `easy`, `hard`, `trivial_cooperation`, `early_containment`, `greedy_neighbor`, `sparse_heroics`, `rest_trap`, `chain_reaction`, `deceptive_calm`, `overcrowding`, `mixed_motivation`, `minimal_specialization`, `positional_default`. Each isolates a different dynamic — coordination pressure, social dilemma, sparse work, deceptive signaling, etc. See [docs/game_description.md](docs/game_description.md) for narrative descriptions.
 
+**External consumers** (forks, re-bindings, re-implementations, evaluation harnesses): before scoring anything, verify your build is on the canonical reward scale with the seconds-cheap parity check — `python -m bucket_brigade.baselines.parity --all`. See [docs/PARITY.md](docs/PARITY.md).
+
 ## Custom agents
 
 User policies subclass `AgentBase` and implement `act(obs) -> np.ndarray([house_index, mode_flag])`. Examples for each scenario live in `bucket_brigade/agents/scenario_optimal/`. The archetype library (`bucket_brigade/agents/archetypes.py`) gives parameterized starting points (Firefighter, Free Rider, Hero, Coordinator, Liar).

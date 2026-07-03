@@ -27,6 +27,11 @@ Currently exports:
 For the **frozen baseline distribution** (archetype pickles, Nash vectors,
 PPO checkpoints shipped with the pip wheel + mirrored to HuggingFace), see
 :mod:`bucket_brigade.baselines.release` (issue #373 / parent epic #365).
+
+For the **reward-scale parity check** that packages
+``SCENARIO_RANDOM_BASELINES`` as an executable check for downstream
+consumers (``python -m bucket_brigade.baselines.parity``), see
+:mod:`bucket_brigade.baselines.parity` (issue #437) and ``docs/PARITY.md``.
 """
 
 from bucket_brigade.baselines.specialist import (
