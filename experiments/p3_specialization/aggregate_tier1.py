@@ -27,7 +27,8 @@ the scenario-scale ``uplift_over_random`` column instead.
 Since #436 degenerate-reference rows additionally carry a categorical
 ``trap_verdict`` (``trapped_at_ne`` / ``at_random`` / ``escaped_trap`` /
 ``above_scripted_best``, computed by ``run_tier1_cell.classify_trap_verdict``
-from the seed-bootstrap CI vs the NE / random / scripted_best anchors),
+from the seed-bootstrap CI vs the NE / random-upper-bound /
+scripted_best anchors),
 rendered as its own table column (``n/a`` for every other row).
 
 Cells with ``n_seeds_completed == 0`` (or missing ``cell_summary.json``)
@@ -201,7 +202,8 @@ def build_markdown(rows: Sequence[dict], notes: Optional[str] = None) -> str:
         "**not_scored_degenerate_reference**, #434) are never classified on "
         "the ladder; read their `uplift_over_random` (per-step, scenario "
         "scale) and the categorical `trap_verdict` (#436: seed-bootstrap "
-        "95% CI vs NE / random / scripted_best anchors -> `trapped_at_ne` / "
+        "95% CI vs NE / random-upper-bound / scripted_best anchors -> "
+        "`trapped_at_ne` / "
         "`at_random` / `escaped_trap` / `above_scripted_best`) instead.",
         "",
         "| Trainer | Scenario | gap_closed (mean ± std) | "

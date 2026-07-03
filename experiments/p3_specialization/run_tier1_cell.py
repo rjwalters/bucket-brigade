@@ -32,8 +32,9 @@ The dispatcher knows about 14 trainer names (see :data:`TRAINERS`):
   (:func:`classify_trap_verdict`): the seed-bootstrap 95% CI of the
   trailing-5 per-step team reward is classified against up to three anchors
   from the reference table -- ``ne_per_step_bound`` (upper bound on the
-  frozen NE's per-step payoff), ``random``, and the measured
-  ``scripted_best`` -- into ``trapped_at_ne`` / ``at_random`` /
+  frozen NE's per-step payoff), ``random`` (via its measured 95% CI upper
+  bound ``random_ci95_hi`` when recorded -- PR #440 review), and the
+  measured ``scripted_best`` -- into ``trapped_at_ne`` / ``at_random`` /
   ``escaped_trap`` / ``above_scripted_best``.
 * unknown scenario (no table entry) -> ``gap_closed = null``, loud stderr
   warning, ``verdict_tier = "not_scored"``. There is deliberately no MINSPEC
@@ -366,9 +367,13 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
       scenario is absent from ``SCENARIO_RANDOM_BASELINES`` too.
     * ``reference`` -- per-step upper-reference team reward, or ``None``.
     * ``reference_kind`` / ``reason`` / ``provenance`` -- audit metadata.
-    * ``ne_per_step_bound`` / ``scripted_best`` -- trap-verdict anchors
-      (issue #436), passed through from the table entry when present
-      (``None`` otherwise). Only consumed on the degenerate-reference path.
+    * ``ne_per_step_bound`` / ``random_ci95_hi`` / ``scripted_best`` --
+      trap-verdict anchors (issue #436), passed through from the table entry
+      when present (``None`` otherwise). Only consumed on the
+      degenerate-reference path. ``random_ci95_hi`` is the measured 95% CI
+      upper bound of the random anchor itself; the trap verdict's
+      ``escaped_trap`` rung anchors on it rather than the bare point
+      (PR #440 review).
 
     A degenerate pair includes ``reference <= random`` (zero or negative
     denominator), not just a missing upper reference.
@@ -404,12 +409,14 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
             "reason": "missing_reference",
             "provenance": None,
             "ne_per_step_bound": None,
+            "random_ci95_hi": None,
             "scripted_best": None,
         }
 
     random_ = entry["random"]
     reference = entry.get("reference")
     ne_bound = entry.get("ne_per_step_bound")
+    random_ci_hi = entry.get("random_ci95_hi")
     scripted_best = entry.get("scripted_best")
     if reference is None or float(reference) - float(random_) <= 0:
         return {
@@ -420,6 +427,7 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
             "reason": entry.get("degenerate_reason", "reference_not_above_random"),
             "provenance": entry.get("provenance"),
             "ne_per_step_bound": float(ne_bound) if ne_bound is not None else None,
+            "random_ci95_hi": float(random_ci_hi) if random_ci_hi is not None else None,
             "scripted_best": scripted_best,
         }
 
@@ -431,6 +439,7 @@ def resolve_scenario_references(scenario: str, *, warn: bool = True) -> dict:
         "reason": None,
         "provenance": entry.get("provenance"),
         "ne_per_step_bound": float(ne_bound) if ne_bound is not None else None,
+        "random_ci95_hi": float(random_ci_hi) if random_ci_hi is not None else None,
         "scripted_best": scripted_best,
     }
 
@@ -488,7 +497,7 @@ def _seed_bootstrap_ci(
     point = sum(vals) / n
     if n == 1:
         return point, point, point
-    rng = random.Random(boot_seed)
+    rng = random.Random(boot_seed)  # nosec B311 (deterministic bootstrap resampling, not cryptographic)
     boots = sorted(
         sum(vals[rng.randrange(n)] for _ in range(n)) / n for _ in range(n_boot)
     )
@@ -502,6 +511,7 @@ def classify_trap_verdict(
     trailing5_teams: Sequence[float],
     *,
     random_baseline: float,
+    random_ci95_hi: Optional[float] = None,
     ne_per_step_bound: Optional[float],
     scripted_best: Optional[dict],
 ) -> tuple[str, str, dict]:
@@ -517,8 +527,15 @@ def classify_trap_verdict(
       Requires a usable scripted_best (present AND value > random; a
       battery that fails to beat random is recorded but never anchors
       this rung — issue #436's documented failure mode).
-    * ``escaped_trap``        -- ``lo > random`` (significantly above the
-      uniform-random baseline) but not above scripted_best.
+    * ``escaped_trap``        -- ``lo`` clears the random anchor's own
+      measured 95% CI upper bound (``random_ci95_hi`` when recorded,
+      falling back to the ``random`` point when absent) but not
+      scripted_best. Requiring the *upper bound* — not the point — makes
+      this rung symmetric with rung 1 and with the scripted battery's
+      ``beats_random`` check: the point anchor carries its own measurement
+      noise (±1.4/step at n=10k for rest_trap), so a sub-noise clearance
+      of the point is not a statistically supportable "above random"
+      claim (PR #440 review).
     * ``at_random``           -- not significantly above random, but ``lo``
       clears the NE per-step bound (when recorded).
     * ``trapped_at_ne``       -- cannot be ruled significantly above the NE
@@ -531,6 +548,10 @@ def classify_trap_verdict(
     anchors used.
     """
     mean, lo, hi = _seed_bootstrap_ci(trailing5_teams)
+
+    random_upper = (
+        float(random_ci95_hi) if random_ci95_hi is not None else random_baseline
+    )
 
     scripted_anchor: Optional[float] = None
     scripted_note = "no scripted_best recorded"
@@ -554,6 +575,7 @@ def classify_trap_verdict(
         "anchors": {
             "ne_per_step_bound": ne_per_step_bound,
             "random": random_baseline,
+            "random_ci95_hi": random_ci95_hi,
             "scripted_best_anchor": scripted_anchor,
         },
     }
@@ -568,7 +590,14 @@ def classify_trap_verdict(
             f"{scripted_anchor:.2f}",
             details,
         )
-    if lo > random_baseline:
+    random_desc = (
+        f"the random anchor's measured 95% upper bound {random_upper:.2f} "
+        f"(point {random_baseline:.2f})"
+        if random_ci95_hi is not None
+        else f"random {random_baseline:.2f} (point anchor; no measured "
+        "random_ci95_hi recorded)"
+    )
+    if lo > random_upper:
         upper_note = (
             f"below the scripted_best anchor {scripted_anchor:.2f}"
             if scripted_anchor is not None
@@ -576,20 +605,20 @@ def classify_trap_verdict(
         )
         return (
             "escaped_trap",
-            f"{ci_str}: significantly above random {random_baseline:.2f}, {upper_note}",
+            f"{ci_str}: CI lower bound clears {random_desc}, {upper_note}",
             details,
         )
     if ne_per_step_bound is not None and lo > ne_per_step_bound:
         return (
             "at_random",
-            f"{ci_str}: CI overlaps random {random_baseline:.2f} but clears "
-            f"the NE per-step bound {ne_per_step_bound:.2f}",
+            f"{ci_str}: CI lower bound does not clear {random_desc} but "
+            f"clears the NE per-step bound {ne_per_step_bound:.2f}",
             details,
         )
     if ne_per_step_bound is None:
         return (
             "at_random",
-            f"{ci_str}: CI overlaps random {random_baseline:.2f}; no NE "
+            f"{ci_str}: CI lower bound does not clear {random_desc}; no NE "
             "per-step bound recorded for this scenario",
             details,
         )
@@ -766,6 +795,7 @@ def build_cell_summary(
         trap_verdict, trap_verdict_reason, trap_details = classify_trap_verdict(
             trailing5_teams,
             random_baseline=refs["random"],
+            random_ci95_hi=refs.get("random_ci95_hi"),
             ne_per_step_bound=refs.get("ne_per_step_bound"),
             scripted_best=refs.get("scripted_best"),
         )

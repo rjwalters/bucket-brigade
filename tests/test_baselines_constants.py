@@ -208,6 +208,9 @@ def test_gap_references_rest_trap_trap_anchors_match_committed_artifacts() -> No
     * ``scripted_best`` == the final-stage winner recorded by the scripted
       battery run (scripted_battery/rest_trap.json), and it must actually
       beat random (otherwise it must not be recorded as an anchor).
+    * ``random_ci95_hi`` == the battery's final-stage n=10k uniform
+      re-measurement CI upper bound (PR #440: the escaped_trap rung anchors
+      on this, not the bare random point).
     """
     entry = SCENARIO_GAP_REFERENCES["rest_trap"]
 
@@ -234,7 +237,8 @@ def test_gap_references_rest_trap_trap_anchors_match_committed_artifacts() -> No
         / "scripted_battery"
         / "rest_trap.json"
     )
-    measured = json.loads(battery_path.read_text())["scripted_best"]
+    battery = json.loads(battery_path.read_text())
+    measured = battery["scripted_best"]
     sb = entry["scripted_best"]
     assert sb["value"] == measured["value"]
     assert sb["ci95_lo"] == measured["ci95_lo"]
@@ -243,8 +247,21 @@ def test_gap_references_rest_trap_trap_anchors_match_committed_artifacts() -> No
     assert sb["kind"] == f"scripted_battery:{measured['name']}"
     assert measured["beats_random"] is True
     assert sb["value"] > entry["random"]
-    # Anchor ordering sanity: NE bound < random < scripted_best.
-    assert entry["ne_per_step_bound"] < entry["random"] < sb["value"]
+    # random_ci95_hi drift guard (PR #440): must equal the battery's
+    # final-stage uniform re-measurement CI upper bound, and it must bracket
+    # the random point from above while staying below scripted_best's own
+    # CI lower bound (otherwise the rung ordering degenerates).
+    uniform_final = battery["final"]["uniform"]["team"]
+    assert entry["random_ci95_hi"] == uniform_final["ci95_hi"]
+    assert uniform_final["ci95_lo"] < entry["random"] < entry["random_ci95_hi"]
+    assert entry["random_ci95_hi"] < sb["ci95_lo"]
+    # Anchor ordering sanity: NE bound < random < random_ci95_hi < scripted_best.
+    assert (
+        entry["ne_per_step_bound"]
+        < entry["random"]
+        < entry["random_ci95_hi"]
+        < sb["value"]
+    )
 
 
 def test_gap_references_valid_pairs_have_positive_denominator() -> None:

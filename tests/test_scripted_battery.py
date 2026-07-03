@@ -186,3 +186,69 @@ class TestSchema:
         rs = result["screen"]["random_search"]
         assert rs["n_samples"] == 2
         assert len(rs["samples"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# Markdown rendering (both verdict branches, synthetic input — no episodes)
+# ---------------------------------------------------------------------------
+
+
+def _synthetic_result(*, beats_random: bool) -> dict:
+    """Minimal result dict exercising ``render_markdown`` without running
+    any episodes (PR #440 review: the ``beats_random=False`` branch was
+    previously untested)."""
+    team = {"mean": 300.0, "ci95_lo": 298.0, "ci95_hi": 302.0}
+    delta = {"mean": -2.0, "ci95_lo": -4.0, "ci95_hi": 0.5}
+    return {
+        "scenario": "rest_trap",
+        "config": {
+            "n_episodes": 4,
+            "n_episodes_final": 4,
+            "seed": 0,
+            "n_boot": 20,
+            "random_search": 0,
+        },
+        "provenance": {"host": "testhost", "git_sha": "deadbeef"},
+        "cited_random_baseline": 302.87,
+        "screen": {
+            "policies": {
+                "uniform": {"team": team, "team_work_rate": 0.5, "n_episodes": 4},
+                "always_rest": {
+                    "team": team,
+                    "team_delta_vs_uniform_paired": delta,
+                    "team_work_rate": 0.0,
+                    "n_episodes": 4,
+                },
+            },
+            "screen_best": {"name": "always_rest"},
+        },
+        "final": {
+            "n_episodes": 4,
+            "uniform": {"team": team},
+            "winner": {"name": "always_rest", "team": team},
+            "winner_delta_vs_uniform_paired": delta,
+        },
+        "scripted_best": {
+            "name": "always_rest",
+            "value": 300.0,
+            "ci95_lo": 298.0,
+            "ci95_hi": 302.0,
+            "n_episodes": 4,
+            "beats_random": beats_random,
+        },
+    }
+
+
+class TestRenderMarkdown:
+    def test_beats_random_false_branch(self):
+        md = battery.render_markdown(_synthetic_result(beats_random=False))
+        assert "no battery member beats the uniform-random baseline" in md
+        assert "`scripted_best` <= random" in md
+        assert "recorded as absent" in md
+        # The failure-mode verdict must NOT claim an upper anchor exists.
+        assert "decisively above" not in md
+
+    def test_beats_random_true_branch(self):
+        md = battery.render_markdown(_synthetic_result(beats_random=True))
+        assert "measured `scripted_best` upper anchor" in md
+        assert "decisively above" in md

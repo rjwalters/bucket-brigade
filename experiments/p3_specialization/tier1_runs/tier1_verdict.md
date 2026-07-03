@@ -1,6 +1,6 @@
 # Tier-1 sweep verdict
 
-Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; `0.49 <= mean < 0.88` -> **partial_upper**; `0.20 <= mean < 0.49` -> **partial_lower**; `mean < 0.20` -> **insufficient**. Rows with a null `gap_closed` (**not_scored** / **not_scored_degenerate_reference**, #434) are never classified on the ladder; read their `uplift_over_random` (per-step, scenario scale) and the categorical `trap_verdict` (#436: seed-bootstrap 95% CI vs NE / random / scripted_best anchors -> `trapped_at_ne` / `at_random` / `escaped_trap` / `above_scripted_best`) instead.
+Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; `0.49 <= mean < 0.88` -> **partial_upper**; `0.20 <= mean < 0.49` -> **partial_lower**; `mean < 0.20` -> **insufficient**. Rows with a null `gap_closed` (**not_scored** / **not_scored_degenerate_reference**, #434) are never classified on the ladder; read their `uplift_over_random` (per-step, scenario scale) and the categorical `trap_verdict` (#436: seed-bootstrap 95% CI vs NE / random-upper-bound / scripted_best anchors -> `trapped_at_ne` / `at_random` / `escaped_trap` / `above_scripted_best`) instead.
 
 | Trainer | Scenario | gap_closed (mean ± std) | uplift_over_random (mean ± std) | Trap verdict | n_seeds | Verdict |
 |---------|----------|--------------------------|---------------------------------|--------------|---------|---------|
@@ -8,7 +8,7 @@ Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; `0.49 <= mean < 0.88` -
 | influence | minimal_specialization | 0.120 ± 0.036 | +7.101 ± 2.121 | n/a | 3 ok | insufficient |
 | hca | minimal_specialization | 0.081 ± 0.139 | +4.806 ± 8.268 | n/a | 3 ok | insufficient |
 | lola | minimal_specialization | 0.005 ± 0.053 | +0.267 ± 3.132 | n/a | 3 ok | insufficient |
-| het_ppo | rest_trap | n/a | +3.394 ± 7.340 | escaped_trap | 20 ok | not_scored_degenerate_reference |
+| het_ppo | rest_trap | n/a | +3.394 ± 7.340 | at_random | 20 ok | not_scored_degenerate_reference |
 
 ## Notes
 
@@ -65,7 +65,7 @@ scenarios (`asym_b05_k05_c09`, `asym_b05_k09_c09`) are not registered in
 is blocked on the #358 cell-to-scenario follow-up (see
 `experiments/p3_specialization/het_ppo_runbook.md` and issue #429).
 
-### het_ppo / rest_trap (#436): trap-escape verdict — `escaped_trap` (marginal)
+### het_ppo / rest_trap (#436): trap-escape verdict — `at_random`
 
 Issue #436 added a measured upper anchor and a categorical four-way
 trap-escape verdict for degenerate-reference (social-trap) rows, computed by
@@ -74,21 +74,31 @@ trap-escape verdict for degenerate-reference (social-trap) rows, computed by
 
 - **Anchors** (per-step team reward): NE bound ≤ 248.67 (frozen NE payoff
   2984.04/episode ÷ min_nights = 12), random 302.87
-  (`SCENARIO_RANDOM_BASELINES`), and the measured `scripted_best` = 386.60
-  [386.17, 387.03] (homogeneous `specialist` team, n=10k, issue #436 Part A;
-  artifact `experiments/p3_specialization/scripted_battery/rest_trap.{json,md}`).
+  (`SCENARIO_RANDOM_BASELINES`) with its own measured 95% upper bound
+  304.31 (`random_ci95_hi`, the battery's final-stage n=10k uniform
+  re-measurement 302.94 [301.46, 304.31]), and the measured `scripted_best`
+  = 386.60 [386.17, 387.03] (homogeneous `specialist` team, n=10k, issue
+  #436 Part A; artifact
+  `experiments/p3_specialization/scripted_battery/rest_trap.{json,md}`).
 - **Rule**: nested one-sided ladder on the lower bound of the seed-bootstrap
   95% CI of the trailing-5 per-step team reward (10k resamples, fixed seed):
-  `lo > scripted_best_ci_hi` → `above_scripted_best`; `lo > random` →
-  `escaped_trap`; `lo > ne_bound` → `at_random`; else `trapped_at_ne`.
+  `lo > scripted_best_ci_hi` → `above_scripted_best`; `lo > random_ci95_hi`
+  → `escaped_trap`; `lo > ne_bound` → `at_random`; else `trapped_at_ne`.
+  The `escaped_trap` rung anchors on the random baseline's *measured 95%
+  upper bound*, not the bare point (PR #440 review): the point carries
+  ±1.4/step measurement noise at n=10k, so a sub-noise clearance of the
+  point is not a statistically supportable "above random" claim. This makes
+  rung 2 symmetric with rung 1 (`scripted_best.ci95_hi`) and with the
+  battery's own `beats_random` check.
 - **het_ppo result (20 seeds)**: trailing-5 mean 306.26, CI [302.95, 309.33]
-  → **`escaped_trap`**, but *marginal*: the CI lower bound clears the random
-  anchor by only 0.08/step, and the #436 fresh n=10k re-measurement of the
-  uniform baseline (302.94 [301.46, 304.31]) sits essentially on that lower
-  bound. Read this as "statistically distinguishable from random under the
-  committed anchor, far below scripted_best (Δ ≈ −80/step)" — PPO escapes
-  the *resting* trap direction but captures almost none of the measurable
-  scripted headroom. The scripted battery also shows `always_rest` (288.55)
-  and the NE bound (≤ 248.67) are both *below* random: the trap is real, and
-  a fully-scripted specialist team demonstrates the scenario is not
-  reward-capped at random-level play.
+  → **`at_random`**. The CI lower bound clears the 302.87 random *point* by
+  only 0.08/step but sits below the random anchor's own n=10k measurement
+  upper bound (304.31) — the clearance is within the anchor's measurement
+  noise, so het_ppo cannot be ruled significantly above random. It does
+  clear the NE bound (≤ 248.67), i.e. PPO does not fall into the resting
+  trap, but it captures essentially none of the measured scripted headroom
+  (Δ ≈ −80/step vs `scripted_best`). The quantitative headline stays
+  `uplift_over_random = +3.39 ± 7.34`/step. The scripted battery also shows
+  `always_rest` (288.55) and the NE bound (≤ 248.67) are both *below*
+  random: the trap is real, and a fully-scripted specialist team
+  demonstrates the scenario is not reward-capped at random-level play.

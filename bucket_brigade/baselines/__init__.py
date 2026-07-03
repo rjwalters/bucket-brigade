@@ -198,6 +198,22 @@ SCENARIO_RANDOM_BASELINES: dict[str, float] = {
 #     Drift guard: ``tests/test_baselines_constants.py`` asserts this block
 #     matches the committed measurement artifact.
 #
+#     ``random_ci95_hi`` (issue #436 / PR #440 review): 95% CI upper bound
+#     of the uniform-random anchor's own measurement — the battery's
+#     final-stage n=10000 re-measurement of uniform play gives
+#     ``302.94/step [301.46, 304.31]`` (same run/commit as
+#     ``scripted_best``; stored in ``final.uniform.team.ci95_hi`` of the
+#     committed artifact). The trap-escape rule's ``escaped_trap`` rung
+#     requires the trained CI lower bound to clear THIS upper bound, not
+#     the bare ``random`` point: the point anchor carries ±1.4/step
+#     measurement noise at n=10k, so a sub-noise clearance of the point is
+#     not a statistically supportable "above random" claim. This makes
+#     rung 2 symmetric with rung 1 (which anchors on
+#     ``scripted_best.ci95_hi``) and with the battery's own
+#     ``beats_random`` check (``scripted_battery.py``). Drift guard:
+#     ``tests/test_baselines_constants.py`` asserts it matches the
+#     committed battery artifact.
+#
 # Drift guard: ``tests/test_baselines_constants.py`` asserts the ``random``
 # side of every entry matches ``SCENARIO_RANDOM_BASELINES`` and that the
 # minimal_specialization entry matches ``MINSPEC_RANDOM``/``MINSPEC_SPECIALIST``.
@@ -214,6 +230,15 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
     },
     "rest_trap": {
         "random": SCENARIO_RANDOM_BASELINES["rest_trap"],
+        # 95% CI upper bound of the uniform-random anchor's own measurement
+        # (issue #436 / PR #440 review): battery final-stage n=10000 uniform
+        # re-measurement, 302.94/step [301.46, 304.31], seed=0 (stage seed
+        # 500009), host studio, commit ee21e796. Artifact:
+        # experiments/p3_specialization/scripted_battery/rest_trap.json
+        # (final.uniform.team.ci95_hi). The escaped_trap rung of the trap
+        # verdict requires the trained CI lower bound to clear this, not
+        # the bare point above.
+        "random_ci95_hi": 304.3071270072002,
         "reference": None,
         "reference_kind": None,
         "degenerate_reason": "social_trap_ne_below_random",
@@ -247,8 +272,9 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
             "equilibrium is team-suboptimal by construction (social trap). "
             "The gap fraction ladder is not applicable; degenerate rows are "
             "classified by the four-way trap-escape verdict (#436) against "
-            "ne_per_step_bound / random / scripted_best, with "
-            "uplift_over_random as the quantitative headline."
+            "ne_per_step_bound / random (via its measured 95% upper bound "
+            "random_ci95_hi) / scripted_best, with uplift_over_random as "
+            "the quantitative headline."
         ),
     },
 }

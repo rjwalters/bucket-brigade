@@ -99,13 +99,13 @@
       "gap_source": "degenerate_reference",
       "uplift_over_random_mean": 3.3936260986328053,
       "uplift_over_random_std": 7.339720627595225,
-      "trap_verdict": "escaped_trap",
-      "trap_verdict_reason": "trailing-5 mean 306.26/step, seed-bootstrap 95% CI [302.95, 309.33]: significantly above random 302.87, below the scripted_best anchor 387.03",
+      "trap_verdict": "at_random",
+      "trap_verdict_reason": "trailing-5 mean 306.26/step, seed-bootstrap 95% CI [302.95, 309.33]: CI lower bound does not clear the random anchor's measured 95% upper bound 304.31 (point 302.87) but clears the NE per-step bound 248.67",
       "gap_closed_minspec_legacy_mean": 6.6394274704858915,
       "n_seeds_completed": 20,
       "n_seeds_failed": 0,
       "verdict_tier": "not_scored_degenerate_reference",
-      "verdict_reason": "reference pair degenerate (social_trap_ne_below_random): fraction ladder not applicable; uplift_over_random = +3.394/step vs random = 302.87/step; trap_verdict = escaped_trap (trailing-5 mean 306.26/step, seed-bootstrap 95% CI [302.95, 309.33]: significantly above random 302.87, below the scripted_best anchor 387.03)"
+      "verdict_reason": "reference pair degenerate (social_trap_ne_below_random): fraction ladder not applicable; uplift_over_random = +3.394/step vs random = 302.87/step; trap_verdict = at_random (trailing-5 mean 306.26/step, seed-bootstrap 95% CI [302.95, 309.33]: CI lower bound does not clear the random anchor's measured 95% upper bound 304.31 (point 302.87) but clears the NE per-step bound 248.67)"
     }
   ]
 }

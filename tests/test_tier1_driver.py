@@ -691,14 +691,25 @@ def test_summary_schema_version_bumped(tmp_path):
 
 
 _TRAP_RANDOM = 302.87
+# Measured 95% upper bound of the random anchor itself (battery final-stage
+# n=10k uniform re-measurement; PR #440 review): the escaped_trap rung must
+# clear THIS, not the bare point.
+_TRAP_RANDOM_CI_HI = 304.31
 _TRAP_NE_BOUND = 248.67
 _TRAP_SCRIPTED = {"value": 386.60, "ci95_lo": 386.17, "ci95_hi": 387.03}
 
 
-def _classify(values, *, ne=_TRAP_NE_BOUND, scripted=_TRAP_SCRIPTED):
+def _classify(
+    values,
+    *,
+    ne=_TRAP_NE_BOUND,
+    scripted=_TRAP_SCRIPTED,
+    random_ci_hi=_TRAP_RANDOM_CI_HI,
+):
     return run_tier1_cell.classify_trap_verdict(
         values,
         random_baseline=_TRAP_RANDOM,
+        random_ci95_hi=random_ci_hi,
         ne_per_step_bound=ne,
         scripted_best=scripted,
     )
@@ -722,12 +733,41 @@ def test_trap_verdict_at_random():
 
 
 def test_trap_verdict_escaped_trap():
-    """CI significantly above random but below scripted_best -> escaped_trap."""
+    """CI clearing the random anchor's own 95% upper bound but below
+    scripted_best -> escaped_trap."""
     verdict, reason, details = _classify([320.0, 322.0, 318.0, 321.0, 319.0])
     assert verdict == "escaped_trap"
     lo, _hi = details["trailing5_ci95"]
-    assert lo > _TRAP_RANDOM
+    assert lo > _TRAP_RANDOM_CI_HI
     assert lo <= _TRAP_SCRIPTED["ci95_hi"]
+
+
+def test_trap_verdict_marginal_above_point_below_random_ci_hi_is_at_random():
+    """The PR #440 marginal case: a CI lower bound between the random *point*
+    anchor and the random anchor's own measured 95% upper bound is NOT a
+    statistically supportable "above random" claim -> at_random.
+
+    This pins the het_ppo / rest_trap regression: trained lo = 302.95 clears
+    the 302.87 point by 0.08/step but sits below the n=10k uniform
+    re-measurement's ci95_hi = 304.31.
+    """
+    # Flat seeds -> the bootstrap CI degenerates to the point 303.5, strictly
+    # between the random point (302.87) and its upper bound (304.31).
+    verdict, reason, details = _classify([303.5, 303.5, 303.5])
+    assert verdict == "at_random"
+    lo, _hi = details["trailing5_ci95"]
+    assert _TRAP_RANDOM < lo < _TRAP_RANDOM_CI_HI
+    assert "does not clear" in reason
+    assert details["anchors"]["random_ci95_hi"] == pytest.approx(_TRAP_RANDOM_CI_HI)
+
+
+def test_trap_verdict_falls_back_to_point_anchor_without_random_ci_hi():
+    """Without a committed random_ci95_hi the rung anchors on the point
+    (documented fallback), and the reason string says so."""
+    verdict, reason, details = _classify([303.5, 303.5, 303.5], random_ci_hi=None)
+    assert verdict == "escaped_trap"
+    assert "no measured random_ci95_hi recorded" in reason
+    assert details["anchors"]["random_ci95_hi"] is None
 
 
 def test_trap_verdict_above_scripted_best():
@@ -792,14 +832,15 @@ def test_rest_trap_summary_carries_trap_verdict(tmp_path):
     cell_summary.json (integration through build_cell_summary)."""
     summary = _summary_for(tmp_path, "rest_trap", [[306.26] * 10] * 3)
     assert summary["schema_version"] >= 3
-    # Flat 306.26 across seeds -> degenerate CI at 306.26 > 302.87 random,
-    # far below the scripted_best anchor.
+    # Flat 306.26 across seeds -> degenerate CI at 306.26, above the random
+    # anchor's measured 95% upper bound (304.31), far below scripted_best.
     assert summary["trap_verdict"] == "escaped_trap"
     assert "trap_verdict = escaped_trap" in summary["verdict_reason"]
     lo, hi = summary["trailing5_team_ci95"]
     assert lo == hi == pytest.approx(306.26)
     anchors = summary["trap_anchors"]
     assert anchors["random"] == pytest.approx(302.87)
+    assert anchors["random_ci95_hi"] == pytest.approx(304.3071270072002)
     assert anchors["ne_per_step_bound"] == pytest.approx(2984.043694076538 / 12.0)
     assert anchors["scripted_best_kind"] == "scripted_battery:specialist"
     assert anchors["scripted_best_value"] > anchors["random"]
@@ -853,14 +894,28 @@ def test_resolve_scenario_references_passes_trap_anchors():
     refs = run_tier1_cell.resolve_scenario_references("rest_trap", warn=False)
     assert refs["source"] == "degenerate_reference"
     assert refs["ne_per_step_bound"] == pytest.approx(2984.043694076538 / 12.0)
+    assert refs["random_ci95_hi"] == pytest.approx(304.3071270072002)
     assert refs["scripted_best"]["kind"] == "scripted_battery:specialist"
     # Scored + missing scenarios expose the keys as None.
     refs = run_tier1_cell.resolve_scenario_references(
         "minimal_specialization", warn=False
     )
     assert refs["ne_per_step_bound"] is None and refs["scripted_best"] is None
+    assert refs["random_ci95_hi"] is None
     refs = run_tier1_cell.resolve_scenario_references("nope_never", warn=False)
     assert refs["ne_per_step_bound"] is None and refs["scripted_best"] is None
+    assert refs["random_ci95_hi"] is None
+
+
+def test_rest_trap_marginal_cell_is_at_random_end_to_end(tmp_path):
+    """Integration pin for the corrected rung 2 (PR #440): a rest_trap cell
+    whose trained CI lower bound clears the 302.87 random point but not the
+    committed random_ci95_hi (304.31) must summarize as at_random."""
+    summary = _summary_for(tmp_path, "rest_trap", [[303.5] * 10] * 3)
+    assert summary["trap_verdict"] == "at_random"
+    assert "trap_verdict = at_random" in summary["verdict_reason"]
+    lo, hi = summary["trailing5_team_ci95"]
+    assert 302.87 < lo < 304.3071270072002
 
 
 # ---------------------------------------------------------------------------
@@ -990,11 +1045,12 @@ def _make_not_scored_cell_summary(cell_dir: Path) -> None:
         "uplift_over_random_mean": 3.39,
         "uplift_over_random_std": 7.53,
         "uplift_over_random_per_seed": [3.0, 3.78],
-        "trap_verdict": "escaped_trap",
-        "trap_verdict_reason": "CI above random, below scripted_best",
+        "trap_verdict": "at_random",
+        "trap_verdict_reason": "CI does not clear random_ci95_hi, above NE",
         "trap_anchors": {
             "ne_per_step_bound": 248.67,
             "random": 302.87,
+            "random_ci95_hi": 304.31,
             "scripted_best_anchor": 387.03,
             "scripted_best_value": 386.60,
             "scripted_best_kind": "scripted_battery:specialist",
@@ -1033,7 +1089,7 @@ def test_aggregator_renders_null_gap_row(tmp_path):
     # #436: trap verdict column present; degenerate row carries its verdict,
     # scored rows render n/a.
     assert "| Trap verdict |" in md
-    assert "| escaped_trap |" in md
+    assert "| at_random |" in md
     ippo_line = next(line for line in md.splitlines() if "| ippo |" in line)
     assert "| n/a |" in ippo_line
     assert "nan" not in md.lower().replace("n/a", "")
@@ -1051,7 +1107,7 @@ def test_aggregator_renders_null_gap_row(tmp_path):
     het = by_trainer["het_ppo"]
     assert het["gap_closed_mean"] is None
     assert het["gap_source"] == "degenerate_reference"
-    assert het["trap_verdict"] == "escaped_trap"
+    assert het["trap_verdict"] == "at_random"
     assert by_trainer["ippo"]["trap_verdict"] is None
     assert het["uplift_over_random_mean"] == pytest.approx(3.39)
     assert het["gap_closed_minspec_legacy_mean"] == pytest.approx(6.639)

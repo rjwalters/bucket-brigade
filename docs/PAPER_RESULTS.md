@@ -386,7 +386,7 @@ anchor and a categorical verdict.
 |---|---|---|
 | NE per-step bound | ≤ 248.67 | frozen NE payoff / min_nights (upper bound; conservative for the "above NE" claim) |
 | `always_rest` ×4 | 288.55 [285.20, 291.65] | scripted battery screen, n=2000 |
-| uniform random | 302.87 (cited); 302.94 [301.46, 304.31] re-measured at n=10k | `SCENARIO_RANDOM_BASELINES` (#237); #436 final stage |
+| uniform random | 302.87 (cited); 302.94 [301.46, 304.31] re-measured at n=10k — the 304.31 upper bound is committed as `random_ci95_hi` and anchors the `escaped_trap` rung | `SCENARIO_RANDOM_BASELINES` (#237); #436 final stage |
 | `scripted_best` = `specialist` ×4 | **386.60 [386.17, 387.03]** | all-scripted team battery, n=10000, seed=0, host studio, commit `ee21e796` |
 
 The battery (24 team profiles: uniform, always_rest, specialist, the
@@ -404,25 +404,39 @@ CI `[lo, hi]` over **seeds** of the trained trailing-5 per-step team reward
 on `lo`:
 
 1. `lo > scripted_best.ci95_hi` → **`above_scripted_best`**
-2. `lo > random` → **`escaped_trap`**
+2. `lo > random_ci95_hi` (the random anchor's own measured 95% upper
+   bound, 304.31 at n=10k; falls back to the `random` point when no
+   measured bound is committed) → **`escaped_trap`**
 3. `lo > ne_per_step_bound` → **`at_random`**
 4. else → **`trapped_at_ne`**
+
+Rung 2 deliberately anchors on the random baseline's *measured upper
+bound*, not the bare point: the 302.87 point carries ±1.4/step measurement
+noise at n=10k, so a sub-noise clearance of the point is not a
+statistically supportable "above random" claim. This makes rung 2
+symmetric with rung 1 (which anchors on `scripted_best.ci95_hi`) and with
+the battery's own `beats_random` check.
 
 If a scenario's scripted battery fails to beat random (documented #436
 failure mode), `scripted_best` is recorded with provenance but rung 1 is
 disabled and the rule operates on the NE + random anchors alone. The
 anchors live in
 `bucket_brigade.baselines.SCENARIO_GAP_REFERENCES["rest_trap"]`
-(`ne_per_step_bound`, `scripted_best`); `reference` deliberately stays
-`None` so the fraction ladder remains off for social-trap scenarios.
+(`ne_per_step_bound`, `random_ci95_hi`, `scripted_best`); `reference`
+deliberately stays `None` so the fraction ladder remains off for
+social-trap scenarios.
 
 **het_ppo result (20 seeds, re-summarized without retraining)**: trailing-5
-mean 306.26, seed-bootstrap CI [302.95, 309.33] → **`escaped_trap`**, but
-marginal: the CI lower bound clears the random anchor by only 0.08/step
-while sitting ≈ 80/step below `scripted_best`. Honest reading: het_ppo is
-statistically distinguishable from random play (it does not fall into the
-resting trap), but captures essentially none of the measured scripted
-headroom on this scenario.
+mean 306.26, seed-bootstrap CI [302.95, 309.33] → **`at_random`**. The CI
+lower bound clears the 302.87 random *point* by 0.08/step, but that is
+within the anchor's own measurement noise: it does not clear the n=10k
+uniform re-measurement's upper bound (304.31), so het_ppo cannot be ruled
+significantly above random. It does clear the NE bound (≤ 248.67) — PPO
+does not fall into the resting trap — while sitting ≈ 80/step below
+`scripted_best`. Honest reading: het_ppo is indistinguishable from random
+play at the committed measurement precision and captures essentially none
+of the measured scripted headroom on this scenario; the quantitative
+headline remains `uplift_over_random = +3.39 ± 7.34`/step.
 
 **Artifacts**:
 - Battery script: [`experiments/p3_specialization/scripted_battery.py`](../experiments/p3_specialization/scripted_battery.py)
