@@ -50,19 +50,26 @@ asymmetry-aware story collapses and needs reframing.
 
 ### Phase 2: phase-diagram `asymmetric_only` cells
 
-From `experiments/nash/phase_diagram/phase_diagram_table.md` (commit 1de2d557):
+From `experiments/nash/phase_diagram/results.json` (per-cell ground truth;
+note that `phase_diagram_table.md` renders columns in `c | β | κ` order — an
+earlier revision of this runbook misread it as `β | κ | c` and derived two
+non-existent c=0.90 cells, corrected under issue #435):
 
-| β | κ | c | verdict | NE team reward |
-|---|---|---|---------|----------------|
-| 0.5 | 0.5 | 0.9 | `asymmetric_only` | 72.01 |
-| 0.5 | 0.9 | 0.9 | `asymmetric_only` | 72.01 |
+| β | κ | c | verdict | NE team payoff (per episode) | scenario name |
+|---|---|---|---------|------------------------------|---------------|
+| 0.5 | 0.9 | 0.5 | `asymmetric_only` | 72.0095 (14/20 converged) | `asym_b05_k09_c05` |
+| 0.9 | 0.9 | 0.5 | `asymmetric_only` | 72.0095 (14/20 converged) | `asym_b09_k09_c05` |
 
-These are the only `asymmetric_only` cells in the current preview slice (3
-β-values × 3 κ-values × 3 c-values). Scenario file names for these cells live
-under `experiments/scenarios/` once the cell-to-scenario mapping driver from
-#358 has emitted them. As of this writing, only `rest_trap` is committed as a
-standalone scenario; the Phase 2 cells require the #358 follow-up to
-materialize.
+These are the only `asymmetric_only` cells in the committed phase diagram.
+Issue #435 registered both as first-class named scenarios
+(`bucket_brigade/envs/scenarios_generated.py`, frozen IDs
+`asym_b05_k09_c05-v1` / `asym_b09_k09_c05-v1` in
+`bucket_brigade/envs/registry.py`), bit-identical to the
+`make_phase_diagram_scenario(β, κ, c)` construction the #358 NE search used
+— so the NE artifacts above remain citable for the named scenarios. Random
+baselines + gap references are wired through
+`bucket_brigade.baselines.SCENARIO_RANDOM_BASELINES` /
+`SCENARIO_GAP_REFERENCES`.
 
 ### Phase 3 (optional): `symmetric_only` sanity check
 
@@ -111,11 +118,11 @@ All launches go through `launch_het_ppo_sweep.sh`. The script reads
 - Use this to confirm the trainer is wired correctly on a new host before
   burning compute on the full 20-seed sweep
 
-### Plan C — Phase 2 (after #358 emits asymmetric_only scenarios)
+### Plan C — Phase 2 (asymmetric_only scenarios registered by #435)
 
 ```bash
 ./experiments/scripts/launch_het_ppo_sweep.sh \
-    --scenarios rest_trap,asym_b05_k05_c09,asym_b05_k09_c09
+    --scenarios rest_trap,asym_b05_k09_c05,asym_b09_k09_c05
 ```
 
 Each cell appends a fresh `het_ppo_<scenario>/cell_summary.json` under

@@ -347,7 +347,7 @@ fn default_agent_home_positions() -> Vec<u8> {
     Vec::new()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Scenario {
     // Topology (issue #254): number of houses on the ring. Defaults to 10
     // for backward compatibility with every pre-#254 scenario; serde reads
@@ -1186,6 +1186,78 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
         },
     );
 
+    // Issue #435: `asymmetric_only` NE phase-diagram cells promoted to named
+    // scenarios. Both mirror `minimal_specialization` with only (beta, kappa,
+    // c) overridden — parameter-identical to the Python
+    // `make_phase_diagram_scenario(beta, kappa, c)` construction used by the
+    // #358 heterogeneous double-oracle phase-diagram search. These are the
+    // cells whose NE demands role asymmetry (1x hero + 3x firefighter, team
+    // payoff 72.0095 per episode, 14/20 restarts converged), targeted by the
+    // het_ppo Phase 2 sweep (#429). Keep parameters in sync with
+    // `definitions/scenarios.json` (drift is caught by the Python bit-parity
+    // test in `tests/test_env_registry.py`).
+    m.insert(
+        "asym_b05_k09_c05",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.5,
+            prob_solo_agent_extinguishes_fire: 0.9,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 10.0,
+            team_penalty_house_burns: 10.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(50.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(100.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
+        },
+    );
+
+    m.insert(
+        "asym_b09_k09_c05",
+        Scenario {
+            prob_fire_spreads_to_neighbor: 0.9,
+            prob_solo_agent_extinguishes_fire: 0.9,
+            prob_house_catches_fire: 0.02,
+            team_reward_house_survives: 10.0,
+            team_penalty_house_burns: 10.0,
+            cost_to_work_one_night: 0.5,
+            min_nights: 12,
+            reward_own_house_survives: per_agent(50.0),
+            reward_other_house_survives: per_agent(0.0),
+            penalty_own_house_burns: per_agent(100.0),
+            penalty_other_house_burns: per_agent(0.0),
+            agent_home_positions: default_agent_home_positions(),
+            distance_cost_alpha: default_distance_cost_alpha(),
+            distance_metric: default_distance_metric(),
+            num_houses: default_num_houses(),
+            action_shaping_alpha: default_action_shaping_alpha(),
+            action_shaping_beta: default_action_shaping_beta(),
+            progress_shaping_coef: default_progress_shaping_coef(),
+            team_welfare_lambda: default_team_welfare_lambda(),
+            team_welfare_gamma: default_team_welfare_gamma(),
+            team_welfare_kind: default_team_welfare_kind(),
+            action_validity_mode: default_action_validity_mode(),
+            extinguish_mode: default_extinguish_mode(),
+            suppression_per_worker: default_suppression_per_worker(),
+            commitment_mode: default_commitment_mode(),
+        },
+    );
+
     m
 });
 
@@ -1222,6 +1294,10 @@ mod tests {
         // Issue #253: default_continuous mirrors default with continuous
         // extinguish dynamics enabled.
         assert!(SCENARIOS.get("default_continuous").is_some());
+        // Issue #435: asymmetric_only phase-diagram cells promoted to named
+        // scenarios for the het_ppo Phase 2 sweep (#429).
+        assert!(SCENARIOS.get("asym_b05_k09_c05").is_some());
+        assert!(SCENARIOS.get("asym_b09_k09_c05").is_some());
     }
 
     #[test]
@@ -1357,8 +1433,8 @@ mod tests {
     fn test_scenario_count() {
         let count = SCENARIOS.keys().count();
         assert_eq!(
-            count, 16,
-            "Expected 16 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional + 1 v2 minimal + 1 continuous)"
+            count, 18,
+            "Expected 18 predefined scenarios (3 difficulty + 9 research + 1 sanity-check + 1 positional + 1 v2 minimal + 1 continuous + 2 asym phase-diagram cells)"
         );
     }
 
@@ -1388,6 +1464,30 @@ mod tests {
         assert_eq!(scenario.prob_house_catches_fire, 0.02);
         assert_eq!(scenario.cost_to_work_one_night, 0.5);
         assert_eq!(scenario.min_nights, 12);
+    }
+
+    /// Issue #435: the promoted `asymmetric_only` phase-diagram cells must
+    /// mirror `minimal_specialization` with ONLY (beta, kappa, c) overridden
+    /// — same override set as the Python
+    /// `make_phase_diagram_scenario(beta, kappa, c)` construction.
+    #[test]
+    fn test_asym_phase_diagram_cell_values() {
+        let base = SCENARIOS.get("minimal_specialization").unwrap();
+        for (name, beta, kappa, c) in [
+            ("asym_b05_k09_c05", 0.5_f32, 0.9_f32, 0.5_f32),
+            ("asym_b09_k09_c05", 0.9_f32, 0.9_f32, 0.5_f32),
+        ] {
+            let scenario = SCENARIOS.get(name).unwrap();
+            assert_eq!(scenario.prob_fire_spreads_to_neighbor, beta, "{}", name);
+            assert_eq!(scenario.prob_solo_agent_extinguishes_fire, kappa, "{}", name);
+            assert_eq!(scenario.cost_to_work_one_night, c, "{}", name);
+            // Every non-overridden field matches the base cell family.
+            let mut expected = base.clone();
+            expected.prob_fire_spreads_to_neighbor = beta;
+            expected.prob_solo_agent_extinguishes_fire = kappa;
+            expected.cost_to_work_one_night = c;
+            assert_eq!(scenario, &expected, "{}", name);
+        }
     }
 
     #[test]

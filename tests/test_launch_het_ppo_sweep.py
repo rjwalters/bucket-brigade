@@ -158,7 +158,7 @@ def test_dry_run_session_name_with_multiple_scenarios() -> None:
             "--host",
             "fake-host",
             "--scenarios",
-            "rest_trap,asym_b05_k05_c09,asym_b05_k09_c09",
+            "rest_trap,asym_b05_k09_c05,asym_b09_k09_c05",
             "--dry-run",
         ]
     )
@@ -176,14 +176,14 @@ def test_dry_run_loops_over_scenarios() -> None:
             "--host",
             "fake-host",
             "--scenarios",
-            "rest_trap,asym_b05_k05_c09",
+            "rest_trap,asym_b05_k09_c05",
             "--dry-run",
         ]
     )
     assert result.returncode == 0, result.stderr
     # One --scenario clause per scenario in the driver invocation.
     assert "--scenario 'rest_trap'" in result.stdout
-    assert "--scenario 'asym_b05_k05_c09'" in result.stdout
+    assert "--scenario 'asym_b05_k09_c05'" in result.stdout
     # The loop is chained with &&; verify we have at least one chain so an
     # early failure aborts the rest (set -e + && in the wrapper).
     driver_section = result.stdout.split("Driver command")[-1]
@@ -270,12 +270,12 @@ def test_unknown_flag_exits_nonzero_with_message() -> None:
         (
             [
                 "--scenarios",
-                "rest_trap,asym_b05_k05_c09,asym_b05_k09_c09",
+                "rest_trap,asym_b05_k09_c05,asym_b09_k09_c05",
             ],
             [
                 "--scenario 'rest_trap'",
-                "--scenario 'asym_b05_k05_c09'",
-                "--scenario 'asym_b05_k09_c09'",
+                "--scenario 'asym_b05_k09_c05'",
+                "--scenario 'asym_b09_k09_c05'",
             ],
         ),
     ],

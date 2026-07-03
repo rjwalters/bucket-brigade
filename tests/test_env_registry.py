@@ -43,6 +43,13 @@ class TestRegistryShape:
         assert "minimal_specialization-v1" in ids
         assert "rest_trap-v1" in ids
 
+    def test_asym_phase_diagram_ids_present(self):
+        """Issue #435: the promoted asymmetric_only phase-diagram cells must
+        have frozen -v1 IDs listed by ``list_versioned_scenarios()``."""
+        ids = list_versioned_scenarios()
+        assert "asym_b05_k09_c05-v1" in ids
+        assert "asym_b09_k09_c05-v1" in ids
+
     def test_list_envs_matches_registry_keys(self):
         """``bucket_brigade.list_envs()`` must agree with the registry keys."""
         assert bucket_brigade.list_envs() == sorted(SCENARIO_VERSIONS.keys())
@@ -251,3 +258,86 @@ class TestDocstringPolicy:
         assert "observation space" in doc
         assert "action space" in doc
         assert "reward function" in doc
+
+    def test_registry_module_documents_cell_promotion(self):
+        """Issue #435 acceptance: the cell-promotion convention must be
+        documented in the registry module docstring."""
+        from bucket_brigade.envs import registry as reg_mod
+
+        doc = reg_mod.__doc__
+        assert doc is not None
+        assert "Promoting a phase-diagram cell" in doc
+        assert "asym_bBB_kKK_cCC" in doc
+        assert "make_phase_diagram_scenario" in doc
+
+
+class TestAsymPhaseDiagramCellParity:
+    """Issue #435: the promoted asymmetric_only cells must be bit-identical
+    to the on-the-fly phase-diagram construction.
+
+    The #358 NE phase diagram built each cell as
+    ``make_phase_diagram_scenario(beta, kappa, c)`` — a
+    ``dataclasses.replace`` on the ``minimal_specialization`` base
+    overriding ONLY β/κ/c. The named registration must reproduce that
+    construction field-for-field, otherwise the cell's NE artifacts (team
+    payoff 72.0095/episode, 14/20 convergence, frozen genome files under
+    ``bucket_brigade/baselines/release/local/nash/phase_diagram/``) stop
+    being citable for the named scenario.
+    """
+
+    # (name, beta, kappa, c) — the two asymmetric_only cells from the
+    # committed phase diagram (experiments/nash/phase_diagram/results.json).
+    CELLS = [
+        ("asym_b05_k09_c05", 0.5, 0.9, 0.5),
+        ("asym_b09_k09_c05", 0.9, 0.9, 0.5),
+    ]
+
+    @pytest.mark.parametrize("name,beta,kappa,c", CELLS)
+    def test_named_scenario_bit_identical_to_cell(self, name, beta, kappa, c):
+        import dataclasses
+
+        from bucket_brigade.baselines.per_cell import make_phase_diagram_scenario
+        from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+
+        named = get_scenario_by_name(name, num_agents=DEFAULT_NUM_AGENTS)
+        cell = make_phase_diagram_scenario(beta, kappa, c)
+        assert dataclasses.asdict(named) == dataclasses.asdict(cell), (
+            f"{name} is not field-for-field identical to "
+            f"make_phase_diagram_scenario({beta}, {kappa}, {c}) — the NE "
+            "phase-diagram artifacts are no longer citable for this name."
+        )
+
+    @pytest.mark.parametrize("name,beta,kappa,c", CELLS)
+    def test_frozen_id_bit_identical_to_cell(self, name, beta, kappa, c):
+        import dataclasses
+
+        from bucket_brigade.baselines.per_cell import make_phase_diagram_scenario
+
+        frozen = get_scenario_by_id(f"{name}-v1")
+        cell = make_phase_diagram_scenario(beta, kappa, c)
+        assert dataclasses.asdict(frozen) == dataclasses.asdict(cell)
+
+    @pytest.mark.parametrize("name,beta,kappa,c", CELLS)
+    def test_only_beta_kappa_c_differ_from_base(self, name, beta, kappa, c):
+        """The named cell must differ from minimal_specialization in exactly
+        the three overridden fields — any extra drift means it is no longer
+        a phase-diagram cell of the minspec base family."""
+        import dataclasses
+
+        from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
+
+        named = dataclasses.asdict(get_scenario_by_name(name, num_agents=4))
+        base = dataclasses.asdict(
+            get_scenario_by_name("minimal_specialization", num_agents=4)
+        )
+        differing = {k for k in base if named[k] != base[k]}
+        assert differing == {
+            "prob_fire_spreads_to_neighbor",
+            "prob_solo_agent_extinguishes_fire",
+        } | ({"cost_to_work_one_night"} if c != base["cost_to_work_one_night"] else set()), (
+            f"{name} differs from minimal_specialization in unexpected "
+            f"fields: {sorted(differing)}"
+        )
+        assert named["prob_fire_spreads_to_neighbor"] == beta
+        assert named["prob_solo_agent_extinguishes_fire"] == kappa
+        assert named["cost_to_work_one_night"] == c
