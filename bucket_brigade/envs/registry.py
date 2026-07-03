@@ -71,6 +71,7 @@ from .scenarios_generated import (
     default_scenario,
     deceptive_calm_scenario,
     early_containment_scenario,
+    easy_scenario,
     greedy_neighbor_scenario,
     hard_scenario,
     minimal_specialization_scenario,
@@ -123,6 +124,10 @@ _ScenarioFactory = Callable[[int], Scenario]
 SCENARIO_VERSIONS: Dict[str, _ScenarioFactory] = {
     # Default-family scenarios (covered by most diagnostic suites).
     "default-v1": default_scenario,
+    # ``easy-v1`` added by issue #437 so every scenario with a canonical
+    # random baseline (``SCENARIO_RANDOM_BASELINES``) has a frozen ID the
+    # parity manifest can key on. New ``-v1`` entries never require a bump.
+    "easy-v1": easy_scenario,
     "hard-v1": hard_scenario,
     # Named test scenarios from ``definitions/scenarios.json``.
     "trivial_cooperation-v1": trivial_cooperation_scenario,
