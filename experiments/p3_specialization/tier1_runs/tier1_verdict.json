@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "thresholds": {
     "partial_lower": 0.2,
     "partial_upper": 0.49,
@@ -7,96 +7,95 @@
   },
   "cells": [
     {
-      "trainer": "het_ppo",
-      "scenario": "rest_trap",
-      "gap_closed_mean": 6.6394274704858915,
-      "gap_closed_std": 0.12368925897531559,
-      "gap_closed_per_seed": [
-        6.7068494610968035,
-        6.7899591017139045,
-        6.652135465215021,
-        6.649288289346877,
-        6.748193733773329,
-        6.622083519298218,
-        6.732935561850932,
-        6.319210493488265,
-        6.586252879164297,
-        6.631388140640798,
-        6.805166668147802,
-        6.715171903964443,
-        6.455381223076234,
-        6.641984539076981,
-        6.622277507004129,
-        6.78699569779291,
-        6.570818308028943,
-        6.573315976885059,
-        6.433038488477418,
-        6.746102451675461
-      ],
-      "n_seeds_completed": 20,
-      "n_seeds_failed": 0,
-      "verdict_tier": "closed",
-      "verdict_reason": "gap_closed_mean = 6.639 >= 0.88"
-    },
-    {
       "trainer": "ippo",
       "scenario": "minimal_specialization",
-      "gap_closed_mean": 0.11280246414064482,
-      "gap_closed_std": 0.0740555437212949,
+      "gap_closed_mean": 0.12479746833220985,
+      "gap_closed_std": 0.08193034117463785,
       "gap_closed_per_seed": [
-        0.19579564927646603,
-        0.12662705873952781,
-        0.015984684405940617
+        0.2166158472362655,
+        0.14009212009184363,
+        0.01768443766852042
       ],
+      "gap_source": "scenario",
+      "uplift_over_random_mean": 7.405481770833333,
+      "uplift_over_random_std": 4.861746445303011,
+      "gap_closed_minspec_legacy_mean": 0.12479746833220985,
       "n_seeds_completed": 3,
       "n_seeds_failed": 0,
       "verdict_tier": "insufficient",
-      "verdict_reason": "gap_closed_mean = 0.113 < 0.2"
+      "verdict_reason": "gap_closed_mean = 0.125 < 0.2"
     },
     {
       "trainer": "influence",
       "scenario": "minimal_specialization",
-      "gap_closed_mean": 0.10816682930312256,
-      "gap_closed_std": 0.032300660061601316,
+      "gap_closed_mean": 0.11966889692871581,
+      "gap_closed_std": 0.03573539489457578,
       "gap_closed_per_seed": [
-        0.1333670506473723,
-        0.1285623333968011,
-        0.06257110386519428
+        0.14754881825075822,
+        0.14223318482473868,
+        0.06922468771065056
       ],
+      "gap_source": "scenario",
+      "uplift_over_random_mean": 7.101152343749997,
+      "uplift_over_random_std": 2.1205383330441268,
+      "gap_closed_minspec_legacy_mean": 0.11966889692871581,
       "n_seeds_completed": 3,
       "n_seeds_failed": 0,
       "verdict_tier": "insufficient",
-      "verdict_reason": "gap_closed_mean = 0.108 < 0.2"
+      "verdict_reason": "gap_closed_mean = 0.120 < 0.2"
     },
     {
       "trainer": "hca",
       "scenario": "minimal_specialization",
-      "gap_closed_mean": 0.07320346217314033,
-      "gap_closed_std": 0.12593507397537304,
+      "gap_closed_mean": 0.0809876523705201,
+      "gap_closed_std": 0.13932655218205664,
       "gap_closed_per_seed": [
-        -0.09516791222391471,
-        0.20766612718964197,
-        0.10711217155369372
+        -0.1052877222362656,
+        0.22974858864172557,
+        0.11850209070610032
       ],
+      "gap_source": "scenario",
+      "uplift_over_random_mean": 4.805807291666663,
+      "uplift_over_random_std": 8.267637606483241,
+      "gap_closed_minspec_legacy_mean": 0.0809876523705201,
       "n_seeds_completed": 3,
       "n_seeds_failed": 0,
       "verdict_tier": "insufficient",
-      "verdict_reason": "gap_closed_mean = 0.073 < 0.2"
+      "verdict_reason": "gap_closed_mean = 0.081 < 0.2"
     },
     {
       "trainer": "lola",
       "scenario": "minimal_specialization",
-      "gap_closed_mean": 0.004068093107387671,
-      "gap_closed_std": 0.047704636808460425,
+      "gap_closed_mean": 0.004500679347826102,
+      "gap_closed_std": 0.052777374561432874,
       "gap_closed_per_seed": [
-        0.025188023610053293,
-        -0.061981150038080746,
-        0.048997405750190466
+        0.027866426525109518,
+        -0.06857200033704079,
+        0.05420761185540958
       ],
+      "gap_source": "scenario",
+      "uplift_over_random_mean": 0.26707031250000074,
+      "uplift_over_random_std": 3.131809406475427,
+      "gap_closed_minspec_legacy_mean": 0.004500679347826102,
       "n_seeds_completed": 3,
       "n_seeds_failed": 0,
       "verdict_tier": "insufficient",
-      "verdict_reason": "gap_closed_mean = 0.004 < 0.2"
+      "verdict_reason": "gap_closed_mean = 0.005 < 0.2"
+    },
+    {
+      "trainer": "het_ppo",
+      "scenario": "rest_trap",
+      "gap_closed_mean": null,
+      "gap_closed_std": null,
+      "gap_closed_per_seed": null,
+      "gap_source": "degenerate_reference",
+      "uplift_over_random_mean": 3.3936260986328053,
+      "uplift_over_random_std": 7.339720627595225,
+      "gap_closed_minspec_legacy_mean": 6.6394274704858915,
+      "n_seeds_completed": 20,
+      "n_seeds_failed": 0,
+      "verdict_tier": "not_scored_degenerate_reference",
+      "verdict_reason": "reference pair degenerate (social_trap_ne_below_random): fraction ladder not applicable; uplift_over_random = +3.394/step vs random = 302.87/step"
     }
   ]
 }

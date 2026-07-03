@@ -18,6 +18,11 @@ Currently exports:
   mirroring the value column of
   ``experiments/p3_specialization/diagnostics/random_baseline.py``'s
   ``SCENARIO_CITED_VALUES`` for non-torch consumers (issue #323).
+- :data:`SCENARIO_GAP_REFERENCES` -- sparse per-scenario ``(random, upper
+  reference)`` pairs for the Tier-1 ``gap_closed`` metric (issue #434). Only
+  scenarios with hand-audited measurement provenance are listed; consumers
+  must treat absent scenarios as *not scorable* rather than falling back to
+  the MINSPEC constants (that silent fallback was the #434 bug).
 
 For the **frozen baseline distribution** (archetype pickles, Nash vectors,
 PPO checkpoints shipped with the pip wheel + mirrored to HuggingFace), see
@@ -127,6 +132,80 @@ SCENARIO_RANDOM_BASELINES: dict[str, float] = {
     "positional_default": 250.73,
 }
 
+# ---------------------------------------------------------------------------
+# Per-scenario gap_closed reference pairs (Tier-1 verdict ladder, issue #434)
+# ---------------------------------------------------------------------------
+#
+# ``gap_closed = (trained - random) / (reference - random)`` is only
+# meaningful when a scenario has BOTH a measured uniform-random baseline and
+# a measured *upper* reference that beats random. This table is deliberately
+# **sparse**: an entry exists only when the pair has hand-audited measurement
+# provenance. Consumers (``experiments/p3_specialization/run_tier1_cell.py``)
+# must resolve scenarios in three ways:
+#
+# 1. Entry with ``reference > random``  -> valid pair, fraction ladder applies.
+# 2. Entry with ``reference = None`` (or ``reference <= random``) -> the
+#    reference is *degenerate*: the fraction ladder MUST NOT be applied.
+#    Report the scenario-scale ``uplift_over_random`` instead.
+# 3. No entry -> not scorable. Do NOT fall back to the MINSPEC constants:
+#    named scenarios differ by ~400 per-step reward units, so a MINSPEC-scale
+#    fraction is never meaningful off ``minimal_specialization`` (that silent
+#    fallback produced the vacuous ``gap_closed ~ 6.6`` on rest_trap, #434).
+#
+# Entry provenance:
+#
+#   minimal_specialization:
+#     ``(MINSPEC_RANDOM, MINSPEC_SPECIALIST)`` — see the derivation comments
+#     above. ``reference_kind = "specialist_homogeneous"`` (hand-coded
+#     ``SpecialistPolicy``, n=10000, issue #416 / PR #415).
+#
+#   rest_trap:
+#     ``random = SCENARIO_RANDOM_BASELINES["rest_trap"] = 302.87``/step
+#     (issue #237 derivation, n=1000 episodes). Upper reference: **None**
+#     (``degenerate_reason = "social_trap_ne_below_random"``). The frozen
+#     Nash equilibrium (3×free_rider + 1×firefighter,
+#     ``bucket_brigade/baselines/release/local/nash/rest_trap-v1.json``)
+#     has ``team_payoff = 2984.04`` **per episode** — a per-EPISODE quantity,
+#     while gap metrics are per-STEP. Do not divide by a guessed night count;
+#     the bound "<= 248.7/step at >= 12 nights" is sufficient to establish
+#     that the NE sits *below* the 302.87/step random baseline. rest_trap's
+#     equilibrium is team-suboptimal by construction (a social trap), so a
+#     ``(trained - random)/(NE - random)`` fraction has a negative/degenerate
+#     denominator, and no committed policy reference beats random there
+#     (het_ppo's trained trailing-5 is 306.26 vs 302.87, #429 / PR #433).
+#     Measuring a proper upper reference is a remote-compute follow-up.
+#
+# Drift guard: ``tests/test_baselines_constants.py`` asserts the ``random``
+# side of every entry matches ``SCENARIO_RANDOM_BASELINES`` and that the
+# minimal_specialization entry matches ``MINSPEC_RANDOM``/``MINSPEC_SPECIALIST``.
+SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
+    "minimal_specialization": {
+        "random": MINSPEC_RANDOM,
+        "reference": MINSPEC_SPECIALIST,
+        "reference_kind": "specialist_homogeneous",
+        "provenance": (
+            "MINSPEC_RANDOM (issue #237 / PR #244, n=1000x5 seeds) and "
+            "MINSPEC_SPECIALIST (issue #416 re-derivation, n=10000 at the "
+            "canonical cell b=0.25 k=0.50 c=0.50)."
+        ),
+    },
+    "rest_trap": {
+        "random": SCENARIO_RANDOM_BASELINES["rest_trap"],
+        "reference": None,
+        "reference_kind": None,
+        "degenerate_reason": "social_trap_ne_below_random",
+        "provenance": (
+            "Frozen NE (rest_trap-v1.json, 3xfree_rider + 1xfirefighter) has "
+            "team_payoff = 2984.04 PER EPISODE (<= 248.7/step at >= 12 "
+            "nights), below the 302.87/step random baseline: rest_trap's "
+            "equilibrium is team-suboptimal by construction (social trap). "
+            "No committed policy reference beats random on this scenario "
+            "(#429 / #434); report uplift_over_random instead of a gap "
+            "fraction."
+        ),
+    },
+}
+
 __all__ = [
     "SpecialistPolicy",
     "specialist_action",
@@ -134,4 +213,5 @@ __all__ = [
     "MINSPEC_RANDOM",
     "MINSPEC_SPECIALIST",
     "SCENARIO_RANDOM_BASELINES",
+    "SCENARIO_GAP_REFERENCES",
 ]
