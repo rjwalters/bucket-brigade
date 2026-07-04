@@ -9,6 +9,15 @@ parameter sweep over:
   - κ = ``prob_solo_agent_extinguishes_fire`` (single-agent extinguish prob)
   - c = ``cost_to_work_one_night`` (work cost)
 
+.. warning:: **β is inert in bernoulli extinguish mode** (issue #442): the
+   engine ruins every still-burning house before the spread phase runs and
+   the spread phase draws zero RNG, so cells differing only in β are repeat
+   solves of the same game. Future bernoulli-mode sweeps should pass a
+   single ``--beta-values`` entry (canonical: 0.5) — a 3-value β axis
+   triples compute for zero information. See
+   ``experiments/nash/phase_diagram/beta_residuals.md`` and the β-axis
+   policy section of ``experiments/nash/phase_diagram/LAUNCH_RUNBOOK.md``.
+
 Per cell we run the same Heterogeneous Double Oracle search as
 ``compute_nash_heterogeneous.py`` and classify the converged equilibrium
 profile into one of four verdicts:

@@ -299,6 +299,18 @@ def render_markdown(data: dict[str, Any], out_md: Path) -> None:
             f"simulations={params.get('num_simulations')}, "
             f"ε={params.get('epsilon')}\n"
         )
+    if len(grid.get("beta_values", [])) > 1:
+        lines.append(
+            "\n> **β-inertness caveat (issue #442)**: in bernoulli extinguish "
+            "mode β (`prob_fire_spreads_to_neighbor`) is inert — burning houses "
+            "are ruined before the spread phase runs and the spread phase draws "
+            "zero RNG, so rows differing only in β are *repeat solves of the "
+            "same game*. Any cross-β payoff/verdict difference below is "
+            "double-oracle solver nondeterminism, quantified in "
+            "`experiments/nash/phase_diagram/beta_residuals.md`. Future "
+            "bernoulli-mode sweeps should collapse the β axis (see "
+            "`LAUNCH_RUNBOOK.md`).\n"
+        )
     lines.append("\n")
     lines.append("| c | β | κ | verdict | equilibrium_payoff | convergence_rate |\n")
     lines.append("|---|---|---|---|---|---|\n")
