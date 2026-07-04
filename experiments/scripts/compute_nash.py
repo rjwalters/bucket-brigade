@@ -33,6 +33,60 @@ from bucket_brigade.agents.archetypes import (
 )
 
 
+# Default initial pool used by DoubleOracle.solve() when no seeds are given.
+# Kept in sync with bucket_brigade/equilibrium/double_oracle.py (solve()).
+DEFAULT_ARCHETYPE_POOL = [
+    ("firefighter", FIREFIGHTER_PARAMS),
+    ("free_rider", FREE_RIDER_PARAMS),
+    ("hero", HERO_PARAMS),
+    ("coordinator", COORDINATOR_PARAMS),
+]
+
+GENOME_LENGTH = 10
+
+
+def load_seed_profiles(path: Path) -> list[tuple[str, np.ndarray]]:
+    """Load seed strategy profiles from a JSON file (issue #445).
+
+    Expected format: a JSON list of objects, each with a ``name`` (str)
+    and a ``genome`` (list of 10 floats in [0, 1]):
+
+        [
+          {"name": "specialist_owned_ff", "genome": [1.0, 0.2, ...]},
+          ...
+        ]
+
+    Returns a list of (name, genome) tuples. Raises ValueError on
+    malformed entries so a bad seeds file fails fast before compute.
+    """
+    with open(path) as f:
+        data = json.load(f)
+
+    if not isinstance(data, list) or not data:
+        raise ValueError(f"Seed profiles file {path} must be a non-empty JSON list")
+
+    profiles: list[tuple[str, np.ndarray]] = []
+    for i, entry in enumerate(data):
+        if not isinstance(entry, dict) or "name" not in entry or "genome" not in entry:
+            raise ValueError(
+                f"Seed profile entry {i} in {path} must be an object with "
+                f"'name' and 'genome' keys, got: {entry!r}"
+            )
+        genome = np.asarray(entry["genome"], dtype=np.float64)
+        if genome.shape != (GENOME_LENGTH,):
+            raise ValueError(
+                f"Seed profile '{entry['name']}' must have a genome of length "
+                f"{GENOME_LENGTH}, got shape {genome.shape}"
+            )
+        if np.any(genome < 0.0) or np.any(genome > 1.0):
+            raise ValueError(
+                f"Seed profile '{entry['name']}' has genome values outside [0, 1]"
+            )
+        profiles.append((str(entry["name"]), genome))
+
+    return profiles
+
+
 def classify_strategy(strategy: np.ndarray) -> str:
     """Classify a strategy into an archetype category."""
     # Extract key parameters
@@ -80,6 +134,7 @@ def compute_nash_equilibrium(
     max_iterations: int = 50,
     epsilon: float = 0.01,
     seed: Optional[int] = 42,
+    seed_profiles_path: Optional[Path] = None,
     verbose: bool = True,
 ):
     """Compute Nash equilibrium using Double Oracle algorithm."""
@@ -105,6 +160,29 @@ def compute_nash_equilibrium(
     print(f"  Seed: {seed}")
     print()
 
+    # Build the initial strategy pool (issue #445: optional seeding).
+    # When --seed-profiles is given, the initial restart population is the
+    # default archetype pool PLUS the seed genomes from the JSON file.
+    # When absent, behavior is identical to the pre-#445 script (the solver
+    # falls back to its own default archetype pool).
+    initial_strategies = None
+    seed_profile_names: list[str] = []
+    if seed_profiles_path is not None:
+        seeds = load_seed_profiles(seed_profiles_path)
+        seed_profile_names = [name for name, _ in seeds]
+        named_pool = list(DEFAULT_ARCHETYPE_POOL) + seeds
+        initial_strategies = [g.copy() for _, g in named_pool]
+
+        print("=" * 80)
+        print(f"Seeded Initial Strategy Pool ({len(named_pool)} strategies)")
+        print("=" * 80)
+        print(f"Seed profiles file: {seed_profiles_path}")
+        for i, (name, genome) in enumerate(named_pool):
+            origin = "archetype" if i < len(DEFAULT_ARCHETYPE_POOL) else "SEED"
+            genome_str = ", ".join(f"{v:.3f}" for v in genome)
+            print(f"  [{i}] ({origin}) {name}: [{genome_str}]")
+        print()
+
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -125,7 +203,7 @@ def compute_nash_equilibrium(
 
     # Solve for Nash equilibrium
     start_time = time.time()
-    equilibrium = solver.solve()
+    equilibrium = solver.solve(initial_strategies=initial_strategies)
     elapsed_time = time.time() - start_time
 
     print()
@@ -253,6 +331,12 @@ def compute_nash_equilibrium(
             "max_iterations": max_iterations,
             "epsilon": epsilon,
             "seed": seed,
+            "seed_profiles": {
+                "file": str(seed_profiles_path),
+                "names": seed_profile_names,
+            }
+            if seed_profiles_path is not None
+            else None,
         },
         "equilibrium": {
             "type": equilibrium_type,
@@ -306,6 +390,17 @@ def main():
     )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument(
+        "--seed-profiles",
+        type=Path,
+        default=None,
+        help=(
+            "JSON file of seed strategy profiles to inject into the initial "
+            "Double Oracle strategy pool (issue #445). Format: list of "
+            '{"name": str, "genome": [10 floats in 0..1]} objects. Seeds are '
+            "appended to the default archetype pool."
+        ),
+    )
+    parser.add_argument(
         "--output-dir", type=Path, default=None, help="Output directory"
     )
     parser.add_argument(
@@ -335,6 +430,7 @@ def main():
         max_iterations=args.max_iterations,
         epsilon=args.epsilon,
         seed=args.seed,
+        seed_profiles_path=args.seed_profiles,
         verbose=not args.quiet,
     )
 

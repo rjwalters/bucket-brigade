@@ -1,0 +1,32 @@
+[
+  {
+    "name": "specialist_owned_house_firefighter",
+    "description": "Genome mapping of the scripted battery winner 'specialist' (owned-house firefighter x4, 386.60/step, PR #440). Rests unless own house is burning: work intent = 0.2 base + 0.5 own_house_priority bonus = 0.7 > 0.5 signal threshold when own house burns, 0.2 otherwise (altruism 0 means never works off-signal). own_house_priority=1.0 dominates house choice so it targets its own house.",
+    "source": "experiments/p3_specialization/scripted_battery/rest_trap.json (winner: specialist)",
+    "genome": [1.0, 0.2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  },
+  {
+    "name": "firefighter_any_full_work",
+    "description": "Genome mapping of battery member 'firefighter[any,work=1.00]x4' (384.19/step). Always works (work_tendency=1.0, honesty=1.0), prefers burning houses and burning neighbors over own house.",
+    "source": "experiments/p3_specialization/scripted_battery/rest_trap.json",
+    "genome": [1.0, 1.0, 0.8, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  },
+  {
+    "name": "conditional_firefighter_fire_responsive",
+    "description": "Fire-responsive variant: base work intent 0, but risk_aversion=1.0 scales intent with the burning fraction and altruism=1.0 converts off-signal intent into work probability. Approximates 'work only when fires exist somewhere'.",
+    "source": "diversity seed (approximates firefighter[any] conditional behavior)",
+    "genome": [1.0, 0.0, 0.8, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  },
+  {
+    "name": "always_rest",
+    "description": "Genome mapping of battery member 'always_rest' (288.55/step). Work intent = 0 * (1 - rest_bias=1.0) = 0; signal rest; off-signal work probability = intent * altruism = 0. Never works.",
+    "source": "experiments/p3_specialization/scripted_battery/rest_trap.json",
+    "genome": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+  },
+  {
+    "name": "uniform_random",
+    "description": "Genome mapping of battery baseline 'uniform' (305.56/step). exploration_rate=1.0 overrides house and mode choice with uniform random every night.",
+    "source": "experiments/p3_specialization/scripted_battery/rest_trap.json",
+    "genome": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 0.5, 0.5]
+  }
+]
