@@ -94,6 +94,16 @@ Every committed profile (13 unique profile/column combinations) was evaluated un
   update to the registered `asym_b05_k09_c05` / `asym_b09_k09_c05`
   gap references (`SCENARIO_GAP_REFERENCES`) should ride that
   coordinated re-solve, not this analysis.
+  **Outcome (2026-07-04)**: #445 resolved the rest_trap *scenario*
+  (β = 0.05, κ = 0.95, c = 0.20) — symmetric DO cycles; canonical
+  characterization stays the asymmetric FR×3+FF NE; anchors unchanged
+  (`experiments/nash/rest_trap_seeded_do/RESULTS.md`). The
+  phase-diagram-cell question deferred above (is FF|hero|hero|FF an
+  ε-NE at κ = 0.90, c = 0.50?) is **still open**; the harnesses to
+  answer it now exist
+  (`experiments/scripts/test_mixture_exploitability.py`,
+  `test_specialist_exploitability.py --profile-file`) and need a
+  follow-up issue with its own compute budget.
 - **Issue #429** — het_ppo Phase 2 gap ladder consumes the registered
   cells' NE payoff as denominator; see the interpretation above.
 - **PR #448** — the workshop paper carries the matching β-inertness
