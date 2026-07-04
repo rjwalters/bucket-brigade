@@ -1,0 +1,9 @@
+{
+  "description": "Owned-house firefighter x4 (scripted battery winner 'specialist', 386.60/step per PR #440), mapped onto 10-dim heuristic genomes via experiments/nash/seeds/rest_trap_battery_seeds.json. Input profile for the per-position exploitability bound of issue #445 (test_specialist_exploitability.py --profile-file).",
+  "strategy_profile": [
+    {"genome": [1.0, 0.2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]},
+    {"genome": [1.0, 0.2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]},
+    {"genome": [1.0, 0.2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]},
+    {"genome": [1.0, 0.2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
+  ]
+}
