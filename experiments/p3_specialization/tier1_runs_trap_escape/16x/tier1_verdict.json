@@ -1,0 +1,44 @@
+{
+  "schema_version": 3,
+  "thresholds": {
+    "partial_lower": 0.2,
+    "partial_upper": 0.49,
+    "closed": 0.88
+  },
+  "cells": [
+    {
+      "trainer": "het_ppo",
+      "scenario": "rest_trap",
+      "gap_closed_mean": null,
+      "gap_closed_std": null,
+      "gap_closed_per_seed": null,
+      "gap_source": "degenerate_reference",
+      "uplift_over_random_mean": 4.961892700195304,
+      "uplift_over_random_std": 6.586260362156591,
+      "trap_verdict": "escaped_trap",
+      "trap_verdict_reason": "trailing-5 mean 307.83/step, seed-bootstrap 95% CI [305.00, 310.71]: CI lower bound clears the random anchor's measured 95% upper bound 304.31 (point 302.87), below the scripted_best anchor 387.03",
+      "gap_closed_minspec_legacy_mean": 6.665855960569519,
+      "n_seeds_completed": 20,
+      "n_seeds_failed": 0,
+      "verdict_tier": "not_scored_degenerate_reference",
+      "verdict_reason": "reference pair degenerate (social_trap_ne_below_random): fraction ladder not applicable; uplift_over_random = +4.962/step vs random = 302.87/step; trap_verdict = escaped_trap (trailing-5 mean 307.83/step, seed-bootstrap 95% CI [305.00, 310.71]: CI lower bound clears the random anchor's measured 95% upper bound 304.31 (point 302.87), below the scripted_best anchor 387.03)"
+    },
+    {
+      "trainer": "ippo",
+      "scenario": "rest_trap",
+      "gap_closed_mean": null,
+      "gap_closed_std": null,
+      "gap_closed_per_seed": null,
+      "gap_source": "degenerate_reference",
+      "uplift_over_random_mean": 4.121822814941401,
+      "uplift_over_random_std": 7.950369098165412,
+      "trap_verdict": "at_random",
+      "trap_verdict_reason": "trailing-5 mean 306.99/step, seed-bootstrap 95% CI [303.46, 310.39]: CI lower bound does not clear the random anchor's measured 95% upper bound 304.31 (point 302.87) but clears the NE per-step bound 248.67",
+      "gap_closed_minspec_legacy_mean": 6.6516990700192355,
+      "n_seeds_completed": 20,
+      "n_seeds_failed": 0,
+      "verdict_tier": "not_scored_degenerate_reference",
+      "verdict_reason": "reference pair degenerate (social_trap_ne_below_random): fraction ladder not applicable; uplift_over_random = +4.122/step vs random = 302.87/step; trap_verdict = at_random (trailing-5 mean 306.99/step, seed-bootstrap 95% CI [303.46, 310.39]: CI lower bound does not clear the random anchor's measured 95% upper bound 304.31 (point 302.87) but clears the NE per-step bound 248.67)"
+    }
+  ]
+}

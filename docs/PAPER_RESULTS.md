@@ -23,6 +23,7 @@ caveats. All commands assume:
 6. [PPO trainability sweep across NE-class cells (paper §4)](#6-ppo-trainability-sweep-across-ne-class-cells-paper-4)
 7. [Trap-escape verdict rule for social-trap scenarios (rest_trap first)](#7-trap-escape-verdict-rule-for-social-trap-scenarios-rest_trap-first)
 8. [het_ppo Phase 2 on the asymmetric_only cells: at_random](#8-het_ppo-phase-2-on-the-asymmetric_only-cells-at_random)
+9. [Trap-escape ladder rung 1: budget scaling on rest_trap (4×/16×)](#9-trap-escape-ladder-rung-1-budget-scaling-on-rest_trap-416)
 
 ---
 
@@ -543,6 +544,96 @@ uv run python experiments/p3_specialization/aggregate_tier1.py
 #435 / PR #441 (frozen asym scenarios + measured random baseline), #442 /
 PR #450 (NE-denominator caveat), PR #433 (Phase 1), #445 (seeded DO retry
 that will settle the denominator).
+
+---
+
+## 9. Trap-escape ladder rung 1: budget scaling on rest_trap (4×/16×)
+
+**Question** (issue #444, rung 1 of the trap-escape ladder): is the
+rest_trap at-random plateau (§7) a training-budget artifact? het_ppo and
+ippo re-run at 4× and 16× the tier-1 budget (200 / 800 iterations × 2048
+rollout steps vs the standard 50 × 2048), 20 seeds (42–61) per cell, host
+alc-2, train commit `ed0555af`. Budget is encoded in the artifact **root**
+(`tier1_runs_trap_escape/{4x,16x}/`), not the cell name, so the standard
+`--summarize-only` + `aggregate_tier1.py --tier1-root` pipeline applies
+per root unchanged.
+
+**Result — mostly no, with one marginal statistical escape.** Anchors as
+in §7 (random point 302.87, measured 95% upper bound 304.31,
+`scripted_best` 386.60 [386.17, 387.03]); values are trailing-5 per-step
+team reward with seed-bootstrap 95% CIs:
+
+| Budget | Trainer | trailing-5 mean | 95% CI | uplift_over_random (±std, n=20) | trap verdict |
+|---|---|---|---|---|---|
+| 1× (§7) | het_ppo | 306.26 | [302.95, 309.33] | +3.39 ± 7.34 | `at_random` |
+| 4× | het_ppo | 307.66 | [304.03, 311.26] | +4.79 ± 8.36 | `at_random` |
+| 4× | ippo | 306.13 | [301.77, 310.68] | +3.26 ± 10.24 | `at_random` |
+| 16× | het_ppo | **307.83** | **[305.00, 310.71]** | +4.96 ± 6.59 | **`escaped_trap`** |
+| 16× | ippo | 306.99 | [303.46, 310.39] | +4.12 ± 7.95 | `at_random` |
+
+The 16× het_ppo cell is the first `escaped_trap` verdict recorded for any
+trainer on rest_trap: its CI lower bound clears the random anchor's
+measured 95% upper bound by +0.69/step, i.e. het_ppo at 16× budget is
+statistically distinguishable from random play. Read it honestly:
+
+- **No dose-response on the mean.** The plateau level is flat across
+  budgets (306.26 → 307.66 → 307.83; paired same-seed contrasts: 4×−1× =
+  +1.40 ± 4.79/step, t = +1.30; 16×−1× = +1.57 ± 4.80, t = +1.46; 16×−4×
+  = +0.17 ± 4.25, t = +0.18; ippo 16×−4× = +0.86 ± 4.70, t = +0.82 — all
+  n.s.). This extends §6b's flat-at-4× vanilla-PPO result to het_ppo,
+  ippo, and 16×.
+- **The verdict flip is variance-driven.** Extra budget tightens the seed
+  spread (het_ppo uplift std 8.36 → 6.59), marching the CI *lower bound*
+  up (302.95 → 304.03 → 305.00) around an unchanged mean: budget buys
+  seed consistency, not performance.
+- **The ~80/step learnability gap stands.** Mean uplift +4.96/step is
+  ≈ 6% of the measured 83.7/step scripted headroom; the best single seed
+  in all of rung 1 (4× het_ppo seed 61, trailing-5 325.84) captures ≈ 27%
+  of it and remains ≈ 61/step below `scripted_best`. No seed comes close.
+- **Multiplicity/CRN caveat**: the four cells share seed streams (seed 61
+  is the top seed in 3 of 4 cells), so they are CRN-coupled rather than
+  independent tests, and one of four 95%-CI tests crossing by 0.69/step
+  is weak stand-alone evidence. The rule (#436/#440) is pre-registered,
+  so the row stands as scored — as "marginally but significantly above
+  random", not as closing the trap.
+
+**Ladder decision**: #444's pre-registered stopping rule — any
+`escaped_trap` ends the ladder — fires at rung 1. Recipe: het_ppo
+(`--per-agent-init-seed-offset 1000`) on rest_trap, 800 iterations × 2048
+rollout steps, 20 seeds. Rungs 2–4 (exploration variants, demonstration
+seeding, PBT) are not run under this issue; the §7 hardness headline (no
+gradient method captures more than a few percent of the scripted
+headroom) is unchanged and, if anything, sharpened: 16× compute buys
+statistical separation from random but no progress toward the specialist
+solution.
+
+**Artifacts**:
+- Per-seed runs + cell summaries + per-root verdict tables:
+  [`experiments/p3_specialization/tier1_runs_trap_escape/`](../experiments/p3_specialization/tier1_runs_trap_escape/)
+  (see its README for layout; caveats in each root's
+  `tier1_verdict_notes.md`)
+
+**Reproduce** (summaries only — no training; seconds locally):
+
+```bash
+for spec in "4x:200" "16x:800"; do
+  root=${spec%%:*}; iters=${spec##*:}
+  for tr in het_ppo ippo; do
+    uv run python experiments/p3_specialization/run_tier1_cell.py \
+      --trainer $tr --scenario rest_trap \
+      --seeds 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 \
+      --num-iterations $iters --summarize-only \
+      --output-root experiments/p3_specialization/tier1_runs_trap_escape/$root
+  done
+  uv run python experiments/p3_specialization/aggregate_tier1.py \
+    --tier1-root experiments/p3_specialization/tier1_runs_trap_escape/$root
+done
+```
+
+**Source**: issue #444 (ladder design + stopping rule; launch and results
+comments), PR #440 / #436 (trap verdict rule + anchors), PR #438
+(scenario-aware gap), §6b (4× vanilla-PPO precedent), #356 (why tier-1
+trainers fail by construction).
 
 ---
 
