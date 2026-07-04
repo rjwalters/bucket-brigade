@@ -1,0 +1,136 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.5",
+  "critic_id": "pub-review",
+  "rubric": "anvil-pub-v2",
+  "scores": [
+    {
+      "id": "rigor",
+      "name": "Rigor of method / argument",
+      "score": 5,
+      "max": 6,
+      "justification": "Section 3 derives closed-form boundary inequalities (S)/(A)/(C) via single-house mean-field reduction with explicit tilde-A = A*rho = 36.24. 3-10x quantitative gap owned with three named systematic biases; new Appendix B Section B.5 expands to five biases (adds beta-independence-as-leading-order and single-stage-vs-multi-stage SPE). Section 4 adds explicit ordering-not-significance disclosure with per-class std (0.21-0.44) vs class-mean separations (0.073, 0.048, 0.108) and names cross-class 4x-budget sweep as the natural significance gate. One remaining rigor weakness: Appendix B Section B.2 small-q Taylor linearisation is not named as a bias source in Section B.5."
+    },
+    {
+      "id": "evidence",
+      "name": "Evidence sufficiency",
+      "score": 5,
+      "max": 6,
+      "justification": "Headline ordering rests on n=11/9/11/6 cells across four NE classes on the 37-cell PPO sweep (carried unchanged from v4). v5 adds inline Table 1 (per-kappa predicted-class share on the full 39-cell Nash grid: 0/9, 6/6, 6/9, 0/6, 7/9), giving a reader an inline view without flipping to the appendix. 4x-budget structural-failure disambiguation (-0.049 to -0.108 on no_convergence cells) is the right experiment for the claim. Per-class std comparable to class-mean separation remains a genuine weakness, but v5 now owns it in prose and names the cross-class 4x-budget sweep as the camera-ready significance gate."
+    },
+    {
+      "id": "clarity",
+      "name": "Clarity of contribution",
+      "score": 5,
+      "max": 5,
+      "justification": "Section 1 Contributions split (3a)/(3b) directly addresses v2 reviewer flag. (3a) protocol+results+4x-budget falsification; (3b) per-cell NE-anchored metric as standalone methodological contribution with single-cell-baseline-inverts-ordering finding named in the bullet directly. Conclusion (L698-702) carries the same separation. Abstract gives four NE classes, ordering, 3-10x gap, methodological-complement framing in one 270-word paragraph."
+    },
+    {
+      "id": "related_work",
+      "name": "Related-work positioning",
+      "score": 4,
+      "max": 5,
+      "justification": "Section 5 + Table 2 cover the six canonical MARL benchmarks honestly with year/agents/per-agent |A|/NE characterisability/coop-comp axes. Methodological-complement framing consistent. v5 does not regress dim 4 from v2. Held at 4/5 (not raised) for the same legacy-baseline reason as v2: no pub-litsearch sibling was run so the perspective-substrate bonus does not apply. No close prior work obviously omitted. Appendix A Section A.6 named-template attributions (Volunteer's Dilemma, Public Goods, Stag Hunt) ship without cite keys."
+    },
+    {
+      "id": "reproducibility",
+      "name": "Reproducibility",
+      "score": 5,
+      "max": 5,
+      "justification": "Two new appendices materially upgrade dim 5. Appendix A is a self-contained mathematical contract: state cardinality formula, seven-phase ordering with load-bearing comment, independent-workers extinguish formula, per-agent reward decomposition with round-robin ownership, Table 3 notation summary. Section A.7 explicitly says a reader who reimplements from this appendix alone in any language should obtain matching equilibrium structure. Appendix B sections B.1-B.3 spell out the (S)/(A)/(C) derivation line-by-line. Section 6 Reproducibility paragraph names pip install bucket-brigade, docs/PAPER_RESULTS.md, bucket_brigade/baselines/per_cell.py, experiments/nash/phase_diagram/per_cell_baselines.json, and GitHub URL. HuggingFace baselines disclosed as in-progress."
+    },
+    {
+      "id": "figures_tables",
+      "name": "Figure & table quality",
+      "score": 2,
+      "max": 4,
+      "justification": "Major regression from v2's 3/4. Two distinct rendering defects: (a) Figure 1 (phase_diagram.png, unchanged from v4) shows raw numerical payoff values inside heatmap cells (-9693, -648, +72) rather than the categorical regime labels the caption describes. Legend lists four regimes but the 'mixed' swatch is unused in the plotted c=0.5 panel. Two unsampled cells render as bare em-dashes. Reader cannot read off the four-regime story Section 3 prose makes. Also a static PNG with no source script in figures/src/. (b) Table 2 (benchmark comparison) overflows the right margin on rendered PDF page 7: 'Coop/comp' column header and entries are clipped at the page edge. Tables 1, 3, 4, 5 are clean; Figure 2 is fine."
+    },
+    {
+      "id": "prose",
+      "name": "Prose & structural quality",
+      "score": 3,
+      "max": 4,
+      "justification": "LaTeX compiles cleanly (3 pdflatex passes + bibtex per v4 audit, no regression in v5 source: no broken refs, no unresolved cites, no overfull boxes in body). Section flow canonical. One real prose-quality issue: Appendix B Section B.4 'Predicted vs. empirical phase table (7-cell preview)' is structurally empty - contains one lead-in sentence then immediately Section B.5 header; intended Table 5 floated to mid-page 17 inside Section B.5. Two body-to-appendix references promise content the appendix does not deliver: Section 3 L389 promises a 'per-cell predicted-vs-empirical table' in Appendix B but only the 7-cell preview Table 5 and per-kappa-band Table 4 exist. Section 2 L201 promises 'formal proofs' in Appendix A; appendix has formal specification but not formal proofs."
+    },
+    {
+      "id": "citations",
+      "name": "Citation hygiene",
+      "score": 5,
+      "max": 5,
+      "justification": "v5 fully resolves v4 audit M1 placeholder-citation flag: bbenvspec and bbnestructure @misc entries deleted; placeholder-convention comment block also removed. The 9 remaining cite keys (overcooked2019, meltingpot2021, hanabi2020, smac2019, smacv2_2023, magent2018, pettingzoo2021, ppo2017, mappo2022) all resolve in rendered PDF References. Every bib entry has full author/title/venue/year/arXiv ID set. No malformed entries; no [??] in PDF. Appendix A Section A.6 named-template attributions ship without cite keys per intentional informal-attribution style (changelog L53) but this is a minor not enough to deduct full point."
+    },
+    {
+      "id": "economy",
+      "name": "Rhetorical economy",
+      "score": 3,
+      "max": 4,
+      "justification": "Section 6 Threats merge (v4 two paragraphs to v5 one) is the right move and saves ~80 words. Section 4 Caveats compression real. Figure 1/2 caption polishes real. Net body rhetorical economy is high. The 3/4 score is driven by the appendices: at 247 + 294 source-markdown lines ported as appendix prose, Appendix A Section A.6 re-states Section 2 L195-203 with elaboration; Appendix B Section B.5 expands Section 3 three-bias list to five with the two added biases re-framing rather than introducing new evidence. A camera-ready that promoted the appendices to supplementary materials would let the body alone read tighter."
+    }
+  ],
+  "findings": [
+    {
+      "section": "figure_1",
+      "severity": "major",
+      "text": "phase_diagram.png renders raw numerical payoff values (-9693, -648, +72) inside heatmap cells rather than the four categorical regime labels (symmetric_only, mixed, asymmetric_only, no_convergence) the caption describes. Legend swatch for 'mixed' is unused in the plotted c=0.5 panel. Two unsampled cells render as bare em-dashes. The figure is the visual anchor for Section 3's headline claim about four regimes; a reader scanning the PDF cannot read off the four-regime story. Static PNG with no source script in figures/src/ - re-render is not one-command. Carry-forward from v4; not a v5 regression but a defect a workshop reviewer will see."
+    },
+    {
+      "section": "table_2",
+      "severity": "major",
+      "text": "Table 2 (benchmark comparison) right-margin overflow on rendered PDF page 7: 'Coop/comp' column header and entries ('coop', 'mixed', 'vs. scripted', 'per-scenario', 'mixed within cell') clip at the page edge. Fix path: narrow tabcolsep (currently 4pt), wrap longer cells, shorten column header to 'Coop', or move to table* if class supports two-column span."
+    },
+    {
+      "section": "section_3_ne",
+      "severity": "major",
+      "text": "Body L389 promises 'The per-cell predicted-vs-empirical table and the full bias accounting appear in Appendix B' but Appendix B contains only the 7-cell preview Table 5 and the per-kappa-band Table 4 (5 rows). No full 39-cell per-cell table exists in Appendix B. Either populate Section B.4 with the full per-cell breakdown the body promises or soften L389 to 'The 7-cell preview comparison and the full bias accounting appear in Appendix B.'"
+    },
+    {
+      "section": "appendix_b",
+      "severity": "major",
+      "text": "Section B.4 'Predicted vs. empirical phase table (7-cell preview)' is structurally empty - contains one lead-in sentence ('The 7-cell preview at c=0.5, rho=0.02 against the predicted verdict:') and then immediately Section B.5 header. Intended Table 5 has floated to mid-page 17 inside Section B.5 due to [h] placement. The Section B.4 / Section B.5 layout boundary reads as a layout accident. Fix: stronger float placement [!htbp] on Table 5, or absorb the Section B.4 lead-in + Table 5 into Section B.3 and renumber."
+    },
+    {
+      "section": "section_2_env",
+      "severity": "minor",
+      "text": "L201 promises 'formal proofs' in Appendix A. Appendix A Section A.6 contains informal-attribution descriptions of Volunteer's Dilemma / Public Goods / Stag Hunt as named limits - not formal proofs in the strict mathematical sense. Soften L201 to 'Formal specification and a complete notation table appear in Appendix A.'"
+    },
+    {
+      "section": "appendix_b",
+      "severity": "minor",
+      "text": "Section B.5 enumerates five sources of systematic bias while body Section 3 enumerates three. The expansion is a real value-add but a reader who reads body first will be momentarily confused. Add a bridge sentence at the top of Section B.5 noting that body Section 3 lists the three biases load-bearing for the kappa-threshold gap and Section B.5 expands to five with two derivation-level biases that do not affect qualitative ordering."
+    },
+    {
+      "section": "appendix_b",
+      "severity": "minor",
+      "text": "Section B.2 small-q Taylor linearisation (1-q(k))^T_min approx 1 - T_min*q(k) is not named as a bias source in Section B.5. Either add a sixth bias bullet or add one sentence to Section B.2 bounding the approximation error."
+    },
+    {
+      "section": "section_4_trainability",
+      "severity": "minor",
+      "text": "Compute disclosure (single 16-core host alc-2, approximately six hours) at L429-430 omits CPU model and memory footprint. Workshop-acceptable but workshop-minimally; carry-forward from v2 reviewer flag, not addressed in v5."
+    },
+    {
+      "section": "appendix_a",
+      "severity": "minor",
+      "text": "Section A.6 named-template attributions (Volunteer's Dilemma, Public Goods, Stag Hunt, free-rider, stochastic game) ship without cite keys. Changelog L53 flags this as deliberate informal-attribution style for the appendix; for camera-ready a workshop reviewer may expect at least one cite per named template."
+    },
+    {
+      "section": "section_1_introduction",
+      "severity": "minor",
+      "text": "Contributions paragraph L115-141 packs five items (1, 2, 3a, 3b, 4) plus framing sentence into 26 lines of dense prose. Consider breaking into an enumerate environment for at-a-glance scan."
+    },
+    {
+      "section": "abstract",
+      "severity": "minor",
+      "text": "L66 '9/37 PPO cells, both pure NE coexist' uses slash notation that reads as a fraction. Either '9 of 37' or just n=9 to disambiguate."
+    },
+    {
+      "section": "table_1",
+      "severity": "minor",
+      "text": "Table 1 Empirical distribution column uses abbreviated class names (collapse, symmetric, asymmetric, mixed) while body prose uses underscore form (no_convergence, symmetric_only, asymmetric_only, mixed). Defensible for table width; worth a footnote like 'abbreviated from symmetric_only etc. for column width.'"
+    }
+  ],
+  "critical_flags": [],
+  "total": 37,
+  "threshold": 35,
+  "verdict": "advance"
+}

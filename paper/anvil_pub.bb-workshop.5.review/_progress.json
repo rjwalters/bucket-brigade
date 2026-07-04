@@ -1,0 +1,11 @@
+{
+  "thread": "anvil_pub.bb-workshop",
+  "for_version": 5,
+  "phases": {
+    "review": {
+      "state": "done",
+      "started": "2026-06-13T14:30:00Z",
+      "completed": "2026-06-13T14:38:24Z"
+    }
+  }
+}

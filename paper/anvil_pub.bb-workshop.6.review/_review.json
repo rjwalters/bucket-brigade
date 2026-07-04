@@ -1,0 +1,86 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.6",
+  "critic_id": "pub-review",
+  "rubric": "anvil-pub-v2",
+  "kind": "scorecard",
+  "scorecard_kind": "human-verdict",
+  "verdict": "advance",
+  "block": false,
+  "threshold": 35,
+  "total": 40,
+  "max_total": 44,
+  "dimensions": [
+    {
+      "id": 1,
+      "name": "Rigor of method / argument",
+      "weight": 6,
+      "score": 5,
+      "justification": "Closed-form S/A/C derivation via single-house mean-field reduction; 3-10x quantitative gap owned with three named systematic biases (ring locality, per-agent ownership, heuristic-strategy approximation). v6 metric-consistency fix on §4 separations (now all on gap_closed_homogeneous: 0.001, 0.017, 0.082) makes the ordering-not-significance argument arithmetically clean — per-class mean within-cell std (≈0.21-0.44) now dwarfs all three separations by 3-200x. Held at 5/6 because the small-q(k) Taylor step in §B.2 is not named as a fifth systematic bias source."
+    },
+    {
+      "id": 2,
+      "name": "Evidence sufficiency",
+      "weight": 6,
+      "score": 5,
+      "justification": "Headline ordering rests on n=11/9/11/6 cells across four NE classes on 37-cell PPO sweep. Inline Table 1 (per-κ predicted-class share: 0/9, 6/6, 6/9, 0/6, 7/9) shows where the analytical prediction does and does not hit the modal empirical class. 4×-budget structural-failure disambiguation ($-0.049 → -0.108$) is the right experiment for the right claim. Held at 5/6 because per-class std is comparable to class-mean separation; the named cross-class 4×-budget sweep is the camera-ready significance gate."
+    },
+    {
+      "id": 3,
+      "name": "Clarity of contribution",
+      "weight": 5,
+      "score": 5,
+      "justification": "§1 Contributions split (3a)/(3b) directly addresses v2 reviewer's flag about per-cell baseline being buried. Abstract gives reader four NE classes, ordering, 3-10× gap, methodological-complement framing in one paragraph. Contribution is unambiguous and one-sentence-extractable per item."
+    },
+    {
+      "id": 4,
+      "name": "Related-work positioning",
+      "weight": 5,
+      "score": 4,
+      "justification": "§5 + Table 2 cover six canonical MARL benchmarks with year, agent count, per-agent action space, NE characterisability, coop/competitive axis. v6 fixes Table 2 margin overflow without losing column content. No close prior work obviously omitted. Held at 4/5 for legacy-baseline reason: no pub-litsearch sibling run, so perspective-substrate bonus does not apply."
+    },
+    {
+      "id": 5,
+      "name": "Reproducibility",
+      "weight": 5,
+      "score": 5,
+      "justification": "Appendix A self-contained mathematical contract (state cardinality, seven-phase ordering, extinguish formula, reward decomposition, notation table). Appendix B §B.1-§B.3 derives (S)/(A)/(C) line-by-line. §6 Reproducibility names pip-installable package, repo URL, baseline script paths, JSON paths. v6 additionally ships figures/src/phase_diagram.py source script for Figure 1 — quiet upgrade vs. v5's static PNG."
+    },
+    {
+      "id": 6,
+      "name": "Figure & table quality",
+      "weight": 4,
+      "score": 4,
+      "justification": "+2 vs. v5. Figure 1 regenerated as 3-panel categorical regime heatmap (one panel per c ∈ {0.5,1.0,2.0}), all four regimes visible (no_convergence, symmetric_only, mixed, asymmetric_only), six unsampled cells hatched grey with 'n/a' labels — no inline numerics, no bare dashes. Legend swatches all correspond to plotted cells. Source script figures/src/phase_diagram.py ships alongside. Table 2 wrapped in \\resizebox{\\linewidth}{!}{...} plus tightened cell text ('vs.\\\\ scr.', 'per-scen.'); rendered page 7 shows 'Coop/comp' column complete on page. Figure 2 unchanged and still fine. Tables 1, 3, 4, 5 clean."
+    },
+    {
+      "id": 7,
+      "name": "Prose & structural quality",
+      "weight": 4,
+      "score": 4,
+      "justification": "+1 vs. v5. LaTeX compiles cleanly (v6 changes within-paragraph or cell-text only). Section flow canonical. v5 dim-7 deduction (§3 L389 promised a per-cell predicted-vs-empirical table that Appendix B did not deliver) is closed by v6's softened cross-reference to 'The full bias accounting and the 7-cell preview predicted-vs-empirical table appear in Appendix B' — matches Appendix B §B.4/§B.5 delivery. §4 Results paragraph reads cleanly post-edit: 'we use the homogeneous separations here for metric consistency since no-convergence cells lack gap_closed_ne' is exactly the asterisk the auditor asked for. §B.4/§B.5 layout-accident persists as a minor."
+    },
+    {
+      "id": 8,
+      "name": "Citation hygiene",
+      "weight": 5,
+      "score": 5,
+      "justification": "refs.bib unchanged from v5. All 9 \\cite{} keys (overcooked2019, meltingpot2021, hanabi2020, smac2019, smacv2_2023, magent2018, pettingzoo2021, ppo2017, mappo2022) resolved at v5 audit; v6 introduces no new cites. Every bibliography entry has full author/title/venue/year set. Appendix A §A.6 named-template attributions without \\cite{} links remain a minor for camera-ready."
+    },
+    {
+      "id": 9,
+      "name": "Rhetorical economy",
+      "weight": 4,
+      "score": 3,
+      "justification": "v6 preserves §6 Threats merge and §4 Caveats compression from v5. Body §1-§6 + Conclusion rhetorical economy is high. Held at 3/4 because appendix bulk is unchanged — Appendix A §A.6 re-states §2 with elaboration; Appendix B §B.5 re-frames §3 with two added biases. Camera-ready pass promoting appendices to supplementary materials would let body alone read tighter. User opted out of workshop budget enforcement so not a structural blocker."
+    }
+  ],
+  "critical_flags": [],
+  "summary": "v6 lands the v5 reviewer + auditor punch list cleanly. All five items close: R1 (Figure 1 regenerated as 3-panel categorical regime heatmap with real source script), R2 (Table 2 \\resizebox + tightened cell text — margin overflow gone), R3 (§3 cross-reference softened to match Appendix B delivery), M1 (§4 std-range estimator named: 'per-class mean within-cell std'), M2 (§4 separations switched to metric-consistent homogeneous numbers: 0.001, 0.017, 0.082). Net +3 on /44 score (37 → 40), driven by dim 6 +2 and dim 7 +1. No regression on any other dimension. Zero critical flags. Ready to ship to audit.",
+  "v5_to_v6_changes": {
+    "R1_figure_1_regenerated": "RESOLVED — 3-panel categorical regime heatmap with all four regimes visible, n/a cells hatched, source script ships",
+    "R2_table_2_margin_overflow": "RESOLVED — \\resizebox{\\linewidth}{!}{...} + tightened cell text; 'Coop/comp' column complete on page 7",
+    "R3_section_3_appendix_b_promise": "RESOLVED — cross-reference softened to match what Appendix B §B.4/§B.5 actually carries",
+    "M1_std_range_estimator": "RESOLVED — §4 L476 now names 'per-class mean within-cell std (≈ 0.21-0.44)'",
+    "M2_cross_metric_separations": "RESOLVED — §4 separations all on gap_closed_homogeneous (0.001, 0.017, 0.082) with inline metric-consistency clause"
+  }
+}

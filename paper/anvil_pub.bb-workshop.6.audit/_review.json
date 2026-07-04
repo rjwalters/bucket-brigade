@@ -1,0 +1,44 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.6",
+  "critic_id": "pub-audit",
+  "kind": "tool_evidence",
+  "scorecard_kind": "human-verdict",
+  "verdict": "pass",
+  "block": false,
+  "summary": "v6 audit: 0 critical, 0 major, 2 minor flags. Both v5 majors closed exactly as v5 audit recommended: §4 std-range estimator now named ('per-class mean within-cell std') and §4 separations switched to metric-consistent gap_closed_homogeneous (0.001, 0.017, 0.082). All 41 load-bearing numerical claims reconcile to source; Table 1 per-κ counts (6+3 / 6 / 6+3 / 6 / 7+2), per-class means (0.180/0.107/0.059/-0.049), 4×-budget shift (-0.108), and Ã=36.24 all unchanged from v5 and matching source JSONs. New Figure 1 source script (figures/src/phase_diagram.py) runs cleanly against results.json and the rendered PDF matches the shipped figures/phase_diagram.pdf content-wise (binary differs only on PDF metadata); spot-check of (β=0.5,κ=0.3,c=1.0)→symmetric_only and (β=0.1,κ=0.9,c=1.0)→mixed both verify. Table 2 with v6 tabcolsep 3pt and 'vs. scr.' / 'per-scen.' abbreviations sits fully within page 9 text margin; no overfull warning. Compile clean: 3/3 pdflatex passes exit 0, only 1 benign font-shape default-substitution warning, 0 overfull/underfull, 0 unresolved citations. Page count 19 (was 20 in v5; one-page shrink from Table 2 tightening + PDF-vs-PNG figure swap).",
+  "total_flags": 2,
+  "critical_flags": 0,
+  "major_flags": 0,
+  "minor_flags": 2,
+  "page_count": 19,
+  "compile_status": "clean (3 pdflatex passes + bibtex exit 0; 1 benign font-shape default-substitution warning; 0 overfull/underfull; 0 unresolved citations)",
+  "citation_audit": {
+    "total_cites": 9,
+    "resolved": 9,
+    "unresolved": 0,
+    "claim_support_obvious_mismatch": 0,
+    "notes": "9 \\cite{} keys in main.tex (7 \\citep, 2 \\citet) match 9 @entries in refs.bib exactly. v5 carried over clean state (bbenvspec/bbnestructure deleted; appendix \\ref{} cross-refs in place). v6 does not edit refs.bib. All cited claims (six-benchmark survey in §5; PPO/MAPPO algorithmic references in §4) match the cited papers' canonical pitches; no claim/source mismatches."
+  },
+  "numerical_audit": {
+    "claims_checked": 41,
+    "appendix_spot_checks": 14,
+    "disagreements": 0,
+    "load_bearing_disagreements": 0,
+    "minor_nits": 2,
+    "highest_value_spot_checks": {
+      "v6_new_separations": "(0.001, 0.017, 0.082) all on gap_closed_homogeneous; exact values 0.00047/0.01738/0.08134 — first one is an aggressive half-round-up (0.0005 would be more faithful, flagged as minor N1)",
+      "v6_std_estimator_named": "per-class mean within-cell std on gap_closed_ne: 0.44 (sym) / 0.21 (mix) / 0.42 (asym) — range 0.21-0.44 verifies under the now-named estimator",
+      "figure_1_source_script": "figures/src/phase_diagram.py runs against results.json and produces categorical heatmap matching the shipped phase_diagram.pdf; spot-check of (β=0.5,κ=0.3,c=1.0)→symmetric_only (blue) and (β=0.1,κ=0.9,c=1.0)→mixed (teal) both match; 6 unsampled cells at c=0.5 correctly hatched as n/a",
+      "table_1_row_counts": "all 5 rows match Nash results.json exactly (6+3 / 6 / 6+3 / 6 / 7+2)",
+      "class_means_carry_forward": "0.180/0.107/0.059/-0.049 (gap_closed_ne) and 0.051/0.050/0.033/-0.049 (gap_closed_homogeneous) both unchanged from v5 and matching recalibrated_verdict.json",
+      "appendix_b_derivation": "Ã=36.24 from A=1812 (50·12+100·12+10·12/10) and ρ=0.02; thresholds 0.028 / 0.030 / 0.65 / 0.972 all consistent with numerical root-finding on f(κ)=κ(1-κ)^3=0.0276 and g(κ)=36.24·κ(1-κ)=1.0",
+      "long_budget_shift": "4×-budget mean gap_closed_homogeneous = -0.108 verifies (exact -0.1079) against phase_diagram_ppo_longbudget/recalibrated_verdict.json on the 6 no_convergence cells"
+    }
+  },
+  "carry_forward_from_v5": {
+    "M1_std_range_estimator": "RESOLVED in v6: §4 now says 'per-class mean within-cell std' (one-clause clarification implemented exactly as v5 audit recommended)",
+    "M2_cross_metric_separation": "RESOLVED in v6: §4 separations switched to metric-consistent gap_closed_homogeneous (0.001, 0.017, 0.082); v5's 0.108 cross-metric arithmetic eliminated",
+    "M3_page_count_opt_out": "carried forward; user opt-out still in effect (now 19pp, down from 20pp in v5)"
+  },
+  "most_important_flag": "none — ship-ready. Both v5 majors closed. The two residual minor notes (sym-mix separation rounded as 0.001 vs exact 0.00047; std-range on gap_closed_ne while separations on gap_closed_homogeneous) are below the major bar; the qualitative 'std dwarfs separations' conclusion is robust to both choices."
+}

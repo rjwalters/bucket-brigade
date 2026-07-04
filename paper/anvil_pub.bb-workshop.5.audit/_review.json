@@ -1,0 +1,41 @@
+{
+  "version_dir": "anvil_pub.bb-workshop.5",
+  "critic_id": "pub-audit",
+  "kind": "tool_evidence",
+  "scorecard_kind": "human-verdict",
+  "verdict": "pass",
+  "block": false,
+  "summary": "v5 audit: 0 critical flags, 2 v5-specific major flags (M1 std-range read ambiguity in new §4 sentence, M2 cross-metric separation arithmetic in same sentence), 1 carry-forward major (M3 page count 20pp under user opt-out). v4's M1 (internal-memo cites) is fully resolved by Appendix A/B inlining and refs.bib deletion. v4's M3 (12-vs-13 β-independence) is fully resolved by §3 prose now correctly saying '12 of 13 (κ,c) rows' and identifying the splitter (κ=0.9, c=0.5). Table 1 row counts (κ=0.1 6+3; κ=0.3 6/6; κ=0.5 6+3; κ=0.7 6/6; κ=0.9 7+2) all reconcile to Nash results.json. PPO class-mean numbers (0.180/0.107/0.059/-0.049) and separations (0.073/0.048/0.108) reconcile to recalibrated_verdict.json. 4×-budget mean -0.108 reconciles to longbudget JSON. Compile clean: 3/3 pdflatex passes exit 0, 0 warnings, 0 overfull/underfull boxes, 0 unresolved citations, 20 pages.",
+  "total_flags": 5,
+  "critical_flags": 0,
+  "major_flags": 3,
+  "minor_flags": 6,
+  "page_count": 20,
+  "compile_status": "clean (3 pdflatex passes + bibtex exit 0; 0 warnings; 0 overfull/underfull; 0 unresolved citations)",
+  "citation_audit": {
+    "total_cites": 9,
+    "resolved": 9,
+    "unresolved": 0,
+    "claim_support_obvious_mismatch": 0,
+    "notes": "v4 M1 resolved: bbenvspec and bbnestructure deleted from refs.bib and replaced with \\ref{app:envspec}/\\ref{app:nestructure}. Zero \\cite{} to removed keys; string mentions only in comments. Stray diekmann1985 also gone."
+  },
+  "numerical_audit": {
+    "claims_checked": 41,
+    "appendix_spot_checks": 14,
+    "disagreements": 0,
+    "load_bearing_disagreements": 0,
+    "minor_nits": 2,
+    "highest_value_spot_checks": {
+      "table_1_row_counts": "all 5 rows match Nash results.json exactly",
+      "separation_arithmetic": "0.073, 0.048, 0.108 all verify; asym→collapse 0.108 crosses metrics (gap_closed_ne ↔ gap_closed_homogeneous), flagged as M2",
+      "std_range_0p21_to_0p44": "verified under the class-level mean of per-cell stds reading; flagged as M1 for under-specification",
+      "appendix_a_b_transcription": "no transcription errors detected on spot-checked sections; Ã=36.24, A=1812, κ-thresholds 0.028/0.030/0.65/0.972 all faithful to memos"
+    }
+  },
+  "carry_forward_from_v4": {
+    "M1_internal_memo_cites": "RESOLVED in v5 (appendix inlining)",
+    "M2_page_count": "carried forward; user opt-out still in effect (now 20pp, body 9pp)",
+    "M3_beta_independence_count": "RESOLVED in v5 (prose now says 12/13 and names the splitter)"
+  },
+  "most_important_flag": "M2: §4 Results paragraph claims class-mean separations (0.073, 0.048, 0.108) where the third separation crosses gap_closed_ne (asym, 0.059) and gap_closed_homogeneous (collapse, -0.049). The arithmetic is correct but the metric switch is not asterisked in the load-bearing ordering-not-significance sentence. Fix: either flag the cross-metric arithmetic in one sub-clause, or restate the separations under the consistent homogeneous-metric Caveats numbers (0.051/0.050/0.033/-0.049)."
+}
