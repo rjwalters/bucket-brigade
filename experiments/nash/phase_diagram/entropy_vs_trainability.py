@@ -234,12 +234,27 @@ def render_markdown(result: dict) -> str:
         a = homog["aggregates"][agg]
         lines.append(f"| {agg} | {a['spearman_rho']:.3f} | {a['p_value']:.3f} |")
 
+    # Data-driven multiple-comparisons note (8 tests: 4 aggregates x 2 targets).
+    bonferroni_alpha = 0.05 / (2 * len(AGGREGATE_NAMES))
+    nominal: list[str] = []
+    survivors: list[str] = []
+    for label, tbl in (("ne", ne), ("homogeneous", homog)):
+        for agg in AGGREGATE_NAMES:
+            p = tbl["aggregates"][agg]["p_value"]
+            if p < 0.05:
+                nominal.append(f"{agg} vs {label} (p = {p:.3f})")
+            if p < bonferroni_alpha:
+                survivors.append(f"{agg} vs {label} (p = {p:.3f})")
     lines += [
         "",
-        "The single nominally significant entry (spread vs homogeneous, p = 0.039)",
-        "does not survive correction for the 8 tests in this family"
-        " (Bonferroni α = 0.0063), and spread was never the paper's primary",
-        "predictor (mean entropy was; it is null against both targets).",
+        "Nominally significant entries at p < 0.05: "
+        + ("; ".join(nominal) if nominal else "none")
+        + ".",
+        f"Entries surviving correction for the 8 tests in this family"
+        f" (Bonferroni α = {bonferroni_alpha:.4f}): "
+        + ("; ".join(survivors) if survivors else "none")
+        + ". The paper's primary",
+        "predictor (mean entropy) is null against both targets.",
     ]
 
     lines += [
@@ -272,16 +287,19 @@ def render_markdown(result: dict) -> str:
             f"| {row['kappa']:.2f} | {row['c']:.2f} | {betas} | {ents} | {ident} | {gaps} | {rng} |"
         )
 
+    n_seeds_str = "/".join(str(n) for n in noise["n_seeds"])
     lines += [
         "",
-        "## Noise ceiling (n = 4 seeds)",
+        f"## Noise ceiling (n = {n_seeds_str} seeds)",
         "",
-        f"`gap_closed_ne_mean` is estimated from n = {noise['n_seeds']} seeds per cell.",
+        f"`gap_closed_ne_mean` is estimated from n ∈ {noise['n_seeds']} seeds per cell.",
         f"Per-cell std reaches {noise['max_gap_closed_ne_std']:.2f}"
         f" (median {noise['median_gap_closed_ne_std']:.2f}), which caps the",
-        "achievable correlation for *any* predictor. Tightening this (Task 3, 20-seed",
-        "extension on a k\\*-stratified subset) is recommended before the paper makes",
-        "quantitative threshold claims.",
+        "achievable correlation for *any* predictor. The #443 noise buy-down"
+        " (Task 3, 20-seed",
+        "extension on a k\\*-stratified 8-cell subset — see"
+        " `noise_buydown_precision.md`) tightened",
+        "the subset cells; the remaining cells are still n = 4.",
         "",
         "| cell_tag | gap_closed_ne_std |",
         "|---|---|",

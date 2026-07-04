@@ -156,10 +156,14 @@ def test_end_to_end_reproduces_headline(tmp_path):
     result = json.loads(out_json.read_text())
     ne = result["correlations"]["gap_closed_ne_mean"]
     assert ne["n_cells"] == 31
-    assert abs(ne["aggregates"]["mean"]["spearman_rho"]) < 0.05  # dead predictor
-    assert ne["aggregates"]["mean"]["p_value"] > 0.9
+    # Dead predictor — re-verified after the #443 20-seed noise buy-down
+    # updated 8 cells in recalibrated_verdict.json (rho moved 0.007 -> 0.109,
+    # still nowhere near significance).
+    assert abs(ne["aggregates"]["mean"]["spearman_rho"]) < 0.20
+    assert ne["aggregates"]["mean"]["p_value"] > 0.05
     for agg in ("mean", "max", "min", "spread"):
         assert abs(ne["aggregates"][agg]["spearman_rho"]) <= 0.40
+        assert ne["aggregates"][agg]["p_value"] > 0.05  # all insignificant
 
     # Every (kappa, c) group has byte-identical entropy across beta.
     assert all(r["entropy_identical_across_beta"] for r in result["beta_invariance"])
