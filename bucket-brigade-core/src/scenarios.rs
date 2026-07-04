@@ -63,6 +63,17 @@ fn default_distance_cost_alpha() -> f32 {
     0.0
 }
 
+/// Default for `Scenario::reward_rest` (issue #447). The flat per-step
+/// reward an agent receives when it RESTs was historically a hardcoded
+/// `+0.5` in `engine/rewards.rs`; it is now a scenario weight so every
+/// reward term is a scenario parameter (and reward-weight scaling is
+/// exact). The default of 0.5 matches the historical constant, so every
+/// pre-#447 scenario — and any external JSON without the field — is
+/// bit-exactly unchanged.
+fn default_reward_rest() -> f32 {
+    0.5
+}
+
 /// Default for `Scenario::action_shaping_alpha`. Zero preserves bit-exact
 /// backward compatibility with pre-#259 behavior (no action-conditioned
 /// reward shaping). When non-zero, each worker that participates in
@@ -388,6 +399,16 @@ pub struct Scenario {
     pub cost_to_work_one_night: f32, // Cost incurred when agent chooses to work
     pub min_nights: u32,             // Minimum nights before game can end
 
+    // Per-step rest reward (issue #447). Flat reward an agent receives on
+    // any step where it RESTs instead of working. Historically a hardcoded
+    // `+0.5` in `engine/rewards.rs`; promoted to a scenario weight so every
+    // reward term is a scenario parameter and reward-weight scaling is
+    // exact. Serde default of 0.5 matches the historical constant, so every
+    // pre-#447 scenario (and any external JSON without the field) is
+    // bit-exactly unchanged.
+    #[serde(default = "default_reward_rest")]
+    pub reward_rest: f32,
+
     // Spatial cost asymmetry (issue #203, optional, additive).
     //
     // Per-agent "home position" on the 10-house ring. When non-empty (length
@@ -661,6 +682,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(20.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(40.0),
@@ -692,6 +714,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 10,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -723,6 +746,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 15,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -755,6 +779,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -786,6 +811,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -817,6 +843,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 1.0, // High work cost creates social dilemma
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -848,6 +875,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.8,
             min_nights: 20, // Longer games
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -879,6 +907,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.2,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -910,6 +939,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.7,
             min_nights: 15,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -941,6 +971,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.4,
             min_nights: 20, // Long games
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -972,6 +1003,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.6,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -1003,6 +1035,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.6,
             min_nights: 15,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),
@@ -1041,6 +1074,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 10.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(50.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(100.0),
@@ -1078,6 +1112,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(20.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(40.0),
@@ -1118,6 +1153,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 10.0,
             cost_to_work_one_night: 0.5,
             min_nights: 8,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(50.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(100.0),
@@ -1165,6 +1201,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(20.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(40.0),
@@ -1206,6 +1243,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 10.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(50.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(100.0),
@@ -1237,6 +1275,7 @@ pub static SCENARIOS: LazyLock<HashMap<&'static str, Scenario>> = LazyLock::new(
             team_penalty_house_burns: 10.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(50.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(100.0),
@@ -1866,6 +1905,7 @@ mod tests {
             team_penalty_house_burns: 100.0,
             cost_to_work_one_night: 0.5,
             min_nights: 12,
+            reward_rest: default_reward_rest(),
             reward_own_house_survives: per_agent(1.0),
             reward_other_house_survives: per_agent(0.0),
             penalty_own_house_burns: per_agent(2.0),

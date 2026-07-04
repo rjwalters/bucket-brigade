@@ -55,7 +55,9 @@ def _scale_reward_weights(scenario: Scenario, factor: float) -> Scenario:
     Fire dynamics and topology are untouched, so trajectories are
     identical and the per-step team reward scales by exactly ``factor`` —
     the cleanest model of the PR #432 "differently-weighted reward
-    configuration" incident.
+    configuration" incident. As of issue #447 the per-step rest reward
+    (``reward_rest``) is a scenario weight too, so this scaling is exact:
+    every reward term the env can emit is covered below.
     """
     return dataclasses.replace(
         scenario,
@@ -72,6 +74,7 @@ def _scale_reward_weights(scenario: Scenario, factor: float) -> Scenario:
             v * factor for v in scenario.penalty_other_house_burns
         ],
         cost_to_work_one_night=scenario.cost_to_work_one_night * factor,
+        reward_rest=scenario.reward_rest * factor,
     )
 
 
@@ -204,6 +207,63 @@ class TestFingerprint:
 
 
 # ---------------------------------------------------------------------------
+# Rest reward as a scenario weight (issue #447)
+# ---------------------------------------------------------------------------
+
+
+class TestRestRewardScenarioWeight:
+    """Issue #447: the per-step rest reward is ``Scenario.reward_rest``.
+
+    Pins (a) the default of 0.5 — the historical hardcoded constant, so
+    every pre-#447 scenario is bit-identical — and (b) that the env reads
+    the weight from the scenario (a non-default value moves each resting
+    agent's per-step reward by exactly the delta).
+    """
+
+    @staticmethod
+    def _first_step_rewards(scenario: Scenario):
+        """One deterministic no-fire step with every agent resting.
+
+        With ignition and spread probabilities zeroed, all houses stay
+        SAFE, so each agent's step reward is exactly
+        ``reward_rest + team_reward_house_survives`` (no save events, no
+        ruin penalties, no work costs).
+        """
+        import numpy as np
+
+        from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
+
+        env = BucketBrigadeEnv(scenario=scenario)
+        env.reset(seed=0)
+        actions = np.zeros((scenario.num_agents, 3), dtype=np.int64)  # all REST
+        _obs, rewards, _dones, _info = env.step(actions)
+        return rewards
+
+    def test_default_is_historical_half(self) -> None:
+        """Every registered -v1 scenario carries the historical 0.5."""
+        for scenario_id in sorted(SCENARIO_FINGERPRINTS):
+            assert get_scenario_by_id(scenario_id).reward_rest == 0.5
+
+    def test_rest_reward_read_from_scenario_weight(self) -> None:
+        base = dataclasses.replace(
+            get_scenario_by_id("default-v1"),
+            prob_house_catches_fire=0.0,
+            prob_fire_spreads_to_neighbor=0.0,
+        )
+        rewards_default = self._first_step_rewards(base)
+        # Bit-exact pin of the historical behavior: rest(0.5) + team(100.0).
+        expected = base.reward_rest + base.team_reward_house_survives
+        assert list(rewards_default) == [pytest.approx(expected, abs=0.0)] * 4
+
+        # A non-default weight moves each resting agent by exactly the
+        # delta (up to float32 rounding at reward magnitude ~100).
+        bumped = dataclasses.replace(base, reward_rest=0.7)
+        rewards_bumped = self._first_step_rewards(bumped)
+        for r_new, r_old in zip(rewards_bumped, rewards_default):
+            assert float(r_new) - float(r_old) == pytest.approx(0.2, abs=1e-4)
+
+
+# ---------------------------------------------------------------------------
 # Statistical parity check
 # ---------------------------------------------------------------------------
 
@@ -248,10 +308,12 @@ class TestParityCheck:
     def test_check_scenario_scales_with_injected_factor(self) -> None:
         """Reward-weight scaling leaves trajectories untouched (dynamics
         depend only on probabilities/actions), so the observed value scales
-        by ~7x against the same-seed unscaled run. Not *exactly* 7x: the
-        env's flat ``+0.5`` rest reward is hardcoded in
-        ``BucketBrigadeEnv._compute_rewards``, not a scenario weight, so it
-        stays at 1x (a sub-1% effect on ``default``)."""
+        by *exactly* 7x against the same-seed unscaled run. Exactness holds
+        because, as of issue #447, every reward term — including the flat
+        per-step rest reward (``Scenario.reward_rest``, historically a
+        hardcoded ``+0.5`` in ``BucketBrigadeEnv._compute_rewards``) — is a
+        scenario weight scaled by ``_scale_reward_weights``. Only float32
+        rounding separates the two runs."""
         scaled = _scale_reward_weights(get_scenario_by_id("default-v1"), 7.0)
         result = check_scenario("default-v1", n_episodes=60, seed=42, scenario=scaled)
         unscaled = check_scenario(
@@ -262,7 +324,7 @@ class TestParityCheck:
         )
         assert not result.reward_ok
         assert not result.passed
-        assert result.observed == pytest.approx(7.0 * unscaled.observed, rel=0.02)
+        assert result.observed == pytest.approx(7.0 * unscaled.observed, rel=1e-5)
         # The scaled scenario also trips the fingerprint check.
         assert not result.fingerprint_ok
 

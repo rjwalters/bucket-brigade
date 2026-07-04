@@ -103,7 +103,13 @@ impl BucketBrigade {
                 };
                 rewards[agent_idx] -= work_cost;
             } else {
-                rewards[agent_idx] += 0.5; // Rest reward
+                // Issue #447: the flat per-step rest reward is a scenario
+                // weight (`Scenario::reward_rest`), no longer a hardcoded
+                // `+0.5`. The default of 0.5 matches the historical
+                // constant, so every pre-#447 scenario is bit-exactly
+                // unchanged. Mirrors
+                // `bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards`.
+                rewards[agent_idx] += self.scenario.reward_rest;
             }
 
             // 2 & 3. Per-house ownership rewards.

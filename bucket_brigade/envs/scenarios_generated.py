@@ -67,6 +67,17 @@ class Scenario:
     # Game setup
     num_agents: int  # Number of agents participating
 
+    # Per-step rest reward (issue #447). Flat reward an agent receives
+    # on any step where it RESTs instead of working. Historically a
+    # hardcoded ``+0.5`` in the reward implementations; promoted to a
+    # scenario weight so every reward term is a scenario parameter and
+    # reward-weight scaling is exact. Defaults to ``0.5`` so every
+    # pre-#447 scenario is bit-exactly preserved.
+    # See ``bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards``
+    # and ``bucket-brigade-core/src/engine/rewards.rs`` for the canonical
+    # implementation.
+    reward_rest: float = 0.5
+
     # Spatial cost asymmetry (issue #203, optional, additive).
     # Empty ``agent_home_positions`` falls back to the round-robin
     # ``house_owners`` anchor (agent i -> house i). ``distance_cost_alpha
@@ -366,6 +377,7 @@ def default_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -384,6 +396,7 @@ def easy_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=10,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -402,6 +415,7 @@ def hard_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=15,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -420,6 +434,7 @@ def trivial_cooperation_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -438,6 +453,7 @@ def early_containment_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -456,6 +472,7 @@ def greedy_neighbor_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=1.0,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -474,6 +491,7 @@ def sparse_heroics_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.8,
         min_nights=20,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -492,6 +510,7 @@ def rest_trap_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.2,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -510,6 +529,7 @@ def chain_reaction_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.7,
         min_nights=15,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -528,6 +548,7 @@ def deceptive_calm_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.4,
         min_nights=20,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -546,6 +567,7 @@ def overcrowding_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.6,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -564,6 +586,7 @@ def mixed_motivation_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.6,
         min_nights=15,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -582,6 +605,7 @@ def minimal_specialization_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -600,6 +624,7 @@ def positional_default_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
         agent_home_positions=[0, 3, 5, 8],
         distance_cost_alpha=0.1,
         distance_metric="ring_arc",
@@ -621,6 +646,7 @@ def v2_minimal_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=8,
         num_agents=num_agents,
+        reward_rest=0.5,
         num_houses=2,
     )
 
@@ -640,6 +666,7 @@ def default_continuous_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
         extinguish_mode="continuous",
         suppression_per_worker=0.5,
     )
@@ -660,6 +687,7 @@ def asym_b05_k09_c05_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 
@@ -678,6 +706,7 @@ def asym_b09_k09_c05_scenario(num_agents: int) -> Scenario:
         cost_to_work_one_night=0.5,
         min_nights=12,
         num_agents=num_agents,
+        reward_rest=0.5,
     )
 
 

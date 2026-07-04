@@ -117,7 +117,15 @@ __all__ = [
 # Bump when the manifest schema or any reference value changes, so
 # downstream results can cite "scenario ID + manifest version" (issue #437
 # acceptance criteria / docs/PARITY.md).
-MANIFEST_VERSION: int = 1
+#
+# Version history:
+#   1: initial manifest (issue #437).
+#   2: issue #447 — ``Scenario.reward_rest`` field added (default 0.5,
+#      promoting the historical hardcoded per-step ``+0.5`` rest reward to
+#      a scenario weight). All pinned SCENARIO_FINGERPRINTS changed
+#      (fingerprints hash the resolved dataclass); reward behavior and all
+#      reference baselines are bit-identical.
+MANIFEST_VERSION: int = 2
 
 # CLI defaults. 500 episodes is a few seconds of pure env stepping and
 # shrinks the observed-side standard error well below the reference CI for
@@ -208,60 +216,72 @@ def scenario_fingerprint(scenario: Scenario) -> str:
 
 
 # Pinned fingerprints of every manifest scenario, computed from
-# ``get_scenario_by_id(<id>, num_agents=4)`` at the commit that landed
-# issue #437. ``tests/test_parity.py`` recomputes these from the live
-# registry: if a scenario's parameters drift, the test fails and forces the
-# registry version-bump decision (frozen IDs must not mutate — see
-# ``bucket_brigade/envs/registry.py``). Downstream consumers compare their
-# constructed scenario's fingerprint against these published values.
+# ``get_scenario_by_id(<id>, num_agents=4)``. ``tests/test_parity.py``
+# recomputes these from the live registry: if a scenario's parameters
+# drift, the test fails and forces the registry version-bump decision
+# (frozen IDs must not mutate — see ``bucket_brigade/envs/registry.py``).
+# Downstream consumers compare their constructed scenario's fingerprint
+# against these published values.
+#
+# FINGERPRINT-VERSION EVENT (issue #447, manifest_version 1 -> 2): the
+# ``Scenario`` dataclass gained the ``reward_rest`` field (default 0.5,
+# promoting the historical hardcoded per-step ``+0.5`` rest reward to a
+# scenario weight). Since the fingerprint hashes the *resolved dataclass*,
+# every pinned hash below changed at that point even though behavior —
+# and therefore every committed baseline — is bit-identical for all
+# scenarios (verified by the parity CLI across all registered ``-v1``
+# IDs). Consumers pinned to manifest_version 1 fingerprints should
+# re-pin against manifest_version 2; the ``-v1`` scenario IDs themselves
+# are unchanged per the registry version-bump policy (bit-exact
+# refactors do not require a new ``-vN`` ID).
 SCENARIO_FINGERPRINTS: Dict[str, str] = {
     "asym_b05_k09_c05-v1": (
-        "sha256:ce3aa75d21c70ce88f2041d6be0f52dfde76f006ae7f616cd5d1633d37376f89"
+        "sha256:c0bf937a4cc915e7d999e294b9089523b1a8d3c15bea3b5d312537f28f486f5b"
     ),
     "asym_b09_k09_c05-v1": (
-        "sha256:c7e6d12f80befccf4c77b321d4c63bf36f0dcb8d23e37f926d520084ebc5f5fb"
+        "sha256:b48259335d5a0c814d990bfd0323f670cdf7ee94890fdb23ac0d73d9d56ea1ef"
     ),
     "chain_reaction-v1": (
-        "sha256:f1386042d1618ab5b5429e4290cb9bc435e0643f34d7bc2e279d04e3c5443bf9"
+        "sha256:ce0ebfde5baf0c396704e0a616ced0abfb9b4e7d5a4c1b253d9d7c4a2ffb29dd"
     ),
     "deceptive_calm-v1": (
-        "sha256:867f9bd71bcaa68cc4a94f4e5a2c6e4f4e9584d019ac2ead42c9047eb54d4c20"
+        "sha256:76cc48d7461e1e1bd72f3dc636d69566327f1b04ab9d2fd0d93cdae956b27540"
     ),
     "default-v1": (
-        "sha256:d5171b48b046c330fa860d6cb87032d6970f92879375f8623901312af5920fbd"
+        "sha256:9315a158ca5aedebae08b18d412509e480d2808d54ee9ffb34587b6413de84c7"
     ),
     "early_containment-v1": (
-        "sha256:8c78037a7730ef8d8f0032465f1cd7d00f9283a1b3dd82c6ea7f5bf2fc5275ae"
+        "sha256:778e36c98b8f01dd7726a192069c598e4018db9262c2089951d89eee10569c14"
     ),
     "easy-v1": (
-        "sha256:5d63a61a5cc7b0f3b3dbda0bd040f88985d780674c1f74d32a3eb46eb83216a2"
+        "sha256:bf81ba62890c6549959931c0fdb1024ae4efac81f593d3063e4352c85dd227b1"
     ),
     "greedy_neighbor-v1": (
-        "sha256:ecf39439a702ac1c70f8d0c5fa42e28912290c9fee93227880cb8a342501711f"
+        "sha256:67fa8dd4a77f4c4a83cc8a81d60c454c88f98cceba9a93c089bb9956a3390215"
     ),
     "hard-v1": (
-        "sha256:48b414edefb5697b806b2a92eeb45fc61e62168736443d6be069ccbde685cce0"
+        "sha256:fdd2acd5ccba13033923ae689e223c7d3295d92bb9e6994fef0b8dccbbae03f1"
     ),
     "minimal_specialization-v1": (
-        "sha256:eb0c93b8d45550d8adea36d499ef2a5994e7d2198de14fc908991b99e61cfc4f"
+        "sha256:b9e7493e82cbb8d456cc5cae0449a7e9c0677a0478cb02965f512493008e97c0"
     ),
     "mixed_motivation-v1": (
-        "sha256:c191757e40a194339f20ade84e946c2457f7d3be81f6373470c09cc238f1fb56"
+        "sha256:620e97ac89bd26b835e065c6930a991dac31d6200903c788f36e4833f295bed6"
     ),
     "overcrowding-v1": (
-        "sha256:70c2da7347a9f41b17dd8f99615020e95dcb409290bea3c6c776adc5a3cd9999"
+        "sha256:ef8e8df3a4eca7222afa8254f6be3416f48bb6e12b4c4483551733854802f336"
     ),
     "positional_default-v1": (
-        "sha256:9786f49b2480031b59c88fb61bc3c81595aea2e43c4b7424d37dd8651deb75e6"
+        "sha256:5d87a2bfe0cf9b7c47ddb9e01cdf7083d8cebfca49886abf2416fa2ec3e69972"
     ),
     "rest_trap-v1": (
-        "sha256:098ba0ed1cb67779bfb3abd4aea769b6de49d827e3c693554284f00feeabcf5f"
+        "sha256:7fc1ea569029fe952101dfb77b6f80ad8c85efec0e3483a4cd4b6aeb9c6ef7e2"
     ),
     "sparse_heroics-v1": (
-        "sha256:e6f4304bdba5dd444f09ee5a2279e56c1d9353f579d2ebe127dc4783ea84fd21"
+        "sha256:4d38e8e56b8f1d208ebd4cf0e8d32211b9f9508a4082e5bdd0dd05ea94e8c8d8"
     ),
     "trivial_cooperation-v1": (
-        "sha256:15a5878e07a1d8d6f5ea75518f39818fd66504783405ecf2b8914f67e6f9e2a4"
+        "sha256:faabe4848dc5b80f3b556d4abe726fbe0db2779b9b989d00d0186dd14b68b7b2"
     ),
 }
 
