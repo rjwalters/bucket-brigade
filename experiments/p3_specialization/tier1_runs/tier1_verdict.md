@@ -9,6 +9,8 @@ Verdict ladder: `gap_closed_mean >= 0.88` -> **closed**; `0.49 <= mean < 0.88` -
 | hca | minimal_specialization | 0.081 ± 0.139 | +4.806 ± 8.268 | n/a | 3 ok | insufficient |
 | lola | minimal_specialization | 0.005 ± 0.053 | +0.267 ± 3.132 | n/a | 3 ok | insufficient |
 | het_ppo | rest_trap | n/a | +3.394 ± 7.340 | at_random | 20 ok | not_scored_degenerate_reference |
+| het_ppo | asym_b09_k09_c05 | n/a | +2.616 ± 10.210 | at_random | 20 ok | not_scored_degenerate_reference |
+| het_ppo | asym_b05_k09_c05 | n/a | +0.541 ± 8.736 | at_random | 20 ok | not_scored_degenerate_reference |
 
 ## Notes
 
@@ -68,6 +70,75 @@ because its scenarios were not registered in `bucket_brigade/envs`. Issue
 c=0.50), now registered as `asym_b05_k09_c05` / `asym_b09_k09_c05` (frozen
 IDs `-v1`). See `experiments/p3_specialization/het_ppo_runbook.md` and issue
 #429.
+
+### het_ppo Phase 2 (#429): asym_b05_k09_c05 / asym_b09_k09_c05 — `at_random`, no asymmetric role structure learned
+
+Phase 2 ran the direct interventional test on the two `asymmetric_only`
+phase-diagram cells whose frozen NE demands role asymmetry (1×hero +
+3×firefighter, team payoff 72.0095 **per episode**; registered by #435/PR
+#441). Protocol: 20 seeds × 50 iterations × 2048 rollout steps per cell,
+`het_ppo` (per-agent init streams, `--per-agent-init-seed-offset 1000`), host
+alc-9, train commit `8a532de1`; summaries regenerated locally via
+`--summarize-only` (no retraining).
+
+- **Ladder applicability**: `gap_closed = null`, verdict
+  `not_scored_degenerate_reference`, reason `ne_reference_per_episode_only`.
+  The registered upper anchor (72.0095/episode ≈ ≤ +6.0/step at ≥ 12 nights)
+  is per-episode while the ladder is per-step, so
+  `SCENARIO_GAP_REFERENCES` deliberately records no per-step upper reference
+  (PR #441) and the fraction ladder is **not applied**. The quantitative
+  story is `uplift_over_random` plus position relative to the NE bound.
+- **Headline result — het_ppo does NOT learn the asymmetric NE role
+  structure at this budget.** Trailing-5 per-step team reward vs the
+  measured random baseline −78.27/step (95% CI [−83.88, −72.81], n=1000):
+  - `asym_b05_k09_c05`: trailing-5 −77.73, `uplift_over_random = +0.54 ±
+    8.74` (std, n=20; 95% CI on the mean [−3.39, +4.47]); trap verdict
+    **`at_random`** (seed-bootstrap CI [−81.43, −73.82] does not clear the
+    random anchor).
+  - `asym_b09_k09_c05`: trailing-5 −75.65, `uplift_over_random = +2.62 ±
+    10.21` (std, n=20; 95% CI on the mean [−1.98, +7.21]); trap verdict
+    **`at_random`** (CI [−79.82, −70.84]).
+  - Both cells sit ~81–84/step below the NE per-step bound (+6.0). Even the
+    best single seed (b09 seed 46, trailing-5 ≈ −47.99/step) is ~54/step
+    short of it. Paired uplift over each seed's own iteration-0 policy is
+    also not significant (+3.09 ± 10.62, t = +1.30; +4.53 ± 12.18,
+    t = +1.66). MINSPEC-scale audit values:
+    `gap_closed_minspec_legacy_mean` = 0.168 / 0.203.
+- **NE-denominator caveat (#442, REQUIRED)**: the 72.0095 registered NE is
+  likely an *understated* denominator. The cross-β residual analysis
+  (`experiments/nash/phase_diagram/beta_residuals.md`, PR #450) found the
+  β=0.1 batch profile `FF|hero|hero|FF` beats the registered
+  `hero|FF|FF|FF` by **+9.55 ± 2.73 per episode** (seed-robust, CRN
+  re-evaluation 55.36 vs 45.80), and both solver payoffs in `results.json`
+  carry ~+26/episode winner's-curse bias vs CRN re-evaluation. Any future
+  gap fraction against 72.0095 would be *overstated*; pending the seeded DO
+  retry (#445) report against both denominators. For this run the caveat is
+  moot for the verdict — trained policies are at the random baseline, far
+  below either candidate denominator.
+- **Replication-pair finding — CRN-coupled replicas, not independent
+  draws.** β is dynamically inert in bernoulli extinguish mode (the cells
+  are the same game), and the per-seed streams turned out to be *shared*,
+  not scenario-hashed apart: iteration-0 team rewards match exactly on 2/20
+  seeds and to ~0.1% on most others, because β's only live effect is as an
+  observation feature (`bucket-brigade-core/src/engine/observation.rs`) that
+  perturbs otherwise-identical policies. Same-seed trailing-5 correlation
+  r = +0.84; trajectories diverge chaotically over training. Consistency
+  holds: cell means are statistically indistinguishable (Welch t = −0.67 on
+  trailing-5; same-seed diff b09−b05 = +2.07 ± 5.62/step, t ≈ +1.65, n.s.).
+  Consequence: the pair provides ~20 paired draws of one environment, not
+  40 independent seeds — do not pool them as n=40.
+- **Role differentiation — behavioral differentiation without payoff.**
+  Per-seed metrics carry per-agent policy/action entropies and pairwise
+  MI/CMI (no per-agent rewards). Within-seed action-entropy spread across
+  the 4 agents grows from ~0.29 nats at iteration 0 to 1.59 ± 0.65 (b05) /
+  1.32 ± 0.70 (b09) at trailing-5 — the per-agent init streams do induce
+  heterogeneous policies. But pairwise MI *declines* over training (paired
+  Δ −0.22 ± 0.39, t = −2.5 on b05; −0.35 ± 0.33, t = −4.7 on b09): agents
+  become more independent, not more coordinated, and no seed converts the
+  differentiation into hero/firefighter division of labor that pays (team
+  reward stays at random). Late-training CMI conditioner-degeneracy
+  warnings (near-deterministic agents) corroborate collapse onto
+  low-entropy but unproductive policies.
 
 ### het_ppo / rest_trap (#436): trap-escape verdict — `at_random`
 

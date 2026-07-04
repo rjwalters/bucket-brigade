@@ -22,6 +22,7 @@ caveats. All commands assume:
 5. [Specialist exploitability harness](#5-specialist-exploitability-harness)
 6. [PPO trainability sweep across NE-class cells (paper §4)](#6-ppo-trainability-sweep-across-ne-class-cells-paper-4)
 7. [Trap-escape verdict rule for social-trap scenarios (rest_trap first)](#7-trap-escape-verdict-rule-for-social-trap-scenarios-rest_trap-first)
+8. [het_ppo Phase 2 on the asymmetric_only cells: at_random](#8-het_ppo-phase-2-on-the-asymmetric_only-cells-at_random)
 
 ---
 
@@ -458,6 +459,85 @@ uv run python experiments/p3_specialization/aggregate_tier1.py
 mechanism), PR #433 (het_ppo Phase 1 run), PR #432 (oracle pattern), #356
 (why tier-1 trainers were expected to fail on rest_trap), #357 (paper
 tracker).
+
+---
+
+## 8. het_ppo Phase 2 on the asymmetric_only cells: at_random
+
+**Question**: does per-agent init asymmetry (`het_ppo`: disjoint per-agent
+init streams, `--per-agent-init-seed-offset 1000`) let PPO learn the
+asymmetric role structure that the NE demands on the two `asymmetric_only`
+phase-diagram cells (`asym_b05_k09_c05` / `asym_b09_k09_c05`, β 0.5/0.9,
+κ = 0.9, c = 0.5; frozen NE = 1×hero + 3×firefighter, team payoff 72.0095
+**per episode** ⇒ ≤ +6.0/step at min_nights = 12)? This is the direct
+interventional test issue #429 was designed around (Phase 1's rest_trap arm
+turned out to be a degenerate social trap, §7).
+
+**Protocol**: 20 seeds (42–61) × 50 iterations × 2048 rollout steps per
+cell, host alc-9, train commit `8a532de1`; summaries regenerated locally via
+`--summarize-only` (no retraining). The fraction ladder is off by design
+(`ne_reference_per_episode_only`, PR #441): the NE anchor is per-episode,
+gap metrics are per-step, so the story is `uplift_over_random` plus position
+relative to the NE bound.
+
+**Result — no. Both cells land at `at_random`** (per-step team reward;
+random baseline −78.27/step, 95% CI [−83.88, −72.81], n=1000, PR #441):
+
+| Cell | trailing-5 mean | uplift_over_random (±std, n=20) | 95% CI on mean uplift | trap verdict |
+|---|---|---|---|---|
+| `asym_b05_k09_c05` | −77.73 | +0.54 ± 8.74 | [−3.39, +4.47] | `at_random` |
+| `asym_b09_k09_c05` | −75.65 | +2.62 ± 10.21 | [−1.98, +7.21] | `at_random` |
+
+Both cells sit ~81–84/step below the NE per-step bound (+6.0); the best
+single seed (b09 seed 46, trailing-5 ≈ −48/step) is still ~54/step short.
+Per-agent init asymmetry *does* induce behavioral differentiation —
+within-seed action-entropy spread across agents grows from ~0.29 nats at
+iteration 0 to 1.59 ± 0.65 / 1.32 ± 0.70 nats at trailing-5 — but pairwise
+MI declines over training (paired t = −2.5 / −4.7): agents become more
+independent, not coordinated, and no seed converts the differentiation into
+a paying hero/firefighter division of labor.
+
+**Replication-pair caveat**: β is dynamically inert in bernoulli extinguish
+mode, so the two cells are the same game — and the seed streams turned out
+to be shared rather than scenario-hashed apart (iteration-0 returns match
+exactly on 2/20 seeds, to ~0.1% on most; β's only live effect is as an
+observation feature). Same-seed trailing-5 correlation r = +0.84; cell
+means are statistically indistinguishable (Welch t = −0.67; same-seed diff
++2.07 ± 5.62/step, n.s.). Treat the pair as ~20 CRN-coupled draws of one
+environment, **not** 40 independent seeds.
+
+**NE-denominator caveat (#442)**: the 72.0095 registered NE payoff is
+likely understated — the cross-β residual analysis
+([`experiments/nash/phase_diagram/beta_residuals.md`](../experiments/nash/phase_diagram/beta_residuals.md),
+PR #450) found `FF|hero|hero|FF` beats the registered `hero|FF|FF|FF` by
++9.55 ± 2.73/episode (seed-robust CRN re-evaluation, 55.36 vs 45.80), and
+solver payoffs carry ~+26/episode winner's-curse bias vs CRN re-evaluation.
+Moot for this verdict (trained policies are at random, far below either
+candidate denominator), but any future gap fraction against 72.0095 would
+be overstated; pending #445, report against both denominators.
+
+**Artifacts**:
+- Per-seed runs + cell summaries: [`experiments/p3_specialization/tier1_runs/het_ppo_asym_b05_k09_c05/`](../experiments/p3_specialization/tier1_runs/het_ppo_asym_b05_k09_c05/), [`experiments/p3_specialization/tier1_runs/het_ppo_asym_b09_k09_c05/`](../experiments/p3_specialization/tier1_runs/het_ppo_asym_b09_k09_c05/)
+- Verdict table: [`experiments/p3_specialization/tier1_runs/tier1_verdict.md`](../experiments/p3_specialization/tier1_runs/tier1_verdict.md) (full caveats in the appended notes)
+
+**Reproduce** (summaries only — no training; seconds locally):
+
+```bash
+uv run python experiments/p3_specialization/run_tier1_cell.py \
+    --trainer het_ppo --scenario asym_b05_k09_c05 \
+    --seeds 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 \
+    --num-iterations 50 --summarize-only
+uv run python experiments/p3_specialization/run_tier1_cell.py \
+    --trainer het_ppo --scenario asym_b09_k09_c05 \
+    --seeds 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 \
+    --num-iterations 50 --summarize-only
+uv run python experiments/p3_specialization/aggregate_tier1.py
+```
+
+**Source**: issue #429 (het_ppo program; Phase 2 scope refresh comment),
+#435 / PR #441 (frozen asym scenarios + measured random baseline), #442 /
+PR #450 (NE-denominator caveat), PR #433 (Phase 1), #445 (seeded DO retry
+that will settle the denominator).
 
 ---
 
