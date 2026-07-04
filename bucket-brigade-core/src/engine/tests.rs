@@ -1709,6 +1709,10 @@ mod proptests {
                 team_penalty_house_burns: 100.0,
                 cost_to_work_one_night: 0.5,
                 min_nights: 12,
+                // Issue #447: historical rest reward so the existing
+                // proptest invariants (assume pre-#447 reward semantics)
+                // hold.
+                reward_rest: 0.5,
                 reward_own_house_survives: vec![100.0; 10],
                 reward_other_house_survives: vec![50.0; 10],
                 penalty_own_house_burns: vec![0.0; 10],

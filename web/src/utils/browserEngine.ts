@@ -32,6 +32,10 @@ export interface Scenario {
 
   // Costs and structure
   cost_to_work_one_night: number; // Cost per worker per night
+  // Issue #447: flat per-step rest reward, promoted from a hardcoded +0.5
+  // to a scenario weight. Optional for backward compatibility; the engine
+  // falls back to the historical 0.5 when absent.
+  reward_rest?: number;
   min_nights: number; // Minimum nights before termination
 
   // Game setup
@@ -304,7 +308,7 @@ export class BrowserBucketBrigade {
       if (actions[agent_idx][1] === 1) {
         reward -= this.scenario.cost_to_work_one_night; // Work cost
       } else {
-        reward += 0.5; // Rest reward
+        reward += this.scenario.reward_rest ?? 0.5; // Rest reward (#447: scenario weight)
       }
 
       // Ownership bonus/penalty

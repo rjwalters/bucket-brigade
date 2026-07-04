@@ -80,6 +80,21 @@ bootstrap CI, and the scenario fingerprint. A top-level
 were measured. Drift guards in `tests/test_parity.py` keep the manifest
 aligned with `SCENARIO_RANDOM_BASELINES` and `SCENARIO_VERSIONS`.
 
+### Manifest version history
+
+- **v1** (issue #437): initial manifest.
+- **v2** (issue #447): the `Scenario` dataclass gained the `reward_rest`
+  field (default `0.5`), promoting the per-step rest reward — historically
+  a hardcoded `+0.5` in the reward implementations — to a scenario weight.
+  Every reward term is now a scenario parameter, so
+  `definitions/scenarios.json` fully determines the reward surface and
+  reward-weight scaling is exact. **All pinned scenario fingerprints
+  changed** (they hash the resolved dataclass); reward behavior and every
+  reference baseline are bit-identical, and the frozen `-v1` scenario IDs
+  are unchanged (bit-exact refactors do not require a new `-vN` ID per the
+  registry version-bump policy). Consumers pinned to v1 fingerprints
+  should re-pin against v2.
+
 ## For re-implementations (no Python `Scenario` available)
 
 Reproduce the measurement convention from the manifest and compare your own
@@ -104,5 +119,5 @@ against `definitions/scenarios.json` / `bucket-brigade-core/src/scenarios.rs`.
 
 When publishing numbers about this benchmark, cite the **frozen scenario ID**
 (e.g. `rest_trap-v1`, never just "rest_trap") and the **manifest version**
-(`manifest_version` in the manifest JSON, currently 1), and state that the
+(`manifest_version` in the manifest JSON, currently 2), and state that the
 parity check passed on the build that produced your results.

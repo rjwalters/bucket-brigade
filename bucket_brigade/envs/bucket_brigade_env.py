@@ -646,6 +646,13 @@ class BucketBrigadeEnv:
         # unchanged.
         alpha = float(getattr(self.scenario, "distance_cost_alpha", 0.0))
 
+        # Issue #447: the flat per-step rest reward is a scenario weight
+        # (``Scenario.reward_rest``), no longer a hardcoded ``+0.5``. The
+        # default of 0.5 matches the historical constant, so every pre-#447
+        # scenario is bit-exactly unchanged. Mirrors
+        # ``bucket-brigade-core/src/engine/rewards.rs``.
+        rest_reward = float(getattr(self.scenario, "reward_rest", 0.5))
+
         for agent_idx in range(self.num_agents):
             # Work/rest component.
             #
@@ -666,7 +673,7 @@ class BucketBrigadeEnv:
                     work_cost = base_cost + alpha * dist
                 individual_rewards[agent_idx] -= work_cost
             else:
-                individual_rewards[agent_idx] += 0.5  # Rest reward
+                individual_rewards[agent_idx] += rest_reward  # Rest reward (#447)
 
             # Per-house ownership rewards.
             # For each of the 10 houses, decide whether the agent owns it and

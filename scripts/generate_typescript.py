@@ -245,6 +245,9 @@ def generate_scenarios(json_path: Path, output_path: Path):
         )
         code += f"      team_penalty_house_burns: {spec['team_penalty_house_burns']},\n"
         code += f"      cost_to_work_one_night: {spec['cost_to_work_one_night']},\n"
+        # Issue #447: flat per-step rest reward, promoted from a hardcoded
+        # +0.5 to a scenario weight. Fallback matches the historical constant.
+        code += f"      reward_rest: {spec.get('reward_rest', 0.5)},\n"
         code += f"      min_nights: {spec['min_nights']},\n"
         code += f"      reward_own_house_survives: {spec.get('reward_own_house_survives', 0)},\n"
         code += f"      reward_other_house_survives: {spec.get('reward_other_house_survives', 0)},\n"
@@ -287,6 +290,7 @@ def generate_scenarios(json_path: Path, output_path: Path):
         penalty_own_house_burns: template.parameters.penalty_own_house_burns ?? 0,
         penalty_other_house_burns: template.parameters.penalty_other_house_burns ?? 0,
         cost_to_work_one_night: randomize(template.parameters.cost_to_work_one_night ?? 0.5),
+        reward_rest: template.parameters.reward_rest ?? 0.5,
         min_nights: template.parameters.min_nights ?? 12,
         num_agents: numAgents,
       };

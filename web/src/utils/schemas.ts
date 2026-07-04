@@ -34,6 +34,10 @@ export const ScenarioSchema = z.object({
 
   // Costs and structure
   cost_to_work_one_night: z.number().nonnegative(), // Cost per worker per night
+  // Issue #447: flat per-step rest reward, promoted from a hardcoded +0.5
+  // to a scenario weight. Optional for backward compatibility; consumers
+  // fall back to the historical 0.5 when absent.
+  reward_rest: z.number().optional(),
   min_nights: z.number().int().positive(), // Minimum nights before termination
 
   // Game setup

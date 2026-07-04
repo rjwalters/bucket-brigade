@@ -167,6 +167,17 @@ def generate_scenarios(json_path: Path, output_path: Path):
         # Game setup
         num_agents: int  # Number of agents participating
 
+        # Per-step rest reward (issue #447). Flat reward an agent receives
+        # on any step where it RESTs instead of working. Historically a
+        # hardcoded ``+0.5`` in the reward implementations; promoted to a
+        # scenario weight so every reward term is a scenario parameter and
+        # reward-weight scaling is exact. Defaults to ``0.5`` so every
+        # pre-#447 scenario is bit-exactly preserved.
+        # See ``bucket_brigade/envs/bucket_brigade_env.py::_compute_rewards``
+        # and ``bucket-brigade-core/src/engine/rewards.rs`` for the canonical
+        # implementation.
+        reward_rest: float = 0.5
+
         # Spatial cost asymmetry (issue #203, optional, additive).
         # Empty ``agent_home_positions`` falls back to the round-robin
         # ``house_owners`` anchor (agent i -> house i). ``distance_cost_alpha
@@ -482,6 +493,14 @@ def generate_scenarios(json_path: Path, output_path: Path):
         code += f"        cost_to_work_one_night={spec['cost_to_work_one_night']},\n"
         code += f"        min_nights={spec['min_nights']},\n"
         code += "        num_agents=num_agents,\n"
+        # Issue #447 per-step rest reward. Every entry in
+        # definitions/scenarios.json sets this explicitly (0.5 everywhere as
+        # of the promotion, matching the historical hardcoded value) so
+        # downstream consumers reproducing the env from the JSON alone see
+        # the full reward surface. Emitted conditionally to stay robust to
+        # external JSON without the field (dataclass default 0.5 applies).
+        if "reward_rest" in spec:
+            code += f"        reward_rest={spec['reward_rest']},\n"
         # Issue #203 optional spatial-cost fields. Emit only when set in JSON
         # (every other scenario keeps the dataclass defaults: empty list,
         # alpha=0.0, metric="ring_arc") so behavior is byte-identical to

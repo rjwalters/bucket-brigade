@@ -104,9 +104,8 @@ impl WasmBucketBrigade {
         round1_signals_json: &str,
         round2_actions_json: &str,
     ) -> Result<String, JsValue> {
-        let round1_signals: Vec<u8> = serde_json::from_str(round1_signals_json).map_err(|e| {
-            JsValue::from_str(&format!("Failed to parse round1_signals: {}", e))
-        })?;
+        let round1_signals: Vec<u8> = serde_json::from_str(round1_signals_json)
+            .map_err(|e| JsValue::from_str(&format!("Failed to parse round1_signals: {}", e)))?;
 
         let round2_actions: Vec<[u8; 3]> =
             match serde_json::from_str::<Vec<[u8; 3]>>(round2_actions_json) {
@@ -114,10 +113,7 @@ impl WasmBucketBrigade {
                 Err(_) => {
                     let legacy: Vec<[u8; 2]> =
                         serde_json::from_str(round2_actions_json).map_err(|e| {
-                            JsValue::from_str(&format!(
-                                "Failed to parse round2_actions: {}",
-                                e
-                            ))
+                            JsValue::from_str(&format!("Failed to parse round2_actions: {}", e))
                         })?;
                     legacy.into_iter().map(|a| [a[0], a[1], a[1]]).collect()
                 }
@@ -205,6 +201,13 @@ impl WasmScenario {
             team_penalty_house_burns,
             cost_to_work_one_night,
             min_nights,
+            // Issue #447: the per-step rest reward defaults to the
+            // historical 0.5 so existing JS/TS callers see byte-identical
+            // rewards. The WASM constructor doesn't expose the knob;
+            // non-default values reach the WASM engine via the JSON path
+            // (``Scenario::to_json`` / ``from_json``) which preserves all
+            // fields.
+            reward_rest: 0.5,
             reward_own_house_survives: vec![
                 reward_own_house_survives.unwrap_or(100.0);
                 DEFAULT_LEN

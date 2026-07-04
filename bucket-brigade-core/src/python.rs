@@ -191,6 +191,14 @@ impl PyScenario {
             team_penalty_house_burns,
             cost_to_work_one_night,
             min_nights,
+            // Issue #447: the per-step rest reward defaults to the
+            // historical 0.5 so existing PyScenario callers see
+            // byte-identical rewards. The constructor doesn't expose the
+            // knob; to use a non-default value from Python, pull the
+            // scenario out of ``bucket_brigade_core.SCENARIOS[...]`` or
+            // route through the JSON path, both of which preserve all
+            // fields.
+            reward_rest: 0.5,
             reward_own_house_survives: to_vec(py, reward_own_house_survives)?,
             reward_other_house_survives: to_vec(py, reward_other_house_survives)?,
             penalty_own_house_burns: to_vec(py, penalty_own_house_burns)?,
@@ -295,6 +303,14 @@ impl PyScenario {
     #[getter]
     fn min_nights(&self) -> u32 {
         self.inner.min_nights
+    }
+
+    /// Issue #447: flat per-step rest reward (scenario weight; historically
+    /// a hardcoded +0.5 in the engine). Readable so Python callers can
+    /// inspect scenarios pulled from the SCENARIOS dict / JSON path.
+    #[getter]
+    fn reward_rest(&self) -> f32 {
+        self.inner.reward_rest
     }
 
     #[getter]
