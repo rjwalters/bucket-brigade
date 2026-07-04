@@ -645,6 +645,42 @@ def default_continuous_scenario(num_agents: int) -> Scenario:
     )
 
 
+def asym_b05_k09_c05_scenario(num_agents: int) -> Scenario:
+    """Issue #435: NE phase-diagram cell (beta=0.50, kappa=0.90, c=0.50) promoted to a named scenario. Parameter-identical to make_phase_diagram_scenario(0.5, 0.9, 0.5) on the minimal_specialization base (only beta/kappa/c differ from that base; bit-parity is enforced by tests/test_env_registry.py). The #358 heterogeneous double-oracle search classified this cell `asymmetric_only` (NE team payoff 72.0095 PER EPISODE, 14/20 restarts converged, profile 1xhero + 3xfirefighter; artifacts: experiments/nash/phase_diagram/results.json and bucket_brigade/baselines/release/local/nash/phase_diagram/b0.50_k0.90_c0.50.json) — the regime where the NE itself demands role asymmetry, targeted by het_ppo Phase 2 (#429)."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.5,
+        prob_solo_agent_extinguishes_fire=0.9,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=10.0,
+        team_penalty_house_burns=10.0,
+        reward_own_house_survives=[50.0, 50.0, 50.0, 50.0],
+        reward_other_house_survives=[0.0, 0.0, 0.0, 0.0],
+        penalty_own_house_burns=[100.0, 100.0, 100.0, 100.0],
+        penalty_other_house_burns=[0.0, 0.0, 0.0, 0.0],
+        cost_to_work_one_night=0.5,
+        min_nights=12,
+        num_agents=num_agents,
+    )
+
+
+def asym_b09_k09_c05_scenario(num_agents: int) -> Scenario:
+    """Issue #435: NE phase-diagram cell (beta=0.90, kappa=0.90, c=0.50) promoted to a named scenario. Parameter-identical to make_phase_diagram_scenario(0.9, 0.9, 0.5) on the minimal_specialization base (only beta/kappa/c differ from that base; bit-parity is enforced by tests/test_env_registry.py). The #358 heterogeneous double-oracle search classified this cell `asymmetric_only` (NE team payoff 72.0095 PER EPISODE, 14/20 restarts converged, profile 1xhero + 3xfirefighter; artifacts: experiments/nash/phase_diagram/results.json and bucket_brigade/baselines/release/local/nash/phase_diagram/b0.90_k0.90_c0.50.json) — the regime where the NE itself demands role asymmetry, targeted by het_ppo Phase 2 (#429)."""
+    return Scenario(
+        prob_fire_spreads_to_neighbor=0.9,
+        prob_solo_agent_extinguishes_fire=0.9,
+        prob_house_catches_fire=0.02,
+        team_reward_house_survives=10.0,
+        team_penalty_house_burns=10.0,
+        reward_own_house_survives=[50.0, 50.0, 50.0, 50.0],
+        reward_other_house_survives=[0.0, 0.0, 0.0, 0.0],
+        penalty_own_house_burns=[100.0, 100.0, 100.0, 100.0],
+        penalty_other_house_burns=[0.0, 0.0, 0.0, 0.0],
+        cost_to_work_one_night=0.5,
+        min_nights=12,
+        num_agents=num_agents,
+    )
+
+
 # Registry of all scenarios
 SCENARIO_REGISTRY = {
     "default": default_scenario,
@@ -663,6 +699,8 @@ SCENARIO_REGISTRY = {
     "positional_default": positional_default_scenario,
     "v2_minimal": v2_minimal_scenario,
     "default_continuous": default_continuous_scenario,
+    "asym_b05_k09_c05": asym_b05_k09_c05_scenario,
+    "asym_b09_k09_c05": asym_b09_k09_c05_scenario,
 }
 
 

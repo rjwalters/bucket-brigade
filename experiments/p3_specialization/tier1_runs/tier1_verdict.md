@@ -57,13 +57,17 @@ bit-identical to the historical MINSPEC formula for this scenario
 (`SCENARIO_GAP_REFERENCES["minimal_specialization"]` = `(MINSPEC_RANDOM,
 MINSPEC_SPECIALIST)`, drift-guarded in `tests/test_baselines_constants.py`).
 
-### het_ppo Phase 2 (asymmetric_only phase-diagram cells): blocked
+### het_ppo Phase 2 (asymmetric_only phase-diagram cells): unblocked by #435
 
-Phase 1 ran to completion (see recalibrated row above), but the Phase 2
-scenarios (`asym_b05_k05_c09`, `asym_b05_k09_c09`) are not registered in
-`bucket_brigade/envs` — they exist only in the runbook/launcher docs. Phase 2
-is blocked on the #358 cell-to-scenario follow-up (see
-`experiments/p3_specialization/het_ppo_runbook.md` and issue #429).
+Phase 1 ran to completion (see recalibrated row above). Phase 2 was blocked
+because its scenarios were not registered in `bucket_brigade/envs`. Issue
+#435 resolved this — and found that the names this note previously listed
+(`asym_b05_k05_c09`, `asym_b05_k09_c09`) came from a column-order misread of
+`phase_diagram_table.md` (its columns are `c | β | κ`): the actual
+`asymmetric_only` cells are (β=0.50, κ=0.90, c=0.50) and (β=0.90, κ=0.90,
+c=0.50), now registered as `asym_b05_k09_c05` / `asym_b09_k09_c05` (frozen
+IDs `-v1`). See `experiments/p3_specialization/het_ppo_runbook.md` and issue
+#429.
 
 ### het_ppo / rest_trap (#436): trap-escape verdict — `at_random`
 

@@ -28,7 +28,7 @@
 #
 #   # Phase 2: every asymmetric_only cell from the phase diagram
 #   ./experiments/scripts/launch_het_ppo_sweep.sh \
-#       --scenarios rest_trap,asym_b05_k05_c09,asym_b05_k09_c09
+#       --scenarios rest_trap,asym_b05_k09_c05,asym_b09_k09_c05
 #
 #   # Explicit host, smaller seed set for a fast positive-control rerun
 #   ./experiments/scripts/launch_het_ppo_sweep.sh \

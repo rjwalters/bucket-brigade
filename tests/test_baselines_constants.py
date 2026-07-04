@@ -279,3 +279,38 @@ def test_gap_references_valid_pairs_have_positive_denominator() -> None:
             f"{scenario!r}: reference {reference!r} must exceed random "
             f"{entry['random']!r} for the gap fraction to be meaningful."
         )
+
+
+def test_gap_references_asym_cells_are_degenerate_with_per_episode_caveat() -> None:
+    """The #435 asym_* entries must stay on the degenerate-reference path:
+    the only committed upper anchor (the #358 double-oracle NE team payoff,
+    72.0095) is a PER EPISODE quantity while gap metrics are per-STEP, so
+    no fraction-ladder reference can be pinned without a new measurement.
+    They must also NOT carry #436 trap anchors — the trap-verdict rung
+    ordering assumes NE below random, and here the (positive) NE per-step
+    value sits far above the -78.27/step random baseline."""
+    for scenario in ("asym_b05_k09_c05", "asym_b09_k09_c05"):
+        entry = SCENARIO_GAP_REFERENCES[scenario]
+        assert entry["reference"] is None
+        assert entry["reference_kind"] is None
+        assert entry["degenerate_reason"] == "ne_reference_per_episode_only"
+        # The provenance must record the per-episode vs per-step unit caveat.
+        assert "PER EPISODE" in str(entry["provenance"])
+        assert "ne_per_step_bound" not in entry
+        assert "scripted_best" not in entry
+
+
+def test_asym_cells_random_baselines_are_identical() -> None:
+    """The two asym_* random baselines must be EQUAL, not merely close:
+    beta (prob_fire_spreads_to_neighbor) is inert in bernoulli extinguish
+    mode (burn_out ruins every burning house before the spread phase runs),
+    so the two phase-diagram cells are the same effective environment and
+    the #237-protocol measurement is bit-identical for both (the committed
+    phase diagram shows the same equivalence: identical NE payoffs across
+    beta at fixed kappa). If a re-measurement ever breaks this equality,
+    the engine's phase ordering changed and BOTH scenarios need a registry
+    version bump, not a silent value edit."""
+    assert (
+        SCENARIO_RANDOM_BASELINES["asym_b05_k09_c05"]
+        == SCENARIO_RANDOM_BASELINES["asym_b09_k09_c05"]
+    )

@@ -53,6 +53,48 @@ Naming conventions
   increasing.
 - Full ID example: ``"minimal_specialization-v1"``.
 
+Promoting a phase-diagram cell to a named scenario (issue #435)
+---------------------------------------------------------------
+
+The NE phase diagram (#358) sweeps (β, κ, c) overrides on the
+``minimal_specialization`` base via
+:func:`bucket_brigade.baselines.per_cell.make_phase_diagram_scenario`.
+To promote a cell to a first-class named scenario:
+
+1. **Name**: ``asym_bBB_kKK_cCC`` where ``BB``/``KK``/``CC`` are the two
+   digits after the decimal point, e.g. cell (β=0.50, κ=0.90, c=0.50)
+   becomes ``asym_b05_k09_c05``. Read the (β, κ, c) values from the
+   per-cell artifacts (``experiments/nash/phase_diagram/results.json``
+   ``cells[*].{beta,kappa,c}`` or the ``b*_k*_c*`` cell tag), NOT from a
+   rendered markdown table — the ``phase_diagram_table.md`` column order
+   is ``c | β | κ``, which has already caused one transposition mishap
+   (issue #435 was filed against non-existent c=0.90 cells).
+2. **Definition**: add the scenario to ``definitions/scenarios.json``,
+   copying the ``minimal_specialization`` parameters with ONLY
+   ``prob_fire_spreads_to_neighbor`` (β),
+   ``prob_solo_agent_extinguishes_fire`` (κ), and
+   ``cost_to_work_one_night`` (c) overridden; then run
+   ``scripts/generate_python.py`` and ``scripts/generate_typescript.py``,
+   and mirror the entry in ``bucket-brigade-core/src/scenarios.rs``
+   (bump its ``test_scenario_count``).
+3. **Parity test**: extend the bit-parity test in
+   ``tests/test_env_registry.py`` asserting the registered scenario is
+   field-for-field identical to ``make_phase_diagram_scenario(β, κ, c)``
+   — this is what keeps the cell's NE artifacts (payoff, convergence,
+   genome files) citable for the named scenario.
+4. **Freeze**: add the ``<name>-v1`` entry to :data:`SCENARIO_VERSIONS`
+   below (append-only, per the version-bump policy above).
+5. **Baselines**: give the scenario a canonical uniform-random baseline
+   under the issue #237 convention (n=1000; see
+   ``experiments/p3_specialization/diagnostics/random_baseline.py``) and
+   wire it through ``SCENARIO_RANDOM_BASELINES``,
+   ``SCENARIO_GAP_REFERENCES`` (reference side from the n=10k #413
+   per-cell calibration in
+   ``experiments/nash/phase_diagram/per_cell_baselines.json`` when the
+   cell is covered), and the parity manifest
+   (``bucket_brigade/baselines/parity.py``: ``REFERENCE_CI95`` +
+   ``SCENARIO_FINGERPRINTS``), each with measurement provenance.
+
 The registry intentionally ships a *small* curated set of frozen IDs (the
 ones used in our own paper results + diagnostics). External users who
 want every scenario name from ``definitions/scenarios.json`` can still go
@@ -67,6 +109,8 @@ from typing import Callable, Dict, List
 
 from .scenarios_generated import (
     Scenario,
+    asym_b05_k09_c05_scenario,
+    asym_b09_k09_c05_scenario,
     chain_reaction_scenario,
     default_scenario,
     deceptive_calm_scenario,
@@ -146,6 +190,12 @@ SCENARIO_VERSIONS: Dict[str, _ScenarioFactory] = {
     # Positional-reward variant of default — frozen baseline for PPO
     # training (#384) and frozen-baseline release manifest (#371). See #403.
     "positional_default-v1": positional_default_scenario,
+    # asymmetric_only NE phase-diagram cells promoted to named scenarios
+    # (issue #435; see the "Promoting a phase-diagram cell" section in the
+    # module docstring). Bit-identical to make_phase_diagram_scenario(β, κ, c)
+    # on the minimal_specialization base; targeted by het_ppo Phase 2 (#429).
+    "asym_b05_k09_c05-v1": asym_b05_k09_c05_scenario,
+    "asym_b09_k09_c05-v1": asym_b09_k09_c05_scenario,
 }
 
 

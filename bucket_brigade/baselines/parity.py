@@ -126,7 +126,7 @@ DEFAULT_EPISODES: int = 500
 DEFAULT_SEED: int = 42
 # Tolerance multiplier: |observed - expected| must be <= z * combined SE
 # (see :func:`check_scenario`). z=3 keeps false alarms rare across the whole
-# 14-scenario manifest while a 7x scale error sits hundreds of SEs out.
+# 16-scenario manifest while a 7x scale error sits hundreds of SEs out.
 DEFAULT_Z: float = 3.0
 
 # Absolute tolerance floor (reward units per step). Covers the 2-decimal
@@ -148,6 +148,14 @@ _TOLERANCE_FLOOR: float = 0.05
 # the parity tolerance derive from the committed measurement uncertainty
 # instead of a made-up epsilon. Keyed by frozen scenario ID.
 #
+# The two ``asym_*`` entries come from the issue #435 measurement (same
+# n=1000 protocol: 200 episodes x 5 seeds 42..46 via
+# ``experiments/p3_specialization/diagnostics/random_baseline.py``, host
+# studio, commit ``866f43dd``). They are identical by construction: beta
+# is inert in bernoulli extinguish mode, so the two phase-diagram cells
+# are the same effective environment (see the provenance comments in
+# ``bucket_brigade/baselines/__init__.py``).
+#
 # Drift guard: ``tests/test_parity.py`` asserts each interval contains the
 # corresponding ``SCENARIO_RANDOM_BASELINES`` mean and that the key set
 # aligns with both ``SCENARIO_RANDOM_BASELINES`` and ``SCENARIO_VERSIONS``.
@@ -166,6 +174,8 @@ REFERENCE_CI95: Dict[str, Tuple[float, float]] = {
     "mixed_motivation-v1": (218.83, 229.26),
     "minimal_specialization-v1": (-93.31, -82.16),
     "positional_default-v1": (244.36, 257.01),
+    "asym_b05_k09_c05-v1": (-83.88, -72.81),
+    "asym_b09_k09_c05-v1": (-83.88, -72.81),
 }
 
 # Reference sample size behind every entry above (episodes per scenario in
@@ -205,6 +215,12 @@ def scenario_fingerprint(scenario: Scenario) -> str:
 # ``bucket_brigade/envs/registry.py``). Downstream consumers compare their
 # constructed scenario's fingerprint against these published values.
 SCENARIO_FINGERPRINTS: Dict[str, str] = {
+    "asym_b05_k09_c05-v1": (
+        "sha256:ce3aa75d21c70ce88f2041d6be0f52dfde76f006ae7f616cd5d1633d37376f89"
+    ),
+    "asym_b09_k09_c05-v1": (
+        "sha256:c7e6d12f80befccf4c77b321d4c63bf36f0dcb8d23e37f926d520084ebc5f5fb"
+    ),
     "chain_reaction-v1": (
         "sha256:f1386042d1618ab5b5429e4290cb9bc435e0643f34d7bc2e279d04e3c5443bf9"
     ),
