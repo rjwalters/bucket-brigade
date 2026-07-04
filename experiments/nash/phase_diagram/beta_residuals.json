@@ -1,0 +1,559 @@
+{
+  "inputs": {
+    "results_json": "/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-442/experiments/nash/phase_diagram/results.json",
+    "baselines_dir": "/Users/rwalters/GitHub/bucket-brigade/.loom/worktrees/issue-442/bucket_brigade/baselines/release/local/nash/phase_diagram"
+  },
+  "crn_n_sims": 20000,
+  "columns": [
+    {
+      "kappa": 0.1,
+      "c": 0.5,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.10_c0.50",
+        "b0.50_k0.10_c0.50",
+        "b0.90_k0.10_c0.50"
+      ],
+      "best_team_payoff": [
+        -9692.665,
+        -9692.665,
+        -9692.665
+      ],
+      "converged": [
+        0,
+        0,
+        0
+      ],
+      "verdicts": [
+        "no_convergence",
+        "no_convergence",
+        "no_convergence"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.1,
+      "c": 1.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.10_c1.00",
+        "b0.50_k0.10_c1.00",
+        "b0.90_k0.10_c1.00"
+      ],
+      "best_team_payoff": [
+        -9599.586875,
+        -9599.586875,
+        -9599.586875
+      ],
+      "converged": [
+        1,
+        1,
+        1
+      ],
+      "verdicts": [
+        "asymmetric_only",
+        "asymmetric_only",
+        "asymmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.1,
+      "c": 2.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.10_c2.00",
+        "b0.50_k0.10_c2.00",
+        "b0.90_k0.10_c2.00"
+      ],
+      "best_team_payoff": [
+        -9681.693125,
+        -9681.693125,
+        -9681.693125
+      ],
+      "converged": [
+        0,
+        0,
+        0
+      ],
+      "verdicts": [
+        "no_convergence",
+        "no_convergence",
+        "no_convergence"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.3,
+      "c": 1.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.30_c1.00",
+        "b0.50_k0.30_c1.00",
+        "b0.90_k0.30_c1.00"
+      ],
+      "best_team_payoff": [
+        -3479.635,
+        -3479.635,
+        -3479.635
+      ],
+      "converged": [
+        2,
+        2,
+        2
+      ],
+      "verdicts": [
+        "symmetric_only",
+        "symmetric_only",
+        "symmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.3,
+      "c": 2.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.30_c2.00",
+        "b0.50_k0.30_c2.00",
+        "b0.90_k0.30_c2.00"
+      ],
+      "best_team_payoff": [
+        -3538.2970000000005,
+        -3538.2970000000005,
+        -3538.2970000000005
+      ],
+      "converged": [
+        1,
+        1,
+        1
+      ],
+      "verdicts": [
+        "symmetric_only",
+        "symmetric_only",
+        "symmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.5,
+      "c": 0.5,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.50_c0.50",
+        "b0.50_k0.50_c0.50",
+        "b0.90_k0.50_c0.50"
+      ],
+      "best_team_payoff": [
+        -614.433,
+        -648.015,
+        -648.015
+      ],
+      "converged": [
+        7,
+        3,
+        3
+      ],
+      "verdicts": [
+        "symmetric_only",
+        "symmetric_only",
+        "symmetric_only"
+      ],
+      "payoff_residual": 33.581999999999994,
+      "bit_identical": false,
+      "verdict_consistent": true,
+      "convergence_consistent": false
+    },
+    {
+      "kappa": 0.5,
+      "c": 1.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.50_c1.00",
+        "b0.50_k0.50_c1.00",
+        "b0.90_k0.50_c1.00"
+      ],
+      "best_team_payoff": [
+        -705.656,
+        -705.656,
+        -705.656
+      ],
+      "converged": [
+        7,
+        7,
+        7
+      ],
+      "verdicts": [
+        "symmetric_only",
+        "symmetric_only",
+        "symmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.5,
+      "c": 2.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.50_c2.00",
+        "b0.50_k0.50_c2.00",
+        "b0.90_k0.50_c2.00"
+      ],
+      "best_team_payoff": [
+        -740.025,
+        -740.025,
+        -740.025
+      ],
+      "converged": [
+        6,
+        6,
+        6
+      ],
+      "verdicts": [
+        "mixed",
+        "mixed",
+        "mixed"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.7,
+      "c": 1.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.70_c1.00",
+        "b0.50_k0.70_c1.00",
+        "b0.90_k0.70_c1.00"
+      ],
+      "best_team_payoff": [
+        -57.30799999999999,
+        -57.30799999999999,
+        -57.30799999999999
+      ],
+      "converged": [
+        4,
+        4,
+        4
+      ],
+      "verdicts": [
+        "asymmetric_only",
+        "asymmetric_only",
+        "asymmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.7,
+      "c": 2.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.70_c2.00",
+        "b0.50_k0.70_c2.00",
+        "b0.90_k0.70_c2.00"
+      ],
+      "best_team_payoff": [
+        -77.868,
+        -77.868,
+        -77.868
+      ],
+      "converged": [
+        3,
+        3,
+        3
+      ],
+      "verdicts": [
+        "asymmetric_only",
+        "asymmetric_only",
+        "asymmetric_only"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.9,
+      "c": 0.5,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.90_c0.50",
+        "b0.50_k0.90_c0.50",
+        "b0.90_k0.90_c0.50"
+      ],
+      "best_team_payoff": [
+        80.91499999999999,
+        72.0095,
+        72.0095
+      ],
+      "converged": [
+        17,
+        14,
+        14
+      ],
+      "verdicts": [
+        "mixed",
+        "asymmetric_only",
+        "asymmetric_only"
+      ],
+      "payoff_residual": 8.90549999999999,
+      "bit_identical": false,
+      "verdict_consistent": false,
+      "convergence_consistent": false
+    },
+    {
+      "kappa": 0.9,
+      "c": 1.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.90_c1.00",
+        "b0.50_k0.90_c1.00",
+        "b0.90_k0.90_c1.00"
+      ],
+      "best_team_payoff": [
+        73.797125,
+        73.797125,
+        73.797125
+      ],
+      "converged": [
+        13,
+        13,
+        13
+      ],
+      "verdicts": [
+        "mixed",
+        "mixed",
+        "mixed"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    },
+    {
+      "kappa": 0.9,
+      "c": 2.0,
+      "betas": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "tags": [
+        "b0.10_k0.90_c2.00",
+        "b0.50_k0.90_c2.00",
+        "b0.90_k0.90_c2.00"
+      ],
+      "best_team_payoff": [
+        57.632875,
+        57.632875,
+        57.632875
+      ],
+      "converged": [
+        9,
+        9,
+        9
+      ],
+      "verdicts": [
+        "mixed",
+        "mixed",
+        "mixed"
+      ],
+      "payoff_residual": 0.0,
+      "bit_identical": true,
+      "verdict_consistent": true,
+      "convergence_consistent": true
+    }
+  ],
+  "n_columns": 13,
+  "n_bit_identical": 11,
+  "residual_columns": [
+    {
+      "kappa": 0.5,
+      "c": 0.5,
+      "payoff_residual": 33.581999999999994
+    },
+    {
+      "kappa": 0.9,
+      "c": 0.5,
+      "payoff_residual": 8.90549999999999
+    }
+  ],
+  "missing_committed_profiles": [],
+  "crn_evaluations": [
+    {
+      "kappa": 0.5,
+      "c": 0.5,
+      "eval_beta": 0.5,
+      "n_sims": 20000,
+      "seed": 20260442,
+      "profiles": [
+        {
+          "from_betas": [
+            "0.10"
+          ],
+          "profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+          "solver_team_payoff": -692.805,
+          "reeval_mean": -795.891975,
+          "reeval_se": 13.3810053126905,
+          "solver_minus_reeval": 103.08697500000005
+        },
+        {
+          "from_betas": [
+            "0.50",
+            "0.90"
+          ],
+          "profile_label": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+          "solver_team_payoff": -821.6789999999999,
+          "reeval_mean": -795.892,
+          "reeval_se": 13.381005762883122,
+          "solver_minus_reeval": -25.786999999999807
+        }
+      ],
+      "pairwise": [
+        {
+          "a": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+          "a_from_betas": [
+            "0.10"
+          ],
+          "b": "hero(d=0.00) | hero(d=0.00) | hero(d=0.00) | hero(d=0.00)",
+          "b_from_betas": [
+            "0.50",
+            "0.90"
+          ],
+          "genome_max_delta": 4.169247298513312e-07,
+          "crn_diff_mean": 2.5e-05,
+          "crn_diff_se": 1.7677227560302294e-05,
+          "crn_diff_t": 1.4142489208060227,
+          "verdict": "not_distinguishable",
+          "better_profile": null
+        }
+      ]
+    },
+    {
+      "kappa": 0.9,
+      "c": 0.5,
+      "eval_beta": 0.5,
+      "n_sims": 20000,
+      "seed": 20260442,
+      "profiles": [
+        {
+          "from_betas": [
+            "0.10"
+          ],
+          "profile_label": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+          "solver_team_payoff": 80.91499999999999,
+          "reeval_mean": 55.3578125,
+          "reeval_se": 3.4433763455291726,
+          "solver_minus_reeval": 25.55718749999999
+        },
+        {
+          "from_betas": [
+            "0.50",
+            "0.90"
+          ],
+          "profile_label": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)",
+          "solver_team_payoff": 72.0095,
+          "reeval_mean": 45.8046125,
+          "reeval_se": 3.5750151193995237,
+          "solver_minus_reeval": 26.204887500000005
+        }
+      ],
+      "pairwise": [
+        {
+          "a": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)",
+          "a_from_betas": [
+            "0.10"
+          ],
+          "b": "hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)",
+          "b_from_betas": [
+            "0.50",
+            "0.90"
+          ],
+          "genome_max_delta": 0.9,
+          "crn_diff_mean": 9.5532,
+          "crn_diff_se": 2.734858722957591,
+          "crn_diff_t": 3.4931237653361373,
+          "verdict": "decisive",
+          "better_profile": "firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)"
+        }
+      ]
+    }
+  ],
+  "inertness": {
+    "n_profiles_checked": 13,
+    "n_sims": 2000,
+    "all_identical": true
+  },
+  "interpretation": "At (\u03ba = 0.50, c = 0.50) the committed profiles are behaviorally identical (genome max |\u0394| = 4.2e-07 \u2014 L-BFGS-B endpoint jitter), and the CRN paired difference is +2.5e-05 \u00b1 1.768e-05. The headline results.json residual in this column is therefore pure Monte-Carlo evaluation + restart-selection noise at num_simulations = 1000, giving an honest per-cell payoff noise scale of order tens of payoff units.\n\nAt (\u03ba = 0.90, c = 0.50) the two batches found **structurally different** equilibria (`firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)` vs `hero(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00) | firefighter(d=0.00)`), and the CRN comparison is decisive: `firefighter(d=0.00) | hero(d=0.00) | hero(d=0.00) | firefighter(d=0.00)` has the higher true team payoff by 9.55 \u00b1 2.73 (t = +3.5). The restart lottery is not just payoff jitter \u2014 it changes *which* equilibrium is reported. Whether the better profile is itself an \u03b5-Nash equilibrium of the shared environment requires the seeded re-solve of issue #445 (best-response search is not re-run here)."
+}

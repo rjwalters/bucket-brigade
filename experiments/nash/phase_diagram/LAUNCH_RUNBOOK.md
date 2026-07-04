@@ -17,6 +17,36 @@ scoped to the requested cells. The actual cell-fill completes hours later
 inside the tmux session; the operator's job is to launch, wait, then rsync
 and replot.
 
+## β-axis policy for future sweeps (issue #442)
+
+**β (`prob_fire_spreads_to_neighbor`) is inert in bernoulli extinguish
+mode** — the engine phase order (extinguish → burn_out → spread →
+spontaneous_ignition) ruins every still-burning house before the spread
+phase runs, and the spread phase draws zero RNG in this mode. Cells that
+differ only in β are repeat solves of the same game with a bit-identical
+RNG stream. The committed 39-cell grid confirms this empirically: 11/13
+(κ, c) columns are bit-identical across β, and the 2 residual columns are
+exactly the cells re-solved in a separate post-crash batch (pure
+double-oracle restart lottery — see `beta_residuals.md`).
+
+**Decision: collapse the β axis in all future bernoulli-mode sweeps.**
+Run a single canonical β (use β = 0.5, the value behind the registered
+`asym_b05_k09_c05` scenario) — the 3-value β axis turns 13 effective
+cells into 39 solves, i.e. 3× compute (~5.5 h/cell × 26 redundant cells
+≈ 140 core-hours per grid) for zero information.
+
+We considered the alternative — switching the sweep to **continuous
+extinguish mode**, where β is live (issue #253) — and rejected it as the
+*default*: it changes the environment family, invalidating comparability
+with every committed artifact (NE cells, PPO trainability sweeps,
+per-cell baselines, the workshop paper). If β-response is a research
+question, launch a continuous-mode grid as a deliberately separate
+experiment family with its own baselines; do not mix modes within this
+grid.
+
+If you re-run individual cells (e.g. the issue #445 seeded retry), the
+redundant β=0.5/β=0.9 twins should be treated as one cell.
+
 ## Prerequisites
 
 The two performance / reliability fixes merged on 2026-06-08 must be on

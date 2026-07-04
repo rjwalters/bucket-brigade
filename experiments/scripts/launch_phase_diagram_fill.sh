@@ -6,6 +6,13 @@
 # passed and the driver will run that subset, caching previously-completed
 # cells via summary.json (see compute_nash_phase_diagram.py --force).
 #
+# NOTE (issue #442): beta is INERT in bernoulli extinguish mode — cells
+# differing only in beta are repeat solves of the same game. For any new
+# bernoulli-mode sweep pass a single --beta-values entry (canonical: 0.5);
+# a multi-value beta axis multiplies compute for zero information. See the
+# beta-axis policy section of experiments/nash/phase_diagram/LAUNCH_RUNBOOK.md
+# and experiments/nash/phase_diagram/beta_residuals.md.
+#
 # The script does NOT compute anything locally. It only:
 #   1. Reads $COMPUTE_HOST_* aliases from .env to resolve a target host
 #      (unless --host is passed explicitly).
