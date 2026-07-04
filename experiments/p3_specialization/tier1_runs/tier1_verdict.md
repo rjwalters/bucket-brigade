@@ -119,7 +119,8 @@ alc-9, train commit `8a532de1`; summaries regenerated locally via
   draws.** β is dynamically inert in bernoulli extinguish mode (the cells
   are the same game), and the per-seed streams turned out to be *shared*,
   not scenario-hashed apart: iteration-0 team rewards match exactly on 2/20
-  seeds and to ~0.1% on most others, because β's only live effect is as an
+  seeds, within 0.1% on about half of the rest (9/18; 13/20 within 0.5%),
+  because β's only live effect is as an
   observation feature (`bucket-brigade-core/src/engine/observation.rs`) that
   perturbs otherwise-identical policies. Same-seed trailing-5 correlation
   r = +0.84; trajectories diverge chaotically over training. Consistency
@@ -127,14 +128,18 @@ alc-9, train commit `8a532de1`; summaries regenerated locally via
   trailing-5; same-seed diff b09−b05 = +2.07 ± 5.62/step, t ≈ +1.65, n.s.).
   Consequence: the pair provides ~20 paired draws of one environment, not
   40 independent seeds — do not pool them as n=40.
-- **Role differentiation — behavioral differentiation without payoff.**
+- **Role differentiation — injected at init, does not grow, no payoff.**
   Per-seed metrics carry per-agent policy/action entropies and pairwise
-  MI/CMI (no per-agent rewards). Within-seed action-entropy spread across
-  the 4 agents grows from ~0.29 nats at iteration 0 to 1.59 ± 0.65 (b05) /
-  1.32 ± 0.70 (b09) at trailing-5 — the per-agent init streams do induce
-  heterogeneous policies. But pairwise MI *declines* over training (paired
-  Δ −0.22 ± 0.39, t = −2.5 on b05; −0.35 ± 0.33, t = −4.7 on b09): agents
-  become more independent, not more coordinated, and no seed converts the
+  MI/CMI (no per-agent rewards). The disjoint per-agent init streams
+  mechanically inject behavioral differentiation at iteration 0
+  (within-seed action-entropy spread across the 4 agents = 1.28 nats), and
+  it does *not* significantly grow through training: trailing-5 spread is
+  1.59 ± 0.65 (b05) / 1.32 ± 0.70 (b09) nats, paired growth t = +1.62 /
+  +0.20, both n.s. (policy-entropy spread tells the same story: 0.29 at
+  iter 0 → 0.36 ± 0.15 / 0.30 ± 0.16, t = +1.67 / +0.27, both n.s.).
+  Meanwhile pairwise MI *declines* over training (paired Δ −0.22 ± 0.39,
+  t = −2.5 on b05; −0.35 ± 0.33, t = −4.7 on b09): agents become more
+  independent, not more coordinated, and no seed converts the injected
   differentiation into hero/firefighter division of labor that pays (team
   reward stays at random). Late-training CMI conditioner-degeneracy
   warnings (near-deterministic agents) corroborate collapse onto

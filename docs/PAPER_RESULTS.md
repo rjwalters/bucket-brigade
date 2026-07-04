@@ -490,17 +490,22 @@ random baseline −78.27/step, 95% CI [−83.88, −72.81], n=1000, PR #441):
 
 Both cells sit ~81–84/step below the NE per-step bound (+6.0); the best
 single seed (b09 seed 46, trailing-5 ≈ −48/step) is still ~54/step short.
-Per-agent init asymmetry *does* induce behavioral differentiation —
-within-seed action-entropy spread across agents grows from ~0.29 nats at
-iteration 0 to 1.59 ± 0.65 / 1.32 ± 0.70 nats at trailing-5 — but pairwise
-MI declines over training (paired t = −2.5 / −4.7): agents become more
-independent, not coordinated, and no seed converts the differentiation into
-a paying hero/firefighter division of labor.
+Per-agent init asymmetry injects behavioral differentiation at iteration 0
+(within-seed action-entropy spread across agents = 1.28 nats) but the
+spread does not significantly grow through training — trailing-5 spread is
+1.59 ± 0.65 / 1.32 ± 0.70 nats, paired growth t = +1.62 / +0.20, both n.s.
+(policy-entropy spread agrees: 0.29 → 0.36 ± 0.15 / 0.30 ± 0.16, t = +1.67
+/ +0.27) — and pairwise MI declines over training (paired t = −2.5 /
+−4.7): agents become more independent, not coordinated, no role structure
+emerges beyond what the init streams mechanically injected, and no seed
+converts that injected differentiation into a paying hero/firefighter
+division of labor.
 
 **Replication-pair caveat**: β is dynamically inert in bernoulli extinguish
 mode, so the two cells are the same game — and the seed streams turned out
 to be shared rather than scenario-hashed apart (iteration-0 returns match
-exactly on 2/20 seeds, to ~0.1% on most; β's only live effect is as an
+exactly on 2/20 seeds, within 0.1% on 9/18 of the rest, within 0.5% on
+13/20 overall; β's only live effect is as an
 observation feature). Same-seed trailing-5 correlation r = +0.84; cell
 means are statistically indistinguishable (Welch t = −0.67; same-seed diff
 +2.07 ± 5.62/step, n.s.). Treat the pair as ~20 CRN-coupled draws of one
