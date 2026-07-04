@@ -21,7 +21,6 @@ from pathlib import Path
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 from matplotlib.patches import Rectangle
 
 
@@ -37,17 +36,17 @@ VERDICT_ORDER = [
 # the body prose already names: gray for collapse, blue for symmetric,
 # teal for mixed, pale yellow for asymmetric).
 VERDICT_COLORS = {
-    "no_convergence":  "#bdbdbd",
-    "symmetric_only":  "#2c7bb6",
-    "mixed":           "#7fcdbb",
+    "no_convergence": "#bdbdbd",
+    "symmetric_only": "#2c7bb6",
+    "mixed": "#7fcdbb",
     "asymmetric_only": "#f4e285",
 }
 
 # Pretty labels for the legend (typeset names match the prose)
 VERDICT_LABELS = {
-    "no_convergence":  "no_convergence",
-    "symmetric_only":  "symmetric_only",
-    "mixed":           "mixed",
+    "no_convergence": "no_convergence",
+    "symmetric_only": "symmetric_only",
+    "mixed": "mixed",
     "asymmetric_only": "asymmetric_only",
 }
 
@@ -60,9 +59,7 @@ COSTS = [0.5, 1.0, 2.0]
 def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[4]
     default_in = repo_root / "experiments/nash/phase_diagram/results.json"
-    default_out = (
-        Path(__file__).resolve().parent.parent / "phase_diagram.pdf"
-    )
+    default_out = Path(__file__).resolve().parent.parent / "phase_diagram.pdf"
     p = argparse.ArgumentParser()
     p.add_argument("--in", dest="in_path", type=Path, default=default_in)
     p.add_argument("--out", dest="out_path", type=Path, default=default_out)
@@ -82,7 +79,6 @@ def render(grid: dict, out_path: Path) -> None:
     )
     # Map verdicts to small integers for the colormap; -1 = unsampled.
     verdict_to_idx = {v: i for i, v in enumerate(VERDICT_ORDER)}
-    cmap = ListedColormap([VERDICT_COLORS[v] for v in VERDICT_ORDER])
 
     for ax, cost in zip(axes, COSTS):
         # Build a 3 (beta) x 5 (kappa) grid of verdict indices; rows are
@@ -102,24 +98,38 @@ def render(grid: dict, out_path: Path) -> None:
             for j, kappa in enumerate(KAPPAS):
                 idx = rows[i][j]
                 if idx == -1:
-                    ax.add_patch(Rectangle(
-                        (j, i), 1, 1,
-                        facecolor="#f0f0f0",
-                        edgecolor="white",
-                        linewidth=1.5,
-                        hatch="//",
-                    ))
-                    ax.text(j + 0.5, i + 0.5, "n/a",
-                            ha="center", va="center",
-                            fontsize=7, color="#666666")
+                    ax.add_patch(
+                        Rectangle(
+                            (j, i),
+                            1,
+                            1,
+                            facecolor="#f0f0f0",
+                            edgecolor="white",
+                            linewidth=1.5,
+                            hatch="//",
+                        )
+                    )
+                    ax.text(
+                        j + 0.5,
+                        i + 0.5,
+                        "n/a",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color="#666666",
+                    )
                 else:
                     verdict = VERDICT_ORDER[idx]
-                    ax.add_patch(Rectangle(
-                        (j, i), 1, 1,
-                        facecolor=VERDICT_COLORS[verdict],
-                        edgecolor="white",
-                        linewidth=1.5,
-                    ))
+                    ax.add_patch(
+                        Rectangle(
+                            (j, i),
+                            1,
+                            1,
+                            facecolor=VERDICT_COLORS[verdict],
+                            edgecolor="white",
+                            linewidth=1.5,
+                        )
+                    )
 
         ax.set_xlim(0, len(KAPPAS))
         ax.set_ylim(0, len(BETAS))
@@ -138,16 +148,23 @@ def render(grid: dict, out_path: Path) -> None:
 
     # Shared categorical legend at the bottom.
     handles = [
-        mpatches.Patch(facecolor=VERDICT_COLORS[v], edgecolor="white",
-                       label=VERDICT_LABELS[v])
+        mpatches.Patch(
+            facecolor=VERDICT_COLORS[v], edgecolor="white", label=VERDICT_LABELS[v]
+        )
         for v in VERDICT_ORDER
     ]
-    handles.append(mpatches.Patch(
-        facecolor="#f0f0f0", edgecolor="white", hatch="//", label="n/a (unsampled)"
-    ))
+    handles.append(
+        mpatches.Patch(
+            facecolor="#f0f0f0", edgecolor="white", hatch="//", label="n/a (unsampled)"
+        )
+    )
     fig.legend(
-        handles=handles, loc="lower center", ncol=5,
-        frameon=False, fontsize=8, bbox_to_anchor=(0.5, -0.05),
+        handles=handles,
+        loc="lower center",
+        ncol=5,
+        frameon=False,
+        fontsize=8,
+        bbox_to_anchor=(0.5, -0.05),
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
