@@ -249,8 +249,8 @@ This is the trainability evidence the workshop paper's §4 finding rests on.
 - 4×-budget rerun: `experiments/p3_specialization/phase_diagram_ppo_longbudget/cell_<tag>/cell_summary.json` (6 no_convergence cells × 4 seeds)
 - Recalibrated verdict tables: [`experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.md`](../experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.md), [`experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.md`](../experiments/p3_specialization/phase_diagram_ppo_longbudget/recalibrated_verdict.md)
 - Per-cell baselines consumed by the recalibrator: [`experiments/nash/phase_diagram/per_cell_baselines.json`](../experiments/nash/phase_diagram/per_cell_baselines.json)
-- Figure 2 source (per-cell heatmap): [`paper/anvil_pub.bb-workshop.8/figures/src/recalibrated_heatmap.py`](../paper/anvil_pub.bb-workshop.8/figures/src/recalibrated_heatmap.py)
-- Published paper: [`paper/anvil_pub.bb-workshop.8/main.tex`](../paper/anvil_pub.bb-workshop.8/main.tex)
+- Figure 2 source (per-cell heatmap): [`paper/anvil_pub.bb-workshop.9/figures/src/recalibrated_heatmap.py`](../paper/anvil_pub.bb-workshop.9/figures/src/recalibrated_heatmap.py)
+- Published paper: [`paper/anvil_pub.bb-workshop.9/main.tex`](../paper/anvil_pub.bb-workshop.9/main.tex)
 
 ### 6a. PPO sweep at original budget (37 cells × 4 seeds)
 
@@ -310,7 +310,7 @@ $c \in \{0.5, 1.0, 2.0\}$) per-cell `gap_closed_ne` heatmap to vector PDF:
 
 ```bash
 uv run --with matplotlib python \
-    paper/anvil_pub.bb-workshop.8/figures/src/recalibrated_heatmap.py
+    paper/anvil_pub.bb-workshop.9/figures/src/recalibrated_heatmap.py
 ```
 
 The 4-class ordering summary printed at the bottom of each
@@ -323,7 +323,7 @@ For the surrounding argument — the closed-form bound that predicts
 collapse $\to$ symmetric $\to$ asymmetric, how the empirical
 `mixed` class sits between symmetric and asymmetric, and the
 trainability-vs-NE-structure framing — see
-[`paper/anvil_pub.bb-workshop.8/main.tex`](../paper/anvil_pub.bb-workshop.8/main.tex)
+[`paper/anvil_pub.bb-workshop.9/main.tex`](../paper/anvil_pub.bb-workshop.9/main.tex)
 §4.
 
 ### 6f. k = 1 improvability oracle on the `no_convergence` cells (issue #428)
@@ -348,9 +348,14 @@ $c = 0.5$ `no_convergence` cells cannot be read as "no single-agent gap
 exists, so flat is correct" — a scripted k = 1 best response finds a
 statistically decisive team-return improvement that PPO does not. The
 trainability failure on these cells therefore remains unexplained by this
-oracle (as it is by NE conditional entropy, #430 Task 1); the
-coordination-threshold account ($k^* > 1$, issue #430 / thrust#259) and
-plain exploration failure remain the live hypotheses. The three
+oracle (as it is by NE conditional entropy, #430 Task 1). The binary
+coordination-threshold account ($k^* > 1 \Rightarrow$ untrainable,
+issue #430 / thrust#259) was subsequently falsified by the full-grid
+join (PR #475,
+[`experiments/nash/phase_diagram/kstar_vs_trainability.md`](../experiments/nash/phase_diagram/kstar_vs_trainability.md)):
+plain exploration failure and the exploratory, $\kappa$-confounded
+$k^* = k_{max}$ failure-zone reading are the remaining live
+candidates. The three
 $c = 2.0$ `no_convergence` cells are not yet characterized (run the
 oracle with `--cells b0.10_k0.10_c2.00 b0.50_k0.10_c2.00
 b0.90_k0.10_c2.00` in a follow-up).
