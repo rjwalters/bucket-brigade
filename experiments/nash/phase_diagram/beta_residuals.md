@@ -99,11 +99,16 @@ Every committed profile (13 unique profile/column combinations) was evaluated un
   characterization stays the asymmetric FR×3+FF NE; anchors unchanged
   (`experiments/nash/rest_trap_seeded_do/RESULTS.md`). The
   phase-diagram-cell question deferred above (is FF|hero|hero|FF an
-  ε-NE at κ = 0.90, c = 0.50?) is **still open**; the harnesses to
-  answer it now exist
-  (`experiments/scripts/test_mixture_exploitability.py`,
-  `test_specialist_exploitability.py --profile-file`) and need a
-  follow-up issue with its own compute budget.
+  ε-NE at κ = 0.90, c = 0.50?) was **resolved by issue #459**
+  (`exploitability/RESULTS.md`): BOTH committed profiles are ε-NE at
+  ε = 50 (CRN paired deviation check over archetype + harness-BR
+  deviations; largest 95% upper bound on any deviation gain
+  +13.6/episode). The restart lottery documented above selected
+  between two genuine equilibria on a FF↔hero-interchangeable
+  plateau. Since FF|hero|hero|FF is also the decisively better
+  profile (the CRN comparison above), the coordinated
+  `SCENARIO_GAP_REFERENCES` / frozen-artifact update is flagged (not
+  executed) in `exploitability/RESULTS.md` §4.
 - **Issue #429** — het_ppo Phase 2 gap ladder consumes the registered
   cells' NE payoff as denominator; see the interpretation above.
 - **PR #448** — the workshop paper carries the matching β-inertness
