@@ -66,6 +66,7 @@ import hashlib
 import json
 import subprocess  # nosec B404 (only used to stamp manifest with git short SHA; argv is hardcoded)
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -88,12 +89,19 @@ from .manifest import (
 # bytes unchanged. 0.1.1 -> 0.1.2: manifest-only hash re-sync (#470)
 # for the 4 (c=0.50) phase-diagram cells that #420's full-grid
 # regeneration rewrote after the 0.1.0 freeze; shipped bytes unchanged
-# since #420. NOTE: re-running this freeze script regenerates those
-# cells from the preview sources (restoring the source_parameters /
-# swept_parameters blocks #420 dropped) and clears the full-grid cells
-# #420 added to local/nash/phase_diagram/ — review issue #470 before
-# re-freezing.
-DEFAULT_RELEASE_VERSION: str = "0.1.2"
+# since #420. 0.1.2 -> 0.1.3: manifest-only addition (#473) of the 29
+# full-grid phase-diagram genomes #420 shipped in local/nash/
+# phase_diagram/ without cataloguing; artifact bytes unchanged. Those
+# 29 cells are NOT reproducible by this script (the per-cell solver
+# outputs were never committed — only the aggregated summary at
+# experiments/nash/phase_diagram/results.json, which carries no genome
+# vectors), so :func:`freeze_release` now refuses to clear a bundle
+# containing files it cannot regenerate unless ``--force`` is passed.
+# NOTE: re-running this freeze script regenerates the 4 preview-derived
+# (c=0.50) cells from the preview sources (restoring the
+# source_parameters / swept_parameters blocks #420 dropped) — review
+# issues #470/#473 before re-freezing.
+DEFAULT_RELEASE_VERSION: str = "0.1.3"
 
 
 # Default subdirectory layout inside the release bundle. Mirrors the
@@ -145,6 +153,38 @@ _PHASE_DIAGRAM_CELL_NOTE_SUFFIXES: Dict[str, str] = {
     )
     for tag in ("b0.50_k0.90_c0.50", "b0.90_k0.90_c0.50")
 }
+
+
+class UnknownBundleFilesError(RuntimeError):
+    """Raised when a freeze would delete bundle files it cannot regenerate.
+
+    Issue #470/#473 background: PR #420 wrote 29 full-grid phase-diagram
+    genome files directly into the shipped ``local/nash/phase_diagram/``
+    bundle without committing the per-cell solver outputs they came
+    from. The freeze script only knows the preview sources, so a naive
+    re-freeze would silently ``rmtree`` those cells. Rather than lose
+    unreproducible artifacts, :func:`freeze_release` refuses up front
+    and lists the orphaned files; the operator can pass ``force=True``
+    (CLI ``--force``) after moving/backing up the files or deciding the
+    deletion is intended.
+    """
+
+    def __init__(self, bundle_dir: Path, unknown_files: Sequence[str]) -> None:
+        self.bundle_dir = Path(bundle_dir)
+        self.unknown_files = list(unknown_files)
+        listing = "\n".join(f"  - {f}" for f in self.unknown_files)
+        super().__init__(
+            f"Refusing to freeze into {self.bundle_dir}: it contains "
+            f"{len(self.unknown_files)} artifact file(s) this freeze run "
+            "cannot regenerate from its known sources and would therefore "
+            f"delete:\n{listing}\n"
+            "These are likely unreproducible artifacts written directly "
+            "into the bundle (see issues #470/#473 — e.g. the #420 "
+            "full-grid phase-diagram genomes, whose per-cell solver "
+            "outputs were never committed). Either move them out of the "
+            "bundle, stage their sources so the freeze can regenerate "
+            "them, or re-run with --force to delete them anyway."
+        )
 
 
 @dataclass(frozen=True)
@@ -537,6 +577,76 @@ def _freeze_ppo_checkpoints(repo_root: Path, bundle_dir: Path) -> List[ArtifactE
 # ---------------------------------------------------------------------------
 
 
+def _produce_artifacts(
+    repo_root: Path,
+    bundle_dir: Path,
+    include_phase_diagram: bool,
+    include_ppo: bool,
+) -> Tuple[
+    List[ArtifactEntry],
+    List[ArtifactEntry],
+    List[ArtifactEntry],
+    List[ArtifactEntry],
+]:
+    """Write every artifact file into ``bundle_dir`` and return entries.
+
+    Shared by the real freeze and the pre-flight staging pass in
+    :func:`find_unreproducible_files`, so both agree exactly on which
+    files a freeze run produces.
+    """
+    archetype_entries = _freeze_archetypes(bundle_dir)
+    nash_entries = _freeze_heterogeneous_ne(repo_root, bundle_dir)
+    pd_entries: List[ArtifactEntry] = []
+    if include_phase_diagram:
+        pd_entries = _freeze_phase_diagram_ne(repo_root, bundle_dir)
+    ppo_entries: List[ArtifactEntry] = []
+    if include_ppo:
+        ppo_entries = _freeze_ppo_checkpoints(repo_root, bundle_dir)
+    return archetype_entries, nash_entries, pd_entries, ppo_entries
+
+
+def _existing_artifact_files(bundle_dir: Path) -> set[str]:
+    """Relative POSIX paths of all files under the artifact subdirs."""
+    found: set[str] = set()
+    for sub in (ARCHETYPES_SUBDIR, NASH_SUBDIR, PPO_SUBDIR):
+        target = bundle_dir / sub
+        if not target.is_dir():
+            continue
+        for p in target.rglob("*"):
+            if p.is_file():
+                found.add(p.relative_to(bundle_dir).as_posix())
+    return found
+
+
+def find_unreproducible_files(
+    repo_root: Path,
+    bundle_dir: Path,
+    include_phase_diagram: bool = True,
+    include_ppo: bool = True,
+) -> List[str]:
+    """Files in ``bundle_dir``'s artifact subdirs a freeze would NOT rewrite.
+
+    Stages a throwaway freeze into a temporary directory to compute the
+    exact set of files this run would produce, then returns the sorted
+    relative paths of existing bundle files outside that set. A
+    non-empty result means a destructive freeze would permanently
+    delete artifacts that cannot be regenerated from the known sources
+    (see :class:`UnknownBundleFilesError`).
+    """
+    existing = _existing_artifact_files(Path(bundle_dir))
+    if not existing:
+        return []
+    with tempfile.TemporaryDirectory() as tmp:
+        groups = _produce_artifacts(
+            repo_root=Path(repo_root),
+            bundle_dir=Path(tmp),
+            include_phase_diagram=include_phase_diagram,
+            include_ppo=include_ppo,
+        )
+    producible = {entry.filename for group in groups for entry in group}
+    return sorted(existing - producible)
+
+
 def freeze_release(
     repo_root: Path,
     bundle_dir: Path,
@@ -544,6 +654,7 @@ def freeze_release(
     release_date: Optional[str] = None,
     include_phase_diagram: bool = True,
     include_ppo: bool = True,
+    force: bool = False,
 ) -> FreezeStats:
     """Gather every artifact and write the manifest into ``bundle_dir``.
 
@@ -562,12 +673,33 @@ def freeze_release(
             the phase-diagram preview. Most callers want this.
         include_ppo: If True, copy any staged PPO checkpoints into the
             bundle. No-op if none are staged.
+        force: If True, skip the pre-flight unreproducible-files check
+            and clear the artifact subdirs unconditionally (the pre-#473
+            behaviour).
 
     Returns:
         :class:`FreezeStats` summarising what was written.
+
+    Raises:
+        UnknownBundleFilesError: If ``bundle_dir`` contains artifact
+            files this run cannot regenerate and ``force`` is False.
     """
     bundle_dir = Path(bundle_dir)
     bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    # Pre-flight (#473): refuse to delete artifact files this run
+    # cannot regenerate. PR #420 demonstrated the failure mode — genome
+    # files written straight into the shipped bundle with no committed
+    # source, which a naive re-freeze would silently rmtree.
+    if not force:
+        unknown = find_unreproducible_files(
+            repo_root=repo_root,
+            bundle_dir=bundle_dir,
+            include_phase_diagram=include_phase_diagram,
+            include_ppo=include_ppo,
+        )
+        if unknown:
+            raise UnknownBundleFilesError(bundle_dir, unknown)
 
     # Clear out any prior artifact subdirs so stale entries don't
     # linger across runs. The .gitkeep + README that ship in the
@@ -578,14 +710,12 @@ def freeze_release(
         if target.exists():
             _rmtree(target)
 
-    archetype_entries = _freeze_archetypes(bundle_dir)
-    nash_entries = _freeze_heterogeneous_ne(repo_root, bundle_dir)
-    pd_entries: List[ArtifactEntry] = []
-    if include_phase_diagram:
-        pd_entries = _freeze_phase_diagram_ne(repo_root, bundle_dir)
-    ppo_entries: List[ArtifactEntry] = []
-    if include_ppo:
-        ppo_entries = _freeze_ppo_checkpoints(repo_root, bundle_dir)
+    archetype_entries, nash_entries, pd_entries, ppo_entries = _produce_artifacts(
+        repo_root=repo_root,
+        bundle_dir=bundle_dir,
+        include_phase_diagram=include_phase_diagram,
+        include_ppo=include_ppo,
+    )
 
     if release_date is None:
         release_date = datetime.date.today().isoformat()
@@ -699,6 +829,16 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "Print the manifest that *would* be written and exit without touching disk."
         ),
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Clear the destination artifact subdirs even if they contain "
+            "files this freeze cannot regenerate (skips the #473 "
+            "unreproducible-files guard). DESTRUCTIVE: review the guard's "
+            "file list (run without --force first) before using."
+        ),
+    )
     return parser
 
 
@@ -710,8 +850,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.dry_run:
         # In dry-run mode we still construct the bundle in a temp dir
         # so we exercise the same code path, then report and exit.
-        import tempfile
-
         with tempfile.TemporaryDirectory() as tmp:
             stats = freeze_release(
                 repo_root=repo_root,
@@ -724,16 +862,38 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("(dry-run)")
             print(stats.short_summary())
             print(f"  intended destination: {bundle_dir}")
+        # Also run the #473 pre-flight against the *intended*
+        # destination so operators see what a real (non---force) run
+        # would refuse to delete.
+        unknown = find_unreproducible_files(
+            repo_root=repo_root,
+            bundle_dir=bundle_dir,
+            include_phase_diagram=not args.no_phase_diagram,
+            include_ppo=not args.no_ppo,
+        )
+        if unknown:
+            print(
+                f"  WARNING: {len(unknown)} file(s) in the destination "
+                "cannot be regenerated by this freeze; a real run will "
+                "refuse without --force:"
+            )
+            for f in unknown:
+                print(f"    - {f}")
         return 0
 
-    stats = freeze_release(
-        repo_root=repo_root,
-        bundle_dir=bundle_dir,
-        release_version=args.release_version,
-        release_date=args.release_date,
-        include_phase_diagram=not args.no_phase_diagram,
-        include_ppo=not args.no_ppo,
-    )
+    try:
+        stats = freeze_release(
+            repo_root=repo_root,
+            bundle_dir=bundle_dir,
+            release_version=args.release_version,
+            release_date=args.release_date,
+            include_phase_diagram=not args.no_phase_diagram,
+            include_ppo=not args.no_ppo,
+            force=args.force,
+        )
+    except UnknownBundleFilesError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
     print(stats.short_summary())
     return 0
 

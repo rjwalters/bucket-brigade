@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_version": "0.1.2",
+  "release_version": "0.1.3",
   "release_date": "2026-06-08",
   "source_commit": "9adf1d3a",
   "huggingface_repo": "rjwalters/bucket-brigade-baselines",
@@ -70,12 +70,174 @@
     },
     {
       "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.10_c1.00",
+      "filename": "nash/phase_diagram/b0.10_k0.10_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "a9b74a0fdbaaaef2fa7d2eae06ec5f767ae23d1929b1a81b5fac9e59f28cc1d2",
+      "size_bytes": 1709,
+      "notes": "Phase-diagram cell b0.10_k0.10_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.30_c1.00",
+      "filename": "nash/phase_diagram/b0.10_k0.30_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "e29f8c9083d62c8865c47a281e9425a5a5a15c1f2fe2d8de5327159958fe5be1",
+      "size_bytes": 1613,
+      "notes": "Phase-diagram cell b0.10_k0.30_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.30_c2.00",
+      "filename": "nash/phase_diagram/b0.10_k0.30_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "5490af3f9f5bd7524e93ca93815b00b6a447b8f6f0890f3e8a1217d8d47e47c8",
+      "size_bytes": 1623,
+      "notes": "Phase-diagram cell b0.10_k0.30_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.50_c0.50",
+      "filename": "nash/phase_diagram/b0.10_k0.50_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "1594ed13973c26458743d5397487bf2176fd39b895c7f21b4d8f578917ca1eb7",
+      "size_bytes": 1812,
+      "notes": "Phase-diagram cell b0.10_k0.50_c0.50; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.50_c1.00",
+      "filename": "nash/phase_diagram/b0.10_k0.50_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "312112b240c7f6da3a941839360d1de1681b7eae7a0b4f1425767404062ed727",
+      "size_bytes": 1555,
+      "notes": "Phase-diagram cell b0.10_k0.50_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.50_c2.00",
+      "filename": "nash/phase_diagram/b0.10_k0.50_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "97b78426b317eb48cc6e23a441de0ed315e464ac2aeafdd8f61b8ae54d43c94d",
+      "size_bytes": 1704,
+      "notes": "Phase-diagram cell b0.10_k0.50_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.70_c1.00",
+      "filename": "nash/phase_diagram/b0.10_k0.70_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "08677985809e22b77b28adca0067982fef07ba5afc4e6882e04d55c469d38317",
+      "size_bytes": 1562,
+      "notes": "Phase-diagram cell b0.10_k0.70_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.70_c2.00",
+      "filename": "nash/phase_diagram/b0.10_k0.70_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "f7d6e90714b8771cea63ec126096917025c8a2eb2958dae1e95d39a7a10c17f0",
+      "size_bytes": 1563,
+      "notes": "Phase-diagram cell b0.10_k0.70_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.90_c0.50",
+      "filename": "nash/phase_diagram/b0.10_k0.90_c0.50.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "6cbbbbf775df644b7d9f97002d75a2602dfcba9e2644845e1514e3efdeb8f7a6",
+      "size_bytes": 1579,
+      "notes": "Phase-diagram cell b0.10_k0.90_c0.50; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.90_c1.00",
+      "filename": "nash/phase_diagram/b0.10_k0.90_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "b79e37de9b5f55fcd48d8421303e9376b3c0422b02b86ea800a73d3157eef4d5",
+      "size_bytes": 1875,
+      "notes": "Phase-diagram cell b0.10_k0.90_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.10_k0.90_c2.00",
+      "filename": "nash/phase_diagram/b0.10_k0.90_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "85656e0d71d110b81ca049a36a58223d51508c4e686d078e498f2e80105b9aaf",
+      "size_bytes": 1877,
+      "notes": "Phase-diagram cell b0.10_k0.90_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.10_c1.00",
+      "filename": "nash/phase_diagram/b0.50_k0.10_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "a9b74a0fdbaaaef2fa7d2eae06ec5f767ae23d1929b1a81b5fac9e59f28cc1d2",
+      "size_bytes": 1709,
+      "notes": "Phase-diagram cell b0.50_k0.10_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.30_c1.00",
+      "filename": "nash/phase_diagram/b0.50_k0.30_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "e29f8c9083d62c8865c47a281e9425a5a5a15c1f2fe2d8de5327159958fe5be1",
+      "size_bytes": 1613,
+      "notes": "Phase-diagram cell b0.50_k0.30_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.30_c2.00",
+      "filename": "nash/phase_diagram/b0.50_k0.30_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "5490af3f9f5bd7524e93ca93815b00b6a447b8f6f0890f3e8a1217d8d47e47c8",
+      "size_bytes": 1623,
+      "notes": "Phase-diagram cell b0.50_k0.30_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
       "name": "phase_diagram_b0.50_k0.50_c0.50",
       "filename": "nash/phase_diagram/b0.50_k0.50_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
       "sha256": "8800300a10e5dccb2b6568954bb41692fea77d12af62279ee932774713e046a8",
       "size_bytes": 1561,
       "notes": "Phase-diagram cell b0.50_k0.50_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.50_c1.00",
+      "filename": "nash/phase_diagram/b0.50_k0.50_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "312112b240c7f6da3a941839360d1de1681b7eae7a0b4f1425767404062ed727",
+      "size_bytes": 1555,
+      "notes": "Phase-diagram cell b0.50_k0.50_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.50_c2.00",
+      "filename": "nash/phase_diagram/b0.50_k0.50_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "97b78426b317eb48cc6e23a441de0ed315e464ac2aeafdd8f61b8ae54d43c94d",
+      "size_bytes": 1704,
+      "notes": "Phase-diagram cell b0.50_k0.50_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.70_c1.00",
+      "filename": "nash/phase_diagram/b0.50_k0.70_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "08677985809e22b77b28adca0067982fef07ba5afc4e6882e04d55c469d38317",
+      "size_bytes": 1562,
+      "notes": "Phase-diagram cell b0.50_k0.70_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.70_c2.00",
+      "filename": "nash/phase_diagram/b0.50_k0.70_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "f7d6e90714b8771cea63ec126096917025c8a2eb2958dae1e95d39a7a10c17f0",
+      "size_bytes": 1563,
+      "notes": "Phase-diagram cell b0.50_k0.70_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
     },
     {
       "kind": "nash",
@@ -88,6 +250,51 @@
     },
     {
       "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.90_c1.00",
+      "filename": "nash/phase_diagram/b0.50_k0.90_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "b79e37de9b5f55fcd48d8421303e9376b3c0422b02b86ea800a73d3157eef4d5",
+      "size_bytes": 1875,
+      "notes": "Phase-diagram cell b0.50_k0.90_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.50_k0.90_c2.00",
+      "filename": "nash/phase_diagram/b0.50_k0.90_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "85656e0d71d110b81ca049a36a58223d51508c4e686d078e498f2e80105b9aaf",
+      "size_bytes": 1877,
+      "notes": "Phase-diagram cell b0.50_k0.90_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.10_c1.00",
+      "filename": "nash/phase_diagram/b0.90_k0.10_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "a9b74a0fdbaaaef2fa7d2eae06ec5f767ae23d1929b1a81b5fac9e59f28cc1d2",
+      "size_bytes": 1709,
+      "notes": "Phase-diagram cell b0.90_k0.10_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.30_c1.00",
+      "filename": "nash/phase_diagram/b0.90_k0.30_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "e29f8c9083d62c8865c47a281e9425a5a5a15c1f2fe2d8de5327159958fe5be1",
+      "size_bytes": 1613,
+      "notes": "Phase-diagram cell b0.90_k0.30_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.30_c2.00",
+      "filename": "nash/phase_diagram/b0.90_k0.30_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "5490af3f9f5bd7524e93ca93815b00b6a447b8f6f0890f3e8a1217d8d47e47c8",
+      "size_bytes": 1623,
+      "notes": "Phase-diagram cell b0.90_k0.30_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
       "name": "phase_diagram_b0.90_k0.50_c0.50",
       "filename": "nash/phase_diagram/b0.90_k0.50_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
@@ -97,12 +304,66 @@
     },
     {
       "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.50_c1.00",
+      "filename": "nash/phase_diagram/b0.90_k0.50_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "312112b240c7f6da3a941839360d1de1681b7eae7a0b4f1425767404062ed727",
+      "size_bytes": 1555,
+      "notes": "Phase-diagram cell b0.90_k0.50_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.50_c2.00",
+      "filename": "nash/phase_diagram/b0.90_k0.50_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "97b78426b317eb48cc6e23a441de0ed315e464ac2aeafdd8f61b8ae54d43c94d",
+      "size_bytes": 1704,
+      "notes": "Phase-diagram cell b0.90_k0.50_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.70_c1.00",
+      "filename": "nash/phase_diagram/b0.90_k0.70_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "08677985809e22b77b28adca0067982fef07ba5afc4e6882e04d55c469d38317",
+      "size_bytes": 1562,
+      "notes": "Phase-diagram cell b0.90_k0.70_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.70_c2.00",
+      "filename": "nash/phase_diagram/b0.90_k0.70_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "f7d6e90714b8771cea63ec126096917025c8a2eb2958dae1e95d39a7a10c17f0",
+      "size_bytes": 1563,
+      "notes": "Phase-diagram cell b0.90_k0.70_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
       "name": "phase_diagram_b0.90_k0.90_c0.50",
       "filename": "nash/phase_diagram/b0.90_k0.90_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
       "sha256": "97146cdcc976dbbad2d6891371d26b16171827f8d8dce0b58ed4c040fc91bbab",
       "size_bytes": 1582,
       "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.90_c1.00",
+      "filename": "nash/phase_diagram/b0.90_k0.90_c1.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "b79e37de9b5f55fcd48d8421303e9376b3c0422b02b86ea800a73d3157eef4d5",
+      "size_bytes": 1875,
+      "notes": "Phase-diagram cell b0.90_k0.90_c1.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
+    },
+    {
+      "kind": "nash",
+      "name": "phase_diagram_b0.90_k0.90_c2.00",
+      "filename": "nash/phase_diagram/b0.90_k0.90_c2.00.json",
+      "scenario_id": "minimal_specialization-v1",
+      "sha256": "85656e0d71d110b81ca049a36a58223d51508c4e686d078e498f2e80105b9aaf",
+      "size_bytes": 1877,
+      "notes": "Phase-diagram cell b0.90_k0.90_c2.00; best-equilibrium NE genome for the (\u03b2, \u03ba, c) point, written by #420's full-grid regeneration (commit 73b49b08). Catalogued retroactively (#473, 2026-07-04): #420 shipped this file inside the bundle without a manifest entry, leaving it unreachable via the loader API and without an integrity hash. The per-cell solver outputs were not committed (only the aggregated summary at experiments/nash/phase_diagram/results.json, which carries no genome vectors), so this artifact is not reproducible by the freeze script; the tracked bytes are the canonical record."
     }
   ],
   "extra": {

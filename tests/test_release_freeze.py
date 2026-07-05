@@ -29,6 +29,8 @@ from bucket_brigade.baselines.release.freeze import (
     DEFAULT_RELEASE_VERSION,
     _ARCHETYPE_PARAM_NAMES,
     _select_best_converged_ne,
+    UnknownBundleFilesError,
+    find_unreproducible_files,
     freeze_release,
 )
 
@@ -232,23 +234,72 @@ def test_freeze_handles_missing_nash_sources_gracefully(tmp_path: Path) -> None:
     assert stats.num_nash_phase_diagram_cells == 0
 
 
-def test_freeze_clears_stale_artifact_subdirs(tmp_path: Path) -> None:
-    """Re-running the freeze removes prior subdir contents so an
-    archetype renamed or removed upstream doesn't linger as a stale
-    file in ``local/``."""
+def test_freeze_refuses_to_delete_unreproducible_files(tmp_path: Path) -> None:
+    """A freeze into a bundle containing artifact files it cannot
+    regenerate refuses loudly instead of rmtree-ing them (issue #473 —
+    the #420 full-grid genomes were exactly such files). Nothing in the
+    destination is modified by the refused run."""
+    repo = tmp_path / "repo"
+    bundle = tmp_path / "bundle"
+    _stage_fake_repo(repo)
+    freeze_release(repo_root=repo, bundle_dir=bundle, release_date="2026-06-08")
+    snapshot_before = _snapshot_bundle(bundle)
+
+    # Inject a file the freeze sources cannot reproduce (analogous to
+    # a #420-style direct write into the shipped bundle).
+    orphan = bundle / "nash" / "phase_diagram" / "b9.99_k9.99_c9.99.json"
+    orphan.parent.mkdir(parents=True, exist_ok=True)
+    orphan.write_text("{}")
+
+    with pytest.raises(UnknownBundleFilesError) as excinfo:
+        freeze_release(repo_root=repo, bundle_dir=bundle, release_date="2026-06-08")
+    assert "b9.99_k9.99_c9.99.json" in str(excinfo.value)
+    assert excinfo.value.unknown_files == ["nash/phase_diagram/b9.99_k9.99_c9.99.json"]
+
+    # The refused run must not have touched the bundle.
+    assert orphan.exists()
+    snapshot_after = _snapshot_bundle(bundle)
+    snapshot_after.pop("nash/phase_diagram/b9.99_k9.99_c9.99.json")
+    assert snapshot_after == snapshot_before
+
+
+def test_freeze_force_clears_stale_artifact_subdirs(tmp_path: Path) -> None:
+    """With ``force=True`` the freeze keeps the pre-#473 behaviour:
+    prior subdir contents are removed so an artifact renamed or removed
+    upstream doesn't linger as a stale file in ``local/``."""
     repo = tmp_path / "repo"
     bundle = tmp_path / "bundle"
     _stage_fake_repo(repo)
     freeze_release(repo_root=repo, bundle_dir=bundle, release_date="2026-06-08")
 
-    # Inject a fake stale file under archetypes/. The next freeze must
+    # Inject a fake stale file under archetypes/. A forced freeze must
     # remove it.
     stale = bundle / "archetypes" / "ghost.json"
     stale.write_text("{}")
     assert stale.exists()
 
-    freeze_release(repo_root=repo, bundle_dir=bundle, release_date="2026-06-08")
+    freeze_release(
+        repo_root=repo, bundle_dir=bundle, release_date="2026-06-08", force=True
+    )
     assert not stale.exists()
+
+
+def test_find_unreproducible_files_reports_only_orphans(tmp_path: Path) -> None:
+    """The pre-flight helper returns exactly the files a freeze cannot
+    regenerate: empty for a bundle the sources fully cover, and the
+    orphan's relative path once one is injected."""
+    repo = tmp_path / "repo"
+    bundle = tmp_path / "bundle"
+    _stage_fake_repo(repo)
+    freeze_release(repo_root=repo, bundle_dir=bundle, release_date="2026-06-08")
+
+    assert find_unreproducible_files(repo_root=repo, bundle_dir=bundle) == []
+
+    orphan = bundle / "nash" / "orphan.json"
+    orphan.write_text("{}")
+    assert find_unreproducible_files(repo_root=repo, bundle_dir=bundle) == [
+        "nash/orphan.json"
+    ]
 
 
 def test_freeze_uses_default_release_version_when_unspecified(tmp_path: Path) -> None:
