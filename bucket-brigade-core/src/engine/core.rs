@@ -272,6 +272,18 @@ impl BucketBrigade {
 
         // 5. Spread phase
         // Fires spread to neighbors (visible next turn)
+        //
+        // Phase-order consequence (issue #458): in the default "bernoulli"
+        // extinguish mode, phase 4 has already ruined every still-BURNING
+        // house, so spread_fires never sees a BURNING source and
+        // `prob_fire_spreads_to_neighbor` (β) is dynamics-inert — it never
+        // gates a spread and draws zero RNG. Only "continuous" mode
+        // (#253), whose burn-out returns early, makes fire spread live.
+        // β still reaches agents as scenario_info[0] (observation.rs), so
+        // it is not dead code. Reordering these phases would change the
+        // dynamics of every bernoulli scenario and invalidate all
+        // committed baselines/NE artifacts; the behavior change is
+        // deliberately deferred — see issue #458.
         self.spread_fires();
 
         // 6. Spontaneous ignition phase

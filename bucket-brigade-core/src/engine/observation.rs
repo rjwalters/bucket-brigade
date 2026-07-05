@@ -34,6 +34,12 @@ impl BucketBrigade {
             houses: self.houses.clone(),
             last_actions: self.last_actions.clone(),
             scenario_info: vec![
+                // NOTE (issue #458): β is dynamics-inert in "bernoulli"
+                // extinguish mode (see engine/phases.rs::spread_fires) but
+                // it is LIVE here as a network input — every trained
+                // policy sees it as scenario_info[0]. Do not remove it as
+                // "dead code"; dropping or reordering this entry would
+                // change the observation layout for every trained policy.
                 self.scenario.prob_fire_spreads_to_neighbor,
                 self.scenario.prob_solo_agent_extinguishes_fire,
                 self.scenario.team_reward_house_survives,

@@ -250,6 +250,12 @@ class BucketBrigadeEnv:
 
         # 5. Spread phase
         # Fires spread to neighbors (visible next turn)
+        # NOTE (issue #458): in the default "bernoulli" extinguish mode,
+        # phase 4 has already ruined every still-burning house, so this
+        # phase is a structural no-op and prob_fire_spreads_to_neighbor
+        # (beta) is dynamics-inert (never gates a spread, draws zero RNG).
+        # Only "continuous" mode (#253) makes fire spread live. Mirrors
+        # the Rust step order in engine/core.rs.
         self._spread_fires()
 
         # 6. Spontaneous ignition phase
@@ -507,6 +513,17 @@ class BucketBrigadeEnv:
         scenario value so 2-house and other small-ring topologies wrap
         correctly. Mirrors the Rust ``engine/phases.rs::spread_fires``
         behavior.
+
+        Beta-inertness (issue #458): in the default ``"bernoulli"``
+        extinguish mode this phase is a structural no-op —
+        ``_burn_out_houses`` runs first and ruins every still-BURNING
+        house, so the BURNING guard below skips every house and
+        ``prob_fire_spreads_to_neighbor`` never gates a spread (zero RNG
+        draws; cross-beta trajectories are bit-identical under a shared
+        seed, pinned by ``tests/test_beta_inertness.py``). Fire spread is
+        only live in ``"continuous"`` extinguish mode (#253). Do NOT
+        remove beta as dead code: it reaches agents as
+        ``scenario_info[0]`` in observations.
         """
         # Burning houses try to ignite their safe neighbors
         for house_idx in range(self.num_houses):

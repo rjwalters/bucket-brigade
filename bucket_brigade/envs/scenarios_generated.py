@@ -37,7 +37,16 @@ class Scenario:
     """
 
     # Fire dynamics
-    prob_fire_spreads_to_neighbor: float  # Probability fire spreads to adjacent house
+    #
+    # NOTE (issue #458): ``prob_fire_spreads_to_neighbor`` (beta) is
+    # dynamics-inert in the default ``"bernoulli"`` extinguish mode —
+    # burn-out runs before spread in the step order, so no house is
+    # ever BURNING when the spread phase executes and beta never gates
+    # a spread (zero RNG draws). It only shapes dynamics in
+    # ``"continuous"`` extinguish mode (#253). It is NOT dead code:
+    # agents observe it as ``scenario_info[0]`` (network input). See
+    # bucket-brigade-core/src/scenarios.rs for the canonical note.
+    prob_fire_spreads_to_neighbor: float  # Probability fire spreads to adjacent house (dynamics-inert in bernoulli mode, #458)
     prob_solo_agent_extinguishes_fire: float  # Probability one agent extinguishes fire
     prob_house_catches_fire: float  # Probability house catches fire each night
 

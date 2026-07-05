@@ -1,6 +1,7 @@
 {
   "version": "2.0",
   "note": "Parameter names match Rust implementation (bucket-brigade-core/src/scenarios.rs)",
+  "beta_inertness_note": "Issue #458: prob_fire_spreads_to_neighbor (beta) is dynamics-inert in the default 'bernoulli' extinguish mode — the engine's burn-out phase ruins every still-burning house before the spread phase runs, so beta never gates a spread (same seed + different beta gives bit-identical trajectories; see tests/test_beta_inertness.py). Beta only shapes dynamics when extinguish_mode is 'continuous' (#253). It is NOT dead: agents observe it as scenario_info[0], so it perturbs trained-policy inputs. Do not sweep beta as a dynamics axis in bernoulli-mode grids.",
   "scenarios": {
     "default": {
       "prob_fire_spreads_to_neighbor": 0.25,
