@@ -1,0 +1,765 @@
+{
+  "inputs": {
+    "kstar_json": "experiments/nash/phase_diagram/kstar_phase_diagram.json",
+    "verdict_json": "experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.json"
+  },
+  "kstar_provenance": {
+    "artifact": "kstar_phase_diagram.json",
+    "description": "Full 75-cell coordination-threshold (k*) phase-diagram sweep over the (beta, kappa, c) grid of minimal_specialization-v1. k* is the smallest coalition size k in 1..4 whose best simultaneous deviation from the uniform policy yields a per-step team-return gap with bootstrap CI lower bound > 0.",
+    "source_repo": "rjwalters/thrust",
+    "source_path": "docs/research/data/2026-07-kstar-phase-diagram.json",
+    "source_commit": "4d5d8f4f6ccc209773e4f2bdae240e5f532a2787",
+    "source_pr": "rjwalters/thrust#290",
+    "source_issue": "rjwalters/thrust#269",
+    "git_blob_sha": "305f0ab9d6f622cf1fbec9e315b6bb65fa6688ff",
+    "sha256": "d7f7cbb6eb7478b92c1878ea49ec607f31912b684ca6544fd630ef414a3f03e3",
+    "retrieved": "2026-07-05",
+    "retrieval_command": "gh api repos/rjwalters/thrust/contents/docs/research/data/2026-07-kstar-phase-diagram.json --jq .content | base64 -d",
+    "notes": "Committed verbatim so the issue #430 Task 2 join (kstar_vs_trainability.py) is reproducible without cross-repo access. Per #442 / thrust#458, beta is inert: the 75 (beta, kappa, c) cells collapse to 15 effective (kappa, c) columns with identical k* (in this artifact k* is a pure function of kappa)."
+  },
+  "kstar_protocol": {
+    "num_agents": 4,
+    "k_max": 4,
+    "eval_episodes": 400,
+    "search_episodes": 40,
+    "num_search": 64,
+    "n_boot": 1000,
+    "alpha": 0.05,
+    "seed": 42,
+    "step_cap": 1000,
+    "base_scenario": "minimal_specialization-v1",
+    "k_star_rule": "smallest k in 1..=4 with episode-level bootstrap CI lower bound on the per-episode per-step team-return gap strictly > 0"
+  },
+  "beta_dedup": {
+    "n_artifact_cells": 75,
+    "n_effective_columns": 15,
+    "kstar_beta_invariant": true,
+    "kstar_is_function_of_kappa_only": true,
+    "kstar_by_kappa": {
+      "0.10": [
+        4
+      ],
+      "0.30": [
+        2
+      ],
+      "0.50": [
+        2
+      ],
+      "0.70": [
+        2
+      ],
+      "0.90": [
+        1
+      ]
+    }
+  },
+  "join_report": {
+    "n_verdict_cells": 37,
+    "n_columns_joined": 13,
+    "kstar_columns_without_ppo_sweep": [
+      {
+        "kappa": 0.3,
+        "c": 0.5,
+        "k_star": 2
+      },
+      {
+        "kappa": 0.7,
+        "c": 0.5,
+        "k_star": 2
+      }
+    ]
+  },
+  "columns": [
+    {
+      "kappa": 0.1,
+      "c": 0.5,
+      "k_star": 4,
+      "cell_tags": [
+        "b0.10_k0.10_c0.50",
+        "b0.50_k0.10_c0.50",
+        "b0.90_k0.10_c0.50"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "no_convergence"
+      ],
+      "gap_closed_ne_pooled": null,
+      "n_seeds_ne": 0,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.10_c0.50",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": null
+        },
+        {
+          "cell_tag": "b0.50_k0.10_c0.50",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": null
+        },
+        {
+          "cell_tag": "b0.90_k0.10_c0.50",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": null
+        }
+      ],
+      "gap_closed_homogeneous_pooled": -0.012330146697404279,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.1,
+      "c": 1.0,
+      "k_star": 4,
+      "cell_tags": [
+        "b0.10_k0.10_c1.00",
+        "b0.50_k0.10_c1.00",
+        "b0.90_k0.10_c1.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "asymmetric_only"
+      ],
+      "gap_closed_ne_pooled": -0.03822118219038334,
+      "n_seeds_ne": 28,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.10_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": -0.3169214279138435
+        },
+        {
+          "cell_tag": "b0.50_k0.10_c1.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": 0.009986799782412948
+        },
+        {
+          "cell_tag": "b0.90_k0.10_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": -0.0005608463309046616
+        }
+      ],
+      "gap_closed_homogeneous_pooled": -0.010590443036732514,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.1,
+      "c": 2.0,
+      "k_star": 4,
+      "cell_tags": [
+        "b0.10_k0.10_c2.00",
+        "b0.50_k0.10_c2.00",
+        "b0.90_k0.10_c2.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "no_convergence"
+      ],
+      "gap_closed_ne_pooled": null,
+      "n_seeds_ne": 0,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.10_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": null
+        },
+        {
+          "cell_tag": "b0.50_k0.10_c2.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": null
+        },
+        {
+          "cell_tag": "b0.90_k0.10_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": null
+        }
+      ],
+      "gap_closed_homogeneous_pooled": -0.0028569838353792515,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.3,
+      "c": 1.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.30_c1.00",
+        "b0.50_k0.30_c1.00",
+        "b0.90_k0.30_c1.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "symmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.06585253766338534,
+      "n_seeds_ne": 28,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.30_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.0072611492029397585
+        },
+        {
+          "cell_tag": "b0.50_k0.30_c1.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": 0.04329933028500965
+        },
+        {
+          "cell_tag": "b0.90_k0.30_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.23720996301570932
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.01831291106659459,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.3,
+      "c": 2.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.30_c2.00",
+        "b0.50_k0.30_c2.00",
+        "b0.90_k0.30_c2.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "symmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.0009707023950169437,
+      "n_seeds_ne": 28,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.30_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.08543788523229227
+        },
+        {
+          "cell_tag": "b0.50_k0.30_c2.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": -0.06951197495235562
+        },
+        {
+          "cell_tag": "b0.90_k0.30_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.2689169062946044
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.00020567000593505459,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.5,
+      "c": 0.5,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.50_k0.50_c0.50",
+        "b0.90_k0.50_c0.50"
+      ],
+      "n_beta_replicas": 2,
+      "ne_verdicts": [
+        "symmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.3256035983838486,
+      "n_seeds_ne": 8,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.50_k0.50_c0.50",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.33396398795009513
+        },
+        {
+          "cell_tag": "b0.90_k0.50_c0.50",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.3172432088176021
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.10344395204765858,
+      "n_seeds_homogeneous": 8
+    },
+    {
+      "kappa": 0.5,
+      "c": 1.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.50_c1.00",
+        "b0.50_k0.50_c1.00",
+        "b0.90_k0.50_c1.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "symmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.11132540166809095,
+      "n_seeds_ne": 12,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.50_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.12479131004629479
+        },
+        {
+          "cell_tag": "b0.50_k0.50_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.05067170596224227
+        },
+        {
+          "cell_tag": "b0.90_k0.50_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.15851318899573574
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.03299819794208551,
+      "n_seeds_homogeneous": 12
+    },
+    {
+      "kappa": 0.5,
+      "c": 2.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.50_c2.00",
+        "b0.50_k0.50_c2.00",
+        "b0.90_k0.50_c2.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "mixed"
+      ],
+      "gap_closed_ne_pooled": 0.0001925754553625179,
+      "n_seeds_ne": 28,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.50_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.03192418315520684
+        },
+        {
+          "cell_tag": "b0.50_k0.50_c2.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": -0.02305128777262293
+        },
+        {
+          "cell_tag": "b0.90_k0.50_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.08468028389544544
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 7.685403127747684e-05,
+      "n_seeds_homogeneous": 28
+    },
+    {
+      "kappa": 0.7,
+      "c": 1.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.70_c1.00",
+        "b0.50_k0.70_c1.00",
+        "b0.90_k0.70_c1.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "asymmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.15354809660387084,
+      "n_seeds_ne": 12,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.70_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.1676329910737695
+        },
+        {
+          "cell_tag": "b0.50_k0.70_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.13481755440752255
+        },
+        {
+          "cell_tag": "b0.90_k0.70_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.15819374433032046
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.06478439409411597,
+      "n_seeds_homogeneous": 12
+    },
+    {
+      "kappa": 0.7,
+      "c": 2.0,
+      "k_star": 2,
+      "cell_tags": [
+        "b0.10_k0.70_c2.00",
+        "b0.50_k0.70_c2.00",
+        "b0.90_k0.70_c2.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "asymmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.13463815902421514,
+      "n_seeds_ne": 12,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.70_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.1616342520006439
+        },
+        {
+          "cell_tag": "b0.50_k0.70_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.0969042956201554
+        },
+        {
+          "cell_tag": "b0.90_k0.70_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.14537592945184608
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.05141774311424846,
+      "n_seeds_homogeneous": 12
+    },
+    {
+      "kappa": 0.9,
+      "c": 0.5,
+      "k_star": 1,
+      "cell_tags": [
+        "b0.50_k0.90_c0.50",
+        "b0.90_k0.90_c0.50"
+      ],
+      "n_beta_replicas": 2,
+      "ne_verdicts": [
+        "asymmetric_only"
+      ],
+      "gap_closed_ne_pooled": 0.0540329487642977,
+      "n_seeds_ne": 24,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.50_k0.90_c0.50",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": 0.05465250219719855
+        },
+        {
+          "cell_tag": "b0.90_k0.90_c0.50",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.05093518159979342
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.0328965206654995,
+      "n_seeds_homogeneous": 24
+    },
+    {
+      "kappa": 0.9,
+      "c": 1.0,
+      "k_star": 1,
+      "cell_tags": [
+        "b0.10_k0.90_c1.00",
+        "b0.50_k0.90_c1.00",
+        "b0.90_k0.90_c1.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "mixed"
+      ],
+      "gap_closed_ne_pooled": 0.1220372525110449,
+      "n_seeds_ne": 12,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.90_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.14201767787745884
+        },
+        {
+          "cell_tag": "b0.50_k0.90_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.08634059955190525
+        },
+        {
+          "cell_tag": "b0.90_k0.90_c1.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.13775348010377061
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.06039593743008969,
+      "n_seeds_homogeneous": 12
+    },
+    {
+      "kappa": 0.9,
+      "c": 2.0,
+      "k_star": 1,
+      "cell_tags": [
+        "b0.10_k0.90_c2.00",
+        "b0.50_k0.90_c2.00",
+        "b0.90_k0.90_c2.00"
+      ],
+      "n_beta_replicas": 3,
+      "ne_verdicts": [
+        "mixed"
+      ],
+      "gap_closed_ne_pooled": 0.10111282743370271,
+      "n_seeds_ne": 28,
+      "gap_closed_ne_by_cell": [
+        {
+          "cell_tag": "b0.10_k0.90_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.20670250995016515
+        },
+        {
+          "cell_tag": "b0.50_k0.90_c2.00",
+          "n_seeds": 20,
+          "gap_closed_ne_mean": 0.07491047443351613
+        },
+        {
+          "cell_tag": "b0.90_k0.90_c2.00",
+          "n_seeds": 4,
+          "gap_closed_ne_mean": 0.12653490991817318
+        }
+      ],
+      "gap_closed_homogeneous_pooled": 0.047528057772558543,
+      "n_seeds_homogeneous": 28
+    }
+  ],
+  "threshold_test_primary": {
+    "value_key": "gap_closed_ne_pooled",
+    "registration": "pre-registered (issue #430 Task 2 / thrust#259 threshold prediction)",
+    "group1": "k*=1",
+    "group2": "k*>=2",
+    "n1": 3,
+    "n2": 8,
+    "group1_values": [
+      0.0540329487642977,
+      0.10111282743370271,
+      0.1220372525110449
+    ],
+    "group2_values": [
+      -0.03822118219038334,
+      0.0001925754553625179,
+      0.0009707023950169437,
+      0.06585253766338534,
+      0.11132540166809095,
+      0.13463815902421514,
+      0.15354809660387084,
+      0.3256035983838486
+    ],
+    "group1_median": 0.10111282743370271,
+    "group2_median": 0.11132540166809095,
+    "mann_whitney_u": 12.0,
+    "mwu_p_one_sided": 0.5393939393939394,
+    "mwu_p_two_sided": 1.0,
+    "mwu_min_achievable_p_one_sided": 0.006060606060606061,
+    "rank_biserial": 0.0,
+    "permutation": {
+      "observed_mean_diff": -0.0018443932224107562,
+      "alternative": "greater",
+      "p_one_sided": 0.46060606060606063,
+      "p_two_sided": 0.9939393939393939,
+      "n_permutations": 165,
+      "min_achievable_p_one_sided": 0.006060606060606061
+    }
+  },
+  "threshold_test_homogeneous": {
+    "value_key": "gap_closed_homogeneous_pooled",
+    "registration": "pre-registered split, secondary outcome (homogeneous gap)",
+    "group1": "k*=1",
+    "group2": "k*>=2",
+    "n1": 3,
+    "n2": 10,
+    "group1_values": [
+      0.0328965206654995,
+      0.047528057772558543,
+      0.06039593743008969
+    ],
+    "group2_values": [
+      -0.012330146697404279,
+      -0.010590443036732514,
+      -0.0028569838353792515,
+      7.685403127747684e-05,
+      0.00020567000593505459,
+      0.01831291106659459,
+      0.03299819794208551,
+      0.05141774311424846,
+      0.06478439409411597,
+      0.10344395204765858
+    ],
+    "group1_median": 0.047528057772558543,
+    "group2_median": 0.01831291106659459,
+    "mann_whitney_u": 21.0,
+    "mwu_p_one_sided": 0.1853146853146853,
+    "mwu_p_two_sided": 0.3706293706293706,
+    "mwu_min_achievable_p_one_sided": 0.0034965034965034965,
+    "rank_biserial": 0.3999999999999999,
+    "permutation": {
+      "observed_mean_diff": 0.022393957082809283,
+      "alternative": "greater",
+      "p_one_sided": 0.1888111888111888,
+      "p_two_sided": 0.36013986013986016,
+      "n_permutations": 286,
+      "min_achievable_p_one_sided": 0.0034965034965034965
+    }
+  },
+  "failure_zone_test_posthoc": {
+    "value_key": "gap_closed_homogeneous_pooled",
+    "registration": "POST-HOC (exploratory; split chosen after observing the primary null \u2014 treat the p-value as descriptive, not confirmatory)",
+    "group1": "k*=4 (=k_max)",
+    "group2": "k*<=2",
+    "n1": 3,
+    "n2": 10,
+    "group1_values": [
+      -0.012330146697404279,
+      -0.010590443036732514,
+      -0.0028569838353792515
+    ],
+    "group2_values": [
+      7.685403127747684e-05,
+      0.00020567000593505459,
+      0.01831291106659459,
+      0.0328965206654995,
+      0.03299819794208551,
+      0.047528057772558543,
+      0.05141774311424846,
+      0.06039593743008969,
+      0.06478439409411597,
+      0.10344395204765858
+    ],
+    "group1_median": -0.010590443036732514,
+    "group2_median": 0.047528057772558543,
+    "mann_whitney_u": 0.0,
+    "mwu_p_one_sided": 0.0034965034965034965,
+    "mwu_p_two_sided": 0.006993006993006993,
+    "mwu_min_achievable_p_one_sided": 0.0034965034965034965,
+    "rank_biserial": -1.0,
+    "permutation": {
+      "observed_mean_diff": -0.049798548340178356,
+      "alternative": "less",
+      "p_one_sided": 0.0034965034965034965,
+      "p_two_sided": 0.02097902097902098,
+      "n_permutations": 286,
+      "min_achievable_p_one_sided": 0.0034965034965034965
+    }
+  },
+  "correlations": {
+    "column_level": [
+      {
+        "label": "k* vs gap_closed_ne (pooled, columns)",
+        "n": 11,
+        "spearman_rho": -0.21320071635561041,
+        "p_value": 0.5290641716818756
+      },
+      {
+        "label": "k* vs gap_closed_homogeneous (pooled, columns)",
+        "n": 13,
+        "spearman_rho": -0.6354889093022426,
+        "p_value": 0.01958659481626794
+      }
+    ],
+    "cell_level_pseudo_replicated": [
+      {
+        "label": "k* vs gap_closed_ne (cells)",
+        "n": 31,
+        "spearman_rho": -0.24311349530577014,
+        "p_value": 0.18755461242357255
+      },
+      {
+        "label": "k* vs gap_closed_homogeneous (cells)",
+        "n": 37,
+        "spearman_rho": -0.5559233313452303,
+        "p_value": 0.0003538670566824503
+      }
+    ],
+    "cell_level_caveat": "Cell-level rows repeat each column's k* across its \u03b2-replicas (\u03b2 is inert, #442) \u2014 pseudo-replication inflates n; shown only for comparability with the retired entropy predictor's join.",
+    "entropy_baseline_retired": {
+      "gap_closed_ne_mean": {
+        "spearman_rho": 0.109,
+        "p_value": 0.56,
+        "n_cells": 31
+      },
+      "gap_closed_homogeneous_mean": {
+        "spearman_rho": 0.342,
+        "p_value": 0.06,
+        "n_cells": 31
+      }
+    }
+  },
+  "cross_tab": {
+    "cells_by_kstar": {
+      "1": {
+        "asymmetric_only": 2,
+        "mixed": 6
+      },
+      "2": {
+        "asymmetric_only": 6,
+        "mixed": 3,
+        "symmetric_only": 11
+      },
+      "4": {
+        "asymmetric_only": 3,
+        "no_convergence": 6
+      }
+    },
+    "columns_by_kstar": {
+      "1": {
+        "asymmetric_only": 1,
+        "mixed": 2
+      },
+      "2": {
+        "asymmetric_only": 2,
+        "mixed": 1,
+        "symmetric_only": 4
+      },
+      "4": {
+        "asymmetric_only": 1,
+        "no_convergence": 2
+      }
+    },
+    "no_convergence_only_in_kstar": [
+      4
+    ]
+  },
+  "n20_subset": {
+    "cells": [
+      {
+        "cell_tag": "b0.50_k0.90_c0.50",
+        "k_star": 1,
+        "gap_closed_ne_mean": 0.05465250219719855
+      },
+      {
+        "cell_tag": "b0.50_k0.90_c2.00",
+        "k_star": 1,
+        "gap_closed_ne_mean": 0.07491047443351613
+      },
+      {
+        "cell_tag": "b0.50_k0.30_c1.00",
+        "k_star": 2,
+        "gap_closed_ne_mean": 0.04329933028500965
+      },
+      {
+        "cell_tag": "b0.50_k0.30_c2.00",
+        "k_star": 2,
+        "gap_closed_ne_mean": -0.06951197495235562
+      },
+      {
+        "cell_tag": "b0.50_k0.50_c2.00",
+        "k_star": 2,
+        "gap_closed_ne_mean": -0.02305128777262293
+      },
+      {
+        "cell_tag": "b0.50_k0.10_c0.50",
+        "k_star": 4,
+        "gap_closed_ne_mean": null
+      },
+      {
+        "cell_tag": "b0.50_k0.10_c1.00",
+        "k_star": 4,
+        "gap_closed_ne_mean": 0.009986799782412948
+      },
+      {
+        "cell_tag": "b0.50_k0.10_c2.00",
+        "k_star": 4,
+        "gap_closed_ne_mean": null
+      }
+    ],
+    "n_non_null": 6,
+    "class_sizes_kstar1_vs_ge2": [
+      2,
+      4
+    ],
+    "min_achievable_p_one_sided": 0.06666666666666667,
+    "note": "Preferred for precision (n=20 seeds per cell) but only 6 non-null cells split 2 vs 4 \u2014 the minimum achievable one-sided p exceeds 0.05, so no confirmatory test is possible on this subset alone; reported descriptively."
+  },
+  "supersedes": "noise_buydown_precision.py \u00a74 partial-stratification class test (thrust#259/#268 era, 2 vs 6 cells, p=0.43)"
+}
