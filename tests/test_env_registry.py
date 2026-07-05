@@ -279,8 +279,10 @@ class TestAsymPhaseDiagramCellParity:
     ``make_phase_diagram_scenario(beta, kappa, c)`` — a
     ``dataclasses.replace`` on the ``minimal_specialization`` base
     overriding ONLY β/κ/c. The named registration must reproduce that
-    construction field-for-field, otherwise the cell's NE artifacts (team
-    payoff 72.0095/episode, 14/20 convergence, frozen genome files under
+    construction field-for-field, otherwise the cell's NE artifacts (the
+    FF|hero|hero|FF epsilon-NE adopted by #459/#466, CRN team payoff
+    55.36 +/- 3.44/episode; historical #358 solver record 72.0095/episode,
+    14/20 convergence; frozen genome files under
     ``bucket_brigade/baselines/release/local/nash/phase_diagram/``) stop
     being citable for the named scenario.
     """

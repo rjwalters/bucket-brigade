@@ -114,7 +114,12 @@ alc-9, train commit `8a532de1`; summaries regenerated locally via
   gap fraction against 72.0095 would be *overstated*; pending the seeded DO
   retry (#445) report against both denominators. For this run the caveat is
   moot for the verdict — trained policies are at the random baseline, far
-  below either candidate denominator.
+  below either candidate denominator. *Resolution (#459 / #466,
+  post-verdict)*: the exploitability audit
+  (`experiments/nash/phase_diagram/exploitability/RESULTS.md`) confirmed
+  both profiles are ε-NE at ε = 50 and adopted `FF|hero|hero|FF` (CRN
+  55.36 ± 3.44/episode, winner's-curse-free) as the cells' NE anchor; the
+  registry provenance now cites it. Still moot for this verdict.
 - **Replication-pair finding — CRN-coupled replicas, not independent
   draws.** β is dynamically inert in bernoulli extinguish mode (the cells
   are the same game), and the per-seed streams turned out to be *shared*,

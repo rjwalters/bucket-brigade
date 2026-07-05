@@ -521,6 +521,14 @@ solver payoffs carry ~+26/episode winner's-curse bias vs CRN re-evaluation.
 Moot for this verdict (trained policies are at random, far below either
 candidate denominator), but any future gap fraction against 72.0095 would
 be overstated; pending #445, report against both denominators.
+**Resolution (#459 / #466)**: the exploitability audit
+([`experiments/nash/phase_diagram/exploitability/RESULTS.md`](../experiments/nash/phase_diagram/exploitability/RESULTS.md))
+confirmed both committed profiles are ε-NE at the repo-standard ε = 50 and
+adopted `FF|hero|hero|FF` as the cells' NE anchor (winner's-curse-free CRN
+team payoff 55.36 ± 3.44/episode ⇒ ≤ +4.7/step at min_nights = 12); the
+`SCENARIO_GAP_REFERENCES` provenance and scenario registry now cite it.
+The 72.0095 figure above is the historical solver record for the run as
+executed. Still moot for this verdict.
 
 **Artifacts**:
 - Per-seed runs + cell summaries: [`experiments/p3_specialization/tier1_runs/het_ppo_asym_b05_k09_c05/`](../experiments/p3_specialization/tier1_runs/het_ppo_asym_b05_k09_c05/), [`experiments/p3_specialization/tier1_runs/het_ppo_asym_b09_k09_c05/`](../experiments/p3_specialization/tier1_runs/het_ppo_asym_b09_k09_c05/)
