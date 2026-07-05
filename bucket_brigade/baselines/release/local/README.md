@@ -46,7 +46,8 @@ in-repo sources:
 # From the repo root:
 python -m bucket_brigade.baselines.release.freeze
 
-# Preview without writing:
+# Preview without writing (also reports files a real run would refuse
+# to delete):
 python -m bucket_brigade.baselines.release.freeze --dry-run
 ```
 
@@ -55,6 +56,18 @@ Sources read:
 - Archetypes: `bucket_brigade/agents/archetypes.py`
 - Heterogeneous NE: `experiments/nash/heterogeneous/<scenario>/results.json`
 - Phase-diagram cells: `experiments/nash/phase_diagram/preview/*/cells/*/results.json`
+
+**Unreproducible-files guard (#473)**: the freeze refuses to run if the
+bundle contains artifact files it cannot regenerate from the sources
+above, instead of silently deleting them. The 29 full-grid
+phase-diagram genomes added by #420 are exactly such files — their
+per-cell solver outputs were never committed (only the aggregated
+summary at `experiments/nash/phase_diagram/results.json`, which has no
+genome vectors), so the tracked bytes here are the canonical record.
+Pass `--force` only after reviewing the refusal list; a forced freeze
+deletes those files permanently. Manifest changes for unreproducible
+artifacts go through a `load_manifest` -> `ArtifactEntry` ->
+`save_manifest` round-trip instead (see #470/#472/#473).
 
 To add PPO checkpoints (after #384 lands), stage the trained
 checkpoints under
