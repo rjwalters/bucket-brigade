@@ -23,15 +23,16 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import torch
 
-from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
-from bucket_brigade.training.joint_trainer import (
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv  # noqa: E402
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name  # noqa: E402
+from bucket_brigade.training.joint_trainer import (  # noqa: E402
     JointPPOTrainer,
     flatten_dict_obs,
 )
-from bucket_brigade.training.obs_audit import ObsAuditor, ObsAuditSample
+from bucket_brigade.training.obs_audit import ObsAuditor, ObsAuditSample  # noqa: E402
 
 
 NUM_AGENTS = 4

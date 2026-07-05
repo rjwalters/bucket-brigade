@@ -7,13 +7,14 @@ distributes experiences to GPU learners.
 
 import pytest
 import numpy as np
-import torch
-import multiprocessing as mp
-from unittest.mock import Mock
 
-from bucket_brigade.training.game_simulator import Matchmaker, GameSimulator
-from bucket_brigade.training import PolicyNetwork
-from bucket_brigade_core import SCENARIOS
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+import multiprocessing as mp  # noqa: E402
+from unittest.mock import Mock  # noqa: E402
+
+from bucket_brigade.training.game_simulator import Matchmaker, GameSimulator  # noqa: E402
+from bucket_brigade.training import PolicyNetwork  # noqa: E402
+from bucket_brigade_core import SCENARIOS  # noqa: E402
 
 
 class TestMatchmaker:

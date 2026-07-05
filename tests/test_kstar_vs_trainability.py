@@ -271,14 +271,41 @@ def test_committed_no_convergence_cells_all_kstar4(committed_result):
     assert ct["cells_by_kstar"]["4"]["no_convergence"] == 6
 
 
+def _assert_json_equivalent(committed, regenerated, path="$"):
+    """Deep-compare two parsed JSON trees, tolerating last-ulp float noise.
+
+    Byte-identical regeneration is NOT achievable across numpy versions: the
+    committed artifact was generated under numpy 1.26, and numpy 2.x changed
+    the low-order bits of reductions (pairwise summation), shifting the last
+    1-2 digits of pooled means / permutation p-values (issue #484). Structure,
+    keys, ints, strings, and bools must still match exactly.
+    """
+    if isinstance(committed, dict) and isinstance(regenerated, dict):
+        assert committed.keys() == regenerated.keys(), path
+        for k in committed:
+            _assert_json_equivalent(committed[k], regenerated[k], f"{path}.{k}")
+    elif isinstance(committed, list) and isinstance(regenerated, list):
+        assert len(committed) == len(regenerated), path
+        for i, (a, b) in enumerate(zip(committed, regenerated)):
+            _assert_json_equivalent(a, b, f"{path}[{i}]")
+    elif isinstance(committed, float) and not isinstance(committed, bool):
+        assert regenerated == pytest.approx(committed, rel=1e-9, abs=1e-15), path
+    else:
+        assert committed == regenerated, path
+
+
 def test_committed_output_files_match_regeneration(committed_result, tmp_path):
-    """The committed .json output must be regenerable byte-identically."""
+    """The committed outputs must be regenerable from the committed inputs.
+
+    The .md must match byte-identically (floats are rounded in formatting);
+    the .json is compared numerically — see _assert_json_equivalent for why
+    byte-identity does not survive numpy version changes.
+    """
     import json
 
     committed = kvt.DEFAULT_OUT_JSON
     assert committed.exists(), "run the script to commit its outputs"
-    regenerated = json.dumps(committed_result, indent=2, sort_keys=False) + "\n"
-    assert committed.read_text() == regenerated
+    _assert_json_equivalent(json.loads(committed.read_text()), committed_result)
 
     committed_md = kvt.DEFAULT_OUT_MD
     assert committed_md.exists()

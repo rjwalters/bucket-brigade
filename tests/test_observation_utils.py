@@ -8,7 +8,9 @@ import pytest
 import numpy as np
 from unittest.mock import Mock
 
-from bucket_brigade.training.observation_utils import (
+pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from bucket_brigade.training.observation_utils import (  # noqa: E402
     flatten_observation,
     get_observation_dim,
     create_scenario_info,

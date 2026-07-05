@@ -7,12 +7,13 @@ Focuses heavily on GAE computation where we found bugs during GPU testing.
 
 import pytest
 import numpy as np
-import torch
-from unittest.mock import Mock
-from collections import deque
 
-from bucket_brigade.training.policy_learner import PolicyLearner
-from bucket_brigade.training import compute_gae
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+from unittest.mock import Mock  # noqa: E402
+from collections import deque  # noqa: E402
+
+from bucket_brigade.training.policy_learner import PolicyLearner  # noqa: E402
+from bucket_brigade.training import compute_gae  # noqa: E402
 
 
 class TestPolicyLearnerInitialization:

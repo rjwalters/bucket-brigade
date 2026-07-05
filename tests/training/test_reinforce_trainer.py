@@ -27,14 +27,15 @@ from typing import List
 
 import numpy as np
 import pytest
-import torch
-import torch.nn as nn
-import torch.optim as optim
 
-from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.envs.scenarios_generated import get_scenario_by_name
-from bucket_brigade.training.joint_trainer import flatten_dict_obs
-from bucket_brigade.training.reinforce_trainer import REINFORCETrainer
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+import torch.nn as nn  # noqa: E402
+import torch.optim as optim  # noqa: E402
+
+from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv  # noqa: E402
+from bucket_brigade.envs.scenarios_generated import get_scenario_by_name  # noqa: E402
+from bucket_brigade.training.joint_trainer import flatten_dict_obs  # noqa: E402
+from bucket_brigade.training.reinforce_trainer import REINFORCETrainer  # noqa: E402
 
 
 NUM_AGENTS = 4
