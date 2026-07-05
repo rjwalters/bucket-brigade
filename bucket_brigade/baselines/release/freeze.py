@@ -85,8 +85,15 @@ from .manifest import (
 # real release (the version controls the per-release HF cache subdir
 # in :mod:`.paths`). 0.1.0 -> 0.1.1: annotation-only manifest update for
 # the (kappa=0.90, c=0.50) phase-diagram cells (#459/#466); artifact
-# bytes unchanged.
-DEFAULT_RELEASE_VERSION: str = "0.1.1"
+# bytes unchanged. 0.1.1 -> 0.1.2: manifest-only hash re-sync (#470)
+# for the 4 (c=0.50) phase-diagram cells that #420's full-grid
+# regeneration rewrote after the 0.1.0 freeze; shipped bytes unchanged
+# since #420. NOTE: re-running this freeze script regenerates those
+# cells from the preview sources (restoring the source_parameters /
+# swept_parameters blocks #420 dropped) and clears the full-grid cells
+# #420 added to local/nash/phase_diagram/ — review issue #470 before
+# re-freezing.
+DEFAULT_RELEASE_VERSION: str = "0.1.2"
 
 
 # Default subdirectory layout inside the release bundle. Mirrors the

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_version": "0.1.1",
+  "release_version": "0.1.2",
   "release_date": "2026-06-08",
   "source_commit": "9adf1d3a",
   "huggingface_repo": "rjwalters/bucket-brigade-baselines",
@@ -73,36 +73,36 @@
       "name": "phase_diagram_b0.50_k0.50_c0.50",
       "filename": "nash/phase_diagram/b0.50_k0.50_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
-      "sha256": "8f8f5357e6956988db59bfd0526fef4d319b5c6eb00aaf4a1351105383ffbc45",
-      "size_bytes": 1813,
-      "notes": "Phase-diagram cell b0.50_k0.50_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point."
+      "sha256": "8800300a10e5dccb2b6568954bb41692fea77d12af62279ee932774713e046a8",
+      "size_bytes": 1561,
+      "notes": "Phase-diagram cell b0.50_k0.50_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
     },
     {
       "kind": "nash",
       "name": "phase_diagram_b0.50_k0.90_c0.50",
       "filename": "nash/phase_diagram/b0.50_k0.90_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
-      "sha256": "c8804d73c4f3c935dffb6ef3d40c1437f58655fd512cfad5bd83ecafc6a6aaa2",
-      "size_bytes": 1834,
-      "notes": "Phase-diagram cell b0.50_k0.90_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md."
+      "sha256": "97146cdcc976dbbad2d6891371d26b16171827f8d8dce0b58ed4c040fc91bbab",
+      "size_bytes": 1582,
+      "notes": "Phase-diagram cell b0.50_k0.90_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
     },
     {
       "kind": "nash",
       "name": "phase_diagram_b0.90_k0.50_c0.50",
       "filename": "nash/phase_diagram/b0.90_k0.50_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
-      "sha256": "3793d230ac9fdec556d2385a60d73946ac6259acc874915b99d1db2b70ca1987",
-      "size_bytes": 1813,
-      "notes": "Phase-diagram cell b0.90_k0.50_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point."
+      "sha256": "8800300a10e5dccb2b6568954bb41692fea77d12af62279ee932774713e046a8",
+      "size_bytes": 1561,
+      "notes": "Phase-diagram cell b0.90_k0.50_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
     },
     {
       "kind": "nash",
       "name": "phase_diagram_b0.90_k0.90_c0.50",
       "filename": "nash/phase_diagram/b0.90_k0.90_c0.50.json",
       "scenario_id": "minimal_specialization-v1",
-      "sha256": "e24855c14bd8710972dd53358265606a689977d29291f6f86d71382f3b61b1ef",
-      "size_bytes": 1834,
-      "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md."
+      "sha256": "97146cdcc976dbbad2d6891371d26b16171827f8d8dce0b58ed4c040fc91bbab",
+      "size_bytes": 1582,
+      "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md. Manifest repair (#470, 2026-07-04): sha256/size_bytes re-synced to the tracked bytes shipped since #420, whose full-grid phase-diagram regeneration rewrote this file after the 0.1.0 freeze (#401) without updating the manifest. The #420 rewrite dropped only the source_parameters/swept_parameters metadata blocks; genome, payoffs, and profile_label are byte-for-byte unchanged from the #401 freeze, so downstream analyses are unaffected."
     }
   ],
   "extra": {
