@@ -317,3 +317,4 @@ paper/**/*.synctex.gz
 paper/**/_archive/
 *.local.md
 /.voice/
+.loom/spawn-loop-state.json
