@@ -17,7 +17,7 @@
       "cell_specialist_homogeneous": -86.3310368872549,
       "cell_specialist_ne": null,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -35,7 +35,7 @@
       "cell_specialist_homogeneous": -86.3310368872549,
       "cell_specialist_ne": null,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -53,7 +53,7 @@
       "cell_specialist_homogeneous": -28.376003772893775,
       "cell_specialist_ne": -69.00925641672053,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -71,7 +71,7 @@
       "cell_specialist_homogeneous": 31.97455147004955,
       "cell_specialist_ne": -10.883405113930186,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -89,7 +89,7 @@
       "cell_specialist_homogeneous": -86.3310368872549,
       "cell_specialist_ne": null,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -107,7 +107,7 @@
       "cell_specialist_homogeneous": -28.376003772893775,
       "cell_specialist_ne": -69.00925641672053,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     },
     {
@@ -125,7 +125,7 @@
       "cell_specialist_homogeneous": 31.97455147004955,
       "cell_specialist_ne": -10.883405113930186,
       "old_baseline_random": -87.72,
-      "old_baseline_specialist": -22.07,
+      "old_baseline_specialist": -28.38,
       "baseline_source": "per_cell"
     }
   ]
