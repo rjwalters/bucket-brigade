@@ -318,3 +318,21 @@ paper/**/_archive/
 *.local.md
 /.voice/
 .loom/spawn-loop-state.json
+
+# Local experiment-run byproducts (never committed; only summary.json / cell_summary.json are tracked)
+experiments/p3_specialization/phase_diagram_ppo/**/config.json
+experiments/p3_specialization/phase_diagram_ppo/**/metrics.json
+experiments/p3_specialization/phase_diagram_ppo_v2/**/config.json
+experiments/p3_specialization/phase_diagram_ppo_v2/**/metrics.json
+experiments/p3_specialization/phase_diagram_ppo_longbudget/**/config.json
+experiments/p3_specialization/phase_diagram_ppo_longbudget/**/metrics.json
+# tmux/launcher completion markers
+experiments/p3_specialization/diagnostics/results/**/DONE
+experiments/p3_specialization/diagnostics/results/**/MLP_DONE
+# hostless local preview runs (per-host previews like preview/alc-*/ ARE tracked)
+experiments/nash/phase_diagram/preview/cells/
+experiments/nash/phase_diagram/preview/cells_v2/
+experiments/nash/phase_diagram/preview/results.json
+experiments/nash/phase_diagram/preview/summary.md
+# stray pufferlib resources symlink created by local runs
+/resources
