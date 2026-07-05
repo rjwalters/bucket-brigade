@@ -1,0 +1,10 @@
+{
+  "critic": "pub-audit",
+  "scorecard_kind": "human-verdict",
+  "started": "2026-07-05T13:17:47Z",
+  "finished": "2026-07-05T13:33:16Z",
+  "model": "claude-fable-5",
+  "schema_version": 1,
+  "rubric_id": null,
+  "notes": "Fact/citation/build audit per .anvil/skills/pub/commands/pub-audit.md. Corpus tier inactive (no corpus: key in BRIEF.md frontmatter) -- no .corpus-audit sibling written, pre-#612 behavior."
+}

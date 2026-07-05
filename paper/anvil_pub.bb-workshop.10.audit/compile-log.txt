@@ -1,0 +1,1339 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2026-01-19>
+(../../.anvil/skills/pub/templates/anvil-paper.cls
+Document Class: anvil-paper 2026/05/28 Anvil generic paper class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/size11.clo))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
+(/Users/rwalters/Library/texmf/tex/latex/etoolbox/etoolbox.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption3.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
+ty (/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+)))) (/Users/rwalters/Library/texmf/tex/latex/pgf/frontendlayer/tikz.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgf.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfrcs.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/pgf.revision.tex)))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgfcore.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/systemlayer/pgfsys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgf.cfg)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfint.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgffor.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfkeys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/math/pgfmath.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgffor.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarypatterns.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibrarypatterns.cod
+e.tex)) (/usr/local/texlive/2026/texmf-dist/tex/latex/tools/array.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xurl/xurl.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+No file main.aux.
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+(/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+
+Package natbib Warning: Citation `overcooked2019' on page 1 undefined on input 
+line 152.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 1 undefined on input 
+line 153.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 1 undefined on input line
+ 154.
+
+
+Package natbib Warning: Citation `smac2019' on page 1 undefined on input line 1
+54.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 1 undefined on input lin
+e 154.
+
+
+Package natbib Warning: Citation `magent2018' on page 1 undefined on input line
+ 155.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 1 undefined on input 
+line 156.
+
+[1{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Reference `sec:env' on page 2 undefined on input line 183.
+
+
+LaTeX Warning: Reference `sec:ne' on page 2 undefined on input line 185.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 2 undefined on input line 1
+90.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 2 undefined on input line 2
+00.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 2 undefined on input line 2
+05.
+
+
+LaTeX Warning: Reference `sec:resttrap' on page 2 undefined on input line 225.
+
+
+LaTeX Warning: Reference `sec:related' on page 2 undefined on input line 237.
+
+
+LaTeX Warning: Reference `sec:discussion' on page 2 undefined on input line 237
+.
+
+[2{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
+}]
+
+LaTeX Warning: Reference `app:envspec' on page 3 undefined on input line 301.
+
+
+LaTeX Warning: Reference `sec:env' on page 3 undefined on input line 302.
+
+
+LaTeX Warning: Reference `sec:ne' on page 3 undefined on input line 303.
+
+[3]
+
+LaTeX Warning: Reference `eq:S' on page 4 undefined on input line 360.
+
+
+LaTeX Warning: Reference `eq:A' on page 4 undefined on input line 360.
+
+
+LaTeX Warning: Reference `eq:S' on page 4 undefined on input line 368.
+
+
+LaTeX Warning: Reference `eq:C' on page 4 undefined on input line 369.
+
+
+LaTeX Warning: Reference `eq:C' on page 4 undefined on input line 369.
+
+
+LaTeX Warning: Reference `eq:S' on page 4 undefined on input line 371.
+
+
+LaTeX Warning: Reference `eq:A' on page 4 undefined on input line 372.
+
+
+LaTeX Warning: Reference `fig:phase' on page 4 undefined on input line 384.
+
+
+LaTeX Warning: Reference `eq:S' on page 4 undefined on input line 421.
+
+
+LaTeX Warning: Reference `eq:C' on page 4 undefined on input line 421.
+
+[4
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      ]
+
+LaTeX Warning: Reference `tab:phase-counts' on page 5 undefined on input line 4
+28.
+
+
+LaTeX Warning: Reference `eq:S' on page 5 undefined on input line 474.
+
+
+LaTeX Warning: Reference `eq:C' on page 5 undefined on input line 474.
+
+
+LaTeX Warning: Reference `eq:S' on page 5 undefined on input line 474.
+
+
+LaTeX Warning: Reference `eq:C' on page 5 undefined on input line 474.
+
+
+LaTeX Warning: Reference `sec:discussion' on page 5 undefined on input line 503
+.
+
+[5]
+
+LaTeX Warning: Reference `sec:trainability' on page 6 undefined on input line 5
+19.
+
+
+LaTeX Warning: Reference `app:nestructure' on page 6 undefined on input line 52
+0.
+
+
+LaTeX Warning: Reference `eq:S' on page 6 undefined on input line 547.
+
+
+LaTeX Warning: Reference `eq:C' on page 6 undefined on input line 547.
+
+
+LaTeX Warning: Reference `eq:S' on page 6 undefined on input line 547.
+
+
+LaTeX Warning: Reference `eq:C' on page 6 undefined on input line 547.
+
+
+LaTeX Warning: Reference `fig:phase' on page 6 undefined on input line 556.
+
+
+Package natbib Warning: Citation `ppo2017' on page 6 undefined on input line 57
+1.
+
+
+Package natbib Warning: Citation `mappo2022' on page 6 undefined on input line 
+572.
+
+
+LaTeX Warning: Reference `app:nestructure' on page 6 undefined on input line 57
+3.
+
+[6 <./figures/phase_diagram.pdf>]
+
+LaTeX Warning: Reference `app:nestructure' on page 7 undefined on input line 59
+1.
+
+
+LaTeX Warning: Reference `fig:ppo' on page 7 undefined on input line 599.
+
+
+LaTeX Warning: Reference `sec:ne' on page 7 undefined on input line 623.
+
+
+LaTeX Warning: Reference `sec:resttrap' on page 7 undefined on input line 644.
+
+[7]
+
+LaTeX Warning: Reference `sec:ne' on page 8 undefined on input line 658.
+
+
+LaTeX Warning: Reference `sec:ne' on page 8 undefined on input line 691.
+
+[8] [9]
+
+LaTeX Warning: Reference `sec:ne' on page 10 undefined on input line 865.
+
+
+LaTeX Warning: Reference `sec:ne' on page 10 undefined on input line 865.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 10 undefined on input line 
+872.
+
+
+LaTeX Warning: Reference `sec:ne' on page 10 undefined on input line 893.
+
+
+LaTeX Warning: Reference `tab:trap-anchors' on page 10 undefined on input line 
+902.
+
+[10]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[11 <./figures/recalibrated_heatmap.pdf>]
+
+LaTeX Warning: Reference `sec:trainability' on page 12 undefined on input line 
+983.
+
+[12]
+
+LaTeX Warning: Reference `sec:trainability' on page 13 undefined on input line 
+1077.
+
+[13]
+
+Package natbib Warning: Citation `overcooked2019' on page 14 undefined on input
+ line 1118.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 14 undefined on input
+ line 1121.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 14 undefined on input lin
+e 1124.
+
+
+Package natbib Warning: Citation `smac2019' on page 14 undefined on input line 
+1126.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 14 undefined on input li
+ne 1126.
+
+
+Package natbib Warning: Citation `magent2018' on page 14 undefined on input lin
+e 1128.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 14 undefined on input
+ line 1130.
+
+
+LaTeX Warning: Reference `tab:bench' on page 14 undefined on input line 1133.
+
+
+Package natbib Warning: Citation `overcooked2019' on page 14 undefined on input
+ line 1153.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 14 undefined on input
+ line 1153.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 14 undefined on input lin
+e 1153.
+
+
+Package natbib Warning: Citation `smac2019' on page 14 undefined on input line 
+1153.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 14 undefined on input li
+ne 1153.
+
+
+Package natbib Warning: Citation `magent2018' on page 14 undefined on input lin
+e 1153.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 14 undefined on input
+ line 1153.
+
+[14]
+
+Package natbib Warning: Citation `openspiel2019' on page 15 undefined on input 
+line 1177.
+
+
+Package natbib Warning: Citation `psro2017' on page 15 undefined on input line 
+1180.
+
+
+LaTeX Warning: Reference `sec:resttrap' on page 15 undefined on input line 1183
+.
+
+
+LaTeX Warning: Reference `sec:ne' on page 15 undefined on input line 1209.
+
+
+LaTeX Warning: Reference `tab:bench' on page 15 undefined on input line 1215.
+
+
+LaTeX Warning: Reference `sec:ne' on page 15 undefined on input line 1230.
+
+
+LaTeX Warning: Reference `app:envspec:variants' on page 15 undefined on input l
+ine 1236.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 15 undefined on input line 
+1248.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 15 undefined on input line 
+1251.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 15 undefined on input line 
+1260.
+
+[15]
+
+LaTeX Warning: Reference `sec:trainability' on page 16 undefined on input line 
+1270.
+
+
+LaTeX Warning: Reference `fig:ppo' on page 16 undefined on input line 1274.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 16 undefined on input line 
+1278.
+
+
+LaTeX Warning: Reference `fig:ppo' on page 16 undefined on input line 1279.
+
+[16]
+
+LaTeX Warning: Reference `eq:S' on page 17 undefined on input line 1320.
+
+
+LaTeX Warning: Reference `eq:C' on page 17 undefined on input line 1320.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 17 undefined on input line 
+1339.
+
+No file main.bbl.
+
+LaTeX Warning: Reference `sec:env' on page 17 undefined on input line 1365.
+
+
+LaTeX Warning: Reference `sec:env' on page 17 undefined on input line 1369.
+
+
+LaTeX Warning: Reference `app:envspec:variants' on page 17 undefined on input l
+ine 1380.
+
+
+LaTeX Warning: Reference `app:envspec:reward' on page 17 undefined on input lin
+e 1399.
+
+[17] [18] [19] [20]
+
+LaTeX Warning: Reference `sec:ne' on page 21 undefined on input line 1699.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 21 undefined on input line 
+1699.
+
+
+LaTeX Warning: Reference `sec:discussion' on page 21 undefined on input line 16
+99.
+
+
+LaTeX Warning: Reference `app:nestructure' on page 21 undefined on input line 1
+699.
+
+
+LaTeX Warning: Reference `sec:ne' on page 21 undefined on input line 1699.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 21 undefined on input line 
+1699.
+
+
+LaTeX Warning: Reference `sec:discussion' on page 21 undefined on input line 16
+99.
+
+
+LaTeX Warning: Reference `app:nestructure' on page 21 undefined on input line 1
+699.
+
+
+LaTeX Warning: Reference `app:envspec:dynamics' on page 21 undefined on input l
+ine 1704.
+
+
+LaTeX Warning: Reference `app:envspec:dynamics' on page 21 undefined on input l
+ine 1707.
+
+[21]
+
+LaTeX Warning: Reference `sec:ne' on page 22 undefined on input line 1719.
+
+
+LaTeX Warning: Reference `fig:phase' on page 22 undefined on input line 1720.
+
+
+LaTeX Warning: Reference `fig:ppo' on page 22 undefined on input line 1721.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 22 undefined on input l
+ine 1743.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 22 undefined on input l
+ine 1764.
+
+
+LaTeX Warning: Reference `app:envspec:reward' on page 22 undefined on input lin
+e 1771.
+
+[22]
+
+LaTeX Warning: Reference `app:nestructure:candidates' on page 23 undefined on i
+nput line 1837.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 23 undefined on input l
+ine 1841.
+
+
+LaTeX Font Warning: Font shape `OT1/cmr/bx/sc' undefined
+(Font)              using `OT1/cmr/bx/n' instead on input line 1847.
+
+[23]
+
+LaTeX Warning: Reference `sec:ne' on page 24 undefined on input line 1929.
+
+
+LaTeX Warning: Reference `sec:trainability' on page 24 undefined on input line 
+1934.
+
+
+LaTeX Warning: Reference `tab:ne-empirical' on page 24 undefined on input line 
+1935.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 24 undefined on input l
+ine 1936.
+
+
+LaTeX Warning: Reference `sec:ne' on page 24 undefined on input line 1964.
+
+
+LaTeX Warning: Reference `sec:ne' on page 24 undefined on input line 1964.
+
+
+LaTeX Warning: Reference `sec:ne' on page 24 undefined on input line 1964.
+
+
+LaTeX Warning: Reference `sec:ne' on page 24 undefined on input line 1964.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[24]
+
+LaTeX Warning: Reference `app:envspec:variants' on page 25 undefined on input l
+ine 2037.
+
+[25]
+
+LaTeX Warning: Reference `app:nestructure:reduction' on page 26 undefined on in
+put line 2045.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 26 undefined on input l
+ine 2081.
+
+
+LaTeX Warning: Reference `sec:ne' on page 26 undefined on input line 2088.
+
+
+LaTeX Warning: Reference `app:envspec:variants' on page 26 undefined on input l
+ine 2090.
+
+
+LaTeX Warning: Reference `app:nestructure:gaps' on page 26 undefined on input l
+ine 2095.
+
+
+Package natbib Warning: There were undefined citations.
+
+[26] (./main.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2026/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2026/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/local/texlive/2026/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2026/texmf-dist/fon
+ts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2026/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/publi
+c/amsfonts/cm/cmr8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmssbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mti10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+ti9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt
+10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9
+.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/ms
+am10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbol
+s/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sf
+rm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm
+1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm10
+95.pfb>
+Output written on main.pdf (26 pages, 559394 bytes).
+Transcript written on main.log.
+EXIT_PDFLATEX_1=0
+This is BibTeX, Version 0.99e (TeX Live 2026)
+The top-level auxiliary file: main.aux
+The style file: plainnat.bst
+Database file #1: refs.bib
+EXIT_BIBTEX=0
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2026-01-19>
+(../../.anvil/skills/pub/templates/anvil-paper.cls
+Document Class: anvil-paper 2026/05/28 Anvil generic paper class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/size11.clo))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
+(/Users/rwalters/Library/texmf/tex/latex/etoolbox/etoolbox.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption3.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
+ty (/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+)))) (/Users/rwalters/Library/texmf/tex/latex/pgf/frontendlayer/tikz.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgf.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfrcs.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/pgf.revision.tex)))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgfcore.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/systemlayer/pgfsys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgf.cfg)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfint.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgffor.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfkeys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/math/pgfmath.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgffor.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarypatterns.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibrarypatterns.cod
+e.tex)) (/usr/local/texlive/2026/texmf-dist/tex/latex/tools/array.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xurl/xurl.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+(./main.aux)
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+(/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-cmr.cfg) (./main.out
+) (./main.out) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+
+Package natbib Warning: Citation `overcooked2019' on page 1 undefined on input 
+line 152.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 1 undefined on input 
+line 153.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 1 undefined on input line
+ 154.
+
+
+Package natbib Warning: Citation `smac2019' on page 1 undefined on input line 1
+54.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 1 undefined on input lin
+e 154.
+
+
+Package natbib Warning: Citation `magent2018' on page 1 undefined on input line
+ 155.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 1 undefined on input 
+line 156.
+
+[1{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+[2{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
+}] [3] [4
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      ] [5]
+
+Package natbib Warning: Citation `ppo2017' on page 6 undefined on input line 57
+1.
+
+
+Package natbib Warning: Citation `mappo2022' on page 6 undefined on input line 
+572.
+
+[6 <./figures/phase_diagram.pdf>] [7] [8] [9] [10]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[11 <./figures/recalibrated_heatmap.pdf>] [12] [13]
+
+Package natbib Warning: Citation `overcooked2019' on page 14 undefined on input
+ line 1118.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 14 undefined on input
+ line 1121.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 14 undefined on input lin
+e 1124.
+
+
+Package natbib Warning: Citation `smac2019' on page 14 undefined on input line 
+1126.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 14 undefined on input li
+ne 1126.
+
+
+Package natbib Warning: Citation `magent2018' on page 14 undefined on input lin
+e 1128.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 14 undefined on input
+ line 1130.
+
+
+Package natbib Warning: Citation `overcooked2019' on page 14 undefined on input
+ line 1153.
+
+
+Package natbib Warning: Citation `meltingpot2021' on page 14 undefined on input
+ line 1153.
+
+
+Package natbib Warning: Citation `hanabi2020' on page 14 undefined on input lin
+e 1153.
+
+
+Package natbib Warning: Citation `smac2019' on page 14 undefined on input line 
+1153.
+
+
+Package natbib Warning: Citation `smacv2_2023' on page 14 undefined on input li
+ne 1153.
+
+
+Package natbib Warning: Citation `magent2018' on page 14 undefined on input lin
+e 1153.
+
+
+Package natbib Warning: Citation `pettingzoo2021' on page 14 undefined on input
+ line 1153.
+
+[14]
+
+Package natbib Warning: Citation `openspiel2019' on page 15 undefined on input 
+line 1177.
+
+
+Package natbib Warning: Citation `psro2017' on page 15 undefined on input line 
+1180.
+
+[15] [16] (./main.bbl [17]) [18] [19] [20] [21] [22] [23]
+
+LaTeX Font Warning: Font shape `OT1/cmr/bx/sc' undefined
+(Font)              using `OT1/cmr/bx/n' instead on input line 1847.
+
+[24]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[25] [26]
+
+Package natbib Warning: There were undefined citations.
+
+[27] (./main.aux
+
+Package natbib Warning: Citation(s) may have changed.
+(natbib)                Rerun to get citations correct.
+
+)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2026/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2026/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fon
+ts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2026/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2026/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmssbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmsy8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmti10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmti9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+tt10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
+t9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/
+msam10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symb
+ols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/
+sfrm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sf
+rm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm
+1095.pfb>
+Output written on main.pdf (27 pages, 564027 bytes).
+Transcript written on main.log.
+EXIT_PDFLATEX_2=0
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./main.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2026-01-19>
+(../../.anvil/skills/pub/templates/anvil-paper.cls
+Document Class: anvil-paper 2026/05/28 Anvil generic paper class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/size11.clo))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
+(/Users/rwalters/Library/texmf/tex/latex/etoolbox/etoolbox.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/caption/caption3.sty))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
+ty (/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/url/url.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty)))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/local/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+)))) (/Users/rwalters/Library/texmf/tex/latex/pgf/frontendlayer/tikz.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgf.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfrcs.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/pgf.revision.tex)))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/basiclayer/pgfcore.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/systemlayer/pgfsys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgf.cfg)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfint.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/Users/rwalters/Library/texmf/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgffor.sty
+(/Users/rwalters/Library/texmf/tex/latex/pgf/utilities/pgfkeys.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/Users/rwalters/Library/texmf/tex/latex/pgf/math/pgfmath.sty
+(/Users/rwalters/Library/texmf/tex/generic/pgf/math/pgfmath.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/utilities/pgffor.code.tex))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/Users/rwalters/Library/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarypatterns.code.tex
+(/Users/rwalters/Library/texmf/tex/generic/pgf/libraries/pgflibrarypatterns.cod
+e.tex)) (/usr/local/texlive/2026/texmf-dist/tex/latex/tools/array.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/xurl/xurl.sty)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+(./main.aux)
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+(/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-cmr.cfg) (./main.out
+) (./main.out) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msb.cfg) [1{/usr/loc
+al/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2{/usr/local/te
+xlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [3] [4
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{equation.1}) 
+has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.427 
+      ] [5] [6 <./figures/phase_diagram.pdf>] [7] [8] [9] [10]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[11 <./figures/recalibrated_heatmap.pdf>] [12] [13] [14] [15] [16] (./main.bbl
+[17]) [18] [19] [20] [21] [22] [23]
+
+LaTeX Font Warning: Font shape `OT1/cmr/bx/sc' undefined
+(Font)              using `OT1/cmr/bx/n' instead on input line 1847.
+
+[24]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[25] [26] [27] (./main.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ )
+(see the transcript file for additional information)</usr/local/texlive/2026/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2026/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fon
+ts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2026/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2026/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmssbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmsy8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmti10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmti9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+tt10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
+t9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/
+msam10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symb
+ols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/
+sfrm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sf
+rm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm
+1095.pfb>
+Output written on main.pdf (27 pages, 566570 bytes).
+Transcript written on main.log.
+EXIT_PDFLATEX_3=0

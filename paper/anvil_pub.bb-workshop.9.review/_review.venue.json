@@ -1,0 +1,62 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.9",
+  "critic_id": "pub-review-venue",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-neurips-v1",
+  "scores": [
+    {
+      "dimension": "soundness",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Methodology is rigorous and claims are carefully calibrated to evidence (pre-registered tests, power floors, post-hoc flags at every mention); one specific weakness — the class-level trainability comparison is ordering-only and its metric-robustness margin (0.001) inverts on the current committed artifact — does not undermine the headline phase-order claim."
+    },
+    {
+      "dimension": "presentation",
+      "score": 1,
+      "max": 2,
+      "critical": false,
+      "justification": "Readable but rough in places: five severe overfull hboxes push artifact paths into the margin, the Figure 1 / Table 1 captions mischaracterize the unsampled cells, and the one-page abstract impedes first-pass extraction."
+    },
+    {
+      "dimension": "contribution",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Solid but incremental for the Cooperative AI community: an NE-transparent parametric benchmark plus two honestly-retired predictors and a measured social-trap headroom target is useful methodological infrastructure, though the niche (equilibrium-convergence quality on a small custom game) is narrow by design."
+    },
+    {
+      "dimension": "novelty",
+      "score": 2,
+      "max": 3,
+      "critical": false,
+      "justification": "The parametric phase-diagram-with-computable-NE framing is new, but the closest prior tradition (OpenSpiel small games with exact solvers; exploitability/NashConv-based convergence evaluation) is omitted from the related-work section, leaving the 'only published' novelty claim under-qualified."
+    },
+    {
+      "dimension": "reproducibility",
+      "score": 2,
+      "max": 3,
+      "critical": false,
+      "justification": "Methods, seeds, hyperparameter pins, frozen scenario IDs, and a parity CLI are supplied and the repo artifacts exist; held below full because the cited recalibrated_verdict.json has drifted from the paper's numbers (n=20 regeneration) and the baseline-checkpoint hosting is still in progress."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "major",
+      "dimension": "novelty",
+      "rationale": "prior_work_omission risk (advisory): OpenSpiel and the exploitability-evaluation literature are the reference points a NeurIPS reviewer will reach for against the 'only published parametric MARL game' claim.",
+      "suggested_fix": "Engage that tradition explicitly or scope the claim."
+    },
+    {
+      "severity": "minor",
+      "dimension": "reproducibility",
+      "rationale": "The NeurIPS checklist expects the hosted-baselines pathway to be resolved, not 'in progress'.",
+      "suggested_fix": "Complete or remove the HuggingFace hosting promise before submission."
+    }
+  ],
+  "critical_flags": [],
+  "total": 11,
+  "unscored": false
+}

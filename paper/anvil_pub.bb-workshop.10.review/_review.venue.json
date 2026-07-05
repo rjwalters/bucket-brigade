@@ -1,0 +1,61 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.10",
+  "critic_id": "pub-review-venue",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-neurips-v1",
+  "scores": [
+    {
+      "dimension": "soundness",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Methodology is rigorous and claims are calibrated to evidence (pre-registered tests, power floors, post-hoc flags, an honestly withdrawn robustness claim); the one named weakness - the class-level trainability comparison remains ordering-only at the shipped budget - does not undermine the headline phase-order claim."
+    },
+    {
+      "dimension": "presentation",
+      "score": 1,
+      "max": 2,
+      "critical": false,
+      "justification": "Well-organized with a clean 27-page build (0 overfull hboxes, 0 broken refs) and a now-extractable abstract, but the headline Figure 1 caption carries a transposed rows/columns description contradicting the figure's own axis labels - a caption defect a reviewer will notice on first read."
+    },
+    {
+      "dimension": "contribution",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Solid but deliberately narrow for the Cooperative AI community: an NE-transparent parametric benchmark, a per-cell baseline methodological lesson, two honestly retired predictors, and a machine-verdicted social-trap target constitute useful methodological infrastructure in a niche the paper itself bounds."
+    },
+    {
+      "dimension": "novelty",
+      "score": 3,
+      "max": 3,
+      "critical": false,
+      "justification": "The parametric phase-diagram-with-computable-NE framing is new and the closest prior line (OpenSpiel; PSRO/NashConv exploitability evaluation) is now engaged accurately, with the measurable-equilibrium-convergence credit explicitly ceded and the claim scoped to the parametric-family property."
+    },
+    {
+      "dimension": "reproducibility",
+      "score": 2,
+      "max": 3,
+      "critical": false,
+      "justification": "Code, seeds, hyperparameter pins, frozen scenario IDs, parity manifest, and per-figure recipes are supplied, and this review re-derived the headline statistics and Figure 2 from the committed artifacts at HEAD; held below full because the baseline-checkpoint hosting is still in progress and one statistic traces to a non-regenerable PR recomputation."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "minor",
+      "dimension": "reproducibility",
+      "rationale": "The NeurIPS checklist expects the hosted-baselines pathway resolved, not 'in progress'.",
+      "suggested_fix": "Complete or remove the HuggingFace hosting promise before submission."
+    },
+    {
+      "severity": "minor",
+      "dimension": "presentation",
+      "rationale": "Figure 1 caption's panel-layout clause is transposed relative to the rendered axes.",
+      "suggested_fix": "Swap to 'rows are beta and columns are kappa'."
+    }
+  ],
+  "critical_flags": [],
+  "total": 12
+}
