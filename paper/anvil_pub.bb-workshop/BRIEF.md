@@ -5,6 +5,7 @@ authors:
 venue: "NeurIPS 2026 Cooperative AI Workshop"
 target_length: "4 pages (workshop format), ~3000-4000 words excluding refs"
 anonymous: false
+web_search: true
 tracker: rjwalters/bucket-brigade#357
 issue: rjwalters/bucket-brigade#364
 voice_notes: |

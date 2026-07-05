@@ -1,0 +1,9 @@
+{
+  "critic": "litsearch",
+  "role": "pub-litsearch.md",
+  "started": "2026-07-05T15:16:00Z",
+  "finished": "2026-07-05T15:20:57Z",
+  "model": "claude-fable-5",
+  "schema_version": 1,
+  "scorecard_kind": "human-verdict"
+}

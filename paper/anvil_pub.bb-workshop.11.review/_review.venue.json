@@ -1,0 +1,67 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.11",
+  "critic_id": "pub-review-venue",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-neurips-v1",
+  "scores": [
+    {
+      "dimension": "soundness",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Methodology rigorous and claims calibrated to evidence (pre-registered tests, power floors, post-hoc flags, honestly withdrawn robustness claim; nothing changed at v11); the one named weakness stands: the class-level trainability comparison remains ordering-only at the shipped budget, with the significance sweep deferred to camera-ready."
+    },
+    {
+      "dimension": "presentation",
+      "score": 2,
+      "max": 2,
+      "critical": false,
+      "justification": "Well-organized 28-page build with 0 overfull hboxes and 0 broken refs; the v10 defect (transposed Figure 1 caption clause) is fixed and verified against the rendered figure and generating script, so captions are now self-contained and internally consistent."
+    },
+    {
+      "dimension": "contribution",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "justification": "Solid but deliberately narrow for the Cooperative AI community: an NE-transparent parametric benchmark, a per-cell-baseline methodological lesson, two honestly retired predictors, and a machine-verdicted social-trap target constitute useful methodological infrastructure in a niche the paper itself bounds; unchanged at v11."
+    },
+    {
+      "dimension": "novelty",
+      "score": 3,
+      "max": 3,
+      "critical": false,
+      "justification": "The parametric phase-diagram-with-computable-NE framing is new; the closest prior line is now engaged beyond its anchor papers (population-based RPS evaluation, meta-game estimation, equilibrium-selection matrix games), all resolver-verified, with the measurable-equilibrium-convergence credit explicitly ceded and the claim scoped to the parametric-family property on a live-search basis."
+    },
+    {
+      "dimension": "reproducibility",
+      "score": 2,
+      "max": 3,
+      "critical": false,
+      "justification": "Code, seeds, hyperparameter pins, frozen scenario IDs, parity manifest, and per-figure recipes supplied and carried byte-identical from the v10-verified state; held below full because the baseline-checkpoint hosting is still in progress and one statistic traces to a non-regenerable PR recomputation — both carried operator tasks the NeurIPS checklist expects resolved by submission."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "minor",
+      "dimension": "reproducibility",
+      "rationale": "The NeurIPS checklist expects the hosted-baselines pathway resolved, not 'in progress' (carried from v10).",
+      "suggested_fix": "Complete or remove the HuggingFace hosting promise before submission."
+    },
+    {
+      "severity": "minor",
+      "dimension": "soundness",
+      "rationale": "The class-ordering headline is ordering-only; a NeurIPS reviewer will ask for the significance test the paper itself names as the camera-ready gate.",
+      "suggested_fix": "Run the cross-class 4x-budget significance sweep before submission."
+    },
+    {
+      "severity": "nit",
+      "dimension": "presentation",
+      "rationale": "The submission artifact is the extended version of record (28pp); the 4-page workshop body specified by the section-1 footnote must still be produced.",
+      "suggested_fix": "Compress per the footnote's stated section split before the deadline."
+    }
+  ],
+  "critical_flags": [],
+  "total": 13
+}
