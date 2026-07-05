@@ -1,0 +1,10 @@
+{
+  "critic": "pub-audit",
+  "scorecard_kind": "human-verdict",
+  "started": "2026-07-05T15:12:00Z",
+  "finished": "2026-07-05T15:52:00Z",
+  "model": "claude-fable-5",
+  "schema_version": 1,
+  "rubric_id": null,
+  "notes": "Fact/citation/build audit per .anvil/skills/pub/commands/pub-audit.md; v11 polish-pass verification with operator-requested priorities: (1) claim-support audit of the 7 litsearch-merged citations, (2) diff-based no-numbers-moved verification vs v10 (attestation confirmed TRUE), (3) NC-3 wording-fix verification against results.json + recalibrated_verdict.json, (4) standard full pass. Corpus tier inactive (resolve_corpus_dirs -> [], no corpus: key in BRIEF.md frontmatter) -- no .corpus-audit sibling written, pre-#612 behavior. Repo HEAD at audit time: 73911a75."
+}

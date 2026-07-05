@@ -1,0 +1,140 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.11",
+  "critic_id": "pub-review",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-v2",
+  "scores": [
+    {
+      "dimension": "1_rigor",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L275-L276",
+      "fix": "Run the cross-class higher-budget significance sweep (already named in-paper as the camera-ready gate) to lift the ordering-only limit on the headline trainability claim.",
+      "justification": "Method discipline unchanged from the advancing v10 (owned 3-10x threshold gap; pre-registered k* test with exact/permutation p-values and power floor; ground-truth-then-falsification framing). Held at 5/6 for the same structural reason: the central section-4 correlation rests on a 50-iteration budget whose class separations the paper concedes are ordering-only; the significance sweep was legitimately declined for this polish revision."
+    },
+    {
+      "dimension": "2_evidence",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L649-L654",
+      "fix": "Add the cross-class budget sweep (or class-mean uncertainty) so the ordering claim carries quantitative support.",
+      "justification": "Evidence base is byte-identical to v10's HEAD-recomputed state; this review verified by full-file diff that no statistic moved (the only claim-adjacent edits are the two wording-precision fixes) and the fresh numeric-consistency pass found 0 findings over 1055 numbers. Held at 5/6 because the section-4 headline remains ordering-only: the data does not reject the null of equal class means."
+    },
+    {
+      "dimension": "3_contribution",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L134-L276",
+      "justification": "Abstract (~325 words) and the section-1 (1)-(5) enumeration carried unchanged, each contribution extractable in one sentence including the double negative result; the new page-budget footnote sharpens what the 4-page body claims vs. the supplement."
+    },
+    {
+      "dimension": "4_related_work",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1214-L1246",
+      "justification": "Substrate-backed per the litsearch sibling: all four previously memory-entered keys resolver-CONFIRMED with zero corrections, and section-6 now surveys the exploitability line's own follow-ups (lanctot2023population, li2024meta) plus the equilibrium-selection tradition (christianos2022pareto) with explicit differentiator framing; the to-our-knowledge scoping sentence stands on a live search that found no closer parametric-family prior. Two low-severity related-work leads recorded in comments.md."
+    },
+    {
+      "dimension": "5_reproducibility",
+      "score": 4,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1317-L1364",
+      "fix": "Complete (or remove) the HuggingFace baselines hosting promise and regenerate the 300/300 bootstrap sweep as a committed experiments/ artifact before camera-ready.",
+      "justification": "Apparatus carried intact (frozen scenario IDs, parity manifest, per-figure recipes, pinned hyperparameters); figures and scripts byte-identical to the v10-verified state. Held at 4/5 for the same two self-named, explicitly-carried gaps: HF baselines hosting in progress, and the 300/300 sweep + t-interval trace to a PR-review recomputation rather than a regenerable artifact."
+    },
+    {
+      "dimension": "6_figures_tables",
+      "score": 4,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L562-L586",
+      "justification": "The v10 major is fixed and triple-verified: the Figure 1 caption's rows-are-beta / columns-are-kappa clause now matches the rendered figure's axis labels, the generating script's BETAS-rows x KAPPAS-columns layout, and the caption's own later clauses; every per-class cell count in the rendered figure matches Table 1's per-kappa distributions. Figure 2's opposite-layout caption verified not copy-pasted. The Table 2 path-break remains a documented, deliberately-declined nit."
+    },
+    {
+      "dimension": "7_prose_structure",
+      "score": 4,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L104-L108",
+      "justification": "Independent build converges at 28 pages with 0 overfull hboxes, 0 broken cross-references, 0 unresolved citations; the hypertexnames=false preamble line eliminates the v10 duplicate-destination log nit (0 in the converged log). Structure, tense, and voice intact."
+    },
+    {
+      "dimension": "8_citation_hygiene",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L330-L340",
+      "justification": "All 18 refs.bib entries resolve with complete fields (0 undefined citations, 0 bibtex warnings); the seven resolver-verified additions carry disclosed cosmetic normalizations and each is cited load-bearingly in context (section-6 x3; section-2 + Appendix A.6 template attributions x4, closing the standing v6 carry-forward). Spot-checked bibliographic fields are consistent with the litsearch resolver provenance."
+    },
+    {
+      "dimension": "9_rhetorical_economy",
+      "score": 4,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L1366-L1388",
+      "justification": "Both v10 holds resolved: the conclusion is cut to ~165 words / three sentences with no statistic restated outside its owning section, and the section-1 footnote answers the page-budget question in-paper with an explicit 4-page-body vs. supplementary-appendix split; the busy-reviewer 90-second extraction path is clean."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "minor",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1105-L1111",
+      "rationale": "The 300/300 bootstrap-combination sweep and t-interval still trace to the PR #460 judge recomputation, not a regenerable experiments/ artifact (honestly footnoted; carried from v10).",
+      "suggested_fix": "Regenerate as a committed script + JSON before camera-ready."
+    },
+    {
+      "severity": "minor",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1359-L1364",
+      "rationale": "HuggingFace baselines hosting remains 'in progress'; the NeurIPS checklist expects it resolved by submission (carried operator task).",
+      "suggested_fix": "Complete or remove the hosting promise before submission."
+    },
+    {
+      "severity": "minor",
+      "dimension": "1_rigor",
+      "evidence_span": "main.tex:L649-L656",
+      "rationale": "The class-ordering headline remains ordering-only at the shipped budget; the cross-class 4x-budget significance sweep is the named camera-ready gate holding dims 1-2 at 5/6.",
+      "suggested_fix": "Run the cross-class significance sweep for camera-ready."
+    },
+    {
+      "severity": "nit",
+      "dimension": "6_figures_tables",
+      "evidence_span": "main.tex:L949-L980",
+      "rationale": "xurl breaks caption-resident artifact paths without hyphens; documented, deliberately-declined carry.",
+      "suggested_fix": "Revisit only if a downstream reader misparses."
+    },
+    {
+      "severity": "nit",
+      "dimension": "9_rhetorical_economy",
+      "evidence_span": "main.tex:L203-L215",
+      "rationale": "The section-1 footnote answers the page-budget policy; the actual 4-page compressed body remains the submission-time deliverable (operator task).",
+      "suggested_fix": "Produce the 4-page workshop body per the footnote's stated split."
+    },
+    {
+      "severity": "nit",
+      "dimension": "4_related_work",
+      "evidence_span": "main.tex:L1235-L1239",
+      "rationale": "The climbing/penalty-game tradition is cited via its modern representative (christianos2022pareto) because the primary (Claus & Boutilier 1998) has no resolvable identifier per the litsearch contract; a reader may misattribute the tradition's origin. [related-work]",
+      "suggested_fix": "If the author hand-enters a verified BibTeX entry for Claus & Boutilier 1998, cite the primary directly (litsearch re-run item)."
+    },
+    {
+      "severity": "nit",
+      "dimension": "4_related_work",
+      "evidence_span": "main.tex:L1240-L1246",
+      "rationale": "Recall lead (not a live search; network unavailable): Galla & Farmer 2013 (PNAS 110(4):1232-1236, 'Complex dynamics in learning complicated games') gives a learning-dynamics phase diagram over parametric random-game families; the paper's scoped claim survives it, but acknowledgment could preempt a reviewer. [related-work]",
+      "suggested_fix": "Re-run pub-litsearch to resolver-verify the lead; optionally acknowledge the phase-diagram-over-game-families precedent in one clause."
+    }
+  ],
+  "critical_flags": [],
+  "total": 41,
+  "threshold": 35,
+  "verdict": "ADVANCE"
+}

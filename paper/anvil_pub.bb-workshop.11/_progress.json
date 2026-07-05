@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "thread": "anvil_pub.bb-workshop",
+  "phases": {
+    "revise": {
+      "state": "done",
+      "started": "2026-07-05T15:04:00Z",
+      "completed": "2026-07-05T15:32:27Z"
+    }
+  },
+  "metadata": {
+    "iteration": 11,
+    "max_iterations": 12,
+    "revised_from": 10
+  }
+}
