@@ -15,10 +15,11 @@ from typing import Dict
 
 import numpy as np
 import pytest
-import torch
 
-from bucket_brigade.analysis.info_theory import is_degenerate_conditioner
-from experiments.p3_specialization.train import (
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from bucket_brigade.analysis.info_theory import is_degenerate_conditioner  # noqa: E402
+from experiments.p3_specialization.train import (  # noqa: E402
     _ACTION_NO_PRIOR_SENTINEL,
     _masked_mean_cmi_action,
     _other_agent_action_codes,

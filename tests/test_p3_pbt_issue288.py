@@ -33,14 +33,15 @@ import json
 from pathlib import Path
 
 import pytest
-import torch
 
-from experiments.p3_specialization.analyze_288 import (
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from experiments.p3_specialization.analyze_288 import (  # noqa: E402
     VERDICT_ESCAPE_THRESHOLD,
     VERDICT_PARTIAL_THRESHOLD,
     classify_verdict,
 )
-from experiments.p3_specialization.run_issue288_pbt import (
+from experiments.p3_specialization.run_issue288_pbt import (  # noqa: E402
     LineageState,
     _perturb_checkpoint_dir,
     run_pbt,

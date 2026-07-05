@@ -379,12 +379,46 @@ class TestGeneticAlgorithm:
         assert len(result.diversity_history) == 2
 
         # With only 1 game per individual, fitness has high variance
-        # so we just verify that fitness values are reasonable
+        # so we just verify that fitness values are reasonable.
         initial_best = result.fitness_history[0]["max"]
         final_best = result.fitness_history[-1]["max"]
-        # Fitness should be in a reasonable range (negative due to reward structure)
-        assert -100 <= initial_best <= 100
-        assert -100 <= final_best <= 100
+
+        # Fitness contract: RustFitnessEvaluator returns GameResult.final_score,
+        # the per-step rewards summed over the whole episode AND all agents.
+        # Since bucket-brigade-core commit 354219d9 ("Align Rust reward
+        # computation with Python per-step logic") ALL reward components
+        # (team, ownership, work/rest) accrue every step, so final_score
+        # scales with episode length x num_agents. The old [-100, 100] bound
+        # here reflected the pre-354219d9 contract where the team payoff was
+        # a one-shot terminal value; e.g. trivial_cooperation now yields
+        # ~13 nights x 4 agents x ~100 team reward ~= 5200 for a cooperative
+        # outcome. Derive the bound from the scenario instead of hardcoding.
+        import bucket_brigade_core as core
+
+        scenario = core.SCENARIOS["trivial_cooperation"]  # GA default scenario
+        max_steps = 100  # safety cap in fitness_rust._run_rust_game
+        num_agents = 4  # RustFitnessEvaluator default
+        team_bound = max(
+            scenario.team_reward_house_survives, scenario.team_penalty_house_burns
+        )
+        ownership_bound = sum(
+            max(own_r, own_p) + max(oth_r, oth_p)
+            for own_r, own_p, oth_r, oth_p in zip(
+                scenario.reward_own_house_survives,
+                scenario.penalty_own_house_burns,
+                scenario.reward_other_house_survives,
+                scenario.penalty_other_house_burns,
+            )
+        )
+        per_step_per_agent = (
+            team_bound
+            + max(scenario.cost_to_work_one_night, scenario.reward_rest)
+            + ownership_bound
+        )
+        fitness_bound = max_steps * num_agents * per_step_per_agent
+
+        assert -fitness_bound <= initial_best <= fitness_bound
+        assert -fitness_bound <= final_best <= fitness_bound
 
     def test_ga_convergence_detection(self):
         """Test convergence detection."""
@@ -573,17 +607,25 @@ class TestParallelEvaluation:
         assert len(result.fitness_history) == 3  # Initial + 2 generations
 
     def test_parallel_with_scenario(self):
-        """Test parallel evaluation with custom scenario."""
-        from bucket_brigade.envs import default_scenario
+        """Test parallel evaluation with custom scenario.
+
+        RustFitnessEvaluator's API takes a scenario *name* (looked up in
+        core.SCENARIOS, the single source of truth) plus num_agents — it no
+        longer accepts a Python Scenario object (the old ``scenario=`` kwarg
+        was dropped in 0e2fdb30 when evaluation moved to the Rust core).
+        """
         from bucket_brigade.evolution.fitness_rust import (
             RustFitnessEvaluator as FitnessEvaluator,
         )
 
-        scenario = default_scenario(num_agents=1)
         pop = create_random_population(size=3, generation=0, seed=42)
 
         evaluator = FitnessEvaluator(
-            scenario=scenario, games_per_individual=2, seed=100, num_workers=2
+            scenario_name="easy",
+            num_agents=1,
+            games_per_individual=2,
+            seed=100,
+            num_workers=2,
         )
         evaluator.evaluate_population(pop, parallel=True)
 

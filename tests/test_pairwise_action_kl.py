@@ -14,7 +14,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
 
 # Load ``softmax_packed`` via importlib so we don't trigger the diagnostic
 # module's transitive imports (JointPPOTrainer -> bucket_brigade_core). Those

@@ -26,7 +26,9 @@ from pathlib import Path
 
 import pytest
 
-from experiments.p3_specialization.train import (
+pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from experiments.p3_specialization.train import (  # noqa: E402
     CellConfig,
     _curriculum_floor_for,
     _parse_curriculum_arg,

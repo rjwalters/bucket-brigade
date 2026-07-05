@@ -176,7 +176,12 @@ class PayoffEvaluator:
 
                 total_reward += episode_reward
 
-            return total_reward / self.num_simulations
+            # Cast to a builtin float: `rewards` is a float32 numpy array, so
+            # the `episode_reward`/`total_reward` accumulation above promotes
+            # to np.float32 (which is NOT an instance of `float`, unlike
+            # np.float64). The declared return type is `float` and the
+            # parallel branch already casts (issue #484).
+            return float(total_reward / self.num_simulations)
 
     def evaluate_payoff_matrix(
         self,

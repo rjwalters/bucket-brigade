@@ -12,8 +12,15 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-# Import generated Python modules
-from bucket_brigade.agents.archetypes_generated import (
+# Import generated Python modules.
+# archetypes_generated.py is produced by scripts/generate_python.py and is
+# NOT committed; skip the module when codegen has not been run in this
+# checkout (e.g. CI installs only .[dev] — issue #484).
+pytest.importorskip(
+    "bucket_brigade.agents.archetypes_generated",
+    reason="generated module missing (run scripts/generate_python.py)",
+)
+from bucket_brigade.agents.archetypes_generated import (  # noqa: E402
     ARCHETYPES as PY_ARCHETYPES,
     FIREFIGHTER_PARAMS,
     FREE_RIDER_PARAMS,
@@ -21,7 +28,7 @@ from bucket_brigade.agents.archetypes_generated import (
     COORDINATOR_PARAMS,
     LIAR_PARAMS,
 )
-from bucket_brigade.envs.scenarios_generated import (
+from bucket_brigade.envs.scenarios_generated import (  # noqa: E402
     SCENARIO_REGISTRY as PY_SCENARIOS,
     Scenario,
     default_scenario,

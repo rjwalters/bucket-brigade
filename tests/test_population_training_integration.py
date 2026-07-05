@@ -10,11 +10,12 @@ These tests are marked as 'slow' and can be skipped with: pytest -m "not slow"
 import pytest
 import tempfile
 from pathlib import Path
-import torch
-import time
 
-from bucket_brigade.training import PopulationTrainer
-from bucket_brigade_core import SCENARIOS
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+import time  # noqa: E402
+
+from bucket_brigade.training import PopulationTrainer  # noqa: E402
+from bucket_brigade_core import SCENARIOS  # noqa: E402
 
 
 @pytest.mark.slow

@@ -11,14 +11,15 @@ from typing import Tuple
 
 import numpy as np
 import pytest
-import torch
 
-from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv
-from bucket_brigade.training.joint_trainer import (
+torch = pytest.importorskip("torch")  # skip module when RL extras absent (issue #484)
+
+from bucket_brigade.envs.bucket_brigade_env import BucketBrigadeEnv  # noqa: E402
+from bucket_brigade.training.joint_trainer import (  # noqa: E402
     JointPPOTrainer,
     flatten_dict_obs,
 )
-from bucket_brigade.training.networks import CentralizedCritic, CentralizedQCritic
+from bucket_brigade.training.networks import CentralizedCritic, CentralizedQCritic  # noqa: E402
 
 
 NUM_AGENTS = 4
