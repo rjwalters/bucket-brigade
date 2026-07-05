@@ -255,3 +255,13 @@ The `"pending"` value is the audit signal: it tells the reviewer + operator "the
 Sub-issue 5f (issue #211) codifies the rule the migration tool uses to find an operator-authored `brief.md` in the legacy thread: **the earliest non-empty brief wins.** The discovery helper (`_discover_source_brief(source_tex)` in `anvil/skills/memo/lib/migrate.py`) globs both `<legacy-thread-root>/brief.md` (treated as N=0) and `<legacy-thread-root>/memo.*/brief.md` (treated as N=1, N=2, …), filters to candidates whose content is non-empty after `.strip()`, and picks the lowest-N candidate.
 
 The rule is the most forgiving of the cohort layouts surfaced by the bower migration: it survives both "operator wrote the brief at v1 and never moved it forward" *and* "operator copied the brief forward into every version dir" without requiring pre-cleanup of the legacy layout. The bower case (canonical brief at `memo.1/brief.md`, source `.tex` at `memo.3/memo.tex`) is the load-bearing fixture. When multiple candidates have non-empty content, the operator gets a `MigrationResult.notes` diagnostic enumerating the ignored candidates so a misfit cohort member (where "v1 is canonical" was wrong) surfaces visibly rather than silently losing content. The ingested body is emitted **verbatim** — no heading rewrites, no frontmatter extraction; the operator hand-merges on the first revise pass.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase (the migration still reports its own result unchanged). When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the migration's `_progress.json` writes complete.
+- **Staging target**: ONLY the paths the migration wrote — the migrated `<thread>.{N}/` version dir(s), the project `BRIEF.md` it created or merged, and any `refs/` stubs seeded by the step-13 auto-invoke — each staged explicitly by path (never `git add -A`).
+- **Commit**: `anvil(memo/migrate): <thread>.{N} [<state>]` — the bracket carries the thread's derived state per SKILL.md §State machine after migration.

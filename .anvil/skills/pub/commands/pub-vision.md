@@ -15,7 +15,7 @@ This critic is a sibling of `pub-review` and `pub-audit` in the "N parallel crit
 
 ## Owned vision dimensions (subset of the shipped six, /20 total)
 
-This critic owns a **vision rubric subset** alongside the paper's main 8-dimension /40 rubric (`rubric.md`). The vision dims appear in the aggregated scorecard via the existing mean-of-non-null aggregator (`anvil/lib/critics.py::aggregate`); no schema or aggregation changes are required.
+This critic owns a **vision rubric subset** alongside the paper's main 9-dimension /44 rubric (`rubric.md`). The vision dims appear in the aggregated scorecard via the existing mean-of-non-null aggregator (`anvil/lib/critics.py::aggregate`); no schema or aggregation changes are required.
 
 The pub vision rubric is a **four-dimension subset** of the framework's shipped `DEFAULT_VISION_DIMENSIONS` (the six in `anvil/lib/vision.py`), composed by passing the relevant dims to `VisionRubric(dimensions=[...])`. The dropped two (`vertical_overflow`, `slide_density`) are slide-centric and do not apply to a paginated, reflowing paper. The four pub-owned dims, scored 0–5 each (/20 total):
 
@@ -62,11 +62,11 @@ Other vision findings surface as `Finding` items with severity `major` / `minor`
   _progress.json                   { version, thread, phases.vision.{state,started,completed} }
 ```
 
-**Atomicity** (issue #350): the vision sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The three top-level files (`_review.json`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.vision.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.vision/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.vision.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob. The `pages/` subdirectory is staged inside the staging dir but is NOT validated by the required-files manifest (per `staged_sidecar`'s flat-manifest contract — subdirectories like `pages/` are not validated).
+**Atomicity** (issue #350, #376): the vision sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The three top-level files (`_review.json`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.vision.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.vision/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.vision.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.vision)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob. The `pages/` subdirectory is staged inside the staging dir but is NOT validated by the required-files manifest (per `staged_sidecar`'s flat-manifest contract — subdirectories like `pages/` are not validated).
 
 ## Procedure
 
-1. **Discover state** + **resume check** (per `anvil/lib/snippets/progress.md`). Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.vision.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed VLM session (issue #350). The sweep is idempotent. The "completed" check is satisfied when the final-named `<thread>.{N}.vision/` exists — the atomic-rename contract guarantees the dir only exists when complete.
+1. **Discover state** + **resume check** (per `anvil/lib/snippets/progress.md`). Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.vision)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.vision.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched (issue #350, #376). The sweep is idempotent. The "completed" check is satisfied when the final-named `<thread>.{N}.vision/` exists — the atomic-rename contract guarantees the dir only exists when complete.
 2. **Open the staged sidecar** for the vision dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.vision, required_files=["_review.json", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.vision.tmp/`), NOT inside the final `<thread>.{N}.vision/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`:
    ```json
    {
@@ -170,7 +170,7 @@ This critic's `_review.json` is discovered by `anvil.lib.critics.discover_critic
 - Per-dim `critical=True` ORs across critics; non-empty `critical_flags` forces `Verdict.BLOCK`.
 - The `pub-revise` command (with no code changes) consumes the vision findings via the same discover-glob → aggregate pattern documented in `pub-revise.md`.
 
-The vision overlay is **additive evidence**, not a change to the /40 convergence gate: like the venue overlay, it contributes findings the reviser acts on. The generic 8-dimension `_review.json` from `pub-review` remains the sole driver of the `advance` decision; vision critical flags participate in the same critical-flag short-circuit the rubric already defines.
+The vision overlay is **additive evidence**, not a change to the /44 convergence gate: like the venue overlay, it contributes findings the reviser acts on. The generic 9-dimension `_review.json` from `pub-review` remains the sole driver of the `advance` decision; vision critical flags participate in the same critical-flag short-circuit the rubric already defines.
 
 See `anvil/lib/README.md` § "Rendered-artifact review (`kind: vision`)" for the worked example.
 
@@ -182,3 +182,13 @@ See `anvil/lib/README.md` § "Rendered-artifact review (`kind: vision`)" for the
 - **Be specific.** A finding that says "Table 2's right two columns are clipped at the page margin; the best-F1 column is unreadable" is actionable; "the paper has table issues" is not. Cite figures/tables by their `\label{}` or caption and pages by `paper.pdf:page=<N>`.
 
 **Scorecard kind declaration**: This critic's `_meta.json` SHOULD include `"scorecard_kind": "machine-summary"` per `anvil/lib/snippets/scorecard_kind.md`. The canonical payload is `_review.json` per #26 (the prose siblings are not produced — the vision critic ships `_review.json` directly).
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.vision/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.vision/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(pub/vision): <thread>.{N} [<state>]` (the bracket carries the thread's current derived state per SKILL.md §State machine — vision is a non-gating critic and does not advance the state machine on its own).

@@ -6,8 +6,8 @@ description: Figurer command for the proposal skill. Resolves the figure referen
 # proposal-figures — Figurer
 
 **Role**: figurer.
-**Reads**: latest `<thread>.{N}/proposal.tex` and `<thread>.{N}/figures/src/` (any author-supplied or revision-supplied source scripts).
-**Writes**: rendered figures or stub placeholders into `<thread>.{N}/figures/`. Idempotent.
+**Reads**: latest `<thread>/<thread>.{N}/proposal.tex` and `<thread>/<thread>.{N}/figures/src/` (the version dir is nested under the thread root per the artifact contract; any author-supplied or revision-supplied source scripts).
+**Writes**: rendered figures or stub placeholders into `<thread>.{N}/figures/` (same nested version dir; bare `<thread>.{N}/` references below are shorthand). Idempotent.
 
 ## Engine note
 
@@ -16,11 +16,13 @@ The proposal artifact compiles with **XeLaTeX** (`xelatex proposal.tex`), not pd
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/proposal.tex` existing.
+- **Latest version directory**: highest `N` with `<thread>.{N}/proposal.tex` existing under the thread root `<thread>/`.
 - **Figure references**: extracted from `proposal.tex` by scanning for `\includegraphics{figures/<name>}`, `\herofigure{figures/<name>}`, and `\input{figures/<name>.tex}`.
 - **Source scripts**: `<thread>.{N}/figures/src/*.tex` (TikZ standalone, e.g. a topology diagram or site/routing plan) or `<thread>.{N}/figures/src/*.py` (matplotlib, e.g. a link-budget or cost-breakdown chart loading a co-located `.csv`).
 
 ## Outputs
+
+Nested under the thread root `<thread>/`:
 
 ```
 <thread>.{N}/figures/
@@ -47,7 +49,7 @@ The figurer only *renders* a figure when it has a deterministic source it can ru
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex`. Read `<thread>.{N}/_progress.json` to see if `phases.figures.state == done`.
+1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex` under the thread root `<thread>/`. Read `<thread>.{N}/_progress.json` to see if `phases.figures.state == done`.
 2. **Resume check**: enumerate `\includegraphics{...}`, `\herofigure{...}`, and `\input{figures/<name>.tex}` references in `proposal.tex`. For each, check if the target file exists in `figures/`. If all referenced figures exist (or have a `.MISSING` stub) AND `phases.figures.state == done` AND no source script is newer than its rendered output, exit early — no work needed.
 3. **Initialize `_progress.json`**: write `phases.figures.state = in_progress`, `phases.figures.started = <ISO>`.
 4. **For each referenced figure**:
@@ -88,3 +90,13 @@ This command updates `phases.figures` only, per the shallow merge rule documente
 ```
 
 Merge rule (shallow): preserve all other phases and all `metadata` fields. The figurer only touches `phases.figures`. Use ISO-8601 UTC timestamps per `anvil/lib/snippets/timestamp.md`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.figures.state = done`.
+- **Staging target**: ONLY the `<thread>.{N}/` version dir this phase wrote into.
+- **Commit**: `anvil(proposal/figures): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine, since the figures phase does not advance the state machine.

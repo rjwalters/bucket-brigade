@@ -39,7 +39,7 @@ reports/
       _progress.json               Phase state for this version
       changelog.md                 (revisions only) Maps prior critic notes to changes
     <thread>.1.review/             Reviewer output for version 1 (read-only)
-      verdict.md                   Decision (advance / block) + total /40
+      verdict.md                   Decision (advance / block) + total /44
       scoring.md                   Per-dimension scores
       comments.md                  Line-level comments
     <thread>.1.audit/              Auditor output for version 1 (read-only, REQUIRED by default)
@@ -72,13 +72,13 @@ EMPTY → DRAFTED → REVIEWED+AUDITED → REVISED → … → READY → AUDITED
 | `AUDITED-PARTIAL` | `<thread>.{N}.audit/verdict.md` exists for the latest `N` (without `.review/`) — transient; not advance-eligible |
 | `REVIEWED+AUDITED` | BOTH `<thread>.{N}.review/verdict.md` AND `<thread>.{N}.audit/verdict.md` exist for the latest `N` |
 | `REVISED` | A `<thread>.{N+1}/` exists after a prior `REVIEWED+AUDITED` state at `N` |
-| `READY` | Latest `<thread>.{N}.review/verdict.md` records `advance: true` (score ≥35) AND latest `<thread>.{N}.audit/verdict.md` records `pass: true` AND no unresolved critical flag in either sibling |
+| `READY` | Latest `<thread>.{N}.review/verdict.md` records `advance: true` (score ≥39) AND latest `<thread>.{N}.audit/verdict.md` records `pass: true` AND no unresolved critical flag in either sibling |
 | `AUDITED` | Same as `READY` for this skill — the term `AUDITED` is the standard anvil terminal state; report reaches it once both critic siblings clear |
 | `CUSTOMER-READY` | `<thread>.{N}.promote/receipt.md` exists for an `AUDITED` version |
 
 **Why "REVIEWED+AUDITED" rather than running them serially?** Both siblings consume the same `<thread>.{N}/` and write to disjoint paths — they are pure parallel critics in the "N parallel critics, one reviser" sense. Sequential execution would let the auditor read reviewer notes (a sometimes-useful signal: "reviewer praised a finding that is factually wrong"), but it sacrifices parallelism without a clear win. v0 runs them in parallel; revisit after first real use (see Open questions in #8).
 
-**Threshold**: ≥35/40 (the customer-facing tier; higher than the ≥32/40 used by `anvil:memo`). Any critical flag in EITHER `.review/` or `.audit/` short-circuits regardless of total — block until addressed.
+**Threshold**: ≥39/44 (the customer-facing tier; higher than the ≥35/44 used by `anvil:memo`). Any critical flag in EITHER `.review/` or `.audit/` short-circuits regardless of total — block until addressed.
 
 **Iteration cap**: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Configurable per-thread by writing `{ "max_iterations": <N> }` to `<thread>/.anvil.json` in the thread root.
 
@@ -115,6 +115,11 @@ recipient: "Acme Corporation, Q2 Engagement"
 engagement_id: "ACME-2026-Q2"
 delivery_format: "pdf"             # pdf | latex | markdown
 confidentiality_class: "internal"  # public | internal | confidential | restricted
+customer: "acme"                   # OPTIONAL — cross-project customer-context slug (see below)
+# audience_class: "commercial"     # OPTIONAL — audience-class house-style switch
+                                   # (commercial | defense | internal; issue #450).
+                                   # Overrides the customer's context.yaml default;
+                                   # see "Cross-project customer context" below.
 prior_reports:
   - thread: findings
     final_version: 3
@@ -139,6 +144,33 @@ auditor should keep in mind.)
 **Auditor use of `prior_reports`**: the auditor uses this list to cross-check the current draft for **contradictions with previously-delivered material**. Inconsistency across an engagement's report series is a critical-flag offense (see `rubric.md`, critical flag: "internal contradictions across the engagement").
 
 **Framework extraction note (per #10)**: per-project scoping is implemented inline by this skill. Other future skills (`pub` with multi-paper grant projects, `ip-uspto` with patent families) likely benefit from a parallel pattern. Candidate for `anvil/lib/project_scope.py` once a second consumer exists.
+
+## Cross-project customer context (opt-in, defaults off — issue #429)
+
+A customer relationship usually outlives any single project. The customer-context tier adds a locus **above** project level:
+
+```
+<repo_root>/customers/<slug>/
+  context.yaml        Human-owned: version-stamped (version: 1) NDA scope,
+                      export-control class, topics-to-avoid. Agents READ it;
+                      they never rewrite it. Template:
+                      templates/customer-context.template.yaml.
+  disclosures.jsonl   Machine-owned append-only delivery ledger — one JSON
+                      line per promoted report version. report-promote is
+                      the ONLY writer (promotion is the delivery event);
+                      report-draft and report-audit read it. Appends are
+                      idempotent on project/thread/version.
+```
+
+The default location is `<repo_root>/customers/` (customer context is *content*, not framework config); consumers may relocate it via the single optional `.anvil/config.json` key `report.customers_dir`. A project opts in with ONE optional `_project.md` frontmatter key: `customer: "<slug>"`.
+
+**Activation contract** (the #428/#449 pattern, exactly): no `customer:` key → every command behaves **byte-identically** to a pre-#429 install. A declared customer with a missing or malformed `context.yaml` keeps the tier ACTIVE — the breakage surfaces as a `major` finding directing the operator to create or fix the file (a broken declaration is a defect to surface, not an opt-out).
+
+**Consultation matrix**: `report-draft` loads the context advisorily (NDA scope + topics-to-avoid inform drafting; recent ledger entries extend prior-reports awareness across ALL the customer's projects); `report-review` and `report-audit` ENFORCE topics-to-avoid — a violating passage is a **critical flag** (audit-side identifier: `audit_disclosure_topic_violation`, one aggregated entry per the `audit_flags.py` convention; review-side twin defined in `rubric.md`); `report-audit` additionally cross-checks the draft against the ledger for cross-project disclosure consistency; `report-promote` appends the delivery record at promotion time. Deterministic helpers (customers-dir resolution, context load/validation, ledger IO, flag aggregation) live in `lib/customer_context.py`; topic matching itself is critic judgment, like the scope-creep flag.
+
+**Audience-class house-style switch (issue #450)**: `context.yaml` carries an optional top-level `audience_class:` default (closed v1 vocabulary: `commercial | defense | internal`), overridable per project via the same-named `_project.md` frontmatter key — the project key is also the sole locus for internal reports with NO customer (resolution works with this tier off). Deterministic helpers (resolution order, 3-layer `assets/audience/<class>.md` boilerplate lookup, structured errors) live in `lib/audience_class.py`. `report-figures` passes `-M audience_class=<class>` on both render paths, injects the consumer-supplied boilerplate via `--include-before-body`, adds a DRAFT watermark for `defense`, and records provenance in `_progress.json` (`phases.figures.audience_class_resolved` / `audience_boilerplate`); `report-review` treats a defense-class report missing its distribution-statement boilerplate as a **critical flag** (see `rubric.md`; audit-side twin deferred). Anvil ships NO jurisdiction-specific legal text — `assets/audience/` holds only a README. An out-of-vocabulary value is a structured `bad-value` error surfaced as a `major` finding (render proceeds class-less); absent everywhere → byte-identical pre-#450 behavior. Orthogonal to `confidentiality_class` and `export_control` — never merged or derived.
+
+**Framework extraction note (per #10)**: skill-local until a second skill (likely `datasheet`, the other customer-facing class) needs the same store.
 
 ## Command dispatch
 
@@ -185,7 +217,7 @@ The canonical `_progress.json` schema, read-merge-write recipe, and crash recove
 
 ## Rubric
 
-See `rubric.md` for the 8-dimension /40 scoring schema, the ≥35 advance threshold, the critical-flag short-circuit policy, and the auditor-specific findings format.
+See `rubric.md` for the 9-dimension /44 scoring schema, the ≥39 advance threshold, the critical-flag short-circuit policy, and the auditor-specific findings format.
 
 ## Output format
 
@@ -197,6 +229,8 @@ Reports ship as **markdown source-of-truth + rendered PDF**. The PDF is the cust
 Both paths produce `report.pdf` alongside `report.md` in the same version directory — the version dir is self-contained for archival.
 
 `report-figures` generates `report.pdf` as part of its run (the figures phase is the natural place for it since pandoc invocation produces both the rendered figures embedded in the PDF and the PDF itself). `report-promote` re-renders to verify the PDF matches the current `report.md` hash, then records the verified hash in the receipt.
+
+**Consumer-pluggable block-figure adapters (opt-in, defaults off).** For reports about hardware/design artifacts, consumers can register external CLI figure generators (e.g., SPICE→SVG, GDS→PNG) under `report.figure_adapters` in the repo-level `.anvil/config.json`. `report-figures` invokes each adapter once per glob-matched design unit and lands outputs at `<thread>.{N}/exhibits/blocks/<unit>/<adapter>.<ext>`, where body references are covered by the existing `report-review` step-4c existence/freshness gate and the pandoc render. Anvil ships the contract plus a no-op reference adapter (`assets/noop-figure-adapter.sh`), zero EDA tooling; per-unit failures write `*.FAILED.md` stubs and never abort the phase, and a missing adapter binary degrades gracefully. Block coverage is reported, not gated. See `commands/report-figure-adapter.md` for the full contract and `lib/figure_adapters.py` for the dispatcher.
 
 **`report-review` render-gate hook (deterministic pre-flight).** `report-review` runs a deterministic render-gate pre-flight via `anvil/lib/render_gate.py`. The gate checks page count (`page_cap=None` — customer reports vary; consumers can override per-thread via `<thread>/.anvil.json: render_gate.page_cap`), overfull boxes (>5.0pt threshold; **skipped when `delivery_format` selects the pandoc path** — no `Overfull` semantics in CSS output), compile success, and source-side placeholders. On failure, the gate emits a typed `Review(kind=tool_evidence)` with one `CriticalFlag` per failed gate dimension; the existing `anvil/lib/critics.py::compute_verdict` path treats this as `BLOCK`. See `commands/report-review.md` step 4b.
 
@@ -212,6 +246,21 @@ Per anvil principle 8 ("Opinionated defaults, override liberally"), this skill s
 
 Resolution rule: consumer overrides win when present, else fall back to skill defaults. (Concrete resolution helper deferred to `anvil/lib/` per #10; for v0 each command embeds the inline fallback check.)
 
+## Project BRIEF artifact type
+
+`report` is registered as a **skill-identity** `artifact_type` value in
+the shared project-BRIEF registry
+(`anvil/lib/project_brief.py::REGISTERED_ARTIFACT_TYPES` /
+`SKILL_IDENTITY_ARTIFACT_TYPES`; issue #432, following the #386/#408
+pattern for `deck`/`slides`/`proposal`/`pub`). In a shared project
+BRIEF, a `documents:` entry with `artifact_type: report` declares that
+this skill owns the thread. It is NOT a memo subtype: it selects no
+memo rubric overlay, and memo commands fail loudly when pointed at a
+`report`-declared thread. `anvil:project-migrate` writes this value
+(with a `# TODO(operator)` confirmation marker) when its vN report-dir
+adoption mode (`--adopt-vn`) infers the artifact type instead of
+receiving an explicit `--artifact-type`.
+
 ## Relationship to `anvil:memo`
 
 The patterns that recurred vs `anvil:memo` (#3) — input for #10's framework extraction:
@@ -220,7 +269,7 @@ The patterns that recurred vs `anvil:memo` (#3) — input for #10's framework ex
 |---|---|---|
 | Versioned dirs `<thread>.{N}/` | ✓ | — |
 | Sibling critic dirs `.review/`, `.audit/` | ✓ (structure) | Both REQUIRED by default (memo: review only, audit optional) |
-| 8-dimension /40 rubric | ✓ (shape) | Different weights + ≥35 threshold (memo: ≥32) |
+| 9-dimension /44 rubric | ✓ (shape) | Different weights + ≥39 threshold (memo: ≥35) |
 | `_progress.json` per dir, validate-by-file | ✓ | + `phases.audit`, `phases.promote` |
 | Iteration cap (default 4) | ✓ | — |
 | Resume-by-deleting-partial-output | ✓ | — |
@@ -234,3 +283,7 @@ The patterns that recurred vs `anvil:memo` (#3) — input for #10's framework ex
 | PDF as primary deliverable | — | New: pandoc default + LaTeX opt-in |
 
 **Extraction candidates for `anvil/lib/` (per #10)**: project-scope loader, two-stage promotion state-machine extension hook, pandoc render helper. None should be extracted from a single consumer — wait until at least one more skill (likely `pub` or `ip-uspto`) needs a parallel pattern.
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing report command end its phase by staging only the dirs it wrote and committing as `anvil(report/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 9 write-bearing report commands adopt it; the read-only `report` portfolio orchestrator and the `report-figure-adapter` contract document are exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

@@ -14,9 +14,9 @@ This command is the memo-skill's **hyperlink-resolver critic** — a determinist
 **Design contract** (settled at Epic #328 kickoff; do NOT re-litigate):
 
 - **No schema delta.** Ships using the existing free-form `Finding.fix` / `Finding.suggested_fix` text per `anvil/lib/review_schema.py`. No `action` / `target_anchor` / `proposed_content` fields. The structured-action experiment is preserved as a Deferred line item on #328.
-- **Skill-local first.** Implementation lives at `anvil/skills/memo/lib/hyperlink_resolver.py`. Promotion to `anvil/lib/` is deferred per the CLAUDE.md "wait for the second consumer" rule.
+- **Promoted to `anvil/lib/` under #460.** The implementation was born skill-local at `anvil/skills/memo/lib/hyperlink_resolver.py` per the CLAUDE.md "wait for the second consumer" rule; `anvil:essay` (#460) became that second consumer (its review wires broken-link resolution as a convergence-blocking gate), so the canonical module now lives at `anvil/lib/hyperlink_resolver.py`. The memo path remains a back-compat re-export shim — both import paths (and both `python -m` invocations) keep working.
 - **External HTTP check off by default.** `--check-external` is opt-in; the critic stays offline-safe and CI-reproducible by default.
-- **Memo first.** Pub / report / etc. extensions land in follow-on issues when a second consumer surfaces.
+- **Memo + essay.** Pub / report / etc. extensions land in follow-on issues when those skills surface the need.
 
 **State-machine status**: hyperlinks is a **sub-step** of `REVIEWED`, NOT a new state. The critic sibling dir `<thread>.{N}.hyperlinks/` is one of N parallel critics that feed the aggregator (`anvil/lib/critics.py::aggregate`); absence of the sibling means the critic never ran (a fully legal pre-#335 state).
 
@@ -36,7 +36,7 @@ This command is the memo-skill's **hyperlink-resolver critic** — a determinist
   _review.json    Canonical Review payload (kind=tool_evidence, critic_id=hyperlinks).
 ```
 
-**Atomicity** (issue #350): when `--write-review` is set, the hyperlinks sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The `_review.json` file is staged under a leading-dot sibling `.<thread>.{N}.hyperlinks.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.hyperlinks/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.hyperlinks.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): when `--write-review` is set, the hyperlinks sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The `_review.json` file is staged under a leading-dot sibling `.<thread>.{N}.hyperlinks.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.hyperlinks/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.hyperlinks.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.hyperlinks)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 `_review.json` carries the standard `anvil/lib/review_schema.py::Review` shape:
 
@@ -52,7 +52,7 @@ Per the issue #335 AC: every emitted `Finding` uses the existing free-form `fix`
 
 ## Procedure
 
-1. **Discover state**: take the `version_dir` positional arg; verify it exists; verify `<slug>.md` exists inside it (slug-echo per #295). If either check fails, exit code 2 with a clear error. When `--write-review` is set, **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<version_dir>`. This removes any leftover `.<thread>.<M>.hyperlinks.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed session (issue #350). The sweep is idempotent and logs at INFO level the count + names of removed dirs.
+1. **Discover state**: take the `version_dir` positional arg; verify it exists; verify `<slug>.md` exists inside it (slug-echo per #295). If either check fails, exit code 2 with a clear error. When `--write-review` is set, **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<version_dir>.hyperlinks)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<version_dir>.hyperlinks.tmp/` from a previously-killed run of this same hyperlinks critic on THIS version (issue #350). Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched. The sweep is idempotent and logs at INFO level when it removes a dir.
 2. **Enumerate links**: walk the body text and produce four ordered lists:
    - **Cross-thread refs** — `[[../<other-slug>/<other-slug>.N]]` and the symbolic latest-version shape (per `cross_thread_refs.py` — this command tolerates whichever form the canonical resolver supports without writing or following any symlink itself), with optional `/<file>` suffix. Delegates to `anvil/skills/memo/lib/cross_thread_refs.py::find_cross_thread_refs` — **no duplicate parsing**.
    - **Markdown links** — `[text](url)` and image-link `![text](url)`. The per-link validator decides classification (internal vs. external) and pass/fail.
@@ -83,16 +83,20 @@ The cross-thread-anchor critical flag is the load-bearing short-circuit: when me
 ## CLI entry-point
 
 ```bash
-# From a consumer repo (uv-runnable install per issue #230):
-uv run --project .anvil python -m anvil.skills.memo.lib.hyperlink_resolver \
+# From a consumer repo (uv-runnable install per issue #230) — canonical
+# promoted path (issue #460):
+uv run --project .anvil python -m anvil.lib.hyperlink_resolver \
     <thread>.{N}/
 
 # Or from the anvil source repo (development):
-python -m anvil.skills.memo.lib.hyperlink_resolver \
+python -m anvil.lib.hyperlink_resolver \
     anvil/skills/memo/examples/<example>/<thread>.{N}/
+
+# Historical memo path — still works through the back-compat shim:
+python -m anvil.skills.memo.lib.hyperlink_resolver <thread>.{N}/
 ```
 
-The CLI entry-point convention (`python -m anvil.skills.memo.lib.<module> <version_dir>`) is the **agreed coordination point** with the Phase 3 citation-coverage critic (#336) — both critics share an invocation shape so consumer wiring is uniform. Similarly the output-dir naming (`<thread>.{N}.hyperlinks/` here vs. `<thread>.{N}.citations/` for #336) follows the `<version_dir>.<tag>/` convention that `anvil/lib/critics.py::discover_critics` recognizes without code changes.
+The CLI entry-point convention (`python -m <module> <version_dir>`) is the **agreed coordination point** with the Phase 3 citation-coverage critic (#336) — both critics share an invocation shape so consumer wiring is uniform. Similarly the output-dir naming (`<thread>.{N}.hyperlinks/` here vs. `<thread>.{N}.citations/` for #336) follows the `<version_dir>.<tag>/` convention that `anvil/lib/critics.py::discover_critics` recognizes without code changes.
 
 ## Auto-discovery wiring
 
@@ -146,3 +150,13 @@ When the operator (or a future automated runner) calls `aggregate(reviews)` afte
 - **Failure is non-blocking for the rest of the pipeline.** The critic's job is to surface findings; the operator decides whether to revise. The aggregator's verdict short-circuit handles the load-bearing case (broken cross-thread anchor) automatically.
 
 **Snippet references**: See `anvil/lib/review_schema.py` for the `Review` / `Finding` / `CriticalFlag` shape, `anvil/lib/critics.py` for the aggregator's auto-discovery contract, and `anvil/skills/memo/lib/cross_thread_refs.py` for the cross-thread ref parser this critic delegates to.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: on the `--write-review` path, after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.hyperlinks/` — so only complete sidecars are ever committed. The default stdout-scan invocation writes nothing, so the hook has nothing to commit and is a silent no-op.
+- **Staging target**: ONLY this command's own `<thread>.{N}.hyperlinks/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(memo/hyperlinks): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine, since specialist critics do not advance the state machine.

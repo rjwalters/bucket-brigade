@@ -60,6 +60,30 @@ The vision rubric (`anvil-ip-uspto-vision-v1`, /25, dv1–dv5) is a **disjoint c
 
 The vision pass is optional: a thread whose figurer produced only illustrator **stubs** (no rendered `fig-*.svg` / `fig-*.png`) has nothing for the vision critic to look at, and the critic skips without writing a scorecard. Threads with rendered drawings (TikZ mode, or illustrator output dropped into `drawings/`) SHOULD have a vision pass before finalize.
 
+## Adversarial critic — findings-only (optional sibling)
+
+The optional, opt-in `ip-uspto-adversary` critic (`commands/ip-uspto-adversary.md`, issue #434) is the skill's second non-standard critic shape: a **zero-dimension, findings-only** scorecard. Where the vision critic owns a disjoint co-rubric (dv1–dv5), the adversary owns **no dimension at all** — it attacks the application (§103 obviousness combinations over supplied prior art + AAPA, design-arounds, §112(a) enablement-hole challenges) rather than verifying it, so it has nothing to score. Its `_summary.md` carries all nine main-rubric dimension rows with score `null` and its substance lives entirely in `findings.md` and the critical-flag block.
+
+Aggregation needs no special case: the reviser's mean-of-non-null rule (`anvil/lib/critics.py::aggregate`) means an all-null scorecard contributes to no per-dimension mean, while its findings join the deduped union and its critical flags are OR'd with every other critic's. An adversary critical flag (complete design-around with no dependent fallback; enablement hole gutting an independent claim's full asserted scope; §103 combination with overwhelming KSR motivation) **short-circuits the verdict to block** exactly like a §101/§112 flag.
+
+Despite scoring nothing, the adversary sibling's `_meta.json` still stamps `scorecard_kind: "machine-summary"` plus the issue #346 rubric-version fields (`rubric_id: "anvil-ip-uspto-v2"`, `rubric_total: 45`, `advance_threshold: 39`) — the stamp records which rubric's flag semantics and threshold regime the sibling participates in. The critic is **not in the default critic set**; operators enable it per-thread via `<thread>/.anvil.json`'s `critics` array.
+
+## FTO triage critic — report-only, never flags (optional sibling)
+
+The optional, on-demand `ip-uspto-fto` critic (`commands/ip-uspto-fto.md`, issue #446) is the skill's **third non-standard critic shape**: a zero-dimension, **report-only** scorecard that **NEVER raises a critical flag**. Like the adversary it is findings-only — its `_summary.md` carries all nine main-rubric dimension rows with score `null` (justification `n/a — report-only FTO triage critic`) and owns no dimension. The deliberate departure: where the adversary is critical-flag eligible (a patentability attack is a reviser-remediable drafting defect), the fto critic's `critical_flag` is hardcoded `false` — FTO exposure is not a quality defect the reviser can fix by editing the spec, and a machine-emitted blocking flag would read as an infringement verdict, which the command is structurally prohibited from rendering. Severity routes through counsel-action urgency buckets (`Critical` / `Important` / `Nice-to-have`) inside the report instead, and the only scoring vocabulary is the 0–4 relevance scale.
+
+Aggregation needs no special case: mean-of-non-null (`anvil/lib/critics.py::aggregate`) means the all-null scorecard contributes to no per-dimension mean, the findings join the deduped union, and `flagged: false` ORs to nothing — an fto sibling can **never short-circuit or block** the verdict. This is the report-only shape's defining property, the inverse of the adversary's flag semantics.
+
+Despite scoring nothing and never flagging, the fto sibling's `_meta.json` still stamps `scorecard_kind: "machine-summary"` plus the issue #346 fields (`rubric_id: "anvil-ip-uspto-v2"`, `rubric_total: 45`, `advance_threshold: 39`) so downstream consumers aggregate it apples-to-apples. The critic is **not in the default critic set**: expected use is on-demand (pre-finalize / pre-conversion), with `<thread>/.anvil.json` `critics`-array opt-in also supported. Its output is triage-for-counsel — NOT an FTO opinion — with the verbatim NOT-AN-FTO-OPINION boilerplate required at the top of both prose artifacts; see the command file for the full legal-framing rules.
+
+The three non-standard critic shapes, side by side:
+
+| Shape | Critic | Dimensions | Critical flag |
+|---|---|---|---|
+| Disjoint co-rubric | `vision` | dv1–dv5 (/25), main nine `null` | Eligible (`rendered_overflow_unrecoverable`) |
+| Findings-only | `adversary` | all nine `null` | **Eligible** — flags BLOCK like §101/§112 |
+| Report-only | `fto` | all nine `null` | **NEVER** — `critical_flag` always `false` |
+
 ## Scoring guidance
 
 For each dimension owned, the critic assigns an integer between 0 and 5. A short justification accompanies each score (1–3 sentences pointing to specific evidence: spec section, claim number, figure number).
@@ -71,6 +95,8 @@ Suggested calibration:
 - **2** — present but inadequate; major rework needed.
 - **1** — gravely deficient; this dimension alone may sink the application.
 - **0** — absent or actively misleading.
+
+**Quoted evidence (issue #464 / #475).** Every scored dimension's justification string follows the quoted-evidence sub-rule in `anvil/lib/snippets/rubric.md` §"Dimension scoring guidance" rule 1: at least one verbatim inline quote from `spec.tex` with a location anchor — `("the quoted span" — ¶[0042])` — per dimension, with the `no instance of <X> found` by-absence marker allowed at full weight only. The deterministic `anvil/lib/evidence_check.py` self-check is **wired** for this skill (issue #496): the verifier now parses the `scorecard_kind: machine-summary` JSON `dimensions` block in `_summary.md` (not just the 5-column `scoring.md` table) and feeds each scored dimension's justification through the same classifier, so the reviewer runs the write-time `--scoring` self-check (see `commands/ip-uspto-review.md` step 9b). No weight or threshold changes — this is an evidence-discipline contract on the justification prose, not a scoring change.
 
 ## Advance threshold
 
@@ -107,7 +133,7 @@ The critic writes a `_summary.md` at the top of its sibling dir with:
 1. **Critic tag**: e.g., `s101`, `s112`, `claims`, `priorart`, `review`.
 2. **Critical flag**: `flagged: true` or `flagged: false`.
 3. **Critical flag justification** (if flagged): one paragraph per flag.
-4. **Per-dimension scorecard**: a markdown table with columns `# | Dimension | Weight | Score | Justification`. Critics leave non-owned dimensions as score `null` and justification `n/a`.
+4. **Per-dimension scorecard**: a JSON `dimensions` block inside a fenced ` ```json ` block (the `scorecard_kind: machine-summary` shape — see `commands/ip-uspto-review.md` step 9 and `anvil/lib/snippets/scorecard_kind.md`), NOT a markdown table. Each dimension key maps to either `null` (un-owned dim — `n/a`, scored by another critic) or an object carrying `score`, `weight`, and a `justification` string. The whole object also carries the sibling `rubric` block and `critical_flag`. The deterministic quoted-evidence verifier (`anvil/lib/evidence_check.py`, issue #496) parses this `dimensions` block.
 5. **Top 3 revision priorities** (if any score <4 or any flag set): the highest-leverage changes the reviser should focus on.
 
 The detail (per-finding location, severity, suggested fix) lives in `findings.md`.

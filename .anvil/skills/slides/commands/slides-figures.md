@@ -6,18 +6,20 @@ description: Figurer command for the slides skill. Generates diagrams and data p
 # slides-figures — Figurer
 
 **Role**: figurer.
-**Reads**: latest `<thread>.{N}/deck.md` and `<thread>.{N}/figures/` (and `<thread>.{N}/figures/_specs.md` if the drafter left one).
-**Writes**: figure files into `<thread>.{N}/figures/`. Idempotent.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` and `<thread>/<thread>.{N}/figures/` (the version dir is nested under the thread root per the artifact contract; also `figures/_specs.md` if the drafter left one).
+**Writes**: figure files into `<thread>.{N}/figures/` (same nested version dir; bare `<thread>.{N}/` references below are shorthand). Idempotent.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **Figure references**: extracted from `deck.md` by scanning for image references (`![alt](figures/<name>.<ext>)`).
 - **Figure specs**: if the drafter wrote `<thread>.{N}/figures/_specs.md`, it lists each referenced figure with intended content, source data location, and rendering recommendation.
 - **Brief and refs**: `<thread>/BRIEF.md` and `<thread>/refs/**` provide source data for data-driven plots.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`:
 
 ```
 <thread>.{N}/figures/
@@ -104,11 +106,34 @@ mmdc \
   --output figures/<name>.png \
   --width 1600 \
   --height 900 \
+  --scale 2 \
   --backgroundColor white \
   -c anvil/lib/figures/mermaid-theme.json
 ```
 (`mmdc` from `@mermaid-js/mermaid-cli`; install via `npm install -g @mermaid-js/mermaid-cli`.)
 
+Equivalently, the figurer may call the shared Python wrapper
+`anvil.lib.render.render_mermaid_to_png(src_mmd, out_png)` which pins the
+same flag set (issue #545). The wrapper is the preferred call path when
+the figurer is implemented as Python; direct `mmdc` invocation is fine
+for shell-driven figurers.
+
+- `--scale 2` is **load-bearing** (issue #545). `mmdc`'s `--width` /
+  `--height` set the **viewport** the diagram renders into, **NOT** the
+  output canvas — mmdc then crops the PNG to the diagram's intrinsic
+  bounding box. For a sparse `flowchart LR` (3–4 nodes, no branches),
+  the intrinsic bbox is wide-and-thin, so the documented invocation
+  without `--scale` produces ~Nx80–110px thin strips that are
+  unreadable on the slides theme. `--scale 2` doubles the rendered SVG
+  dimensions before PNG conversion (so a 784×102 strip becomes
+  1568×204), which is the legibility knob for the default theme's
+  `max-height` cap.
+- **Orientation guidance for cyclic / dense flowcharts**: prefer
+  `flowchart TB` over `flowchart LR` in the `.mmd` source when the
+  diagram has a feedback loop or more than ~4 nodes. `LR` with a small
+  node count crops to a thin strip; `TB` produces a taller, more
+  legible portrait PNG. `--scale 2` helps but does not re-orient — the
+  authoring fix is in the `.mmd` grammar, not the render flag.
 - `-c anvil/lib/figures/mermaid-theme.json` applies the shared Anvil
   mermaid theme (`theme: base` + navy `themeVariables`) so diagrams render
   on the slides brand palette (navy nodes, muted-grey edges, Helvetica) by
@@ -188,3 +213,13 @@ The auditor (Dimension 1) additionally checks that data plots match their source
 Merge rule (shallow): preserve fields not touched by this command. See `anvil/lib/snippets/progress.md` for the full read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC format. The figurer only touches `phases.figures`; all other phases and metadata are preserved.
 
 Merge rule: preserve all other phases. The figurer only touches `phases.figures`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.figures.state = done`.
+- **Staging target**: ONLY the `<thread>.{N}/` version dir this phase wrote into.
+- **Commit**: `anvil(slides/figures): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; the figures phase does not advance the state machine.

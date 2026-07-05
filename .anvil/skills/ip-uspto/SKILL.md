@@ -10,7 +10,7 @@ user-invocable: false
 
 The `ip-uspto` skill produces non-provisional utility patent applications targeting filing at the United States Patent and Trademark Office. It extends the canonical anvil lifecycle (`draft → review → revise → figures → audit`) with four USPTO-specific phases (`intake`, `inventorship`, `pre-flight`, `finalize`) and is the proving ground for the **N parallel critics, one reviser** framework primitive.
 
-This skill targets **AIA non-provisional utility** applications (first-inventor-to-file framing, post–16 March 2013). Provisional applications and design patents are out of scope for v0.
+This skill targets **AIA non-provisional utility** applications (first-inventor-to-file framing, post–16 March 2013). Provisional applications are handled by the sibling skill **`anvil:ip-uspto-provisional`** (claims-optional, enablement-depth-first — issue #433); design patents are out of scope for v0.
 
 ## Artifact contract
 
@@ -22,7 +22,11 @@ A **patent thread** is a single patent application authored across one or more r
     BRIEF.md                      Structured inventor brief (intake output, or hand-authored)
     refs/                         Optional reference material (transcripts, sketches, lab notebooks)
     prior-art/                    Operator-supplied prior art (PDFs or markdown summaries)
+    fto-refs/                     Operator-supplied third-party references for FTO triage (ip-uspto-fto input; distinct from prior-art/ — FTO targets may postdate priority)
     inventorship.md               Inventorship matrix (inventorship phase output)
+    inventorship-evidence/        Optional (ip-uspto-inventorship --evidence); thread-level like the matrix
+      inventorship_map.json       Element/feature → repo-paths map (semi-manual seed; cached; --reseed discards)
+      evidence.jsonl              Append-only git evidence rows (reduction-to-practice citations only)
     .anvil.json                   Optional per-thread overrides (max_iterations, critic set)
   <thread>.1/                     First drafted version (immutable once written)
     spec.tex                      Specification (LaTeX, using anvil-uspto.cls)
@@ -75,11 +79,11 @@ EMPTY → INTAKE_DONE → INVENTORSHIP_DONE → DRAFTED → REVIEWED → REVISED
 | `REVIEWED` | All configured critic siblings (`<thread>.{N}.<tag>/`) at the latest `N` are `done` |
 | `PRE_FLIGHT_PASSED` | `<thread>.{N}.preflight/_summary.md` records `passed: true` (or all blockers were waived) |
 | `REVISED` | A `<thread>.{N+1}/` exists after prior critic siblings + pre-flight at `<thread>.{N}` |
-| `READY` | Aggregate score from critic siblings ≥35/40 AND no critical flag at latest `N` |
+| `READY` | Aggregate score from critic siblings ≥39/45 AND no critical flag at latest `N` |
 | `AUDITED` | `<thread>.{N}.audit/_summary.md` records `passed: true` alongside a `READY` version |
 | `FINALIZED` | `<thread>.final/_manifest.json` exists with all required submission artifacts referenced |
 
-Thresholds: **≥35/40 advances** (legal/customer-facing artifact per anvil's threshold table). Any §101 critical flag OR §112 critical flag short-circuits regardless of total score — block until addressed. Other critic critical flags follow the same short-circuit rule.
+Thresholds: **≥39/45 advances** (legal/customer-facing artifact per anvil's threshold table). Any §101 critical flag OR §112 critical flag short-circuits regardless of total score — block until addressed. Other critic critical flags follow the same short-circuit rule.
 
 Iteration cap: default `max_iterations: 5`. Configurable per-thread by writing `{ "max_iterations": <N> }` to `<thread>/.anvil.json`. Exceeding the cap marks the thread `BLOCKED` and requires human review.
 
@@ -89,7 +93,7 @@ Iteration cap: default `max_iterations: 5`. Configurable per-thread by writing `
 |---|---|---|---|
 | `ip-uspto` | portfolio orchestrator | all `<thread>.*` dirs under cwd | (none; reports state per thread + recommends next command) |
 | `ip-uspto-intake <thread>` | intake | inventor disclosure (transcript, brain dump, notes) in `<thread>/refs/` | `<thread>/BRIEF.md` (structured) |
-| `ip-uspto-inventorship <thread>` | inventorship interviewer | `<thread>/BRIEF.md`, latest `<thread>.{N}/claims.tex` if present | `<thread>/inventorship.md` (matrix) |
+| `ip-uspto-inventorship <thread> [--evidence [<repo>]] [--reseed]` | inventorship interviewer | `<thread>/BRIEF.md`, latest `<thread>.{N}/claims.tex` if present; with `--evidence` also the implementation repo's git history (via the promoted `anvil/lib/inventorship_evidence.py`) | `<thread>/inventorship.md` (matrix); with `--evidence` also `<thread>/inventorship-evidence/` (map + evidence.jsonl; Notes-column citations only) |
 | `ip-uspto-pre-flight <thread>` | pre-flight checker | latest `<thread>.{N}/` (all files) | `<thread>.{N}.preflight/` with `_summary.md`, `findings.md`, `_meta.json` |
 | `ip-uspto-draft <thread>` | drafter | `<thread>/BRIEF.md`, `<thread>/inventorship.md`, `<thread>/refs/`, `<thread>/prior-art/`; for revisions also prior version + all critic siblings | `<thread>.{N}/` with spec/claims/abstract/drawings |
 | `ip-uspto-review <thread>` | general reviewer | latest `<thread>.{N}/` | `<thread>.{N}.review/` |
@@ -97,6 +101,8 @@ Iteration cap: default `max_iterations: 5`. Configurable per-thread by writing `
 | `ip-uspto-112 <thread>` | §112 critic | latest `<thread>.{N}/` | `<thread>.{N}.s112/` |
 | `ip-uspto-claims <thread>` | claims critic | latest `<thread>.{N}/claims.tex` + `<thread>.{N}/spec.tex` | `<thread>.{N}.claims/` |
 | `ip-uspto-prior-art <thread>` | prior-art critic | latest `<thread>.{N}/` + `<thread>/prior-art/**` | `<thread>.{N}.priorart/` |
+| `ip-uspto-adversary <thread>` | adversarial critic (optional, opt-in via `.anvil.json`) | latest `<thread>.{N}/` + `<thread>/prior-art/**` (optional) | `<thread>.{N}.adversary/` (findings-only — all nine dims `null`) |
+| `ip-uspto-fto <thread>` | FTO triage critic (optional, on-demand; `.anvil.json` opt-in also supported) | latest `<thread>.{N}/` + `<thread>/fto-refs/**` (required) | `<thread>.{N}.fto/` (report-only — all nine dims `null`, never flags; NOT an FTO opinion) |
 | `ip-uspto-vision <thread>` | drawing vision critic (optional) | rendered drawings under latest `<thread>.{N}/drawings/` (SVG/PNG; **drawings only — never the spec PDF**) | `<thread>.{N}.vision/` with `_review.json` (kind=vision) |
 | `ip-uspto-revise <thread>` | reviser | latest `<thread>.{N}/` + ALL `<thread>.{N}.<tag>/` critic siblings | `<thread>.{N+1}/` with `_revision-log.md` |
 | `ip-uspto-audit <thread>` | auditor | READY `<thread>.{N}/` | `<thread>.{N}.audit/` |
@@ -116,6 +122,8 @@ Given an artifact at `<thread>.{N}/`, critic outputs land in sibling directories
 <thread>.{N}.s112/              ← §112 critic
 <thread>.{N}.claims/            ← claims critic
 <thread>.{N}.priorart/          ← prior-art critic
+<thread>.{N}.adversary/         ← adversarial critic (optional, opt-in; findings-only — all nine dims null, critical-flag eligible)
+<thread>.{N}.fto/               ← FTO triage critic (optional, on-demand; report-only — all nine dims null, NEVER flags; triage-for-counsel, not an FTO opinion)
 <thread>.{N}.vision/            ← drawing vision critic (optional; kind=vision, scores rendered drawings only)
 <thread>.{N}.preflight/         ← pre-flight (mechanical compliance) — produced after revise, pre-review
 <thread>.{N}.audit/             ← final fact-check (audit phase, post-convergence only)
@@ -130,7 +138,7 @@ Every critic directory contains:
 
 ```
 <thread>.{N}.<tag>/
-  _summary.md         Scorecard (8-dim /40 partial — critic only fills dimensions it owns) + critical flag boolean
+  _summary.md         Scorecard (9-dim /45 partial — critic only fills dimensions it owns) + critical flag boolean
   findings.md         Itemized findings, each with: severity, location (file:section), rationale, suggested fix
   _meta.json          { critic: <tag>, role: <which role md>, started: <iso>, finished: <iso>, model: <hint>, schema_version: 1, scorecard_kind: "machine-summary" }
 ```
@@ -154,6 +162,10 @@ DRAFTED → (run all critics) → REVIEWED → (revise consumes ALL siblings) �
 ```
 
 The default critic set is `review + s101 + s112 + claims + priorart`. Operator can subset by writing `{ "critics": ["review", "s101", "s112", "claims"] }` to `<thread>/.anvil.json` (e.g., skip `priorart` if no prior art was supplied; the reviser refuses to advance without all configured critics present).
+
+**Optional adversarial critic** (issue #434): the `adversary` critic (`commands/ip-uspto-adversary.md`) is **opt-in, not default** — operators enable it by adding `"adversary"` to the `critics` array in `<thread>/.anvil.json`. It attacks the application (§103 obviousness combinations over supplied prior art + AAPA, design-arounds, §112(a) enablement-hole challenges) rather than verifying it, and is **findings-only**: all nine rubric dimensions stay `null`, so the aggregator's mean-of-non-null rule is unaffected; its critical flags short-circuit the verdict like any other critic's. Once configured, the reviser's all-configured-critics-present rule applies to it as-is.
+
+**Optional FTO triage critic** (issue #446): the `fto` critic (`commands/ip-uspto-fto.md`) is **on-demand, not default** — typically run pre-finalize or before a non-provisional conversion; `.anvil.json` opt-in (add `"fto"` to the `critics` array) is also supported with the adversary's exact mechanism. It screens operator-supplied third-party references in `<thread>/fto-refs/` (never performing its own patent search — a dedicated input dir, distinct from `prior-art/`, because FTO targets may postdate priority) on a 0–4 relevance scale, producing a structured **triage-for-counsel** report — it is NOT an FTO opinion and says so verbatim in both output artifacts. Like the adversary it is findings-only (all nine dims `null`), but with one departure: it is **report-only and NEVER flags** — `critical_flag` is always `false`, so an fto sidecar never blocks convergence; severity routes through counsel-action buckets instead. The reviser MAY consume its design-around vectors as claim-ladder additions; it never consumes a verdict from it.
 
 **Critic concurrency in v0**: critics may be run serially or in parallel. The orchestrator (`ip-uspto.md`) reports "all configured critics done at version N" as a boolean — it does not enforce concurrency. Parallel spawn is a future enhancement that will land in `anvil/lib/critics.py` (issue #10); v0 implementations should default to serial for debuggability.
 
@@ -316,7 +328,25 @@ The schema is documented inline here for v0. There is no separate `schemas/` dir
 
 ## Rubric
 
-See `rubric.md` for the 8-dimension /40 USPTO scoring schema, the ≥35 advance threshold, and the §101/§112 critical-flag short-circuit policy. The optional `ip-uspto-vision` critic owns a **separate drawing-vision rubric subset** (dv1–dv5, /25) documented in the same file — it critiques the rendered drawings only (legibility, line weight/contrast, label placement, figure-number visibility, cross-reference accuracy) and ships its scorecard directly as `_review.json` (canonical `kind=vision` schema) rather than the `_summary.md`/`findings.md` machine-summary shape the source-side critics use; both are discovered and aggregated uniformly by `anvil/lib/critics.py`.
+See `rubric.md` for the 9-dimension /45 USPTO scoring schema, the ≥39 advance threshold, and the §101/§112 critical-flag short-circuit policy. The optional `ip-uspto-vision` critic owns a **separate drawing-vision rubric subset** (dv1–dv5, /25) documented in the same file — it critiques the rendered drawings only (legibility, line weight/contrast, label placement, figure-number visibility, cross-reference accuracy) and ships its scorecard directly as `_review.json` (canonical `kind=vision` schema) rather than the `_summary.md`/`findings.md` machine-summary shape the source-side critics use; both are discovered and aggregated uniformly by `anvil/lib/critics.py`.
+
+## Project BRIEF artifact type
+
+`ip-uspto` is registered as a **skill-identity** `artifact_type` value in
+the shared project-BRIEF registry
+(`anvil/lib/project_brief.py::REGISTERED_ARTIFACT_TYPES` /
+`SKILL_IDENTITY_ARTIFACT_TYPES`; issue #440, following the
+#386/#408/#432 pattern for `deck`/`slides`/`proposal`/`pub`/`report`).
+In a shared project BRIEF, a `documents:` entry with
+`artifact_type: ip-uspto` declares that this skill owns the thread. It
+is NOT a memo subtype: it selects no memo rubric overlay, and memo
+commands fail loudly when pointed at an `ip-uspto`-declared thread.
+`anvil:project-migrate`'s letter-family adoption mode
+(`--adopt-family`) writes this value (with a `# TODO(operator)`
+confirmation marker) when the operator passes the REQUIRED
+`--artifact-type ip-uspto` — there is no inference between a full
+application and a provisional (`ip-uspto-provisional`), so the choice
+is always explicit.
 
 ## USPTO-specific phases
 
@@ -325,9 +355,14 @@ Beyond the standard `draft → review → revise → figures → audit` lifecycl
 | Phase | Command | When | Purpose |
 |---|---|---|---|
 | **Intake** | `ip-uspto-intake` | Before first draft | Convert raw inventor disclosure into a structured brief: problem, prior approaches, key inventive features, embodiments, ranges, edge cases. Without this, the drafter hallucinates. |
-| **Inventorship** | `ip-uspto-inventorship` | Before first draft; re-checked pre-finalize | Generate inventor interview prompts to attribute each independent claim concept to ≥1 named inventor. 37 CFR 1.63 inventor oath requires correct inventorship; mis-attributed inventorship is grounds for unenforceability. |
-| **Pre-flight** | `ip-uspto-pre-flight` | After each revise, before next review | Mechanical compliance scan: paragraph numbering (`[0001]`, `[0002]`, ...), abstract word count ≤150, claims numbered 1..N, no multiple-dependent-on-multiple-dependent claims (37 CFR 1.75(c)), margin/font checks via LaTeX class, render-gate (compile + overfull-box + source-side placeholder scan via `anvil/lib/render_gate.py` — the LaTeX-skill analog of `marp_lint`; `page_cap=None` since patents are uncapped; consumers can override per-thread via `<thread>/.anvil.json: render_gate.page_cap`). Deterministic-first with LLM fallback for ambiguous cases. Render-gate is mechanical pass/fail (Check 9, no rubric score) — failure short-circuits pre-flight per the standard rule. See `commands/ip-uspto-pre-flight.md` Check 9. |
-| **Finalize** | `ip-uspto-finalize` | After AUDITED | Assemble submission package: `spec.pdf`, `drawings.pdf`, ADS placeholder, fee schedule placeholder, inventorship attestation. Does **not** file — that is a human + Patent Center action. |
+| **Inventorship** | `ip-uspto-inventorship` | Before first draft; re-checked pre-finalize | Generate inventor interview prompts to attribute each independent claim concept to ≥1 named inventor. 37 CFR 1.63 inventor oath requires correct inventorship; mis-attributed inventorship is grounds for unenforceability. Opt-in `--evidence` mode mines the implementation repo's git history (the promoted shared `anvil/lib/inventorship_evidence.py`, pure stdlib + subprocess git) into reduction-to-practice citations that pre-fill the matrix **Notes column only** — advisory evidence for the attorney interview; conception attribution and the `●` rules are untouched. |
+| **Pre-flight** | `ip-uspto-pre-flight` | After each revise, before next review | Mechanical compliance scan: paragraph numbering (`[0001]`, `[0002]`, ...), abstract word count ≤150, claims numbered 1..N, no multiple-dependent-on-multiple-dependent claims (37 CFR 1.75(c)), margin/font checks via LaTeX class, render-gate (compile + overfull-box + source-side placeholder scan via `anvil/lib/render_gate.py` — the LaTeX-skill analog of `marp_lint`; `page_cap=None` since patents are uncapped; consumers can override per-thread via `<thread>/.anvil.json: render_gate.page_cap`; **call-site `overfull_threshold_pt=2.0` override per the legal-artifact calibration, issue #572** — tighter than the framework default 5.0pt). Deterministic-first with LLM fallback for ambiguous cases. Render-gate is mechanical pass/fail (Check 9, no rubric score) — failure short-circuits pre-flight per the standard rule. See `commands/ip-uspto-pre-flight.md` Check 9. |
+| **Audit** | `ip-uspto-audit` | After convergence, before finalize | Adds a **render-gate backstop** (issue #572, Check 11): re-invokes `compile_and_gate(...)` at `overfull_threshold_pt=2.0` so a late-revise overfull box introduced AFTER the last pre-flight pass cannot reach FILING-READY unchallenged. The result is written to the audit sibling's `_gate.json`, which `ip-uspto-finalize`'s pre-finalize gate reads. |
+| **Finalize** | `ip-uspto-finalize` | After AUDITED | Assemble submission package: `spec.pdf`, `drawings.pdf`, ADS placeholder, fee schedule placeholder, inventorship attestation. **Pre-finalize gate** (issue #572): reads the audit sibling's `_gate.json` and refuses to assemble `<thread>.final/` when any overfull-box finding is present. Does **not** file — that is a human + Patent Center action. |
+
+### Render-gate threshold calibration
+
+The ip-skill pre-flight + audit-backstop call sites pass `overfull_threshold_pt=2.0` to `compile_and_gate(...)`, **tighter than** the framework default of 5.0pt in `anvil/lib/render_gate.py`. Rationale (issue #572): a filed provisional shipped with a 83.6pt overfull (~16× the framework default; >40× the ip-skill override). The 2.0pt call-site value is the legal-artifact calibration — strict enough to catch margin-breaking content well below the issue body's "egregious / >10pt" line, loose enough that sub-point cosmetic slop still passes. The framework default in `render_gate.py` remains 5.0pt to avoid disturbing the `installation`, `proposal`, `datasheet`, `pub`, `report` consumers that inherit it. The override is per-call-site, not per-skill-config, so an audit done outside the ip-skill commands (e.g., a consumer custom critic) does NOT inherit the tighter threshold unless it passes the same kwarg.
 
 ## Defaults and overrides
 
@@ -343,4 +378,19 @@ This skill ships with opinionated defaults. Consumers extend liberally via `.anv
 - **This skill does NOT file a patent application.** It produces a submission-ready package. Filing requires human review, attorney sign-off, and submission via USPTO Patent Center.
 - **This skill does NOT replace a licensed patent attorney.** It is a drafting and review aid. Inventorship attestation (37 CFR 1.63), assignment, and prosecution strategy require a qualified human attorney.
 - **The prior-art critic does NOT do its own patent search.** Operator must supply prior art in `<thread>/prior-art/`. Patent search is a separate role potentially shipped as a future skill.
-- **Provisional applications and design patents are out of scope for v0.** Track as separate issues.
+- **The FTO triage critic produces triage-for-counsel, NOT an FTO opinion.** `ip-uspto-fto` screens only operator-supplied references in `<thread>/fto-refs/` (it never searches), renders no infringement or clearance conclusion (0–4 relevance scores + counsel-action buckets are its entire vocabulary), and never marks output as privileged. Licensed patent counsel must validate every finding before any business reliance.
+- **Provisional applications are handled by the sibling skill `anvil:ip-uspto-provisional`** (issue #433): claims-optional posture, enablement-depth-dominant `anvil-ip-provisional-v1` rubric (/45, ≥39; dim 9 *Conversion readiness* replaces this skill's *Claim-spec correspondence*), shared `anvil-uspto.cls` + intake substrate. The natural flow is provisional thread → (≤12 months) → a non-provisional conversion thread in THIS skill referencing it. **Design patents remain out of scope** — track as separate issues.
+
+### Conversion linkage — referencing a provisional (issue #501)
+
+A non-provisional thread in this skill converts an earlier `anvil:ip-uspto-provisional` filing through a **mechanical** §119(e) linkage (no manual priority-claim drafting required):
+
+- **Declaration**: the non-provisional `<thread>/BRIEF.md` carries an optional `converts_provisional` frontmatter block (`thread` / `filing_date` / `application_number` / optional `portfolio_path`) — see `commands/ip-uspto-intake.md` §"`converts_provisional`". This is structured filing data, NOT a `refs/` body-citation; `cross_thread_refs.py` is portfolio-root-relative and does not resolve the cross-portfolio case, so the BRIEF key (with `portfolio_path` for cross-portfolio) is the declaration surface.
+- **§119(e) priority-claim text** is emitted from that block at two points: a "CROSS-REFERENCE TO RELATED APPLICATIONS" paragraph into `spec.tex` at **draft** (`ip-uspto-draft.md` §5a), and the ADS domestic-priority data at **finalize** (`ip-uspto-finalize.md` step 10).
+- **12-month deadline**: the orchestrator (`ip-uspto.md` step 5) computes `filing_date + 12 calendar months` via `lib/conversion_deadline.py` and warns loudly when within 60 days of (or past) the §119(e) deadline.
+- **Fail loud**: a `converts_provisional` block present with a missing/empty `filing_date` is an error at draft, finalize, and orchestrator surfacing — never a silently blank priority claim. The authoritative producer copy of the date is the provisional thread's `_filing.json` (written by `ip-uspto-provisional-finalize`); the BRIEF key is the consumer copy.
+- **§112(a) disclosure-coverage check** (issue #517): beyond the mechanical date+boilerplate linkage above, the **`s112` critic** (`commands/ip-uspto-112.md`) gains a `converts_provisional`-gated §112(a) conversion disclosure-coverage check. When the block is present, the s112 per-claim-limitation support sweep is **re-run with the provisional `spec.tex` as the baseline** (resolved via `converts_provisional.thread` + optional `portfolio_path` at highest-`N`): does the provisional disclose each converted claim limitation at §112(a) written-description-and-enablement depth? Findings are **advisory FOR COUNSEL** — they flag possible new-matter / unsupported converted subject matter (claim-number + provisional-spec-paragraph citations) and **never adjudicate priority** (never declare priority lost, claim invalid, or conversion failed). An unsupported converted **independent-claim** limitation is **critical-flag eligible**; dependent-only / narrowly-supported gaps are non-critical. The check is **fail-loud**: if the provisional `spec.tex` cannot be resolved it emits a flagged "could not be performed" finding, never a silent pass. It is **dormant / byte-identical** when `converts_provisional` is absent — no new critic, no new orchestrator critic-set entry, no Python lib module, no new rubric dimension (total stays /45); the check rides on existing dim 2 §112(a).
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing ip-uspto command end its phase by staging only the dirs it wrote and committing as `anvil(ip-uspto/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 16 write-bearing ip-uspto commands adopt it; the read-only `ip-uspto` portfolio orchestrator is exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

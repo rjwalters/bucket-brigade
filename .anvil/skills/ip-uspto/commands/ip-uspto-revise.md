@@ -22,18 +22,18 @@ This is the canonical "N parallel critics, one reviser" pattern from anvil's des
 
 ### Path A: convergence (ADVANCE)
 
-If aggregate ≥35/40 AND no unresolved critical flag, write a marker file to the current version directory and exit without producing a new version:
+If aggregate ≥39/45 AND no unresolved critical flag, write a marker file to the current version directory and exit without producing a new version:
 
 ```
 <thread>.{N}/
-  _revise-result.md      "READY_FOR_AUDIT — aggregate <total>/40, no critical flags, see <thread>.<N>.<critics>/ for detail"
+  _revise-result.md      "READY_FOR_AUDIT — aggregate <total>/45, no critical flags, see <thread>.<N>.<critics>/ for detail"
 ```
 
 Update `<thread>.{N}/_progress.json` with `phases.revise.state = done`, `phases.revise.result = "advance"`, `phases.revise.completed = <ISO>`. Do **not** increment the version.
 
 ### Path B: revision required
 
-If aggregate <35 OR any unresolved critical flag, write the next version:
+If aggregate <39 OR any unresolved critical flag, write the next version:
 
 ```
 <thread>.{N+1}/
@@ -61,23 +61,23 @@ If aggregate <35 OR any unresolved critical flag, write the next version:
    - Compare the discovered tag set to the configured critic set (from `<thread>/.anvil.json` or default). If any configured critic is missing, abort with an error: "configured critic <tag> has no sibling at version <N>; run it before revising."
    - Optional siblings beyond the configured set (e.g., consumer-added critics) are included if present and `done`.
 5. **Aggregate scorecards**:
-   - For each rubric dimension (1..8), gather the non-null scores from each critic's `_summary.md` per-dimension scorecard.
+   - For each rubric dimension (1..9), gather the non-null scores from each critic's `_summary.md` per-dimension scorecard.
    - Per-dimension aggregate score = arithmetic mean of non-null contributions, rounded to one decimal place for reporting (but kept full-precision for the threshold check).
    - Total = sum of per-dimension means.
    - Critical flag aggregate = OR of every critic's `flagged` boolean.
 6. **Decide path**:
-   - If `total >= 35.0` AND `critical_flag_aggregate == false` → Path A (ADVANCE).
+   - If `total >= 39.0` AND `critical_flag_aggregate == false` → Path A (ADVANCE).
    - Otherwise → Path B (REVISE).
 
 ### Path A: write the advance marker
 
 7a. Write `<thread>.{N}/_revise-result.md` containing:
    - Header: `READY_FOR_AUDIT`.
-   - Aggregate score: `<total>/40`.
+   - Aggregate score: `<total>/45`.
    - Per-dimension breakdown.
    - Per-critic links to `_summary.md`.
 8a. Update `<thread>.{N}/_progress.json`: `phases.revise.state = done`, `phases.revise.result = "advance"`, `phases.revise.completed = <ISO>`.
-9a. Report: `Revise: acme-widget.2 → READY_FOR_AUDIT (aggregate 36.4/40, no critical flags). Next: ip-uspto-audit acme-widget.`
+9a. Report: `Revise: acme-widget.2 → READY_FOR_AUDIT (aggregate 40.4/45, no critical flags). Next: ip-uspto-audit acme-widget.`
 
 ### Path B: produce the next version
 
@@ -228,3 +228,14 @@ Note `metadata.revised_from` — the version this revision was produced from. Us
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the revise outcome.
+- **Staging target**: ONLY what this invocation wrote — the new `<thread>.{N+1}/` version dir, or, on the no-new-version path, the `READY_FOR_AUDIT` marker written into the current `<thread>.{N}/` (staged explicitly by path).
+- **Commit**: `anvil(ip-uspto/revise): <thread>.{N+1} [REVISED]` — on the marker path the version token stays `<thread>.{N}` and the bracket carries the thread's current derived state per SKILL.md §State machine.
+

@@ -7,7 +7,7 @@ description: Promoter command — transitions an AUDITED report to CUSTOMER-READ
 
 **Role**: promoter.
 **Reads**: `<project>/_project.md`, latest `<project>/<thread>.{N}/` (must be in state `AUDITED`), `<thread>.{N}.review/verdict.md`, `<thread>.{N}.audit/verdict.md`, `<thread>.{N}/report.pdf`.
-**Writes**: `<project>/<thread>.{N}.promote/receipt.md`, `<project>/<thread>.{N}.promote/_progress.json`, and updates `<project>/<thread>.{N}/_progress.json` with `phases.promote = done`.
+**Writes**: `<project>/<thread>.{N}.promote/receipt.md`, `<project>/<thread>.{N}.promote/_progress.json`, and updates `<project>/<thread>.{N}/_progress.json` with `phases.promote = done`. When the customer-context tier is active (`_project.md` declares `customer: "<slug>"`; issue #429), also appends one delivery record to `<customers_dir>/<slug>/disclosures.jsonl` (step 11b) — this command is the ledger's ONLY writer.
 
 **This command is the customer-facing release gate.** It is the only command in the report skill that requires an explicit human acknowledgment token — the equivalent of Loom's `loom:curated → loom:issue` promotion. It refuses to run from any state other than `AUDITED`.
 
@@ -15,7 +15,7 @@ description: Promoter command — transitions an AUDITED report to CUSTOMER-READ
 
 The standard anvil state machine ends at `AUDITED`. For internal artifacts (like `anvil:memo`) that is sufficient — "the rubric cleared" and "the artifact is usable" are the same event. For customer-facing artifacts they are not:
 
-- **`AUDITED`** is a machine-checkable state: rubric ≥35, audit pass, no critical flags. The skill can determine this from on-disk evidence with no human input.
+- **`AUDITED`** is a machine-checkable state: rubric ≥39, audit pass, no critical flags. The skill can determine this from on-disk evidence with no human input.
 - **`CUSTOMER-READY`** is an act of judgment: a human (or explicitly-authorized approver) accepts liability for releasing this specific PDF, with this specific content, to this specific recipient. The skill cannot determine this without an external acknowledgment.
 
 Conflating them removes a useful kill-switch. A report can pass the rubric and still be inappropriate to deliver (recipient relationship changed, embargo period, follow-up question from the recipient that should be addressed before delivery, schedule slipped past delivery window). `report-promote` is where that judgment lands.
@@ -39,7 +39,7 @@ Conflating them removes a useful kill-switch. A report can pass the rubric and s
 
 And updates `<project>/<thread>.{N}/_progress.json` with `phases.promote.state = done` (so the version dir self-reports its CUSTOMER-READY status).
 
-**Atomicity** (issue #350): the promote sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`receipt.md`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.promote.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.promote/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.promote.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form — load-bearing for the receipt-as-canonical-marker contract (a partially-written `<thread>.{N}.promote/receipt.md` would otherwise look like a completed promotion and break the idempotence check at step 2). The update to `<thread>.{N}/_progress.json` (in the version dir, NOT the promote sibling) happens AFTER the staged_sidecar context exits, so the promote sibling is the canonical commit point.
+**Atomicity** (issue #350, #376): the promote sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`receipt.md`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.promote.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.promote/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.promote.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.promote)` per-critic sweep removes; the final-named dir never exists in partial form — load-bearing for the receipt-as-canonical-marker contract (a partially-written `<thread>.{N}.promote/receipt.md` would otherwise look like a completed promotion and break the idempotence check at step 2). The update to `<thread>.{N}/_progress.json` (in the version dir, NOT the promote sibling) happens AFTER the staged_sidecar context exits, so the promote sibling is the canonical commit point.
 
 ### `receipt.md` schema
 
@@ -63,7 +63,7 @@ And updates `<project>/<thread>.{N}/_progress.json` with `phases.promote.state =
 
 ## Rubric clearance
 
-- Review verdict: <total>/40, advance: true, 0 critical flags
+- Review verdict: <total>/44, advance: true, 0 critical flags
 - Audit verdict: pass: true, 0 critical flags, <findings_count> claims audited
 - Prior-report cross-check: <pass | with-reconciliation | n/a — no prior reports>
 
@@ -81,7 +81,7 @@ And updates `<project>/<thread>.{N}/_progress.json` with `phases.promote.state =
    - `<thread>.{N}.audit/verdict.md` exists, parses, has `pass: true` and no critical flags.
    - `<thread>.{N}/report.pdf` exists and is newer than `report.md`.
 
-   If any precondition fails, exit with a specific error explaining which one. Do NOT run the promotion. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<project_root>)` where `<project_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.promote.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed promotion session (issue #350). The sweep is idempotent.
+   If any precondition fails, exit with a specific error explaining which one. Do NOT run the promotion. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.promote)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.promote.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched (issue #350, #376). The sweep is idempotent.
 2. **Idempotence check**: if `<thread>.{N}.promote/` already exists (the atomic-rename contract guarantees the dir only exists when complete — i.e., `receipt.md` + `_progress.json` are both present), exit early with the message "thread already CUSTOMER-READY at version <N>, promoted at <timestamp>." (Re-promotion is not supported; supersession works by promoting a later version.)
 3. **Load project context**: read `<project>/_project.md`. Extract `recipient` and `engagement_id` (both REQUIRED fields). The acknowledgment will be checked against `recipient` to ensure the operator knows who they are releasing to.
 4. **Extract report title**: parse the first H1 heading from `report.md`. This is the canonical title used in the acknowledgment prompt.
@@ -123,6 +123,11 @@ And updates `<project>/<thread>.{N}/_progress.json` with `phases.promote.state =
 9. **Write `receipt.md`** inside the staging dir per the schema above, including the verified SHA256 of `report.pdf` and `report.md`, the operator identity, acknowledgment method, and rubric clearance summary.
 10. **Update `_progress.json`** inside the staging dir: `phases.promote.state = done`, `phases.promote.completed = <ISO>`. This is the LAST file write before the context manager exits — the manifest verification + atomic rename at exit (issue #350) requires `_progress.json` to be present. Then **exit the `staged_sidecar` context block**: the primitive verifies every name in the required-files manifest exists in the staging dir, then atomically renames `.<thread>.{N}.promote.tmp/` → `<thread>.{N}.promote/`. The final-named dir only ever exists in **complete** form.
 11. **Update `<thread>.{N}/_progress.json`** (in the version dir, AFTER the staged_sidecar context exits): merge `phases.promote.state = done`, `phases.promote.receipt_path = <thread>.{N}.promote/receipt.md`. This update happens AFTER the promote sibling has been atomically renamed — the promote sibling is the canonical commit point.
+11b. **Append the disclosure-ledger record** (conditional — active iff `_project.md` declares `customer: "<slug>"`; issue #429). Promotion is the delivery event, so this command — not the auditor — writes the customer's ledger. AFTER the promote sibling has been atomically renamed (the receipt is the commit point; a failed promotion must never leave a ledger record), call `anvil/skills/report/lib/customer_context.py::append_disclosure(<customers_dir>, <slug>, project=<project-slug>, thread=<thread>, version=N, summary=<one-line human-readable disclosure summary>, engagement_id=<from _project.md>, report_sha256=<the receipt's deliverable SHA256>)`. The append is:
+    - **Append-only**: one JSON line via `open(..., "a")`; `context.yaml` (the human-owned sibling) is NEVER touched.
+    - **Idempotent** on `project/thread/version`: a record already present for this triple → no write, no error (mirrors the receipt idempotency in step 2 — a re-invoked completed promotion is a no-op end to end).
+    - `<customers_dir>` resolves exactly as in the other commands: `.anvil/config.json` key `report.customers_dir`, default `<repo_root>/customers/` (`customer_context.py::resolve_customers_dir`).
+    - A declared customer whose `context.yaml` is missing or malformed does NOT block the append — the ledger is machine-owned and the delivery happened; the context breakage was already surfaced as a `major` finding by the review/audit siblings. When no `customer:` key exists, skip this step entirely (byte-identical to pre-#429).
 12. **Report**: print a one-line status (e.g., `Promoted acme-q2/findings.3 to CUSTOMER-READY (recipient: Acme Corp, deliverable SHA256 c7e3...)`). If this promotion superseded a prior version, also print the supersession note.
 
 ## Idempotence and safety
@@ -167,3 +172,13 @@ The version dir's `_progress.json` is updated additively with the same `phases.p
 - **Refuse silently-broken preconditions.** If `report.pdf` is missing or stale, do not regenerate it as a side effect — fail loudly. The operator should see exactly what is wrong before they acknowledge release.
 - **Acknowledgment is mandatory, not aspirational.** There is no automation path that skips it. If an orchestrating agent invokes this command without `--confirm-customer-ready` or `--ack-file`, the agent must escalate to a human — the skill will not promote.
 - **The receipt is the audit trail.** Capture enough information that a future auditor can reconstruct, weeks later, what was delivered, to whom, when, and on whose say-so. SHA256 of the PDF is the load-bearing field — it is the cryptographic fact that ties the receipt to the artifact.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.promote/` and the version dir's `_progress.json` records `phases.promote = done` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY the paths this invocation wrote — this command's own `<thread>.{N}.promote/` sidecar, the updated `<thread>.{N}/_progress.json` (staged explicitly by path), and, when the customer-context tier is active (issue #429), the appended `<customers_dir>/<slug>/disclosures.jsonl` delivery ledger (staged explicitly by path — this command is the ledger's only writer).
+- **Commit**: `anvil(report/promote): <thread>.{N} [CUSTOMER-READY]`.

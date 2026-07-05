@@ -6,8 +6,8 @@ description: Auditor command for the proposal skill. Verifies BOM arithmetic, sp
 # proposal-audit — Auditor
 
 **Role**: auditor (`kind: tool_evidence`).
-**Reads**: latest `<thread>.{N}/` (specifically `proposal.tex`, the priced BOM/labor/total tables, and the spec tables), and `<thread>/refs/**` (datasheets, vendor quotes, planning-range sources) for the sourceability check.
-**Writes**: `<thread>.{N}.audit/` with `verdict.md`, `findings.md`, `evidence.md`, `_meta.json`, and `_progress.json`.
+**Reads**: latest `<thread>/<thread>.{N}/` (the version dir is nested under the thread root per the artifact contract; specifically `proposal.tex`, the priced BOM/labor/total tables, and the spec tables), and `<thread>/refs/**` (datasheets, vendor quotes, planning-range sources) for the sourceability check.
+**Writes**: `<thread>/<thread>.{N}.audit/` with `verdict.md`, `findings.md`, `evidence.md`, `_meta.json`, and `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.audit/` references below are shorthand for these nested paths.
 
 The audit sibling directory is **read-only once written**. Revisions consume it; they never modify it.
 
@@ -18,11 +18,13 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/proposal.tex` existing.
+- **Latest version directory**: highest `N` with `<thread>.{N}/proposal.tex` existing under the thread root `<thread>/`.
 - **Source references**: `<thread>/refs/**` — datasheets, vendor price lists, quotes. The auditor uses these as the sourceability basis for priced lines and spec claims. (A proposal without `refs/` is auditable on internal consistency and arithmetic alone; the auditor flags any price that has neither a `refs/` basis nor an inline planning-range basis.)
 - **Rubric** (audit-side critical flags): `anvil/skills/proposal/rubric.md` (flags 2, 3, 4 are audit-owned).
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under audit:
 
 ```
 <thread>.{N}.audit/
@@ -33,7 +35,7 @@ This is one of the **two REQUIRED critic siblings** for the proposal skill (the 
   _progress.json   Phase state for the auditor (phase: audit)
 ```
 
-**Atomicity** (issue #350): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`verdict.md`, `findings.md` (or its accepted alias — see "Alias contract" below), `evidence.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`verdict.md`, `findings.md` (or its accepted alias — see "Alias contract" below), `evidence.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.audit)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ### Alias contract — per-claim findings filename
 
@@ -47,10 +49,10 @@ The per-claim findings file ships canonically as **`findings.md`**. Writers SHOU
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.audit.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed auditor session (issue #350). If `<thread>.{N}.audit/` exists (the atomic-rename contract guarantees the dir only exists when complete), the audit is complete — exit early with a notice (idempotent).
+1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex` under the thread root `<thread>/`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.audit)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.audit.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). If `<thread>.{N}.audit/` exists (the atomic-rename contract guarantees the dir only exists when complete), the audit is complete — exit early with a notice (idempotent).
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial audit left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.audit.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.{N}.audit/` exists WITHOUT `verdict.md`, delete the dir and re-audit.
 3. **Open the staged sidecar** for the audit dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.audit, required_files=["verdict.md", "findings.md", "evidence.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.audit.tmp/`), NOT inside the final `<thread>.{N}.audit/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Note: when the writer uses an accepted alias for `findings.md` per the "Alias contract" above (e.g., `claim-log.md`), the required-files manifest passes the alias name in place of `findings.md`. Then, **inside the staging dir**, initialize `_progress.json` for the audit dir: `phases.audit.state = in_progress`, `phases.audit.started = <ISO>`, `for_version = N` (per `anvil/lib/snippets/progress.md`). Also initialize `_meta.json` with `scorecard_kind: human-verdict` (see `anvil/lib/snippets/scorecard_kind.md`); proposal-audit ships task-specific `findings.md` and `evidence.md` alongside the scorecard-kind declaration. (Per the migration note in `audit.md`, this command emits the legacy prose triple today; the legacy adapter bridges it to the `kind: tool_evidence` contract.)
-4. **Read inputs**: load `<thread>.{N}/proposal.tex`, parse the BOM / labor / project-total tables and the spec tables, enumerate `refs/`. **Optional perspective context**: enumerate `<thread>.*.perspective/` siblings and, if any exist, load the latest one's `notes.md` and `candidates.md` for use in step 7's sourceability walk. Absence is fine — the audit's existing cost-only sourceability behavior is unchanged when no perspective sibling is present (graceful skip; backward-compat per `anvil/lib/snippets/perspective.md` §"State-machine non-gating").
+4. **Read inputs**: load `<thread>.{N}/proposal.tex`, parse the BOM / labor / project-total tables and the spec tables, enumerate `refs/`. **Optional perspective context**: enumerate `<thread>.*.perspective/` siblings under the thread root and, if any exist, load the latest one's `notes.md` and `candidates.md` for use in step 7's sourceability walk. Absence is fine — the audit's existing cost-only sourceability behavior is unchanged when no perspective sibling is present (graceful skip; backward-compat per `anvil/lib/snippets/perspective.md` §"State-machine non-gating").
 5. **Audit the BOM arithmetic** — the central check:
    - For **every priced line** in the multi-section BOM, verify `Qty × Unit = Total`. For ranges (`$15--20`), verify both endpoints (`Qty × low = Total_low`, `Qty × high = Total_high`).
    - Verify each **section subtotal** (if the BOM groups lines) and the bold **Materials subtotal** against the sum of its lines.
@@ -155,3 +157,13 @@ And the companion `_meta.json` declaring the scorecard kind:
 ```
 
 Merge rule (shallow): preserve fields not touched by this command. Use ISO-8601 UTC timestamps per `anvil/lib/snippets/timestamp.md`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.audit/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.audit/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(proposal/audit): <thread>.{N} [<state>]` — the bracket carries the thread's derived state per SKILL.md §State machine after the audit lands (`AUDITED` when the audit sits alongside a `READY` version).

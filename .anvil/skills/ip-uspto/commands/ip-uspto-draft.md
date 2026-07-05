@@ -119,6 +119,17 @@ The renderer-per-id logic for the default sections (mapping directly onto the le
    - Title (from `BRIEF.md` frontmatter `title`).
    - Inventors (from `BRIEF.md` frontmatter `inventors`).
    - Field of use (from `BRIEF.md` frontmatter `field_of_use`).
+   - **§119(e) CROSS-REFERENCE paragraph (only when `BRIEF.md` carries a `converts_provisional` block)**: emit, as the spec's FIRST paragraph (before FIELD OF THE INVENTION), a "CROSS-REFERENCE TO RELATED APPLICATIONS" paragraph so the filed specification itself carries the priority claim (not only the ADS produced at finalize):
+
+     ```
+     CROSS-REFERENCE TO RELATED APPLICATIONS
+
+     This application claims the benefit of U.S. Provisional Application No.
+     <converts_provisional.application_number>, filed <converts_provisional.filing_date>,
+     the entire disclosure of which is incorporated herein by reference.
+     ```
+
+     Drafter-time emission (here, into the spec body) is the canonical home for the priority claim; finalize emits the ADS *data* copy. **Fail loud, never silent**: if `converts_provisional` is present but `filing_date` is missing/empty, abort the draft with an error naming the missing field — never render a cross-reference paragraph with a blank filing date (the silent-priority-failure risk the conversion linkage exists to prevent). When `converts_provisional` is ABSENT, emit NO cross-reference paragraph — the spec's first paragraph is FIELD OF THE INVENTION as before (byte-identical to pre-#501).
 
    #### 5b. `field` — FIELD OF THE INVENTION (heading via `\fieldoftheinvention`)
    One paragraph naming the technical field, sized for a USPTO examiner classifier.
@@ -233,3 +244,14 @@ Merge rule: read existing `_progress.json` if present, update only `phases.draft
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.draft.state = done`.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir.
+- **Commit**: `anvil(ip-uspto/draft): <thread>.{N+1} [DRAFTED]`.
+

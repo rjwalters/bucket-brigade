@@ -175,12 +175,30 @@ The detector infers the owning skill for each review via:
    the project `BRIEF.md` `documents:` block's `artifact_type` field if
    present).
 2. Fallback: the parent thread's body filename (`memo.md` →
-   `anvil:memo`, `proposal.md` → `anvil:proposal`, etc.).
+   `anvil:memo`, `proposal.md` → `anvil:proposal`, `deck.md` →
+   `anvil:deck`, `slides.md` → `anvil:slides`, `ip-uspto.md` →
+   `anvil:ip-uspto`, etc.). The full table lives at
+   `lib/detect.py:_BODY_FILENAME_TO_SKILL` (issue #374 added the
+   deck / slides / ip-uspto rows).
 3. Fallback: the parent thread's `_progress.json.thread` slug, which
    often encodes the skill.
-4. If none of the above resolve, the review is skipped with an
-   operator-visible note. The operator can re-run with `--skill=` to
-   force.
+4. If none of the above resolve, the planner records `inferred_skill
+   = None`. The operator can re-run with `--skill=<name>` to assert
+   the skill — when inference returned None, the planner promotes
+   `--skill=<name>` to a force-set and stamps the review under that
+   skill's rubric. (When inference returned a *different* skill,
+   `--skill=<name>` is a filter and the review is skipped with an
+   `outside scope` note.) See `commands/rubric-rebackport.md` for
+   the full `--skill` semantics matrix.
+
+   **Prior-release behavior** (`anvil:rubric-rebackport` shipped one
+   release ago): `--skill=<name>` was a pure post-inference filter,
+   so a review with `inferred_skill is None` would be skipped with
+   `outside --skill=<name> scope (inferred skill: None)` even when
+   the operator's assertion carried enough information to stamp.
+   Issue #374 promoted `--skill` to force-set semantics on the None
+   case so the canary's deck threads (with `aldus/aldus.4/deck.md`,
+   no BRIEF) can be stamped.
 
 ## Heuristic rubric inference (stamp-only fallback)
 
@@ -207,10 +225,18 @@ total but not id), the planner can heuristically pick from the
 | slides | 44 | `anvil-slides-v2` | 35 |
 | installation | 44 | `anvil-installation-v2` | 35 |
 | ip-uspto | 45 | `anvil-ip-uspto-v2` | 39 |
+| datasheet | 44 | `anvil-datasheet-v1` | 39 |
+| ip-uspto-provisional | 45 | `anvil-ip-provisional-v1` | 39 |
+| essay | 44 | `anvil-essay-v1` | 35 |
 
 The /40 rows remain in the catalog because stamp-only inference still
 needs them for legacy reviews authored against pre-#357 rubrics. The
-/44 (/45) rows are the targets for post-#357 reviews.
+/44 (/45) rows are the targets for post-#357 reviews. The datasheet
+(#421) / ip-uspto-provisional (#444) / essay (#477) skills shipped with
+per-review stamping from day one, so they carry no /40 legacy rows
+(issue #482). Note the id asymmetry: the provisional skill's directory
+name is `ip-uspto-provisional` but its rubric_id is
+`anvil-ip-provisional-v1` (no "uspto").
 
 When the legacy `_meta.json` lacks `rubric_total` entirely AND
 `--legacy-rubric` is absent, the review is skipped with an
@@ -254,3 +280,7 @@ Test files:
   `_meta.json` parses with all three required fields.
 - `test_rubric_rebackport_doc.py` — pins CLI flag set, mode-dispatch
   matrix, and per-skill stamping values.
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every write-bearing run leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has the `rubric-rebackport` command end its run by staging only the paths it wrote and committing as `anvil(rubric-rebackport/stamp): <thread>.{N}.review [STAMPED]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, and warn-and-continue failure semantics — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). The `--apply` run adopts it (the non-thread commit shape per `git_sync.md` §Commit-message shape → "Non-thread commit shapes"; `--rescore` commits as `anvil(rubric-rebackport/rescore): <thread>.{N}.review [RESCORED]`); dry-run mode writes nothing and is unaffected. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

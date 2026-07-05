@@ -6,21 +6,23 @@ description: Figurer for the deck skill. Renders Mermaid diagrams and matplotlib
 # deck-figures — Figurer + PDF renderer
 
 **Role**: figurer (and PDF renderer).
-**Reads**: latest `<thread>.{N}/deck.md` and `<thread>.{N}/figures/src/**`.
-**Writes**: rendered images into `<thread>.{N}/figures/` and the full `<thread>.{N}/deck.pdf`.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` and `<thread>/<thread>.{N}/figures/src/**` (the version dir is nested under the thread root per the artifact contract).
+**Writes**: rendered images into `<thread>.{N}/figures/` and the full `<thread>.{N}/deck.pdf` (same nested version dir; bare `<thread>.{N}/` references below are shorthand).
 
 This figurer is the asset-pipeline implementer for the deck skill. It handles the two asset categories anvil ships (Mermaid + matplotlib), then renders the complete deck PDF that downstream critics (especially `deck-design`) and the operator consume.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **Figure sources**: `<thread>.{N}/figures/src/` containing:
   - `*.mmd` — Mermaid diagram source (architecture, flowchart, sequence).
   - `*.py` — Matplotlib Python script (data-driven chart).
   - `*.csv` — Source data for any matplotlib chart.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`:
 
 ```
 <thread>.{N}/
@@ -34,7 +36,7 @@ This figurer is the asset-pipeline implementer for the deck skill. It handles th
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md`. Read `_progress.json`.
+1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`. Read `_progress.json`.
 2. **Resume check** + idempotence:
    - For each `figures/src/*.mmd`: check if `figures/<name>.png` exists AND is newer than the `.mmd` source. If so, skip.
    - For each `figures/src/*.py`: check if `figures/<name>.png` exists AND is newer than the `.py` script AND any referenced `.csv`. If so, skip.
@@ -109,11 +111,34 @@ This figurer is the asset-pipeline implementer for the deck skill. It handles th
      --output figures/<name>.png \
      --width 1600 \
      --height 900 \
+     --scale 2 \
      --backgroundColor white \
      -c anvil/lib/figures/mermaid-theme.json
    ```
    (`mmdc` from `@mermaid-js/mermaid-cli`; install via `npm install -g @mermaid-js/mermaid-cli`.)
 
+   Equivalently, the figurer may call the shared Python wrapper
+   `anvil.lib.render.render_mermaid_to_png(src_mmd, out_png)` which pins the
+   same flag set (issue #545). The wrapper is the preferred call path when
+   the figurer is implemented as Python; direct `mmdc` invocation is fine
+   for shell-driven figurers.
+
+   - `--scale 2` is **load-bearing** (issue #545). `mmdc`'s `--width` /
+     `--height` set the **viewport** the diagram renders into, **NOT** the
+     output canvas — mmdc then crops the PNG to the diagram's intrinsic
+     bounding box. For a sparse `flowchart LR` (3–4 nodes, no branches),
+     the intrinsic bbox is wide-and-thin, so the documented invocation
+     without `--scale` produces ~Nx80–110px thin strips that are
+     unreadable on the deck theme. `--scale 2` doubles the rendered SVG
+     dimensions before PNG conversion (so a 784×102 strip becomes
+     1568×204), which is the legibility knob for the default theme's
+     `max-height` cap.
+   - **Orientation guidance for cyclic / dense flowcharts**: prefer
+     `flowchart TB` over `flowchart LR` in the `.mmd` source when the
+     diagram has a feedback loop or more than ~4 nodes. `LR` with a small
+     node count crops to a thin strip; `TB` produces a taller, more
+     legible portrait PNG. `--scale 2` helps but does not re-orient — the
+     authoring fix is in the `.mmd` grammar, not the render flag.
    - `-c anvil/lib/figures/mermaid-theme.json` applies the shared Anvil
      mermaid theme (`theme: base` + navy `themeVariables`) so diagrams render
      on the deck brand palette (navy nodes, muted-grey edges, Helvetica) by
@@ -162,6 +187,38 @@ This figurer is the asset-pipeline implementer for the deck skill. It handles th
      ```
    - Run with `python3 figures/src/<name>.py`. Capture stdout/stderr; on non-zero exit, write a stub `figures/<name>.png-FAILED.md` describing the error.
    - See `assets/figure-conventions.md` for matplotlib `$`-escaping, DPI, palette, transparency, and output-path conventions.
+
+   **5b. Figure legibility preflight** (issue #563). Once all figures have been rendered (mermaid + matplotlib), run the deterministic legibility gate to catch figures that are *present and well-formed yet illegible at the slide's rendered height*. This is the **cheap mechanical pre-flight before the expensive VLM `deck-design` critic** — same principle as the `slide-content-overflow` lint and the `auto_shrink_detector`.
+
+   ```python
+   from anvil.skills.deck.lib.figure_legibility import lint_figures
+   result = lint_figures(version_dir / "deck.md")
+   ```
+
+   The gate parses each `![alt](figures/<name>.png)` reference in `deck.md`, reads the PNG's intrinsic `(width, height)` from its IHDR chunk (stdlib `struct.unpack` — no Pillow), and computes the figure's *displayed* height on the slide using the smaller of:
+
+   - the explicit `h:NNNpx` Marp keyword (if present in the alt text), and
+   - the CSS `max-height: 75vh` cap from `anvil-deck.css` (≈540 px on a 720 px slide; raised from 60vh in issue #545).
+
+   It then estimates the displayed text-glyph height (`intrinsic_text_h × displayed_h / intrinsic_h`) and flags figures whose glyph height falls below the projection legibility floor: `<14 px` displayed → warning, `<11 px` → error.
+
+   The intrinsic source font height per diagram type lives in `Geometry.intrinsic_text_h_px_by_diagram_type` (mermaid: 18 px after issue #563's theme update; matplotlib: 14 px default). A future image-measurement implementation (Option 2 from the curator's plan — numpy/Pillow connected-component analysis under a `[legibility_lint]` extra) would replace the type-based lookup with measured text bounding-box heights; the public API (`lint_figures(deck_md, figures_dir, geometry=...)`) is the documented escalation seam.
+
+   For each finding, write a `figures/<name>.png-LEGIBILITY.md` stub (mirrors the `figures/<name>.png-FAILED.md` pattern from step 4 — a visible debuggable artifact, never silent) containing the finding message and the per-figure escape hatch:
+
+   ```markdown
+   <!-- anvil-figure-legibility-disable: <name> -->
+   ```
+
+   Add the directive to the slide *above* the figure reference to suppress the gate for that figure (the finding is downgraded to `info` so it still surfaces in the review, but does not block advance). Use `<!-- anvil-figure-legibility-disable -->` (no name) to suppress for every figure on that slide.
+
+   **Mermaid-side mitigations.** The figurer should prefer producing legibility-friendly mermaid output by default (these reduce the rate at which the gate fires):
+
+   - **Larger default node font + padding**: shipped in `anvil/lib/figures/mermaid-theme.json` (`themeVariables.fontSize = "18px"`, `themeVariables.padding = 12`). Already applied via the `-c` flag in the canonical `mmdc` invocation above.
+   - **Orientation guidance for cyclic / dense flowcharts**: already documented in step 4 — prefer `flowchart TB` over `flowchart LR` when the diagram has a feedback loop or more than ~4 nodes.
+   - **Auto-orient LR→TB on cycle detection** (Piece B.1 from the curator's plan): deferred to a follow-up. The current authoring guidance + the legibility gate together carry the load.
+
+   The gate is **not** authoritative on actual rendered text legibility (no OCR; no image measurement in v1) — it is a fast heuristic. The `deck-design` VLM critic remains the source of truth for "does this look right?". The gate exists to catch the obvious legibility breach before the API spend.
 6. **Validate references**: walk `deck.md` and enumerate every `![...](figures/...)` and `![...](assets/...)` reference. For each:
    - **`figures/...` references**: file should now exist (either rendered or carried over). If absent, log a `[blocker]` warning — the design critic will fail to render this slide cleanly.
    - **`assets/...` references**: file should exist in `<thread>/assets/`. If absent, log a `[blocker]` warning — the drafter referenced a consumer-provided asset that isn't actually present. Operator must add the asset.
@@ -257,3 +314,13 @@ Merge rule: preserve all other phases. The figurer only touches `phases.figures`
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.figures.state = done`.
+- **Staging target**: ONLY the `<thread>.{N}/` version dir this phase wrote into (the rendered `figures/` images, the full `deck.pdf`, and `_progress.json`).
+- **Commit**: `anvil(deck/figures): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; the figures phase does not advance the state machine.

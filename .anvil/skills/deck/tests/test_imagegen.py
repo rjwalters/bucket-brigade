@@ -2,8 +2,9 @@
 
 Covers acceptance criteria on issue #178 (Epic #130 / Phase 2E):
 
-- Adapter loading from ``.anvil/config.toml`` works; clear error when
-  absent or malformed.
+- Adapter loading from ``.anvil/config.json`` works; clear error when
+  absent or malformed (the registration migrated off ``.anvil/config.toml``
+  in #442 — hard cutover with a substring-scan migration guard).
 - Anvil ships NO backend implementations — only the adapter contract.
   These tests use an in-process mock adapter (a 5-line class with a
   ``generate`` method that returns deterministic PNG bytes).
@@ -62,6 +63,7 @@ from imagegen import (  # noqa: E402
     load_brief_frontmatter,
     load_config,
     load_style_presets,
+    resolve_default_policy,
     resolve_slot_prompt,
     run_imagegen,
     DEFAULT_PRESET_KEY,
@@ -301,25 +303,35 @@ class TestLoadBriefFrontmatter(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# .anvil/config.toml loader
+# .anvil/config.json loader
 # ---------------------------------------------------------------------------
 
 
 class TestLoadConfig(unittest.TestCase):
-    """``load_config`` reads .anvil/config.toml with a clear error path."""
+    """``load_config`` reads .anvil/config.json with a clear error path."""
 
     def test_missing_file_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ImagegenError) as ctx:
-                load_config(Path(tmp) / "config.toml")
-            # The error MUST point at the adapter doc per AC.
-            self.assertIn("deck-imagegen-adapter.md", str(ctx.exception))
+                load_config(Path(tmp) / "config.json")
+            # The error MUST name config.json and point at the adapter
+            # doc per the #442 AC.
+            msg = str(ctx.exception)
+            self.assertIn(".anvil/config.json", msg)
+            self.assertIn("deck-imagegen-adapter.md", msg)
 
     def test_simple_backend(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            cfg = Path(tmp) / "config.toml"
+            cfg = Path(tmp) / "config.json"
             cfg.write_text(
-                '[deck.imagegen]\nbackend = "myrepo.adapter:Backend"\n',
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {"backend": "myrepo.adapter:Backend"}
+                        },
+                    }
+                ),
                 encoding="utf-8",
             )
             data = load_config(cfg)
@@ -327,20 +339,62 @@ class TestLoadConfig(unittest.TestCase):
                 data["deck"]["imagegen"]["backend"], "myrepo.adapter:Backend"
             )
 
-    def test_unsupported_shape_raises_with_remediation(self) -> None:
-        """A malformed line surfaces a remediation pointer.
+    def test_malformed_json_raises_naming_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Path(tmp) / "config.json"
+            cfg.write_text("{not valid json", encoding="utf-8")
+            with self.assertRaises(ImagegenError) as ctx:
+                load_config(cfg)
+            msg = str(ctx.exception)
+            self.assertIn(str(cfg), msg)
+            self.assertIn("deck-imagegen-adapter.md", msg)
 
-        We feed an unsupported shape to the minimal fallback parser by
-        bypassing tomllib via a temporary import-error monkeypatch.
-        On Python 3.11+ this case is normally never hit (tomllib
-        handles arrays etc.); this test exercises the safety net so the
-        minimal parser doesn't silently drop unparseable content.
+    def test_non_object_top_level_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Path(tmp) / "config.json"
+            cfg.write_text('["not", "an", "object"]', encoding="utf-8")
+            with self.assertRaises(ImagegenError) as ctx:
+                load_config(cfg)
+            self.assertIn("JSON object", str(ctx.exception))
+
+    def test_missing_json_with_stale_toml_raises_migration_error(self) -> None:
+        """#442 migration guard: stale ``[deck.imagegen]`` TOML detected.
+
+        When config.json is absent BUT a sibling config.toml contains the
+        literal ``[deck.imagegen]`` text (substring scan — no TOML
+        parsing), the error must carry the paste-ready JSON snippet.
         """
-        import imagegen as _imagegen
+        with tempfile.TemporaryDirectory() as tmp:
+            anvil_dir = Path(tmp) / ".anvil"
+            anvil_dir.mkdir(parents=True)
+            (anvil_dir / "config.toml").write_text(
+                '[deck.imagegen]\nbackend = "myrepo.adapter:Backend"\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                load_config(anvil_dir / "config.json")
+            msg = str(ctx.exception)
+            self.assertIn("MIGRATION REQUIRED", msg)
+            # The paste-ready JSON snippet, verbatim shape.
+            self.assertIn('"version": 1', msg)
+            self.assertIn('"deck"', msg)
+            self.assertIn('"imagegen"', msg)
+            self.assertIn('"backend"', msg)
 
-        bad = "not_a_valid_toml_line_at_all\n"
-        with self.assertRaises(ImagegenError):
-            _imagegen._parse_toml_minimal(bad)
+    def test_missing_json_with_unrelated_toml_raises_plain_error(self) -> None:
+        """A config.toml WITHOUT [deck.imagegen] adds no migration noise."""
+        with tempfile.TemporaryDirectory() as tmp:
+            anvil_dir = Path(tmp) / ".anvil"
+            anvil_dir.mkdir(parents=True)
+            (anvil_dir / "config.toml").write_text(
+                '[some.other.tool]\nkey = "value"\n', encoding="utf-8"
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                load_config(anvil_dir / "config.json")
+            msg = str(ctx.exception)
+            self.assertNotIn("MIGRATION REQUIRED", msg)
+            self.assertIn(".anvil/config.json", msg)
+            self.assertIn("deck-imagegen-adapter.md", msg)
 
 
 # ---------------------------------------------------------------------------
@@ -694,33 +748,416 @@ class TestRunImagegenOptInGate(unittest.TestCase):
             self.assertEqual(adapter.calls, [])
 
 
+class TestResolveDefaultPolicy(unittest.TestCase):
+    """``resolve_default_policy`` reads the consumer-level override (#547)."""
+
+    def test_none_config_path_returns_none(self) -> None:
+        self.assertIsNone(resolve_default_policy(None))
+
+    def test_missing_file_returns_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(resolve_default_policy(Path(tmp) / "missing.json"))
+
+    def test_no_deck_section_returns_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(json.dumps({"version": 1}), encoding="utf-8")
+            self.assertIsNone(resolve_default_policy(p))
+
+    def test_deck_section_without_imagegen_returns_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps({"version": 1, "deck": {"unrelated": 1}}),
+                encoding="utf-8",
+            )
+            self.assertIsNone(resolve_default_policy(p))
+
+    def test_imagegen_section_without_default_policy_returns_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps(
+                    {"version": 1, "deck": {"imagegen": {"backend": "x:y"}}}
+                ),
+                encoding="utf-8",
+            )
+            self.assertIsNone(resolve_default_policy(p))
+
+    def test_non_string_default_policy_returns_none(self) -> None:
+        """Section-must-be-object-else-treated-absent — defensive: a non-string
+        default_policy (a typo: integer/null/array) is silently ignored, NOT
+        a hard crash. Closed-enum validation only fires on string-shaped typos
+        (where the consumer's intent is clear)."""
+        for bad in (42, None, ["generative-eligible"], {"v": "x"}):
+            with self.subTest(bad=bad):
+                with tempfile.TemporaryDirectory() as tmp:
+                    p = Path(tmp) / "config.json"
+                    p.write_text(
+                        json.dumps(
+                            {
+                                "version": 1,
+                                "deck": {
+                                    "imagegen": {"default_policy": bad}
+                                },
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                    self.assertIsNone(resolve_default_policy(p))
+
+    def test_valid_generative_eligible(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {"default_policy": "generative-eligible"}
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(resolve_default_policy(p), "generative-eligible")
+
+    def test_valid_deterministic_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {"default_policy": "deterministic-only"}
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(resolve_default_policy(p), "deterministic-only")
+
+    def test_valid_consumer_provided(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {"default_policy": "consumer-provided"}
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(resolve_default_policy(p), "consumer-provided")
+
+    def test_case_insensitive_normalization(self) -> None:
+        """Whitespace + case folding for forgiving config-typo recovery."""
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {
+                                "default_policy": "  Generative-Eligible  "
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(resolve_default_policy(p), "generative-eligible")
+
+    def test_out_of_enum_raises_naming_value_and_choices(self) -> None:
+        """Closed-enum violation MUST surface the offending value AND the
+        three valid choices in the error message — the consumer's intent
+        is clear (they set the key) but the value is typoed."""
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            # Underscore-not-hyphen typo: a real-world variant we want to
+            # catch loudly rather than silently fall back.
+            p.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "deck": {
+                            "imagegen": {
+                                "default_policy": "generative_eligible"
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                resolve_default_policy(p)
+            msg = str(ctx.exception)
+            self.assertIn("generative_eligible", msg)
+            self.assertIn("generative-eligible", msg)
+            self.assertIn("consumer-provided", msg)
+            self.assertIn("deterministic-only", msg)
+
+    def test_malformed_json_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "config.json"
+            p.write_text("not json {{{", encoding="utf-8")
+            with self.assertRaises(ImagegenError):
+                resolve_default_policy(p)
+
+
+class TestRunImagegenDefaultPolicy(unittest.TestCase):
+    """Issue #547 — consumer-level `deck.imagegen.default_policy` override.
+
+    Resolution order (highest priority first):
+      1. BRIEF.md frontmatter `imagery_policy:` (per-thread, explicit).
+      2. `.anvil/config.json` `deck.imagegen.default_policy` (consumer-level).
+      3. Built-in `deterministic-only` (existing behavior).
+    """
+
+    def _write_config(
+        self, portfolio: Path, *, default_policy: str | None = None
+    ) -> Path:
+        """Write a minimal config.json with optional default_policy."""
+        cfg = portfolio / ".anvil" / "config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        imagegen: dict[str, object] = {}
+        if default_policy is not None:
+            imagegen["default_policy"] = default_policy
+        payload: dict[str, object] = {
+            "version": 1,
+            "deck": {"imagegen": imagegen},
+        }
+        cfg.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return cfg
+
+    def test_backward_compat_no_default_policy_no_brief_field(self) -> None:
+        """BRIEF without `imagery_policy` AND no `default_policy` →
+        `ImagegenError` per existing contract; state == 'skipped'.
+
+        This is the load-bearing backward-compatibility test: existing
+        consumers who do NOT set `default_policy` see byte-identical
+        behavior (apart from the `reason` field naming the source)."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            version_dir = _build_thread_fixture(portfolio, imagery_policy="")
+            # No .anvil/config.json at all → resolver returns None → fall
+            # back to built-in deterministic-only.
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            self.assertIn("deterministic-only", str(ctx.exception))
+            self.assertIn("built-in default", str(ctx.exception))
+            progress = json.loads(
+                (version_dir / "_progress.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(progress["phases"]["imagegen"]["state"], "skipped")
+            self.assertIn("built-in default", progress["phases"]["imagegen"]["reason"])
+            self.assertEqual(adapter.calls, [])
+
+    def test_override_resolves_to_generative_eligible(self) -> None:
+        """BRIEF lacks `imagery_policy` + config `default_policy:
+        generative-eligible` → run dispatches (the proactive default
+        is the issue #547 happy path)."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            version_dir = _build_thread_fixture(portfolio, imagery_policy="")
+            self._write_config(
+                portfolio, default_policy="generative-eligible"
+            )
+            result = run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            self.assertEqual(result.phase_state, "done")
+            # The adapter was called for every marker (two slots per fixture).
+            self.assertEqual(len(adapter.calls), 2)
+            self.assertEqual(len(result.slots), 2)
+
+    def test_brief_wins_over_config_deterministic_in_brief(self) -> None:
+        """BRIEF: `imagery_policy: deterministic-only` + config
+        `default_policy: generative-eligible` → run is skipped.
+        Per-thread BRIEF intent always wins over the consumer-level
+        default. The `reason` field MUST name BRIEF.md as the source
+        so the operator can tell whether the BRIEF or the config decided."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            version_dir = _build_thread_fixture(
+                portfolio, imagery_policy="deterministic-only"
+            )
+            self._write_config(
+                portfolio, default_policy="generative-eligible"
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            self.assertIn("deterministic-only", str(ctx.exception))
+            self.assertIn("BRIEF.md", str(ctx.exception))
+            progress = json.loads(
+                (version_dir / "_progress.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(progress["phases"]["imagegen"]["state"], "skipped")
+            self.assertIn("BRIEF.md", progress["phases"]["imagegen"]["reason"])
+            self.assertEqual(adapter.calls, [])
+
+    def test_brief_wins_over_config_generative_in_brief(self) -> None:
+        """Opposite direction: BRIEF: `imagery_policy: generative-eligible`
+        + config `default_policy: deterministic-only` → run dispatches.
+        Per-thread opt-in overrides consumer default."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            _build_thread_fixture(
+                portfolio, imagery_policy="generative-eligible"
+            )
+            self._write_config(
+                portfolio, default_policy="deterministic-only"
+            )
+            result = run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            self.assertEqual(result.phase_state, "done")
+            self.assertEqual(len(adapter.calls), 2)
+
+    def test_config_has_only_version_no_imagegen_section(self) -> None:
+        """Edge case: `.anvil/config.json` exists with only `{"version": 1}`
+        (no `deck.imagegen` at all) → falls back to built-in
+        `deterministic-only`. Does NOT regress the existing
+        adapter-registration error path (the registration error fires only
+        if the policy DOES resolve to `generative-eligible`)."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            cfg = portfolio / ".anvil" / "config.json"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text(json.dumps({"version": 1}), encoding="utf-8")
+            _build_thread_fixture(portfolio, imagery_policy="")
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            # Resolution went to built-in, NOT to a registration error,
+            # because the resolved policy is non-generative-eligible.
+            self.assertIn("built-in default", str(ctx.exception))
+            self.assertEqual(adapter.calls, [])
+
+    def test_invalid_default_policy_raises_naming_enum(self) -> None:
+        """A config `default_policy` outside the closed enum raises
+        ImagegenError whose message names both the bad value AND the
+        valid choices."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            _build_thread_fixture(portfolio, imagery_policy="")
+            self._write_config(
+                portfolio, default_policy="anything-else"
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            msg = str(ctx.exception)
+            self.assertIn("anything-else", msg)
+            self.assertIn("generative-eligible", msg)
+            self.assertEqual(adapter.calls, [])
+
+    def test_progress_reason_names_config_as_source(self) -> None:
+        """When the config `default_policy: deterministic-only` is what
+        landed the run on the skip path (BRIEF is silent), the
+        `_progress.json` `reason` field names the config — not BRIEF —
+        as the source. This is the load-bearing observability story for
+        operators surprised by a skipped run."""
+        adapter = _MockAdapter()
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            version_dir = _build_thread_fixture(
+                portfolio, imagery_policy=""
+            )
+            self._write_config(
+                portfolio, default_policy="deterministic-only"
+            )
+            with self.assertRaises(ImagegenError):
+                run_imagegen("acme", portfolio=portfolio, adapter=adapter)
+            progress = json.loads(
+                (version_dir / "_progress.json").read_text(encoding="utf-8")
+            )
+            reason = progress["phases"]["imagegen"]["reason"]
+            self.assertIn(".anvil/config.json", reason)
+            self.assertIn("default_policy", reason)
+            self.assertNotIn("BRIEF.md imagery_policy is", reason)
+
+
+def _write_json_config(
+    portfolio: Path, payload: dict[str, object]
+) -> Path:
+    """Write ``<portfolio>/.anvil/config.json`` with ``payload``."""
+    cfg = portfolio / ".anvil" / "config.json"
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return cfg
+
+
 class TestRunImagegenAdapterRegistration(unittest.TestCase):
-    """Adapter registration via .anvil/config.toml works and fails-clear."""
+    """Adapter registration via .anvil/config.json works and fails-clear."""
 
     def test_missing_config_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             portfolio = Path(tmp)
             _build_thread_fixture(portfolio)
             with self.assertRaises(ImagegenError) as ctx:
-                # No adapter injected → forces config.toml read.
+                # No adapter injected → forces config.json read.
                 run_imagegen("acme", portfolio=portfolio)
-            self.assertIn(".anvil/config.toml", str(ctx.exception))
+            self.assertIn(".anvil/config.json", str(ctx.exception))
             self.assertIn("deck-imagegen-adapter.md", str(ctx.exception))
 
     def test_config_present_but_no_backend_key_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             portfolio = Path(tmp)
             _build_thread_fixture(portfolio)
-            cfg = portfolio / ".anvil" / "config.toml"
-            cfg.parent.mkdir(parents=True, exist_ok=True)
-            # Empty config — no [deck.imagegen] section.
-            cfg.write_text("# empty\n", encoding="utf-8")
+            # Empty envelope — no deck.imagegen section.
+            _write_json_config(portfolio, {"version": 1})
             with self.assertRaises(ImagegenError) as ctx:
                 run_imagegen("acme", portfolio=portfolio)
-            self.assertIn("[deck.imagegen]", str(ctx.exception))
+            self.assertIn("deck.imagegen.backend", str(ctx.exception))
+
+    def test_config_with_only_git_knob_raises_registration_error(self) -> None:
+        """Edge case (#442): a config.json carrying only the #426 git knob.
+
+        The imagegen registration is still absent → the plain
+        registration error, no crash, no migration noise.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            _build_thread_fixture(portfolio)
+            _write_json_config(
+                portfolio,
+                {"version": 1, "git": {"commit_per_phase": True, "push": False}},
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio)
+            msg = str(ctx.exception)
+            self.assertIn("deck.imagegen.backend", msg)
+            self.assertNotIn("MIGRATION REQUIRED", msg)
+
+    def test_json_key_absent_with_stale_toml_raises_migration_error(self) -> None:
+        """#442 migration guard at the run level.
+
+        config.json exists (git knob only) AND a stale config.toml still
+        carries ``[deck.imagegen]`` → the migration error with the
+        paste-ready JSON snippet, not the plain registration error.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            _build_thread_fixture(portfolio)
+            _write_json_config(portfolio, {"version": 1})
+            (portfolio / ".anvil" / "config.toml").write_text(
+                '[deck.imagegen]\nbackend = "myrepo.adapter:Backend"\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(ImagegenError) as ctx:
+                run_imagegen("acme", portfolio=portfolio)
+            msg = str(ctx.exception)
+            self.assertIn("MIGRATION REQUIRED", msg)
+            self.assertIn('"backend"', msg)
 
     def test_config_with_backend_loads_and_dispatches(self) -> None:
-        """End-to-end: config.toml → load_adapter → dispatch.
+        """End-to-end: config.json → load_adapter → dispatch.
 
         We register the mock adapter (this module's _MockAdapter) via
         a temporary alias in ``sys.modules`` so importlib can find it.
@@ -728,12 +1165,17 @@ class TestRunImagegenAdapterRegistration(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             portfolio = Path(tmp)
             version_dir = _build_thread_fixture(portfolio)
-            cfg = portfolio / ".anvil" / "config.toml"
-            cfg.parent.mkdir(parents=True, exist_ok=True)
             sys.modules["test_imagegen_for_e2e"] = sys.modules[__name__]
-            cfg.write_text(
-                '[deck.imagegen]\nbackend = "test_imagegen_for_e2e:_MockAdapter"\n',
-                encoding="utf-8",
+            _write_json_config(
+                portfolio,
+                {
+                    "version": 1,
+                    "deck": {
+                        "imagegen": {
+                            "backend": "test_imagegen_for_e2e:_MockAdapter"
+                        }
+                    },
+                },
             )
             result = run_imagegen("acme", portfolio=portfolio)
             self.assertEqual(result.phase_state, "done")
@@ -842,9 +1284,16 @@ class TestRunImagegenPerSlotFailure(unittest.TestCase):
 
 
 class TestRunImagegenNonPngBytes(unittest.TestCase):
-    """Non-PNG bytes are caught and produce a *-FAILED.md stub."""
+    """Unrecognized bytes are caught and produce a *-FAILED.md stub.
 
-    def test_non_png_bytes_treated_as_failure(self) -> None:
+    Per issue #564, the dispatcher now accepts PNG/JPEG/WebP and only
+    falls into this branch when the bytes match none of those formats
+    (truncated transfers, HTML error pages, exotic raster types). The
+    stub's diagnostic names the format as "unrecognized" rather than
+    "non-PNG".
+    """
+
+    def test_unrecognized_bytes_named_in_stub(self) -> None:
         adapter = _BadBytesAdapter()
         with tempfile.TemporaryDirectory() as tmp:
             portfolio = Path(tmp)
@@ -858,11 +1307,31 @@ class TestRunImagegenNonPngBytes(unittest.TestCase):
                     version_dir / "assets" / "generated" / "hero.png-FAILED.md"
                 ).exists()
             )
-            # The stub mentions the non-PNG bytes condition.
+            # Stub names the format as "unrecognized" with the byte prefix
+            # recorded so the operator can diagnose truncated transfers,
+            # HTML error pages, etc.
             stub_text = (
                 version_dir / "assets" / "generated" / "hero.png-FAILED.md"
             ).read_text(encoding="utf-8")
-            self.assertIn("non-PNG", stub_text)
+            self.assertIn("unrecognized", stub_text)
+            self.assertIn("PNG, JPEG, or WebP", stub_text)
+
+    def test_html_error_page_named_in_stub(self) -> None:
+        """HTML error pages (the classic 'returned a redirect/login page')
+        path: bytes start with `<html` — neither PNG, JPEG, nor WebP."""
+
+        class _HtmlAdapter:
+            def generate(self, prompt: str, style: str, steps: int | None) -> bytes:
+                return b"<html><body>500 internal error</body></html>"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            portfolio = Path(tmp)
+            version_dir = _build_thread_fixture(portfolio)
+            run_imagegen("acme", portfolio=portfolio, adapter=_HtmlAdapter())
+            stub = (
+                version_dir / "assets" / "generated" / "hero.png-FAILED.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("unrecognized", stub)
 
 
 class TestRunImagegenIdempotence(unittest.TestCase):

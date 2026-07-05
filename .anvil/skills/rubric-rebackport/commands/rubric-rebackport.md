@@ -41,8 +41,27 @@ thread root (e.g., `<project>/<slug>/`), a project root (e.g.,
   to disk.
 - `--rescore` requires `--legacy-rubric`. Without it the command exits
   non-zero with a diagnostic.
-- `--skill=<name>` scopes the walk: reviews owned by other skills are
-  reported in the inventory but skipped from the plan.
+- `--skill=<name>` is a hybrid filter / operator-asserted force-set
+  (issue #374 — semantics changed from filter-only in v0.4.x):
+  - When inference returned **None** for a review (no `BRIEF.md`
+    entry, no body-filename match), the operator assertion is taken
+    as authoritative. The review is treated as if `inferred_skill ==
+    <name>` and stamped normally. The plan records a note of the
+    form `skill forced by --skill=<name> (inference returned None)`.
+  - When inference returned a **different** skill, the review is
+    skipped with `outside --skill=<name> scope` — i.e., filter
+    semantics are preserved for the disagree case.
+  - When inference returned the **same** skill, `--skill=<name>` is
+    a no-op for that review.
+
+  **Prior-release behavior** (`anvil:rubric-rebackport` shipped one
+  release ago in PR #362): `--skill=<name>` was a pure post-inference
+  filter, so reviews where inference returned None were skipped with
+  `outside --skill=<name> scope (inferred skill: None)`. The new
+  force-set behavior unblocks the canary's deck threads (and any
+  other skill whose body filename is not slug-echoed, e.g.,
+  `aldus/aldus.4/deck.md` instead of `aldus/aldus.4/aldus.md`) where
+  the operator knows the skill but the heuristic cannot infer it.
 
 ### 1. Detect
 
@@ -175,7 +194,9 @@ The report follows this shape:
 ## Skipped reviews
 
 - `<review-id-3>`: skill could not be inferred (no `BRIEF.md`, no body
-  filename match). Re-run with `--skill=<name>` to force.
+  filename match). Re-run with `--skill=<name>` to assert the skill
+  (the planner will treat the review as if inference returned `<name>`
+  and stamp it).
 
 ## Verification preview
 
@@ -222,3 +243,13 @@ a `--rescore-mode` flag that emits its sidecar at the rescore path
 wiring is a downstream dependency this skill documents but does not
 implement. Until the hook lands, `--rescore` records the planned
 sidecar path and surfaces a deferred verdict to the operator.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics (a per-review tool, not a `<thread>.{N}` phase — non-thread commit shape per `git_sync.md` §Commit-message shape → "Non-thread commit shapes"):
+
+- **Ordering**: on the `--apply` path only, after the per-review atomic writes complete. Dry-run mode writes nothing, so the hook has nothing to commit and is a silent no-op; an all-skipped apply run likewise silently skips the commit.
+- **Staging target**: ONLY exactly what this run wrote — the stamped `_meta.json` files (default stamp mode) or the new `<thread>.{N}.review.rescore-<target-id>/` sidecars (`--rescore` mode), each staged explicitly by path.
+- **Commit**: `anvil(rubric-rebackport/stamp): <thread>.{N}.review [STAMPED]` (or `anvil(rubric-rebackport/rescore): <thread>.{N}.review [RESCORED]` in `--rescore` mode) — the version token is the review path. A batch run that touched many reviews makes ONE commit naming the project tree and the review count.

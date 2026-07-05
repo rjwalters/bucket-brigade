@@ -6,8 +6,8 @@ description: Auditor command for the slides skill. MANDATORY technical fact-chec
 # slides-audit — Auditor (MANDATORY)
 
 **Role**: auditor (technical fact-check).
-**Reads**: latest `<thread>.{N}/deck.md` AND `<thread>.{N}/notes/*.md`. Also reads `<thread>/refs/**` and any cited external sources where retrievable.
-**Writes**: `<thread>.{N}.audit/` with `verdict.md`, `claims.md`, and `_progress.json`.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` AND `<thread>/<thread>.{N}/notes/*.md` (the version dir is nested under the thread root per the artifact contract). Also reads `<thread>/refs/**` and any cited external sources where retrievable.
+**Writes**: `<thread>/<thread>.{N}.audit/` with `verdict.md`, `claims.md`, and `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.audit/` references below are shorthand for these nested paths.
 
 The audit sibling directory is **read-only once written**. The reviewer consumes its verdict to propagate the audit flag; revisions consume it to address `wrong` and `unsupported` claims.
 
@@ -20,11 +20,13 @@ A thread cannot reach `READY` (the terminal-for-rubric state) without an `AUDITE
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` existing.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` existing under the thread root `<thread>/`.
 - **Brief and refs**: `<thread>/BRIEF.md` and `<thread>/refs/**` provide the canonical sources for what the talk should be saying. Citations on slides should resolve to refs where possible.
 - **External sources**: where a claim cites an external paper, statistic, or attribution, the auditor SHOULD attempt to verify it. Where verification is not possible (offline, paywalled, citation absent), the verdict is `ambiguous` rather than `wrong` or `supported`.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under audit:
 
 ```
 <thread>.{N}.audit/
@@ -34,11 +36,11 @@ A thread cannot reach `READY` (the terminal-for-rubric state) without an `AUDITE
   _progress.json   Phase state with audit: done, for_version: <N>
 ```
 
-**Atomicity** (issue #350): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`verdict.md`, `claims.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`verdict.md`, `claims.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.audit)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.audit.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed auditor session (issue #350). If `<thread>.{N}.audit/` exists (the atomic-rename contract guarantees the dir only exists when complete), the audit is complete — exit early with a notice (idempotent).
+1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.audit)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.audit.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). If `<thread>.{N}.audit/` exists (the atomic-rename contract guarantees the dir only exists when complete), the audit is complete — exit early with a notice (idempotent).
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial audit left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.audit.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.{N}.audit/` exists WITHOUT `verdict.md`, delete the dir and re-audit.
 3. **Open the staged sidecar** for the audit dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.audit, required_files=["verdict.md", "claims.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.audit.tmp/`), NOT inside the final `<thread>.{N}.audit/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`: `phases.audit.state = in_progress`, `phases.audit.started = <ISO>`, `for_version: <N>` (per `anvil/lib/snippets/progress.md`). Also initialize `_meta.json` with `scorecard_kind: human-verdict` (see `anvil/lib/snippets/scorecard_kind.md`); slides-audit ships task-specific `claims.md` alongside the scorecard-kind declaration.
 4. **Enumerate claims**: scan `deck.md` AND every `notes/*.md` file. A *technical claim* is any statement that:
@@ -123,3 +125,13 @@ When a new `<thread>.{N+1}/` is produced, the orchestrator runs `slides-audit` a
   }
 }
 ```
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.audit/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.audit/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(slides/audit): <thread>.{N} [<state>]` — the bracket carries the thread's derived state per SKILL.md §State machine after the audit lands (`AUDITED` when the audit sits alongside a `READY` version with no unresolved `wrong` claims).

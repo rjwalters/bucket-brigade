@@ -7,7 +7,7 @@ description: Pre-draft (or re-run) external-substrate critic for the deck skill.
 
 **Role**: perspective critic (sibling, read-only).
 **Reads**: `<thread>/BRIEF.md`, `<thread>/refs/` (any operator-supplied source material: founder transcripts, exported financials, website exports, prior decks, market reports, analyst PDFs, regulatory filings). For a re-run after a reviewer flags missing substrate: also the latest `<thread>.{N}/deck.md` and any `<thread>.{N}.review/comments.md` / `<thread>.{N}.market/findings.md` entries tagged as market / TAM / competitive-positioning concerns.
-**Writes**: `<thread>.0.perspective/` (initial, pre-draft) or `<thread>.{N}.perspective/` (re-run after revision `N`).
+**Writes**: `<thread>/<thread>.0.perspective/` (initial, pre-draft) or `<thread>/<thread>.{N}.perspective/` (re-run after revision `N`) — the perspective sibling is nested under the thread root per the artifact contract. Bare `<thread>.{N}/` / `<thread>.{N}.perspective/` references below are shorthand for these nested paths.
 
 This command is the optional pre-draft step described in `SKILL.md` for the deck skill. It is a **sibling critic**, not a phase that gates the state machine. The drafter consumes the initial perspective; the reviser consumes any re-run perspective alongside `.review/`, `.market/`, `.narrative/`, `.design/`, and `.audit/`. The framework contract for the perspective shape lives in `anvil/lib/snippets/perspective.md` (in an installed consumer repo: `.anvil/lib/snippets/perspective.md`); this command is the deck-skill instantiation of that contract.
 
@@ -61,6 +61,8 @@ Operator workflows the command supports, in order of typical use:
 
 ## Outputs
 
+Nested under the thread root `<thread>/`:
+
 ```
 <thread>.0.perspective/                (initial; or <thread>.{N}.perspective/ for re-runs)
   notes.md             Narrative synthesis: what the market substrate says + gaps surfaced
@@ -69,7 +71,7 @@ Operator workflows the command supports, in order of typical use:
   _progress.json       Phase state (phase: perspective; for_version: N)
 ```
 
-**Atomicity** (issue #350): the perspective sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`notes.md`, `candidates.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.perspective.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.perspective/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.perspective.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the perspective sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`notes.md`, `candidates.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.perspective.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.perspective/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.perspective.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.perspective)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ### `notes.md` structure
 
@@ -153,7 +155,7 @@ The drafter and reviser are free to cite entries from `candidates.md` on relevan
 
 ## Procedure
 
-1. **Discover state**: enumerate `<thread>.*.perspective/` siblings. If invoked without explicit version context, default to creating `<thread>.0.perspective/` (the pre-draft sibling). If the latest version dir is `<thread>.{N}/` and the caller requested a re-run (e.g., `deck-revise` triggered re-run because a market-substrate gap was flagged), create `<thread>.{N}.perspective/`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.perspective.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed perspective session (issue #350).
+1. **Discover state**: enumerate `<thread>.*.perspective/` siblings under the thread root `<thread>/`. If invoked without explicit version context, default to creating `<thread>.0.perspective/` (the pre-draft sibling). If the latest version dir is `<thread>.{N}/` and the caller requested a re-run (e.g., `deck-revise` triggered re-run because a market-substrate gap was flagged), create `<thread>.{N}.perspective/`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.perspective)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.perspective.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376).
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a completed perspective sibling means the final-named `<thread>.{N}.perspective/` dir exists. If it exists, exit early — the sibling is complete (idempotent per `perspective.md` §"Idempotence and resumability"). The completed sibling is read-only; re-run only by creating a NEW sibling at the next version. A partial perspective left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.perspective.tmp/` directory; the step 1 sweep has already removed it.
 3. **Open the staged sidecar** for the perspective dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.perspective, required_files=["notes.md", "candidates.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.perspective.tmp/`), NOT inside the final `<thread>.{N}.perspective/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`: `phases.perspective.state = in_progress`, `phases.perspective.started = <ISO>`, `for_version = N` (0 for the pre-draft sibling).
 4. **Read inputs**: load `BRIEF.md`, enumerate `<thread>/refs/`, classify each ref by format (transcript, deck PDF, market-report PDF, Crunchbase CSV, founder memo, website export). On re-run, also load `<thread>.{N}/deck.md` and the latest `.review/comments.md` + `.market/findings.md`.
@@ -221,3 +223,13 @@ Perspective outputs (`notes.md` + `candidates.md`) are read narratively by the d
 - **Surface contradictions explicitly.** If refs say one thing and the brief says another, the role's job is to NAME the contradiction in `notes.md` "Identified gaps", not to pick a side silently. The drafter (or operator) resolves.
 
 **Snippet references**: See `anvil/lib/snippets/perspective.md` for the framework contract (layout, no-fabrication rule, three consumer classes, re-run pattern, subprocess-only-by-default posture). See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. See `anvil/lib/snippets/scorecard_kind.md` for the `human-verdict` vs `machine-summary` discriminator. See `anvil/skills/pub/commands/pub-litsearch.md` for the load-bearing existing precedent the perspective primitive generalizes.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.0.perspective/` (or `<thread>.{N}.perspective/` on re-run) — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own perspective sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(deck/perspective): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; perspective is non-gating and does not advance the state machine.

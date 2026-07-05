@@ -1,18 +1,19 @@
 ---
 name: pub-draft
-description: Drafter command for the pub skill. Produces a new paper version directory from a brief and any pre-draft litsearch sibling. Output is LaTeX (main.tex + refs.bib + figures/).
+description: Drafter command for the pub skill. Produces a new paper version directory from a brief and any pre-draft litsearch sibling. When BRIEF.md is absent in an interactive session, bootstraps one via a structured interview. Output is LaTeX (main.tex + refs.bib + figures/).
 ---
 
 # pub-draft — Drafter
 
 **Role**: drafter.
 **Reads**: `<thread>/BRIEF.md`, `<thread>/refs/`, `<thread>/refs.bib` (if present), AND any `<thread>.0.litsearch/` sibling. For revise-from-feedback fallback path: also the latest `<thread>.{N}/` and all `<thread>.{N}.*/` critic siblings (but the canonical revise path is `pub-revise`).
-**Writes**: `<thread>.{N+1}/` containing `main.tex`, `refs.bib`, `figures/`, and `_progress.json`.
+**Writes**: `<thread>.{N+1}/` containing `main.tex`, `refs.bib`, `figures/`, and `_progress.json`. Bootstrap path only: `<thread>/BRIEF.md` synthesized from the BRIEF bootstrap interview (see below).
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Brief** (`<thread>/BRIEF.md`): freeform prose with optional YAML frontmatter. Recognized frontmatter keys (all optional):
+- **`--no-interview`** (optional flag): deterministic opt-out of the BRIEF bootstrap interview. With this flag, a missing `BRIEF.md` always fails fast — automation gets predictable behavior without relying on the executing agent's interactivity judgment (precedent: `report-promote`'s interactive-prompt vs `--ack-file` split).
+- **Brief** (`<thread>/BRIEF.md`): freeform prose with optional YAML frontmatter. If absent in an interactive session, the drafter conducts the **BRIEF bootstrap interview** (see section below) and writes the brief before proceeding. Recognized frontmatter keys (all optional):
   - `title` — paper title
   - `author` / `authors` — author list (single string or list)
   - `affiliation` — author affiliation(s)
@@ -43,8 +44,19 @@ For a new thread, `N+1 == 1` so the output is `<thread>.1/`. (Note: a `<thread>.
 
 1. **Discover thread state**: enumerate existing `<thread>.{N}/` dirs. Compute the next `N`.
 2. **Resume check**: if `<thread>.{N+1}/_progress.json.draft.state == done` AND `main.tex` + `refs.bib` exist, the version is already drafted — exit early with a notice (idempotent). If `draft.state == in_progress` with no complete `main.tex`, treat as a crashed prior run: delete any partial output and re-draft.
-3. **Read inputs**: load `BRIEF.md` (or fail with a helpful message if missing — papers need at least a one-line claim and a target venue), enumerate `<thread>/refs/`, load `<thread>/refs.bib` if present, load `<thread>.0.litsearch/notes.md` and `candidates.bib` if present.
-4. **Initialize `_progress.json`**: write `phases.draft.state = in_progress`, `phases.draft.started = <ISO timestamp>`, `metadata.iteration = N+1`, `metadata.max_iterations` (inherit from `<thread>/.anvil.json` if set, else 4).
+3. **Read inputs**: load `BRIEF.md`, enumerate `<thread>/refs/`, load `<thread>/refs.bib` if present, load `<thread>.0.litsearch/notes.md` and `candidates.bib` if present. If `BRIEF.md` is **missing**, branch on interactivity (a judgment instruction for the executing agent, plus the deterministic flag):
+   - **Interactive** — an operator is present who can answer AskUserQuestion-style prompts, AND `--no-interview` was NOT passed: conduct the **BRIEF bootstrap interview** (see section below), write the synthesized `<thread>/BRIEF.md`, then continue with the written brief as the contract — drafting proceeds through the remaining steps unchanged.
+   - **Non-interactive** — batch / CI / orchestrated runs where no operator can answer, OR `--no-interview` was passed: fail fast with a helpful message — papers need at least a one-line claim and a target venue. The error message MUST name both remedies: (a) write `<thread>/BRIEF.md` by hand (model it on `assets/example-brief.md`), or (b) re-run `pub-draft <thread>` interactively to use the BRIEF bootstrap interview. No `BRIEF.md` is written on the fail-fast path.
+   - If `BRIEF.md` **exists**, the interview never fires — the existing path is unchanged.
+3b. **Load corpus grounding (conditional — issue #612)**: invoke `anvil/lib/project_brief.py::resolve_corpus_dirs(<project_dir>)` (the project root carrying the `BRIEF.md` whose frontmatter declares the top-level `corpus:` key — the same project-layout resolution `pub-review`'s `web_search` knob reads; the **corpus tier activates independently** of any other BRIEF field) per `anvil/lib/snippets/provenance.md` §Section 1. This is the project-level read-only factual ground truth, orthogonal to (and coexisting with) the per-thread `<thread>/refs/` PDFs of step 3 — see the snippet's §"Relationship to `<thread>/refs/` and `cite.py`".
+   - **When active** (≥1 resolved dir): write `<thread>.{N+1}/provenance.md` **before the LaTeX body** (before step 6 instantiates `main.tex`), per `anvil/lib/snippets/provenance.md` §Section 2 — the claim→source map with one markdown table row per attributed quote (verbatim, in quotes) and per checkable factual claim (named dates, names, events, places, measured values), each mapping to its supporting corpus passage (`Source file` relative to a declared corpus dir + `Line range`). **Fabricating a source-line mapping is prohibited** — if no corpus passage supports a claim, cut the claim or record it with a `NOT_FOUND` source note; do NOT invent a citation. **Record the resolved corpus dir paths in `_progress.json.metadata.corpus_dirs_resolved`** (a list of path strings) so the reviewer (step 4d) and the corpus auditor (step 5b) can verify the drafter ran.
+   - **When inactive** (no `corpus:` key, `corpus: null`, or `corpus: []`): omit `metadata.corpus_dirs_resolved` entirely and draft without a provenance map. Do NOT invent a provenance contract. **Byte-identical to pre-#612 behavior** — the existing `<thread>/refs/` claim-support path is unchanged.
+   - **Declared-but-missing dirs**: proceed with whatever resolved (`resolve_corpus_dirs` returns `missing: true` entries, never raises); the reviewer surfaces the broken declaration as a `major` finding.
+3c. **Load subject voice grounding (conditional — issue #598)**: invoke `anvil/lib/project_brief.py::resolve_subject_voice_docs(<project_dir>)` (the same `<project_dir>` as step 3b; the **subject voice tier activates independently** of the `corpus:` provenance tier and of any author-tier `voice:` keys — a `subjects`-only `voice:` block returns `[]` from `resolve_voice_docs` but entries here) per `anvil/lib/snippets/voice_grounding.md` §"Subject voice tier". A pub paper that renders dialogue or verbatim quotes from named study participants / interview subjects grounds those lines in the speaker's recorded register — this is the **voice/cadence-fidelity** half only; the substance-verification half (does the underlying fact/quote actually appear in the corpus?) is the step 3b provenance map's job (#612), not this tier's.
+   - **When active** (≥1 declared subject): for each subject whose speech you will render in this paper, load its resolved `corpus` (spoken transcripts — the speaker's ground-truth cadence, register, characteristic openers) and its `voice_doc` when present (cadence rules + named failure modes). Ground every reconstructed line in that speaker's recorded register: the exact words are authorial license, but the line must *sound like how this speaker would say it* (clipped declaratives stay clipped; do not smooth speech into balanced multi-clause prose). **Record the consulted transcript paths in `_progress.json.metadata.subject_voice_exemplars`** — a per-subject map `{"<name>": ["<transcript path>", …], …}` — so the reviewer (step 4e) can verify grounding happened.
+   - **When inactive** (no `subjects` list, empty list, or no BRIEF): omit `metadata.subject_voice_exemplars` entirely and draft without subject calibration. Do NOT invent a subject voice contract. **Byte-identical to pre-#613 behavior.**
+   - **Declared-but-missing corpora**: proceed with whatever resolved (`resolve_subject_voice_docs` returns `missing: true` entries, never raises); the reviewer surfaces the broken declaration as a `major` finding.
+4. **Initialize `_progress.json`**: write `phases.draft.state = in_progress`, `phases.draft.started = <ISO timestamp>`, `metadata.iteration = N+1`, `metadata.max_iterations` (inherit from `<thread>/.anvil.json` if set, else 4). When the corpus tier is active (step 3b), also record `metadata.corpus_dirs_resolved`; when the subject voice tier is active (step 3c), also record `metadata.subject_voice_exemplars`; omit each entirely when its tier is inactive.
 5. **Choose documentclass**:
    - If brief frontmatter sets `documentclass`, use that (e.g., `\documentclass{neurips_2024}`). The consumer is responsible for dropping the matching `.cls` / `.sty` into `.anvil/skills/pub/templates/` in their repo.
    - Otherwise, use `\documentclass{anvil-paper}` (which is shipped at `anvil/skills/pub/templates/anvil-paper.cls`).
@@ -66,6 +78,41 @@ For a new thread, `N+1 == 1` so the output is `<thread>.1/`. (Note: a `<thread>.
 8. **Create `figures/` skeleton**: `mkdir -p figures/src/`. Insert `\includegraphics{figures/<name>}` or `\input{figures/<name>.tex}` placeholders in the body where the brief or the structure calls for a figure. Actual figure generation is `pub-figures`'s job. If the brief supplies a `figures/src/` directory of scripts, copy them into the version dir's `figures/src/` so the figurer can pick them up.
 9. **Update `_progress.json`**: `phases.draft.state = done`, `phases.draft.completed = <ISO timestamp>`.
 10. **Report**: print the path to the new version dir and a one-line status (e.g., `Drafted q3-method.1/ (main.tex: 4200 words, refs.bib: 18 entries, 3 figure placeholders)`).
+
+## BRIEF bootstrap interview (when BRIEF.md is absent)
+
+When `<thread>/BRIEF.md` is absent and the session is interactive (and `--no-interview` was not passed), the drafter interviews the author and synthesizes the brief before drafting begins. The interview output is a **normal BRIEF.md** — the lifecycle is unchanged after bootstrap: no new state, no `_progress.json` schema change (the interview happens before step 4 initializes progress), and the written `BRIEF.md` is the durable, git-diffable record of the interview (consistent with the memo-revise plan-artifact philosophy).
+
+### Question set
+
+Conduct the interview as AskUserQuestion-style prose prompts, one topic at a time:
+
+| # | Question | BRIEF destination | Required? |
+|---|----------|-------------------|-----------|
+| 1 | **Target venue** (and any venue style file the consumer has dropped into `.anvil/skills/pub/templates/`) | `venue` frontmatter (+ `documentclass` if a venue style is named) | Yes |
+| 2 | **Thesis** — one-sentence statement of the main contribution | `claim` frontmatter + `## Claim` prose section | Yes |
+| 3 | **Evidence inventory** — what results/data/figures exist, where source material lives | `## Method (sketch)` + `## Experiments` prose; pointers to `refs/`, `refs.bib`, `figures/src/` | Yes (answer may be "none yet" → `# TODO(operator)` markers) |
+| 4 | **Scope** — audience, rough page bound, double-blind?, keywords | `anonymous`, `keywords` frontmatter + prose framing | Yes |
+| 5 | **Title / authors / affiliation** | `title`, `author`, `affiliation` frontmatter | Optional (`# TODO(operator)` markers if skipped) |
+| 6 | **Web-search appetite** for litsearch (default **no** — anti-hallucination posture) | `web_search: true` emitted ONLY on explicit opt-in; the key is omitted otherwise | Optional |
+
+### Synthesized BRIEF shape
+
+Model the output on `assets/example-brief.md`. The synthesized brief MUST contain:
+
+- **Frontmatter** with at least `venue` + `claim` — the two inputs this command's step 3 declares mandatory. Other recognized keys (`title`, `author`, `affiliation`, `anonymous`, `keywords`, `documentclass`, `web_search`) appear only when the author supplied them.
+- **Prose body** with the example-brief section shape: `## Motivation`, `## Claim`, `## Method (sketch)`, `## Experiments` (the evidence inventory), and `## Related work` hooks.
+- **`# TODO(operator)` markers** for anything the author deferred or skipped (the #408 `project-migrate` starter-synthesis precedent) — deferred answers are marked, **never fabricated**.
+
+Note the per-thread `<thread>/BRIEF.md` is freeform prose + optional YAML frontmatter with **no strict parser** — the strict parser (`anvil/lib/project_brief.py`) governs the project-level BRIEF only. Mirroring the example-brief shape is a convention, not a schema gate.
+
+### No-fabrication rule
+
+The interview synthesizes structure, never substance. The drafter MUST NOT invent evidence, results, figures, datasets, or citations to fill gaps in the author's answers. A skipped or vague answer becomes a `# TODO(operator)` marker, full stop. `web_search` defaults to off and is emitted only on the author's explicit opt-in (preserving the #424 anti-hallucination posture — see `SKILL.md` § "Opt-in web search").
+
+### Scope exclusion: project-level BRIEF
+
+This interview bootstraps the **per-thread** `<thread>/BRIEF.md` only. It has no interplay with the post-#295 project-BRIEF `documents:` entry: project-layout enrollment stays `anvil:project-migrate --enroll` territory, and the per-thread BRIEF remains the primary carrier for this command's inputs.
 
 ## Voice and style overrides
 
@@ -106,3 +153,13 @@ This command writes the version-dir shape documented in `anvil/lib/snippets/prog
 ```
 
 Merge rule (shallow): read existing `_progress.json` if present, update only `phases.draft` and `metadata`, preserve all other fields. Use the read-merge-write recipe in `anvil/lib/snippets/progress.md`; use ISO-8601 UTC timestamps per `anvil/lib/snippets/timestamp.md`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.draft.state = done`.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir — plus, on the BRIEF bootstrap path only, the synthesized `<thread>/BRIEF.md` staged explicitly by path (a thread-level file per the snippet's staging rules).
+- **Commit**: `anvil(pub/draft): <thread>.{N+1} [DRAFTED]`.

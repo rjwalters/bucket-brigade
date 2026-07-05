@@ -31,7 +31,7 @@ This command is the memo-skill analog for Phase 5 of the reframed Epic #328. It 
   _findings.json  Structured payload from ImageAccessibilityResult.to_json() (informational companion).
 ```
 
-**Atomicity** (issue #350): when `--write-review` is set, the image-accessibility sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`_review.json`, `_findings.json`) are staged under a leading-dot sibling `.<thread>.{N}.image-accessibility.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.image-accessibility/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.image-accessibility.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): when `--write-review` is set, the image-accessibility sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`_review.json`, `_findings.json`) are staged under a leading-dot sibling `.<thread>.{N}.image-accessibility.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.image-accessibility/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.image-accessibility.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.image-accessibility)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 The `_review.json` carries:
 
@@ -109,7 +109,7 @@ python -m anvil.skills.memo.lib.image_accessibility <version_dir> [--write-revie
 
 The `<version_dir>` is the memo version directory (e.g. `memo/memo.1/`). The runner always prints the structured payload (`ImageAccessibilityResult.to_json()`) to stdout. When `--write-review` is passed, it additionally writes `<version_dir>.image-accessibility/_review.json` (typed) and `<version_dir>.image-accessibility/_findings.json` (companion) into the sibling critic dir for auto-discovery by `anvil/lib/critics.py::discover_critics`.
 
-**Staged-sidecar wiring** (issue #350; only when `--write-review` is set): on entry, **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<version_dir>`. This removes any leftover `.<thread>.<M>.image-accessibility.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed session. Then **open the staged sidecar** for the image-accessibility dir by invoking `anvil/lib/sidecar.py::staged_sidecar(final_dir=<version_dir>.image-accessibility, required_files=["_review.json", "_findings.json"])`. Write both files **inside the yielded staging directory** (the path of the shape `.<version_dir>.image-accessibility.tmp/`), NOT inside the final `<version_dir>.image-accessibility/` path. On clean context exit, the staged sidecar primitive verifies both files exist, then atomically renames the staging dir to its final name. The final-named dir only ever exists in **complete** form.
+**Staged-sidecar wiring** (issue #350, #376; only when `--write-review` is set): on entry, **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<version_dir>.image-accessibility)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<version_dir>.image-accessibility.tmp/` from a previously-killed run of this same image-accessibility critic on THIS version. Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched. Then **open the staged sidecar** for the image-accessibility dir by invoking `anvil/lib/sidecar.py::staged_sidecar(final_dir=<version_dir>.image-accessibility, required_files=["_review.json", "_findings.json"])`. Write both files **inside the yielded staging directory** (the path of the shape `.<version_dir>.image-accessibility.tmp/`), NOT inside the final `<version_dir>.image-accessibility/` path. On clean context exit, the staged sidecar primitive verifies both files exist, then atomically renames the staging dir to its final name. The final-named dir only ever exists in **complete** form.
 
 **Exit codes** (mirror Phase 2 / Phase 3 sibling-critic CLI contracts):
 
@@ -156,3 +156,13 @@ The lifecycle wiring (per Epic #328 Phase 5):
 - **`memo-revise`** consumes findings from the aggregated review (which includes the `.image-accessibility/` findings) and rewrites the body markdown to address them.
 
 There is no required order between `memo-image-accessibility` and the LLM-side `memo-review`. The standard pattern is: `memo-draft` → `memo-image-accessibility` → `memo-review` → `memo-revise`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: on the `--write-review` path, after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.image-accessibility/` — so only complete sidecars are ever committed. The default stdout-scan invocation writes nothing, so the hook has nothing to commit and is a silent no-op.
+- **Staging target**: ONLY this command's own `<thread>.{N}.image-accessibility/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(memo/image-accessibility): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine, since specialist critics do not advance the state machine.

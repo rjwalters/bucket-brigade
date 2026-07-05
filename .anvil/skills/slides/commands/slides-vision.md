@@ -6,14 +6,14 @@ description: Vision-model critic for the slides skill. Renders the talk deck to 
 # slides-vision — Vision-language-model critic
 
 **Role**: rendered-artifact critic.
-**Reads**: `<thread>.{N}/deck.md` (renders to `deck.pdf` + per-page PNGs on demand).
-**Writes**: `<thread>.{N}.vision/` with `_review.json` (canonical schema, `kind=vision`), `_meta.json`, `_progress.json`, and per-slide PNGs in `slides/`.
+**Reads**: `<thread>/<thread>.{N}/deck.md` (the version dir is nested under the thread root per the artifact contract; renders to `deck.pdf` + per-page PNGs on demand).
+**Writes**: `<thread>/<thread>.{N}.vision/` with `_review.json` (canonical schema, `kind=vision`), `_meta.json`, `_progress.json`, and per-slide PNGs in `slides/`. Bare `<thread>.{N}/` / `<thread>.{N}.vision/` references below are shorthand for these nested paths.
 
 This critic exists because the slides markdown-source critics (`slides-review`, `slides-audit`, `slides-rehearse`) never *look at* the rendered output, and the deterministic `slide-content-overflow` lint (`anvil/lib/marp_lint.py`) only catches the source-only patterns it was written for. The lint and the vision critic are deliberately layered: the lint is fast, deterministic, and source-based (it catches the figure-plus-bullets and `_class: ask` overflow patterns from issues #24/#25 at review time); this critic catches the rest — true rendered overflow from font fallback or theme overrides, label cropping, palette adherence, mathtext artifacts, and slide density at projection scale — none of which is visible in the markdown source. See the `slides-review` "What it does NOT catch" list in `SKILL.md`; this critic is what catches those cases.
 
 ## Owned vision dimensions (six, scored /5 each, /30 total)
 
-This critic owns a separate **vision rubric subset** alongside the slides skill's main 8-dimension /40 rubric (see `rubric.md`). The vision dims appear in the aggregated scorecard via the existing mean-of-non-null aggregator (`anvil/lib/critics.py::aggregate`); no schema or aggregation changes are required.
+This critic owns a separate **vision rubric subset** alongside the slides skill's main 9-dimension /44 rubric (see `rubric.md`). The vision dims appear in the aggregated scorecard via the existing mean-of-non-null aggregator (`anvil/lib/critics.py::aggregate`); no schema or aggregation changes are required.
 
 | Dim | Name | What it catches | Most relevant slides rubric dim |
 |---|---|---|---|
@@ -40,12 +40,14 @@ These two flag types are defined in `anvil/lib/vision.py` (`CRITICAL_FLAG_RENDER
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **Rendered PDF**: `<thread>.{N}/deck.pdf` — produced by `slides-figures`/`slides-handout` or by this critic on demand via `anvil.lib.render.render_marp_to_pdf` (which invokes Marp with the framework-pinned `--config-file anvil/lib/marp/config.yml` per #32).
 - **Per-page PNGs**: produced by `anvil.lib.render.render_pdf_to_pngs` from the PDF.
 - **VLM**: Anthropic SDK by default; consumers without an API key inject a callback per `anvil/lib/vision.py`.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under critique:
 
 ```
 <thread>.{N}.vision/
@@ -56,11 +58,11 @@ These two flag types are defined in `anvil/lib/vision.py` (`CRITICAL_FLAG_RENDER
   _progress.json                   { version, thread, for_version, phases.vision.{state,started,completed} }
 ```
 
-**Atomicity** (issue #350): the vision sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The three top-level files (`_review.json`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.vision.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.vision/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.vision.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob. The `slides/` subdirectory is staged inside the staging dir but is NOT validated by the required-files manifest (per `staged_sidecar`'s flat-manifest contract — subdirectories like `slides/` are not validated).
+**Atomicity** (issue #350, #376): the vision sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The three top-level files (`_review.json`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.vision.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.vision/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.vision.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.vision)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob. The `slides/` subdirectory is staged inside the staging dir but is NOT validated by the required-files manifest (per `staged_sidecar`'s flat-manifest contract — subdirectories like `slides/` are not validated).
 
 ## Procedure
 
-1. **Discover state** + **resume check** (per `anvil/lib/snippets/progress.md`). Find the highest `N` with `<thread>.{N}/deck.md`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.vision.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed VLM session (issue #350). If `<thread>.{N}.vision/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early (idempotent).
+1. **Discover state** + **resume check** (per `anvil/lib/snippets/progress.md`). Find the highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.vision)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.vision.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). If `<thread>.{N}.vision/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early (idempotent).
 2. **Open the staged sidecar** for the vision dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.vision, required_files=["_review.json", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.vision.tmp/`), NOT inside the final `<thread>.{N}.vision/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`:
    ```json
    {
@@ -152,3 +154,13 @@ Dimension 4 (slide density / cognitive load) in `rubric.md` is now **jointly own
 - **Be specific.** A finding that says "slide 4 chart axis label is cropped" is actionable; "the deck has chart issues" is not.
 
 **Scorecard kind declaration**: This critic's `_meta.json` SHOULD include `"scorecard_kind": "machine-summary"` per `anvil/lib/snippets/scorecard_kind.md`. The canonical payload is `_review.json` per #26 (the prose siblings are not produced — the vision critic ships `_review.json` directly). Note this differs from the slides skill's other critics (`.review/`, `.audit/`, `.rehearse/`), which use the `human-verdict` scorecard kind; the aggregator handles the mixed kinds via the `scorecard_kind` discriminator.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.vision/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.vision/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(slides/vision): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; vision is a non-gating critic and does not advance the state machine on its own.

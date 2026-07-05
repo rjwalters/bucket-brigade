@@ -40,9 +40,9 @@ A single command an operator (or orchestrating agent) runs to see the state of e
    | `INTAKE_DONE` (brief but no inventorship) | `ip-uspto-inventorship <thread>` |
    | `INVENTORSHIP_DONE` (no draft yet) | `ip-uspto-draft <thread>` |
    | `DRAFTED` (no critics yet) | `ip-uspto-review <thread>` then `ip-uspto-101 <thread>` then `ip-uspto-112 <thread>` then `ip-uspto-claims <thread>` then `ip-uspto-prior-art <thread>` (or run in parallel) |
-   | `REVIEWED` (aggregate <35 OR critical flag, under iteration cap) | `ip-uspto-revise <thread>` |
-   | `REVIEWED` (aggregate <35 OR critical flag, AT iteration cap) | `BLOCKED — human review required` |
-   | `REVIEWED` (aggregate ≥35, no critical flag) | `ip-uspto-audit <thread>` (then `READY` → `AUDITED`) |
+   | `REVIEWED` (aggregate <39 OR critical flag, under iteration cap) | `ip-uspto-revise <thread>` |
+   | `REVIEWED` (aggregate <39 OR critical flag, AT iteration cap) | `BLOCKED — human review required` |
+   | `REVIEWED` (aggregate ≥39, no critical flag) | `ip-uspto-audit <thread>` (then `READY` → `AUDITED`) |
    | `REVISED` (pre-flight not yet run on the new version) | `ip-uspto-pre-flight <thread>` |
    | `PRE_FLIGHT_PASSED` | `ip-uspto-review <thread>` (and other critics) |
    | `READY` (audit not yet run) | `ip-uspto-audit <thread>` |
@@ -51,12 +51,18 @@ A single command an operator (or orchestrating agent) runs to see the state of e
    | `AUDITED` (figures done; inventorship re-validated) | `ip-uspto-finalize <thread>` |
    | `FINALIZED` | (terminal) |
 
-5. Detect anomalies and surface them:
+5. **Surface the 12-month conversion deadline** for any thread whose `<thread>/BRIEF.md` declares a `converts_provisional` block (conversion linkage, issue #501):
+   - Read `converts_provisional.filing_date` from the BRIEF (the consumer copy). The authoritative producer copy is the provisional thread's `_filing.json` (written by `ip-uspto-provisional-finalize`); when `portfolio_path` is set and that `_filing.json` is reachable, an agent MAY cross-check the two and flag a mismatch, but the BRIEF key is the value used.
+   - Compute the deadline deterministically via the skill-local helper `anvil/skills/ip-uspto/lib/conversion_deadline.py`: `conversion_deadline(filing_date)` returns `filing_date + 12 calendar months` (end-of-month clamped — leap-day Feb 29 → Feb 28, month-end Jan 31 + 1mo → Feb 28/29, never an invalid date). `deadline_status(filing_date)` returns `{ deadline, days_remaining, level, warn, message }` with `level ∈ {ok, warn, past}` — `warn` when within 60 days (inclusive), `past` when the window has closed.
+   - **Fail loud, never silent**: a `converts_provisional` block present with a missing/empty/malformed `filing_date` raises `ValueError` from the helper — surface it as an anomaly (the deadline cannot be silently dropped), not a blank cell.
+   - Render the deadline in the per-thread row (a `Deadline` cell) and, when `level` is `warn` or `past`, repeat the helper's `message` loudly in the `## Operator notes` section. This is the only conversion-deadline surface; there is no separate `_deadline.md` file (the orchestrator is read-only by contract).
+
+6. Detect anomalies and surface them:
    - A `<slug>.{N}/_progress.json` with any phase in state `in_progress` AND the version dir is older than 30 minutes — likely a crashed phase; recommend resuming after deleting partial output.
    - A critic sibling dir (`<slug>.{N}.<tag>/`) without a matching `<slug>.{N}/` — orphan; report.
    - A gap in version numbers (e.g., `<slug>.1/` and `<slug>.3/` with no `<slug>.2/`) — report.
    - A revised version `<slug>.{N+1}/` exists but `<slug>.{N}/` is missing one or more configured critic siblings — the revision was produced from an incomplete review pass; report as warning.
-   - `<slug>.{N}.audit/` exists but the underlying `<slug>.{N}/` is not `READY` (aggregate <35 or flagged) — audit was run prematurely; report.
+   - `<slug>.{N}.audit/` exists but the underlying `<slug>.{N}/` is not `READY` (aggregate <39 or flagged) — audit was run prematurely; report.
 
 ## Output format
 
@@ -65,13 +71,15 @@ Print a markdown table to stdout:
 ```
 | Thread        | Latest | State              | Score   | Critics done    | Iter | Next                              |
 |---------------|--------|--------------------|---------|-----------------|------|-----------------------------------|
-| acme-widget   | .2     | REVIEWED           | 32/40   | 5/5             | 2/5  | ip-uspto-revise acme-widget       |
-| beta-method   | .3     | READY              | 36/40   | 5/5             | 3/5  | ip-uspto-audit beta-method        |
+| acme-widget   | .2     | REVIEWED           | 35/45   | 5/5             | 2/5  | ip-uspto-revise acme-widget       |
+| beta-method   | .3     | READY              | 40/45   | 5/5             | 3/5  | ip-uspto-audit beta-method        |
 | gamma-device  | -      | INTAKE_DONE        | -       | -               | 0/5  | ip-uspto-inventorship gamma-device |
-| delta-system  | .5     | AUDITED            | 37/40   | 5/5             | 5/5  | ip-uspto-finalize delta-system    |
+| delta-system  | .5     | AUDITED            | 41/45   | 5/5             | 5/5  | ip-uspto-finalize delta-system    |
 ```
 
-Follow the table with an `## Anomalies` section if any were detected, and an `## Operator notes` section with any threads requiring human review (iteration cap reached, critical flag unresolved across multiple revisions, etc.).
+For a thread declaring `converts_provisional`, append a `Deadline` cell to its row carrying the computed 12-month §119(e) conversion deadline (e.g., `2026-03-10 (warn: 30d)` or `2025-12-01 (PAST)`); threads with no `converts_provisional` block show `-`.
+
+Follow the table with an `## Anomalies` section if any were detected, and an `## Operator notes` section with any threads requiring human review (iteration cap reached, critical flag unresolved across multiple revisions, conversion deadline within 60 days or past per step 5, etc.).
 
 ## Configuration discovery
 

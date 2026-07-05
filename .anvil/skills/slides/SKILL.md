@@ -33,48 +33,52 @@ If a draft is a talk that lives or dies on technical accuracy, pedagogy, and tim
 
 ## Artifact contract
 
-A **slides thread** is a single talk delivered to a specific audience in a specific time slot. A thread is identified by a slug (e.g., `kdd-2026-keynote`, `intro-to-anvil`, `q3-arch-review`). Each thread occupies a portfolio directory that contains:
+A **slides thread** is a single talk delivered to a specific audience in a specific time slot. A thread is identified by a slug (e.g., `kdd-2026-keynote`, `intro-to-anvil`, `q3-arch-review`). Each thread lives inside a **project root** that carries a project-level `BRIEF.md` (the post-#296 config locus — frontmatter `documents:` list naming every thread in the project). Within the project root, each thread occupies a directory named for its slug; the thread's version dirs and critic siblings are **nested under that thread directory** per the issue #295 project-org model (extended to this skill under issue #382):
 
 ```
-<portfolio>/
-  <thread>/                          Optional thread root with brief and reference material
-    BRIEF.md                         Brief (audience, time slot, learning goals, anchor refs)
+<project>/                           Project root (carries the project-level BRIEF; issues #295/#296)
+  BRIEF.md                           Project-level brief (frontmatter `documents:` list + prose; config locus per #296)
+  research/                          Optional shared evidence pool across documents
+  <thread>/                          Thread root (named for the slug)
+    BRIEF.md                         Thread-level brief (audience, time slot, learning goals, anchor refs)
     refs/                            Optional reference material (papers, prior decks, datasets)
-  <thread>.0.outline/                Pre-draft narrative outline (read-only critic-shaped sibling)
-    outline.md                       Title, audience, time slot, hook, beats, takeaway, Q&A anticipations
-    _progress.json                   Phase state for the outline
-  <thread>.1/                        First drafted version (immutable once written)
-    deck.md                          Marp markdown source (one slide per `---` block)
-    notes/                           Per-slide presenter notes (one file per slide; mirrors deck order)
-    figures/                         Generated/embedded figures referenced from deck.md
-    _progress.json                   Phase state for this version
-    changelog.md                     (revisions only) Maps prior critic notes to changes
-  <thread>.1.review/                 Reviewer output for version 1 (read-only)
-    verdict.md                       Top-level decision (advance / block) + total /40
-    scoring.md                       Per-dimension scores against the slides rubric
-    comments.md                      Slide-level comments keyed to slide numbers
-    _progress.json
-  <thread>.1.audit/                  MANDATORY — Auditor critic sibling (fact-check)
-    verdict.md                       Audit verdict + critical-flag status (any `wrong` claim sets it)
-    claims.md                        Every technical claim enumerated with verdict + citation
-    _progress.json
-  <thread>.1.rehearse/               OPTIONAL — Time-budget + density check
-    timing.md                        Per-slide and aggregate spoken-time estimates
-    density.md                       Per-slide word/bullet counts + flags
-    _progress.json
-  <thread>.2/                        Revised version (after revise consumes v1 + critic siblings)
-  <thread>.2.review/
-  <thread>.2.audit/
-  ...
-  <thread>.{N}/                      Terminal READY version
-  <thread>.{N}.handout/              TERMINAL-ONLY — leave-behind PDF export
-    handout.pdf                      2-up / 4-up / notes-below layout
-    _progress.json
+    <thread>.0.outline/              Pre-draft narrative outline (read-only critic-shaped sibling)
+      outline.md                     Title, audience, time slot, hook, beats, takeaway, Q&A anticipations
+      _progress.json                 Phase state for the outline
+    <thread>.1/                      First drafted version (immutable once written)
+      deck.md                        Marp markdown source (one slide per `---` block; skill-fixed filename — see body-filename note below)
+      notes/                         Per-slide presenter notes (one file per slide; mirrors deck order)
+      figures/                       Generated/embedded figures referenced from deck.md
+      _progress.json                 Phase state for this version
+      changelog.md                   (revisions only) Maps prior critic notes to changes
+    <thread>.1.review/               Reviewer output for version 1 (read-only)
+      verdict.md                     Top-level decision (advance / block) + total /44
+      scoring.md                     Per-dimension scores against the slides rubric
+      comments.md                    Slide-level comments keyed to slide numbers
+      _progress.json
+    <thread>.1.audit/                MANDATORY — Auditor critic sibling (fact-check)
+      verdict.md                     Audit verdict + critical-flag status (any `wrong` claim sets it)
+      claims.md                      Every technical claim enumerated with verdict + citation
+      _progress.json
+    <thread>.1.rehearse/             OPTIONAL — Time-budget + density check
+      timing.md                      Per-slide and aggregate spoken-time estimates
+      density.md                     Per-slide word/bullet counts + flags
+      _progress.json
+    <thread>.2/                      Revised version (after revise consumes v1 + critic siblings)
+    <thread>.2.review/
+    <thread>.2.audit/
+    ...
+    <thread>.{N}/                    Terminal READY version
+    <thread>.{N}.handout/            TERMINAL-ONLY — leave-behind PDF export
+      handout.pdf                    2-up / 4-up / notes-below layout
+      _progress.json
 ```
 
-Versioned dirs (`<thread>.{N}/`) and critic sibling dirs (`<thread>.{N}.<critic>/`) are **immutable once their `_progress.json` records the phase as `done`**. Revisions are produced as a new version dir, never by editing in place.
+**Body filename convention — `deck.md` is retained (slug-echo deferred).** Memo's post-#295 contract renames the body file to echo the slug (`<thread>.md`). The slides skill deliberately does NOT adopt the slug-echo body rename in v1: `deck.md` is the Marp source filename consumed by `marp` CLI invocations across the slides commands and the `templates/deck.md.j2` template (shared shape with `anvil:deck`). The slug-echo migration for slides is tracked as a follow-on; until it lands, `deck.md` is the canonical body filename inside every `<thread>.{N}/` version dir. The directory nesting above is load-bearing today; the body filename is not.
 
-The outline lives at `<thread>.0.outline/` — sibling-shaped (read-only critic-style directory feeding the drafter), but indexed as `.0` because no `<thread>.0/` version exists. This is a deliberate naming choice so the outline appears in the portfolio orchestrator's enumeration alongside other siblings; orchestrators look for `<thread>.<N>.<phase>/` patterns and `N=0` is reserved for pre-draft phases. **Reader-guidance invariant**: orchestrators, anomaly detectors, and any other consumer MUST treat the absence of `<thread>.0/` as expected when `<thread>.0.outline/` exists, NOT as a version-number gap; consult `_progress.json.for_version` (which records `0` for the outline) to disambiguate sibling-vs-version semantics. The `slides` portfolio orchestrator's gap detector (`commands/slides.md` step 5) carries this exemption explicitly.
+Versioned dirs (`<thread>.{N}/`) and critic sibling dirs (`<thread>.{N}.<critic>/`) are **immutable once their `_progress.json` records the phase as `done`**. Revisions are produced as a new version dir, never by editing in place. Threads authored before the nesting landed (version dirs as siblings of the thread root, directly under the project root) are migrated by `anvil:project-migrate`.
+
+The outline lives at `<thread>/<thread>.0.outline/` — sibling-shaped (read-only critic-style directory feeding the drafter), but indexed as `.0` because no `<thread>/<thread>.0/` version exists. This is a deliberate naming choice so the outline appears in the portfolio orchestrator's enumeration alongside other siblings; orchestrators look for `<thread>.<N>.<phase>/` patterns and `N=0` is reserved for pre-draft phases. **Reader-guidance invariant**: orchestrators, anomaly detectors, and any other consumer MUST treat the absence of `<thread>.0/` as expected when `<thread>.0.outline/` exists, NOT as a version-number gap; consult `_progress.json.for_version` (which records `0` for the outline) to disambiguate sibling-vs-version semantics. The `slides` portfolio orchestrator's gap detector (`commands/slides.md` step 5) carries this exemption explicitly.
 
 ## State machine
 
@@ -96,14 +100,14 @@ EMPTY → OUTLINED → DRAFTED → REVIEWED → REVISED → … → READY → AU
 | `REHEARSED` | `<thread>.{N}.rehearse/timing.md` exists for the latest AUDITED version |
 | `HANDOUT_GENERATED` | `<thread>.{N}.handout/handout.pdf` exists for the latest AUDITED+REHEARSED version |
 
-**Thresholds**: ≥32/40 advances. <32/40 requires revision. Any critical flag short-circuits regardless of total — block until addressed.
+**Thresholds**: ≥35/44 advances. <35/44 requires revision. Any critical flag short-circuits regardless of total — block until addressed.
 
 **Three critical-flag rules** (any one short-circuits):
 - **Audit flag** — auditor recorded any `wrong` verdict on a technical claim. Blocks regardless of score.
 - **Density flag** — any slide exceeds 50 words OR 7 bullets. Blocks (forces a slide split).
 - **Time flag** — projected duration >110% of the venue slot. Blocks (forces a cut).
 
-**Iteration cap**: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Configurable per-thread via `<thread>/.anvil.json` with `{ "max_iterations": <N> }`. Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
+**Iteration cap**: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Configurable per-thread via `<thread>/.anvil.json` with `{ "max_iterations": <N> }` in v1; the **v2 convergence target is the project-level `BRIEF.md`** (the post-#296 config locus — memo already carries the per-document override on its `documents:` entries, and `anvil:project-migrate` merges a thread's `.anvil.json` into the project BRIEF when migrating older layouts). Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
 
 **Re-running siblings on revision**: `audit`, `rehearse`, and `vision` are critic-shaped and are re-discovered on each loop. After a revision lands a new `<thread>.{N+1}/`, the orchestrator re-runs `slides-review`, `slides-audit`, `slides-rehearse`, and `slides-vision` against the new version. `handout` is terminal-only and runs once on the final READY+AUDITED+REHEARSED version.
 
@@ -207,6 +211,10 @@ The Marp renderer supports both inline notes (HTML comments) and sidecar notes (
 
 The skill prompt instructs the figurer to **never invent data** — only render what the brief or user-supplied scripts provide. Auditor flags figures whose source is unclear. (TikZ is not used; it requires the LaTeX toolchain, which Marp does not invoke.)
 
+### Generative imagery
+
+`anvil:slides` has **no generative-imagery path, by design** — `anvil:deck` is the imagegen-capable presentation class. Technical talks draw their figures from data (mermaid / matplotlib via `slides-figures`, never-invent-data discipline above); generative imagery is a persuasion-deck concern, and the entire substrate — the `imagery_policy` opt-in gate, style presets, prompt journal, `deck-audit` attribution contract, and the `deck-imagegen` dispatcher — lives in `anvil:deck`. Consumers who need generated imagery in a presentation should author it with `anvil:deck`; start at `anvil/skills/deck/commands/deck-imagegen-onboarding.md` (adapter onboarding walkthrough) and `anvil/skills/deck/commands/deck-imagegen-adapter.md` (adapter contract). If canary demand for slides-side imagegen materializes, that second consumer is what justifies promoting `anvil/skills/deck/lib/imagegen.py` to `anvil/lib/` per the lib-promotion convention — file an issue then, not preemptively.
+
 **`slides-handout`** — *terminal-state export variant.* Runs only on a READY+AUDITED+REHEARSED version. Emits a separate PDF: 2-up or 4-up layout, OR slides-with-notes-below format. Default is **4-up**; `--notes-below` and `--2-up` flags select alternates. Pitch decks have an analogous "leave-behind PDF" need — flagged for `anvil/lib/` extraction (see §lib-sharing-candidates below). Requires Marp CLI installed; falls back to a stub `.md` placeholder with the intended layout described if Marp is unavailable.
 
 ### Pre-flight overflow lint
@@ -232,7 +240,7 @@ The skill prompt instructs the figurer to **never invent data** — only render 
 
 ## Rubric
 
-See `rubric.md` for the 8-dimension /40 scoring schema (talk-tuned weights), the ≥32 advance threshold, and the three critical-flag rules (audit / density / time).
+See `rubric.md` for the 9-dimension /44 scoring schema (talk-tuned weights), the ≥35 advance threshold, and the three critical-flag rules (audit / density / time).
 
 ## Defaults and overrides
 
@@ -240,7 +248,7 @@ This skill ships with opinionated defaults. Consumers are expected to override l
 
 - `voice.md` (optional) — Speaker voice and style guidance the drafter reads in addition to its base prompt (e.g., academic-formal vs. industry-casual).
 - `rubric.overrides.md` (optional) — Add domain-specific critical-flag examples or tune dimension weights for a specific venue.
-- `templates/anvil-slides-theme.css` (optional override) — Replace the default Marp theme. The default ships in this skill at `templates/anvil-slides-theme.css`.
+- `templates/anvil-slides-theme.css` (optional override) — Replace the default Marp theme. The default ships in this skill at `templates/anvil-slides-theme.css`. Consumers porting an existing brand identity (e.g., a LaTeX beamer `.sty`) start from the starter template at `anvil/lib/marp/brand-theme-starter.css` and the porting recipe at `anvil/lib/snippets/brand-theme-porting.md` (beamer-concept mapping table, registration, render-gate + vision validation).
 - `templates/anvil-slides.cls` (Beamer escape hatch) — Drops in a Beamer class for LaTeX-required venues; the consumer's `voice.md` must also instruct the drafter to emit `.tex` instead of `.md`.
 - `BRIEF.md.example` — Reference brief shape; freeform prose with optional YAML frontmatter is accepted.
 
@@ -258,3 +266,7 @@ The following emerge as candidates for shared `anvil/lib/` extraction once both 
 | Presenter-notes schema | Partially | Talks weight notes high (Dim 7 = 4/4); decks weight them critically (decks circulate without speakers). Same underlying sidecar-markdown mechanism. Extract a `notes_schema.py` for consistent population. |
 | Rehearsal / time-budget check | Slides-only initially | Pitch decks don't have a fixed time slot in the same way. May extract if a `deck-rehearse` analog emerges. |
 | Audit role | Both | Both need fact-check; deck audits financials/team-bios/forward-looking-statements, slides audits technical claims. Same critic-sibling shape, different role prompt. Already covered by the generic `auditor` role planned in `anvil/roles/README.md`. |
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing slides command end its phase by staging only the dirs it wrote and committing as `anvil(slides/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 9 write-bearing slides commands adopt it; the read-only `slides` portfolio orchestrator is exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

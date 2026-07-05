@@ -7,7 +7,7 @@ description: Outliner command for the slides skill. Produces a pre-draft narrati
 
 **Role**: outliner (pre-draft narrative shaping).
 **Reads**: `<thread>/BRIEF.md`, `<thread>/refs/**` (if present).
-**Writes**: `<thread>.0.outline/outline.md` and `<thread>.0.outline/_progress.json`.
+**Writes**: `<thread>/<thread>.0.outline/outline.md` and `<thread>/<thread>.0.outline/_progress.json` (the outline sibling is nested under the thread root per the artifact contract; bare `<thread>.0.outline/` references below are shorthand).
 
 The outline sibling is **read-only once written** (state: `done` in its own `_progress.json`). The drafter consumes it without modifying it.
 
@@ -38,6 +38,8 @@ If any such heading is present AND the section has more than 3 lines of content,
 - **References** (`<thread>/refs/**`): any supporting material (papers, prior decks, datasets). Treated as read-only context.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`:
 
 ```
 <thread>.0.outline/
@@ -130,3 +132,13 @@ The `outline.md` is the authoritative narrative spine for the drafter to expand 
 Merge rule (shallow): preserve fields not touched by this command. See `anvil/lib/snippets/progress.md` for the full read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC format. This sibling SHOULD declare `scorecard_kind: human-verdict` in `_meta.json` per `anvil/lib/snippets/scorecard_kind.md` (the reviewer and reviser consume these outputs as narrative, not as programmatic partial scorecards).
 
 The outline sibling's `_progress.json` carries `for_version: 0` to distinguish it from version-dir progress files. Merge rule (shallow): preserve fields not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the outline sibling's `_progress.json` records `outline.state = done`.
+- **Staging target**: ONLY this command's own `<thread>.0.outline/` sibling.
+- **Commit**: `anvil(slides/outline): <thread>.0 [OUTLINED]`.

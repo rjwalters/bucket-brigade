@@ -6,18 +6,20 @@ description: Reviser command for the proposal skill. Reads the latest version + 
 # proposal-revise — Reviser
 
 **Role**: reviser.
-**Reads**: latest `<thread>.{N}/` and ALL `<thread>.{N}.*/` critic siblings (`.review/`, `.audit/`, and any optional `.critic/`).
-**Writes**: `<thread>.{N+1}/` containing the revised proposal, the class file, figures, `_progress.json`, and a `changelog.md` mapping critic notes to the changes made.
+**Reads**: latest `<thread>/<thread>.{N}/` and ALL `<thread>/<thread>.{N}.*/` critic siblings (nested under the thread root per the artifact contract; `.review/`, `.audit/`, and any optional `.critic/`).
+**Writes**: `<thread>/<thread>.{N+1}/` containing the revised proposal, the class file, figures, `_progress.json`, and a `changelog.md` mapping critic notes to the changes made. Bare `<thread>.{N}/` / `<thread>.{N}.<critic>/` references below are shorthand for these nested paths.
 
 This command is the canonical "N parallel critics, one reviser" pattern from anvil's design principles. It consumes any number of critic siblings at the current version and produces a single revised version that addresses them. For the proposal skill, **both `.review/` and `.audit/` are required** — the reviser refuses to run if either is missing.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version**: highest `N` with `<thread>.{N}/proposal.tex`.
-- **Critic siblings**: ALL `<thread>.{N}.<critic>/` directories at that `N`. BOTH `<thread>.{N}.review/verdict.md` AND `<thread>.{N}.audit/verdict.md` are REQUIRED (the proposal skill runs both critics by default). Optional siblings (a domain specialist `.critic/`) contribute additional findings.
+- **Latest version**: highest `N` with `<thread>.{N}/proposal.tex` under the thread root `<thread>/`.
+- **Critic siblings**: ALL `<thread>.{N}.<critic>/` directories at that `N` (also under the thread root). BOTH `<thread>.{N}.review/verdict.md` AND `<thread>.{N}.audit/verdict.md` are REQUIRED (the proposal skill runs both critics by default). Optional siblings (a domain specialist `.critic/`) contribute additional findings.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of `<thread>.{N}/`:
 
 ```
 <thread>.{N+1}/
@@ -51,7 +53,7 @@ The flag honors the existing `comments.md` severity groupings already emitted by
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex` AND BOTH `<thread>.{N}.review/verdict.md` and `<thread>.{N}.audit/verdict.md`. If either critic sibling is missing, exit with an error ("both review and audit are required before revising; run the missing critic first").
+1. **Discover state**: find the highest `N` with `<thread>.{N}/proposal.tex` AND BOTH `<thread>.{N}.review/verdict.md` and `<thread>.{N}.audit/verdict.md` under the thread root `<thread>/`. If either critic sibling is missing, exit with an error ("both review and audit are required before revising; run the missing critic first").
 2. **Resume check**: if `<thread>.{N+1}/_progress.json.revise.state == done` and `proposal.tex` + `changelog.md` exist, the revision is complete — exit early with a notice.
 3. **Iteration cap check**: read `metadata.max_iterations` from `<thread>.{N}/_progress.json` (or `<thread>/.anvil.json` override; default 4). If `N + 1 > max_iterations`, exit with a `BLOCKED` notice — human review required.
 4. **Combined-advance pre-check**: parse both verdicts. If `review.advance == true` (≥35) AND `audit.pass == true` AND there are no critical flags in either sibling, exit with a notice: the thread is `READY`/`AUDITED`, no revision needed. (Operator can force-run by deleting a verdict or bumping the iteration manually, but the default is to refuse to revise an already-passing version.)
@@ -205,3 +207,13 @@ This command writes the version-dir shape documented in `anvil/lib/snippets/prog
 ```
 
 `metadata.revised_from` helps the orchestrator's anomaly detection catch gaps in the version chain. `metadata.scope` is the resolved `--scope` level for this revision (`"critical-only"`, `"important"` (default), or `"all"`) — see §"CLI flags" for the level semantics and step 7 for the filter logic. The field is a skill-specific extension to the `_progress.json` schema and is preserved by the shallow-merge rule per `anvil/lib/snippets/progress.md`. Absence of the field is tolerated by readers and treated as `"all"` for backwards-compat with pre-this-change version dirs. **This field is audit-trail only — not scored, not gating, not state-machine input.** Use ISO-8601 UTC timestamps per `anvil/lib/snippets/timestamp.md`.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the revise phase `done` on the new version dir.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir.
+- **Commit**: `anvil(proposal/revise): <thread>.{N+1} [REVISED]`.

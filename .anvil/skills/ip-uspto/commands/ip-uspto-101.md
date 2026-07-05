@@ -50,11 +50,11 @@ This critic runs the Alice/Mayo analysis on each independent claim and reports f
   _progress.json    Phase state for the s101 critic
 ```
 
-**Atomicity** (issue #350): the s101 sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`_summary.md`, `findings.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.s101.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.s101/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.s101.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the s101 sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The four files (`_summary.md`, `findings.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.s101.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.s101/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.s101.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.s101)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ## Procedure
 
-1. **Discover state**: highest `N` with `<thread>.{N}/claims.tex`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.s101.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed s101 critic (issue #350). Idempotence: if `<thread>.{N}.s101/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early.
+1. **Discover state**: highest `N` with `<thread>.{N}/claims.tex`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.s101)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.s101.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched (issue #350, #376). Idempotence: if `<thread>.{N}.s101/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early.
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial s101 critic left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.s101.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.{N}.s101/` exists without `_summary.md`, delete and re-run.
 3. **Open the staged sidecar** for the s101 dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.s101, required_files=["_summary.md", "findings.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.s101.tmp/`), NOT inside the final `<thread>.{N}.s101/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`.
 4. **Read inputs**: `spec.tex` (for context on what the invention claims to do) and `claims.tex` (the objects of analysis).
@@ -78,6 +78,7 @@ This critic runs the Alice/Mayo analysis on each independent claim and reports f
    - Any claim that fails Alice/Mayo Step 2 → set `flagged: true`.
    - A pure software claim reciting only generic computer components performing well-understood, routine, conventional activity → set `flagged: true`.
    - A claim that recites a mathematical formula without a specific practical application → set `flagged: true`.
+9b. **Quoted-evidence requirement (issue #464 / #475)**: the Dim 4 justification in the `_summary.md` scorecard (the dim this critic owns) MUST embed at least one **verbatim quote from `spec.tex`** (or the offending claim recitation for an Alice Step 1 / Step 2 call), wrapped in inline double quotes and followed by a location anchor — `("the quoted span" — claim 9 / ¶[0042])` — per `anvil/lib/snippets/rubric.md` §"Dimension scoring guidance" rule 1. A dim scored at **full weight** MAY substitute the by-absence marker `no instance of <X> found` (e.g., Dim 4 at 5/5 with "no instance of a claim reciting only generic computer components found") — absence of defects has no quotable span; below ceiling the quote requirement stands. The quote must be byte-verbatim — a paraphrase presented in quote marks is fabricated evidence, the defect class the step 10b self-check exists to catch. **Elision with `...` / `…` is permitted** (issue #478): a quote may skip intervening text with an ellipsis, provided each elided fragment is itself verbatim, ≥ `MIN_QUOTE_CHARS` normalized chars, in document order, and drawn from one nearby passage (within the verifier's `ELISION_WINDOW_CHARS` proximity window) — do NOT stitch fragments from distant sections into one quote. Em/en dashes may be typed as `--` / `---` (the verifier folds dash variants symmetrically).
 10. **Write `_summary.md`**:
 
     ```markdown
@@ -95,7 +96,7 @@ This critic runs the Alice/Mayo analysis on each independent claim and reports f
     | 1 | Claim breadth & dependency | 5 | null | n/a — see claims critic |
     | 2 | §112(a) written description | 5 | null | n/a — see s112 critic |
     | 3 | §112(b) definiteness | 5 | null | n/a — see s112 critic |
-    | 4 | §101 statutory subject matter | 5 | 3 | Claim 1 passes; claim 9 is on weak Step 2 footing (Enfish-style improvement asserted but spec evidence thin). |
+    | 4 | §101 statutory subject matter | 5 | 3 | Claim 1 passes; claim 9 is on weak Step 2 footing — the asserted improvement is "displaying the result on a display" (claim 9), well-understood routine conventional activity, with thin spec support. |
     | 5 | Novelty positioning | 5 | null | n/a — see priorart critic |
     | 6 | Specification completeness | 5 | null | n/a — see reviewer |
     | 7 | Drawing-text correspondence | 5 | null | n/a — see reviewer |
@@ -108,6 +109,10 @@ This critic runs the Alice/Mayo analysis on each independent claim and reports f
     2. ...
     ```
 
+10b. **Validate quoted evidence (deterministic, write-time self-check)** — issue #464 / #475:
+   - After the `_summary.md` write lands inside the staging dir, invoke `python -m anvil.lib.evidence_check <thread>.{N}/ --scoring <staging dir>/_summary.md` (or call `anvil.lib.evidence_check::check_version_dir(<thread>.{N}/, scoring=<staging dir>/_summary.md)` directly). The verifier extracts the quoted spans from the Dim 4 justification and checks each one against `spec.tex` (curly→straight quote folding, dash-variant folding `—`/`–`/`---`/`--`, whitespace collapse, markdown-emphasis stripping; case-sensitive substring match, with `...`/`…`-elided spans matched fragment-by-fragment in document order within the `ELISION_WINDOW_CHARS` proximity window — issue #478). Classification per justification: ≥1 span matching the body → pass; score at full weight + `no instance of <X> found` marker → pass (ceiling-by-absence); spans present but none matching → **major `fabricated_evidence` finding**; no spans at all → minor `missing_evidence` advisory. `null`-score (un-owned) dimensions are skipped, so this single-dim scorecard is checked cleanly. Anchors are NOT validated (judgment-free scope).
+   - **Findings are a write-time self-check failure — correct before the sidecar lands**: a `missing_evidence` finding means the critic adds the verbatim quote + anchor (or, at full weight, the by-absence marker) to the Dim 4 justification and re-runs the check. A `fabricated_evidence` finding is the hard case — the quoted span does not appear in `spec.tex`, so the critic MUST re-derive the Dim 4 justification from the actual body text (re-read the section, re-quote verbatim, and reconsider whether the score itself was grounded). The check is deterministic and cheaply re-runnable. The staged sidecar MUST NOT exit the context block while `fabricated_evidence` findings persist.
+   - **Advisory boundary**: this self-check governs this critic's OWN staging-dir `_summary.md` only. It does NOT gate the verdict (no new critical-flag category, no change to the aggregator's `advance`), does NOT write a sidecar, and is NEVER run retroactively against existing critic dirs — legacy siblings are immutable and the rule applies to NEW critic runs only.
 11. **Write `findings.md`** with one finding per analyzed claim. Format:
 
     ```markdown
@@ -158,3 +163,14 @@ Standard: completed `_summary.md` is never overwritten; crashed runs re-runnable
 ## Scorecard kind
 
 This critic emits the `machine-summary` scorecard kind per `anvil/lib/snippets/scorecard_kind.md`. The `_meta.json` MUST include `"scorecard_kind": "machine-summary"` so the `ip-uspto-revise` aggregator can correctly discriminate this sibling from any `human-verdict` siblings (e.g., consumer-added narrative critics).
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.s101/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.s101/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(ip-uspto/101): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine, since specialist critics do not advance the state machine on their own.
+

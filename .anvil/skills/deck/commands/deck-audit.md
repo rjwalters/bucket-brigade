@@ -6,8 +6,8 @@ description: Fact / number / citation auditor for the deck skill. Verifies every
 # deck-audit — Fact / citation auditor
 
 **Role**: auditor.
-**Reads**: latest `<thread>.{N}/` (specifically `deck.md`, `speaker-notes.md`, `figures/src/*.csv`, and — when `imagery_policy: generative-eligible` — `assets/_prompts.json` via `anvil/skills/deck/lib/prompt_journal.py`), `<thread>/BRIEF.md`, `<thread>/refs/**`.
-**Writes**: `<thread>.{N}.audit/` with `_summary.md`, `findings.md`, `audit-trail.md` (line-by-line evidence), `_meta.json`, `_progress.json`.
+**Reads**: latest `<thread>/<thread>.{N}/` (the version dir is nested under the thread root per the artifact contract; specifically `deck.md`, `speaker-notes.md`, `figures/src/*.csv`, and — when `imagery_policy: generative-eligible` — `assets/_prompts.json` via `anvil/skills/deck/lib/prompt_journal.py`), `<thread>/BRIEF.md`, `<thread>/refs/**`.
+**Writes**: `<thread>/<thread>.{N}.audit/` with `_summary.md`, `findings.md`, `audit-trail.md` (line-by-line evidence), `_meta.json`, `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.audit/` references below are shorthand for these nested paths.
 
 This auditor is sharper than the generic `audit` critic on other skills (e.g., `memo`): it specifically enforces the deck no-fabrication contract. A deck that ships to investors with a single unattested customer logo is a deck that loses the firm's credibility on first reference-check.
 
@@ -18,11 +18,13 @@ The auditor does **not own any rubric dimension directly** — it does not score
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` (usually a version where `verdict.md` has `advance: true`; audit is typically run as the final pre-send gate).
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/` (usually a version where `verdict.md` has `advance: true`; audit is typically run as the final pre-send gate).
 - **Brief**: `<thread>/BRIEF.md` — canonical source of truth for traction numbers, team bios, assets.
 - **Refs**: `<thread>/refs/**` — secondary sources the brief itself was derived from. Audit can drill through to refs when the brief cites them.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under audit:
 
 ```
 <thread>.{N}.audit/
@@ -33,11 +35,11 @@ The auditor does **not own any rubric dimension directly** — it does not score
   _progress.json
 ```
 
-**Atomicity** (issue #350): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`_summary.md`, `findings.md`, `audit-trail.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the audit sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`_summary.md`, `findings.md`, `audit-trail.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.audit.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.audit/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.audit.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.audit)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ## Procedure
 
-1. **Discover state** + **resume check** (standard). Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.audit.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed auditor session (issue #350). The "completed" check is satisfied when the final-named `<thread>.{N}.audit/` exists — the atomic-rename contract guarantees the dir only exists when complete.
+1. **Discover state** + **resume check** (standard). Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.audit)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.audit.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). The "completed" check is satisfied when the final-named `<thread>.{N}.audit/` exists — the atomic-rename contract guarantees the dir only exists when complete.
 2. **Open the staged sidecar** for the audit dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.audit, required_files=["_summary.md", "findings.md", "audit-trail.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.audit.tmp/`), NOT inside the final `<thread>.{N}.audit/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json` + `_meta.json`.
 3. **Enumerate claims**: walk every slide in `<thread>.{N}/deck.md` and extract:
    - **Numbers**: every number that appears in body text or in a chart (read from `figures/src/*.csv` if a chart is data-driven).
@@ -135,6 +137,13 @@ The auditor does **not own any rubric dimension directly** — it does not score
        { "type": "fabricated_traction", "slide_ref": "Slide 8", "justification": "Boeing customer logo on slide; not in brief Assets inventory; asset file does not exist" },
        { "type": "fabricated_traction", "slide_ref": "Slide 8", "justification": "94% net retention asserted on slide; brief says TBD pending cohort analysis" }
      ]
+     // The `type` field is a short snake_case tag; per `anvil/lib/review_schema.py`
+     // the lib does not enforce a vocabulary. The five standing deck flag types
+     // are `fabricated_traction`, `fabricated_team_credentials`, `market_math_error`,
+     // `absent_ask`, and `incoherent_or_absent_business_model` (the latter raised
+     // by `deck-economics` primary / `deck-review` fallback per `rubric.md`
+     // §"Critical flags"; this auditor does not raise it but MAY surface
+     // entries of that type when re-emitting flags from prior critic siblings).
    }
    ```
    ```
@@ -143,7 +152,9 @@ The auditor does **not own any rubric dimension directly** — it does not score
 
 ## Generative-imagery audit
 
-This section documents the three generative-imagery findings the auditor emits **only when `<thread>/BRIEF.md` frontmatter contains `imagery_policy: generative-eligible`**. When the policy is `deterministic-only`, `consumer-provided`, or absent, the entire section is a no-op — the auditor does not load the prompt journal, does not enumerate generative assets, and does not emit any of the three findings below. Deterministic-only decks see byte-identical audit output regardless of whether this auditor version is the pre- or post-Phase-3G build.
+This section documents the three generative-imagery findings the auditor emits **only when the effective `imagery_policy` is `generative-eligible`** — i.e., when `<thread>/BRIEF.md` frontmatter contains `imagery_policy: generative-eligible` OR (when the BRIEF omits the field) when `.anvil/config.json` `deck.imagegen.default_policy: generative-eligible` supplies a consumer-level override (per issue #547; see `commands/deck-imagegen-adapter.md` § "Optional: `deck.imagegen.default_policy`"). When the effective policy is `deterministic-only`, `consumer-provided`, or absent, the entire section is a no-op — the auditor does not load the prompt journal, does not enumerate generative assets, and does not emit any of the three findings below. Deterministic-only decks see byte-identical audit output regardless of whether this auditor version is the pre- or post-Phase-3G build, AND regardless of whether a sibling thread in the same portfolio has opted into the proactive default.
+
+**Division of labor with `deck-design`** (issue #547 Part 2): this section's three findings enforce **attribution** — every generated PNG must carry concept-render attribution language and avoid the FORBIDDEN documentary-truth phrases. The complementary **additive-ness** check — does a correctly-attributed image actually *earn* its slide footprint? — is owned by `deck-design.md` step 7b (the imagine-then-review additive-ness gate), which emits the `non-additive-generative-image` finding into dim 8. The two contracts are **stacked, not alternatives**: an `additive` verdict does NOT waive attribution; a `detracting` verdict does NOT waive attribution; attribution and additive-ness are independently enforced. This non-waivable composition is what lets the proactive `default_policy` ship safely.
 
 Cross-references for the runtime + journal contract:
 
@@ -279,3 +290,13 @@ Standard.
 - **Respect the generative-imagery gate.** The three generative-imagery findings (`unattributed-generative-imagery`, `prompt-claim-divergence`, `style-incoherence`) fire ONLY when `<thread>/BRIEF.md` frontmatter contains `imagery_policy: generative-eligible`. On any other policy (or absent field), the auditor does NOT open the prompt journal and does NOT enumerate generative assets. This is the load-bearing guarantee that deterministic-only decks see zero behavior change from the Phase 3G extension.
 
 **Scorecard kind declaration**: This critic's `_meta.json` SHOULD include `"scorecard_kind": "human-verdict"` per `anvil/lib/snippets/scorecard_kind.md`. deck-audit is an auditor critic — the audit findings are meant for human consumption (or for the reviser to address narratively), not for programmatic per-dimension aggregation.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.audit/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.audit/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(deck/audit): <thread>.{N} [<state>]` — the bracket carries the thread's derived state per SKILL.md §State machine after the audit lands (`AUDITED` when the audit sits alongside a `READY` version).

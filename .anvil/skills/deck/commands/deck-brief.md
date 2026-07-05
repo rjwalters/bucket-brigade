@@ -7,13 +7,13 @@ description: Intake command for the deck skill. Converts founder raw input (tran
 
 **Role**: intake.
 **Reads**: `<thread>/refs/**` (transcripts, founder memos, website exports, prior decks, exported financials).
-**Writes**: `<thread>/BRIEF.md` (canonical) and `<thread>.0/` (immutable record of the intake pass with its own `_progress.json`).
+**Writes**: `<thread>/BRIEF.md` (canonical) and `<thread>/<thread>.0/` (immutable record of the intake pass with its own `_progress.json` — the intake version dir is nested under the thread root per the artifact contract). Bare `<thread>.0/` references below are shorthand for this nested path.
 
 Brief intake is the pre-draft gate. Pitch decks fail catastrophically when the drafter hallucinates traction or invents market numbers, so the intake's job is to surface what is **actually known** vs. what is **assumed or absent** — and to put the drafter under a no-fabrication contract.
 
 ## Inputs
 
-- **Thread slug** (positional argument): identifies the thread within the cwd portfolio.
+- **Thread slug** (positional argument): identifies the thread directory `<thread>/` under the project root (cwd).
 - **Reference material** (`<thread>/refs/`): anything the founder provides. Transcripts of founder calls, copy from the company website, prior pitch decks (any format), spreadsheets with traction data, term sheets from prior rounds, LinkedIn exports for the team. Treated as read-only context.
 - **Optional consumer overrides**:
   - `.anvil/skills/deck/brief.template.md` — alternative brief shape if the consumer wants different sections.
@@ -24,10 +24,10 @@ Brief intake is the pre-draft gate. Pitch decks fail catastrophically when the d
 ```
 <thread>/
   BRIEF.md           Canonical brief, consumed by drafter and audit
-<thread>.0/
-  BRIEF.md           Immutable snapshot of the brief as produced by this intake run
-  _progress.json     Phase state with brief: done
-  intake-notes.md    What was inferred vs. extracted, what is missing, recommended founder follow-ups
+  <thread>.0/
+    BRIEF.md           Immutable snapshot of the brief as produced by this intake run
+    _progress.json     Phase state with brief: done
+    intake-notes.md    What was inferred vs. extracted, what is missing, recommended founder follow-ups
 ```
 
 ## BRIEF.md schema
@@ -44,6 +44,7 @@ target_close: "2026-Q3"
 target_investors: ["industrial automation seed funds", "deep-tech generalists"]
 imagery_policy: deterministic-only  # one of: generative-eligible | consumer-provided | deterministic-only
 imagery_style: editorial-photography  # OPTIONAL preset key (style preset library lands in Phase 1C / #133)
+theme: acme-brand  # OPTIONAL consumer Marp theme name; default anvil-deck when absent
 ---
 ```
 
@@ -55,11 +56,27 @@ Declares which classes of imagery the drafter is allowed to emit. The drafter re
 - **`consumer-provided`** — drafter expects every image asset to already exist under `<thread>/assets/` (and to appear in the brief's "Assets available" inventory). This is the current implicit behavior for hand-curated decks where the founder has supplied all imagery.
 - **`deterministic-only`** — drafter MUST NOT reference any image asset that doesn't already exist on disk. Only matplotlib charts and mermaid diagrams (which are regenerable from `figures/src/`) may appear on slides. This is the safest setting and the **default** when the field is absent — existing decks continue to behave exactly as they did before this field was introduced.
 
-When the field is omitted entirely from the frontmatter, the brief is treated as `imagery_policy: deterministic-only`. The intake does NOT prompt the founder for a policy value during brief generation; the operator sets the policy by editing `BRIEF.md` after intake (or by hand-writing the frontmatter when the brief is hand-authored).
+When the field is omitted entirely from the frontmatter, the brief is treated as `imagery_policy: deterministic-only` **unless** a consumer-level default is registered (see "Consumer-level default override" below). The intake does NOT prompt the founder for a policy value during brief generation; the operator sets the policy by editing `BRIEF.md` after intake (or by hand-writing the frontmatter when the brief is hand-authored).
+
+##### Consumer-level default override (`.anvil/config.json` `deck.imagegen.default_policy`)
+
+Per issue #547, a consumer can register `deck.imagegen.default_policy` in `.anvil/config.json` to opt every BRIEF that omits `imagery_policy` into a proactive (always-on) generative posture. The resolution order is (highest priority first):
+
+1. `BRIEF.md` frontmatter `imagery_policy:` (per-thread, explicit).
+2. `.anvil/config.json` `deck.imagegen.default_policy` (consumer-level fallback).
+3. Built-in `deterministic-only` (existing default; what this section described before #547).
+
+Setting `default_policy: generative-eligible` in the consumer config saves the operator from repeating `imagery_policy: generative-eligible` in every BRIEF for an aesthetic-craft / consumer-product portfolio. A B2B / technical thread inside the same portfolio can still opt out by setting `imagery_policy: deterministic-only` in its BRIEF — per-thread intent always wins over the consumer-level default.
+
+Both `imagery_policy` and `default_policy` are validated against the same closed enum (`generative-eligible | consumer-provided | deterministic-only`); a typo in either is surfaced as a clear error (config-side at config-read time; BRIEF-side at the existing drafter / `deck-imagegen` gate). See `commands/deck-imagegen-adapter.md` § "Optional: `deck.imagegen.default_policy`" for the registration snippet and the rationale for the proactive default.
 
 #### `imagery_style` (optional)
 
 Preset key naming the visual register the generative pipeline should target (e.g., `editorial-photography`, `technical-illustration`). Defined in Phase 1C of Epic #130 (issue #133 — style preset library). Only meaningful when `imagery_policy == generative-eligible`; ignored otherwise. Absent in v0 of this field — operators who set it before #133 ships should treat the value as advisory documentation only.
+
+#### `theme` (optional, default `anvil-deck`)
+
+Marp theme name (the `@theme` marker of a registered theme CSS) the drafter copies into the generated `deck.md` frontmatter `theme:` line (see `deck-draft.md` step 7). When absent, the drafter uses the shipped default (`theme: anvil-deck`) — existing briefs behave exactly as before. Setting the key only names the theme; the consumer must still register the CSS at `.anvil/skills/deck/templates/<their-theme>.css` and pass it via `--theme-set` on the render line. The porting recipe for brand themes (e.g., from a LaTeX beamer `.sty`) lives at `anvil/lib/snippets/brand-theme-porting.md`.
 
 Required sections:
 
@@ -144,3 +161,13 @@ If `<thread>/.anvil.json` declares a valid paired override (`max_iterations: <N>
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `<thread>/BRIEF.md` and the immutable `<thread>.0/` intake record (whose `_progress.json` records `phases.brief.state = done`) are written.
+- **Staging target**: ONLY `<thread>/BRIEF.md` (a thread-level file, staged explicitly by path) and the `<thread>.0/` intake version dir.
+- **Commit**: `anvil(deck/brief): <thread>.0 [BRIEF_DONE]` — a thread-level intake; the version token is the `<thread>.0` intake record per `git_sync.md` §Commit-message shape → "Non-thread commit shapes".

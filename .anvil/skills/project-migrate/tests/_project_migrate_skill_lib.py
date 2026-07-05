@@ -32,14 +32,20 @@ _LIB_DIR = _SKILL_ROOT / "lib"
 
 _PACKAGE_NAME = "project_migrate_lib"
 
-# project-migrate's lib modules have no intra-package imports today,
-# so order is not load-critical — but we keep dependency-safe order
-# (detect → plan → apply → verify → orchestrate) to match the
-# rubric-rebackport precedent and stay robust against future edits.
+# Dependency-safe load order (detect → plan → apply → enroll →
+# adopt_vn → adopt_family → adopt_review → verify → orchestrate): enroll
+# imports detect/plan/apply; adopt_vn imports detect/plan/apply/enroll;
+# adopt_family imports detect/plan/enroll/adopt_vn; adopt_review imports
+# detect + anvil.lib.{critics,review_schema,sidecar}; orchestrate imports
+# everything.
 _MODULES = [
     "detect",
     "plan",
     "apply",
+    "enroll",
+    "adopt_vn",
+    "adopt_family",
+    "adopt_review",
     "verify",
     "orchestrate",
 ]
@@ -86,13 +92,21 @@ _load_skill_lib_package()
 detect = sys.modules[f"{_PACKAGE_NAME}.detect"]
 plan = sys.modules[f"{_PACKAGE_NAME}.plan"]
 apply_mod = sys.modules[f"{_PACKAGE_NAME}.apply"]
+enroll = sys.modules[f"{_PACKAGE_NAME}.enroll"]
+adopt_vn = sys.modules[f"{_PACKAGE_NAME}.adopt_vn"]
+adopt_family = sys.modules[f"{_PACKAGE_NAME}.adopt_family"]
+adopt_review = sys.modules[f"{_PACKAGE_NAME}.adopt_review"]
 verify = sys.modules[f"{_PACKAGE_NAME}.verify"]
 orchestrate = sys.modules[f"{_PACKAGE_NAME}.orchestrate"]
 
 
 __all__ = [
+    "adopt_family",
+    "adopt_review",
+    "adopt_vn",
     "apply_mod",
     "detect",
+    "enroll",
     "orchestrate",
     "plan",
     "verify",

@@ -103,3 +103,13 @@ The auto-invoke from `memo-migrate` uses `force=False` (the migration itself jus
 - **Bare-URL entries are accepted.** When a §Sources entry has no title (only a bare URL), the slug is derived from the URL's domain + path stem. The stub renders with `_Untitled source_` as the title in the heading — the operator is expected to edit it on the next revise pass.
 - **No PDF extraction.** This command does not fetch URLs or extract content from cited PDFs; it only writes stub files keyed off the §Sources entry text. PDF fetching is out of scope for v0.
 - **Soft-fail when auto-invoked by `memo-migrate`.** The step-13 auto-invoke catches exceptions, records them as notes, and continues — the migration's success contract is not regressed. The standalone command surfaces failures normally.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the stub writes complete. An idempotent no-op re-run seeds nothing, so the hook has nothing to commit and is a silent no-op.
+- **Staging target**: ONLY the `<thread>/refs/` stub files this command seeded (staged explicitly by path — never `git add -A`).
+- **Commit**: `anvil(memo/migrate-refs): <thread>.{N} [<state>]` — `<thread>.{N}` names the thread's latest version and the bracket carries the thread's current derived state per SKILL.md §State machine, since refs seeding does not advance the state machine.
