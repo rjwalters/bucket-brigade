@@ -301,15 +301,17 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
     # deliberately identical: beta is inert in bernoulli extinguish mode
     # (see the SCENARIO_RANDOM_BASELINES provenance comment above), so the
     # two cells are the same effective environment. ``reference`` stays
-    # None because the only committed upper anchor — the #358 double-oracle
-    # NE team payoff, 72.0095 — is a PER EPISODE quantity while gap metrics
-    # are per-STEP: the realized episode length under NE play is not
-    # committed, so no per-step reference can be pinned without a new
-    # measurement (positive payoff + min_nights = 12 only bounds it at
-    # <= 6.0/step). NOT a rest_trap-style social trap: the NE per-step
-    # value (positive) sits far above the -78.27/step random baseline, so
-    # the #436 trap anchors (whose rung ordering assumes NE below random)
-    # do not apply here either. Consumers report uplift_over_random.
+    # None because the committed upper anchor — the FF|hero|hero|FF
+    # epsilon-NE adopted by #459/#466, CRN team payoff 55.36 +/- 3.44
+    # (like the superseded #358 solver record, 72.0095) — is a PER EPISODE
+    # quantity while gap metrics are per-STEP: the realized episode length
+    # under NE play is not committed, so no per-step reference can be
+    # pinned without a new measurement (positive payoff + min_nights = 12
+    # only bounds it at <= 4.7/step). NOT a rest_trap-style social trap:
+    # the NE per-step value (positive) sits far above the -78.27/step
+    # random baseline, so the #436 trap anchors (whose rung ordering
+    # assumes NE below random) do not apply here either. Consumers report
+    # uplift_over_random.
     "asym_b05_k09_c05": {
         "random": SCENARIO_RANDOM_BASELINES["asym_b05_k09_c05"],
         "reference": None,
@@ -318,14 +320,23 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
         "provenance": (
             "Random: issue #435 measurement, n=1000 (200 episodes x 5 "
             "seeds 42..46, #237 protocol), host studio, commit 866f43dd, "
-            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the #358 "
-            "double-oracle NE for this cell (1xhero + 3xfirefighter, "
-            "experiments/nash/phase_diagram/results.json, "
-            "b0.50_k0.90_c0.50) has team payoff = 72.0095 PER EPISODE "
-            "(<= 6.0/step at >= 12 nights) — per-episode vs per-step "
-            "units, so it cannot serve as the fraction-ladder reference. "
-            "Identical to asym_b09_k09_c05 by construction (beta inert in "
-            "bernoulli mode)."
+            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the "
+            "cell's NE profile per the #459 exploitability audit "
+            "(adopted by the #466 coordinated update) is "
+            "firefighter|hero|hero|firefighter — an epsilon-NE at "
+            "epsilon=50 (largest 95% UB deviation gain +13.6/episode) "
+            "with winner's-curse-free CRN team payoff = 55.36 +/- 3.44 "
+            "PER EPISODE (<= 4.7/step at >= 12 nights), decisively "
+            "better than the previously cited #358 double-oracle solver "
+            "record (1xhero + 3xfirefighter, solver payoff 72.0095, "
+            "winner's-curse-biased; CRN paired +9.55 +/- 2.73/episode). "
+            "Verdict: experiments/nash/phase_diagram/exploitability/"
+            "RESULTS.md; genome artifact bucket_brigade/baselines/"
+            "release/local/nash/phase_diagram/b0.10_k0.90_c0.50.json "
+            "(beta-inert, applies to this cell) — per-episode vs "
+            "per-step units, so it cannot serve as the fraction-ladder "
+            "reference. Identical to asym_b09_k09_c05 by construction "
+            "(beta inert in bernoulli mode)."
         ),
     },
     "asym_b09_k09_c05": {
@@ -336,14 +347,23 @@ SCENARIO_GAP_REFERENCES: dict[str, dict[str, object]] = {
         "provenance": (
             "Random: issue #435 measurement, n=1000 (200 episodes x 5 "
             "seeds 42..46, #237 protocol), host studio, commit 866f43dd, "
-            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the #358 "
-            "double-oracle NE for this cell (1xhero + 3xfirefighter, "
-            "experiments/nash/phase_diagram/results.json, "
-            "b0.90_k0.90_c0.50) has team payoff = 72.0095 PER EPISODE "
-            "(<= 6.0/step at >= 12 nights) — per-episode vs per-step "
-            "units, so it cannot serve as the fraction-ladder reference. "
-            "Identical to asym_b05_k09_c05 by construction (beta inert in "
-            "bernoulli mode)."
+            "-78.27/step [95% CI -83.88, -72.81]. Upper anchor: the "
+            "cell's NE profile per the #459 exploitability audit "
+            "(adopted by the #466 coordinated update) is "
+            "firefighter|hero|hero|firefighter — an epsilon-NE at "
+            "epsilon=50 (largest 95% UB deviation gain +13.6/episode) "
+            "with winner's-curse-free CRN team payoff = 55.36 +/- 3.44 "
+            "PER EPISODE (<= 4.7/step at >= 12 nights), decisively "
+            "better than the previously cited #358 double-oracle solver "
+            "record (1xhero + 3xfirefighter, solver payoff 72.0095, "
+            "winner's-curse-biased; CRN paired +9.55 +/- 2.73/episode). "
+            "Verdict: experiments/nash/phase_diagram/exploitability/"
+            "RESULTS.md; genome artifact bucket_brigade/baselines/"
+            "release/local/nash/phase_diagram/b0.10_k0.90_c0.50.json "
+            "(beta-inert, applies to this cell) — per-episode vs "
+            "per-step units, so it cannot serve as the fraction-ladder "
+            "reference. Identical to asym_b05_k09_c05 by construction "
+            "(beta inert in bernoulli mode)."
         ),
     },
 }

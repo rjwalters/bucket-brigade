@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_version": "0.1.0",
+  "release_version": "0.1.1",
   "release_date": "2026-06-08",
   "source_commit": "9adf1d3a",
   "huggingface_repo": "rjwalters/bucket-brigade-baselines",
@@ -84,7 +84,7 @@
       "scenario_id": "minimal_specialization-v1",
       "sha256": "c8804d73c4f3c935dffb6ef3d40c1437f58655fd512cfad5bd83ecafc6a6aaa2",
       "size_bytes": 1834,
-      "notes": "Phase-diagram cell b0.50_k0.90_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point."
+      "notes": "Phase-diagram cell b0.50_k0.90_c0.50 from alc-2; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md."
     },
     {
       "kind": "nash",
@@ -102,7 +102,7 @@
       "scenario_id": "minimal_specialization-v1",
       "sha256": "e24855c14bd8710972dd53358265606a689977d29291f6f86d71382f3b61b1ef",
       "size_bytes": 1834,
-      "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point."
+      "notes": "Phase-diagram cell b0.90_k0.90_c0.50 from alc-6; best converged NE for the (\u03b2, \u03ba, c) point. Anchor update (#459/#466): this solver-selected profile (hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) is also an epsilon-NE and decisively better (CRN paired +9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs 45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE anchor; this file is retained unchanged as the historical solver record. See experiments/nash/phase_diagram/exploitability/RESULTS.md."
     }
   ],
   "extra": {

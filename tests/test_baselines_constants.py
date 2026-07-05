@@ -283,9 +283,11 @@ def test_gap_references_valid_pairs_have_positive_denominator() -> None:
 
 def test_gap_references_asym_cells_are_degenerate_with_per_episode_caveat() -> None:
     """The #435 asym_* entries must stay on the degenerate-reference path:
-    the only committed upper anchor (the #358 double-oracle NE team payoff,
-    72.0095) is a PER EPISODE quantity while gap metrics are per-STEP, so
-    no fraction-ladder reference can be pinned without a new measurement.
+    the committed upper anchor (the FF|hero|hero|FF epsilon-NE adopted by
+    #459/#466, CRN team payoff 55.36 +/- 3.44 — like the superseded #358
+    solver record, 72.0095) is a PER EPISODE quantity while gap metrics
+    are per-STEP, so no fraction-ladder reference can be pinned without a
+    new measurement.
     They must also NOT carry #436 trap anchors — the trap-verdict rung
     ordering assumes NE below random, and here the (positive) NE per-step
     value sits far above the -78.27/step random baseline."""

@@ -60,6 +60,17 @@ non-existent c=0.90 cells, corrected under issue #435):
 | 0.5 | 0.9 | 0.5 | `asymmetric_only` | 72.0095 (14/20 converged) | `asym_b05_k09_c05` |
 | 0.9 | 0.9 | 0.5 | `asymmetric_only` | 72.0095 (14/20 converged) | `asym_b09_k09_c05` |
 
+> **Anchor update (#459 / #466)**: the 72.0095 payoffs above are the
+> solver's best-found record (`hero|FF|FF|FF`, winner's-curse-biased). The
+> #459 exploitability audit adopted `FF|hero|hero|FF` as the cells' NE
+> anchor — an ε-NE at ε = 50 with winner's-curse-free CRN team payoff
+> **55.36 ± 3.44 per episode**, decisively better than `hero|FF|FF|FF`
+> (CRN paired +9.55 ± 2.73/episode). See
+> `experiments/nash/phase_diagram/exploitability/RESULTS.md`; genome
+> artifact
+> `bucket_brigade/baselines/release/local/nash/phase_diagram/b0.10_k0.90_c0.50.json`
+> (β-inert, same game).
+
 These are the only `asymmetric_only` cells in the committed phase diagram.
 Issue #435 registered both as first-class named scenarios
 (`bucket_brigade/envs/scenarios_generated.py`, frozen IDs

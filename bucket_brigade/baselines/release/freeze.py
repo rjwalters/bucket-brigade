@@ -83,8 +83,10 @@ from .manifest import (
 # Default release version stamped into newly-frozen manifests when the
 # operator does not pass --release-version. Bumped manually before a
 # real release (the version controls the per-release HF cache subdir
-# in :mod:`.paths`).
-DEFAULT_RELEASE_VERSION: str = "0.1.0"
+# in :mod:`.paths`). 0.1.0 -> 0.1.1: annotation-only manifest update for
+# the (kappa=0.90, c=0.50) phase-diagram cells (#459/#466); artifact
+# bytes unchanged.
+DEFAULT_RELEASE_VERSION: str = "0.1.1"
 
 
 # Default subdirectory layout inside the release bundle. Mirrors the
@@ -115,6 +117,27 @@ _HETEROGENEOUS_NE_SOURCES: Tuple[Tuple[str, str], ...] = (
 # cluster-host's contribution to the partial sweep; each contains
 # ``cells/<tag>/results.json`` files (see PR #387 / #391).
 _PHASE_DIAGRAM_PREVIEW_ROOT: str = "experiments/nash/phase_diagram/preview"
+
+
+# Per-cell provenance annotations appended to the manifest ``notes`` of
+# specific phase-diagram cells, so re-freezing does not lose them. The
+# artifact files themselves stay byte-identical to the solver record;
+# only the manifest note carries the annotation (issue #466).
+_PHASE_DIAGRAM_CELL_NOTE_SUFFIXES: Dict[str, str] = {
+    tag: (
+        " Anchor update (#459/#466): this solver-selected profile "
+        "(hero|FF|FF|FF, solver team_payoff 72.0095, winner's-curse-"
+        "biased) is an epsilon-NE at epsilon=50, but the FF|hero|hero|FF "
+        "profile frozen at b0.10_k0.90_c0.50.json (beta-inert, same game) "
+        "is also an epsilon-NE and decisively better (CRN paired "
+        "+9.55 +/- 2.73/episode; CRN team payoff 55.36 +/- 3.44 vs "
+        "45.80 +/- 3.58). Cite b0.10_k0.90_c0.50.json as this cell's NE "
+        "anchor; this file is retained unchanged as the historical "
+        "solver record. See experiments/nash/phase_diagram/"
+        "exploitability/RESULTS.md."
+    )
+    for tag in ("b0.50_k0.90_c0.50", "b0.90_k0.90_c0.50")
+}
 
 
 @dataclass(frozen=True)
@@ -440,6 +463,7 @@ def _freeze_phase_diagram_ne(repo_root: Path, bundle_dir: Path) -> List[Artifact
                     notes=(
                         f"Phase-diagram cell {tag} from {host_dir.name}; "
                         "best converged NE for the (β, κ, c) point."
+                        + _PHASE_DIAGRAM_CELL_NOTE_SUFFIXES.get(tag, "")
                     ),
                 )
             )
