@@ -1,0 +1,944 @@
+=== issue #445 seeded DO retry ===
+host: alc-9  branch: feature/issue-445  sha: bf825407
+start: 2026-07-04T14:39:59Z  wall-clock cap: 86000s (~23.9h)
+Computing Nash equilibrium for scenario: rest_trap
+Output directory: experiments/nash/rest_trap_seeded_do
+
+Scenario Parameters:
+  beta (spread):       0.05
+  kappa (extinguish):  0.95
+  c (work cost):       0.20
+  num_agents:          4
+
+Double Oracle Configuration:
+  Simulations per evaluation: 200
+  Max iterations: 50
+  Convergence threshold (ε): 0.01
+  Seed: 42
+
+================================================================================
+Seeded Initial Strategy Pool (9 strategies)
+================================================================================
+Seed profiles file: experiments/nash/seeds/rest_trap_battery_seeds.json
+  [0] (archetype) firefighter: [1.000, 0.900, 0.500, 0.800, 0.500, 0.700, 0.100, 0.000, 0.000, 0.800]
+  [1] (archetype) free_rider: [0.700, 0.200, 0.000, 0.900, 0.000, 0.000, 0.100, 0.000, 0.900, 0.000]
+  [2] (archetype) hero: [1.000, 1.000, 1.000, 0.500, 0.100, 0.500, 0.000, 0.900, 0.000, 1.000]
+  [3] (archetype) coordinator: [0.900, 0.600, 0.700, 0.600, 0.800, 1.000, 0.050, 0.000, 0.200, 0.600]
+  [4] (SEED) specialist_owned_house_firefighter: [1.000, 0.200, 0.000, 1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000]
+  [5] (SEED) firefighter_any_full_work: [1.000, 1.000, 0.800, 0.300, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000]
+  [6] (SEED) conditional_firefighter_fire_responsive: [1.000, 0.000, 0.800, 0.500, 1.000, 0.000, 0.000, 0.000, 0.000, 1.000]
+  [7] (SEED) always_rest: [1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000, 0.000]
+  [8] (SEED) uniform_random: [0.500, 0.500, 0.500, 0.500, 0.500, 0.500, 1.000, 0.000, 0.500, 0.500]
+
+================================================================================
+Running Double Oracle Algorithm
+================================================================================
+
+Starting Double Oracle with 9 strategies
+
+--- Iteration 1 ---
+Computing payoff matrix (9x9)...
+Solving restricted game...
+Equilibrium support size: 3
+  Strategy 3: 0.290
+  Strategy 5: 0.582
+  Strategy 6: 0.128
+Equilibrium payoff: 1754.88
+Computing best response...
+Best response payoff: 1881.94
+Improvement: 127.0690
+Added best response to pool (new size: 10)
+
+--- Iteration 2 ---
+Computing payoff matrix (10x10)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.584
+  Strategy 3: 0.163
+  Strategy 4: 0.201
+  Strategy 8: 0.052
+Equilibrium payoff: 2017.89
+Computing best response...
+Best response payoff: 2042.72
+Improvement: 24.8249
+Added best response to pool (new size: 11)
+
+--- Iteration 3 ---
+Computing payoff matrix (11x11)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.014
+  Strategy 2: 0.467
+  Strategy 7: 0.009
+  Strategy 9: 0.510
+Equilibrium payoff: 1976.37
+Computing best response...
+Best response payoff: 2292.80
+Improvement: 316.4279
+Added best response to pool (new size: 12)
+
+--- Iteration 4 ---
+Computing payoff matrix (12x12)...
+Solving restricted game...
+Equilibrium support size: 3
+  Strategy 5: 0.473
+  Strategy 9: 0.002
+  Strategy 10: 0.526
+Equilibrium payoff: 2086.30
+Computing best response...
+Best response payoff: 2236.10
+Improvement: 149.7999
+Added best response to pool (new size: 13)
+
+--- Iteration 5 ---
+Computing payoff matrix (13x13)...
+Solving restricted game...
+Equilibrium support size: 3
+  Strategy 2: 0.151
+  Strategy 5: 0.627
+  Strategy 7: 0.222
+Equilibrium payoff: 1611.56
+Computing best response...
+Best response payoff: 1761.56
+Improvement: 150.0038
+Added best response to pool (new size: 14)
+
+--- Iteration 6 ---
+Computing payoff matrix (14x14)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 4: 0.091
+  Strategy 8: 0.091
+  Strategy 9: 0.251
+  Strategy 12: 0.067
+  Strategy 13: 0.501
+Equilibrium payoff: 1924.69
+Computing best response...
+Best response payoff: 2137.89
+Improvement: 213.2046
+Added best response to pool (new size: 15)
+
+--- Iteration 7 ---
+Computing payoff matrix (15x15)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.467
+  Strategy 3: 0.043
+  Strategy 8: 0.142
+  Strategy 14: 0.349
+Equilibrium payoff: 2141.54
+Computing best response...
+Best response payoff: 2263.97
+Improvement: 122.4320
+Added best response to pool (new size: 16)
+
+--- Iteration 8 ---
+Computing payoff matrix (16x16)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.352
+  Strategy 10: 0.375
+  Strategy 12: 0.198
+  Strategy 15: 0.075
+Equilibrium payoff: 2216.96
+Computing best response...
+Best response payoff: 2341.92
+Improvement: 124.9614
+Added best response to pool (new size: 17)
+
+--- Iteration 9 ---
+Computing payoff matrix (17x17)...
+Solving restricted game...
+Equilibrium support size: 3
+  Strategy 0: 0.232
+  Strategy 13: 0.118
+  Strategy 15: 0.650
+Equilibrium payoff: 2221.09
+Computing best response...
+Best response payoff: 2341.93
+Improvement: 120.8412
+Added best response to pool (new size: 18)
+
+--- Iteration 10 ---
+Computing payoff matrix (18x18)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.004
+  Strategy 4: 0.023
+  Strategy 5: 0.555
+  Strategy 8: 0.202
+  Strategy 12: 0.215
+Equilibrium payoff: 2027.83
+Computing best response...
+Best response payoff: 2049.90
+Improvement: 22.0731
+Added best response to pool (new size: 19)
+
+--- Iteration 11 ---
+Computing payoff matrix (19x19)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 1: 0.184
+  Strategy 2: 0.536
+  Strategy 5: 0.211
+  Strategy 18: 0.069
+Equilibrium payoff: 1687.85
+Computing best response...
+Best response payoff: 1805.00
+Improvement: 117.1504
+Added best response to pool (new size: 20)
+
+--- Iteration 12 ---
+Computing payoff matrix (20x20)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.349
+  Strategy 3: 0.139
+  Strategy 5: 0.116
+  Strategy 6: 0.142
+  Strategy 12: 0.156
+  Strategy 19: 0.098
+Equilibrium payoff: 1905.04
+Computing best response...
+Best response payoff: 1943.14
+Improvement: 38.0978
+Added best response to pool (new size: 21)
+
+--- Iteration 13 ---
+Computing payoff matrix (21x21)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.545
+  Strategy 15: 0.021
+  Strategy 18: 0.346
+  Strategy 19: 0.089
+Equilibrium payoff: 1984.40
+Computing best response...
+Best response payoff: 2082.86
+Improvement: 98.4609
+Added best response to pool (new size: 22)
+
+--- Iteration 14 ---
+Computing payoff matrix (22x22)...
+Solving restricted game...
+Equilibrium support size: 3
+  Strategy 11: 0.012
+  Strategy 14: 0.591
+  Strategy 19: 0.397
+Equilibrium payoff: 2131.30
+Computing best response...
+Best response payoff: 2434.82
+Improvement: 303.5225
+Added best response to pool (new size: 23)
+
+--- Iteration 15 ---
+Computing payoff matrix (23x23)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.116
+  Strategy 2: 0.104
+  Strategy 10: 0.160
+  Strategy 15: 0.462
+  Strategy 20: 0.159
+Equilibrium payoff: 2193.08
+Computing best response...
+Best response payoff: 2356.69
+Improvement: 163.6100
+Added best response to pool (new size: 24)
+
+--- Iteration 16 ---
+Computing payoff matrix (24x24)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.421
+  Strategy 5: 0.004
+  Strategy 12: 0.267
+  Strategy 16: 0.090
+  Strategy 21: 0.218
+Equilibrium payoff: 2077.98
+Computing best response...
+Best response payoff: 2345.66
+Improvement: 267.6823
+Added best response to pool (new size: 25)
+
+--- Iteration 17 ---
+Computing payoff matrix (25x25)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 3: 0.382
+  Strategy 5: 0.352
+  Strategy 12: 0.033
+  Strategy 20: 0.150
+  Strategy 22: 0.083
+Equilibrium payoff: 1921.21
+Computing best response...
+Best response payoff: 2107.36
+Improvement: 186.1496
+Added best response to pool (new size: 26)
+
+--- Iteration 18 ---
+Computing payoff matrix (26x26)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.302
+  Strategy 9: 0.154
+  Strategy 10: 0.094
+  Strategy 14: 0.052
+  Strategy 21: 0.168
+  Strategy 23: 0.231
+Equilibrium payoff: 2316.61
+Computing best response...
+Best response payoff: 2464.77
+Improvement: 148.1649
+Added best response to pool (new size: 27)
+
+--- Iteration 19 ---
+Computing payoff matrix (27x27)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.321
+  Strategy 15: 0.232
+  Strategy 16: 0.323
+  Strategy 24: 0.010
+  Strategy 25: 0.114
+Equilibrium payoff: 2245.23
+Computing best response...
+Best response payoff: 2394.80
+Improvement: 149.5637
+Added best response to pool (new size: 28)
+
+--- Iteration 20 ---
+Computing payoff matrix (28x28)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.306
+  Strategy 3: 0.356
+  Strategy 13: 0.030
+  Strategy 15: 0.204
+  Strategy 20: 0.057
+  Strategy 26: 0.047
+Equilibrium payoff: 2150.20
+Computing best response...
+Best response payoff: 2359.28
+Improvement: 209.0867
+Added best response to pool (new size: 29)
+
+--- Iteration 21 ---
+Computing payoff matrix (29x29)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.217
+  Strategy 6: 0.123
+  Strategy 17: 0.037
+  Strategy 20: 0.269
+  Strategy 25: 0.065
+  Strategy 28: 0.289
+Equilibrium payoff: 1955.23
+Computing best response...
+Best response payoff: 2028.40
+Improvement: 73.1699
+Added best response to pool (new size: 30)
+
+--- Iteration 22 ---
+Computing payoff matrix (30x30)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 3: 0.271
+  Strategy 13: 0.437
+  Strategy 15: 0.194
+  Strategy 27: 0.068
+  Strategy 29: 0.031
+Equilibrium payoff: 2053.70
+Computing best response...
+Best response payoff: 2206.43
+Improvement: 152.7239
+Added best response to pool (new size: 31)
+
+--- Iteration 23 ---
+Computing payoff matrix (31x31)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.235
+  Strategy 2: 0.116
+  Strategy 3: 0.484
+  Strategy 13: 0.050
+  Strategy 24: 0.115
+Equilibrium payoff: 2173.60
+Computing best response...
+Best response payoff: 2350.71
+Improvement: 177.1098
+Added best response to pool (new size: 32)
+
+--- Iteration 24 ---
+Computing payoff matrix (32x32)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.279
+  Strategy 3: 0.186
+  Strategy 20: 0.093
+  Strategy 24: 0.286
+  Strategy 26: 0.155
+Equilibrium payoff: 2175.55
+Computing best response...
+Best response payoff: 2405.65
+Improvement: 230.0993
+Added best response to pool (new size: 33)
+
+--- Iteration 25 ---
+Computing payoff matrix (33x33)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 6: 0.118
+  Strategy 14: 0.175
+  Strategy 16: 0.122
+  Strategy 20: 0.486
+  Strategy 32: 0.099
+Equilibrium payoff: 2025.34
+Computing best response...
+Best response payoff: 2082.30
+Improvement: 56.9661
+Added best response to pool (new size: 34)
+
+--- Iteration 26 ---
+Computing payoff matrix (34x34)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.285
+  Strategy 11: 0.055
+  Strategy 13: 0.147
+  Strategy 14: 0.298
+  Strategy 25: 0.214
+Equilibrium payoff: 2080.22
+Computing best response...
+Best response payoff: 2268.01
+Improvement: 187.7892
+Added best response to pool (new size: 35)
+
+--- Iteration 27 ---
+Computing payoff matrix (35x35)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.280
+  Strategy 13: 0.117
+  Strategy 16: 0.233
+  Strategy 25: 0.106
+  Strategy 27: 0.244
+  Strategy 30: 0.020
+Equilibrium payoff: 2183.78
+Computing best response...
+Best response payoff: 2369.16
+Improvement: 185.3795
+Added best response to pool (new size: 36)
+
+--- Iteration 28 ---
+Computing payoff matrix (36x36)...
+Solving restricted game...
+Equilibrium support size: 7
+  Strategy 13: 0.179
+  Strategy 17: 0.340
+  Strategy 20: 0.153
+  Strategy 21: 0.014
+  Strategy 24: 0.022
+  Strategy 30: 0.258
+  Strategy 32: 0.033
+Equilibrium payoff: 2185.05
+Computing best response...
+Best response payoff: 2396.13
+Improvement: 211.0795
+Added best response to pool (new size: 37)
+
+--- Iteration 29 ---
+Computing payoff matrix (37x37)...
+Solving restricted game...
+Equilibrium support size: 8
+  Strategy 2: 0.014
+  Strategy 5: 0.136
+  Strategy 13: 0.225
+  Strategy 23: 0.034
+  Strategy 24: 0.112
+  Strategy 25: 0.208
+  Strategy 32: 0.067
+  Strategy 35: 0.204
+Equilibrium payoff: 2100.05
+Computing best response...
+Best response payoff: 2334.97
+Improvement: 234.9111
+Added best response to pool (new size: 38)
+
+--- Iteration 30 ---
+Computing payoff matrix (38x38)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 19: 0.028
+  Strategy 20: 0.350
+  Strategy 21: 0.024
+  Strategy 27: 0.490
+  Strategy 32: 0.108
+Equilibrium payoff: 2140.43
+Computing best response...
+Best response payoff: 2405.54
+Improvement: 265.1163
+Added best response to pool (new size: 39)
+
+--- Iteration 31 ---
+Computing payoff matrix (39x39)...
+Solving restricted game...
+Equilibrium support size: 8
+  Strategy 0: 0.051
+  Strategy 3: 0.114
+  Strategy 15: 0.131
+  Strategy 17: 0.169
+  Strategy 20: 0.263
+  Strategy 23: 0.018
+  Strategy 29: 0.210
+  Strategy 37: 0.044
+Equilibrium payoff: 2312.47
+Computing best response...
+Best response payoff: 2384.13
+Improvement: 71.6612
+Added best response to pool (new size: 40)
+
+--- Iteration 32 ---
+Computing payoff matrix (40x40)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 2: 0.164
+  Strategy 3: 0.084
+  Strategy 9: 0.329
+  Strategy 12: 0.212
+  Strategy 20: 0.210
+Equilibrium payoff: 2148.46
+Computing best response...
+Best response payoff: 2330.39
+Improvement: 181.9318
+Added best response to pool (new size: 41)
+
+--- Iteration 33 ---
+Computing payoff matrix (41x41)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 4: 0.137
+  Strategy 14: 0.063
+  Strategy 19: 0.525
+  Strategy 21: 0.098
+  Strategy 30: 0.032
+  Strategy 34: 0.145
+Equilibrium payoff: 2027.70
+Computing best response...
+Best response payoff: 2145.74
+Improvement: 118.0476
+Added best response to pool (new size: 42)
+
+--- Iteration 34 ---
+Computing payoff matrix (42x42)...
+Solving restricted game...
+Equilibrium support size: 7
+  Strategy 10: 0.117
+  Strategy 15: 0.083
+  Strategy 16: 0.184
+  Strategy 20: 0.317
+  Strategy 24: 0.124
+  Strategy 34: 0.124
+  Strategy 40: 0.050
+Equilibrium payoff: 2292.39
+Computing best response...
+Best response payoff: 2399.15
+Improvement: 106.7588
+Added best response to pool (new size: 43)
+
+--- Iteration 35 ---
+Computing payoff matrix (43x43)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.299
+  Strategy 10: 0.106
+  Strategy 26: 0.050
+  Strategy 33: 0.067
+  Strategy 39: 0.104
+  Strategy 41: 0.375
+Equilibrium payoff: 2286.15
+Computing best response...
+Best response payoff: 2407.08
+Improvement: 120.9262
+Added best response to pool (new size: 44)
+
+--- Iteration 36 ---
+Computing payoff matrix (44x44)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 2: 0.364
+  Strategy 10: 0.137
+  Strategy 12: 0.090
+  Strategy 21: 0.003
+  Strategy 23: 0.055
+  Strategy 40: 0.352
+Equilibrium payoff: 2117.92
+Computing best response...
+Best response payoff: 2375.39
+Improvement: 257.4731
+Added best response to pool (new size: 45)
+
+--- Iteration 37 ---
+Computing payoff matrix (45x45)...
+Solving restricted game...
+Equilibrium support size: 7
+  Strategy 0: 0.164
+  Strategy 5: 0.171
+  Strategy 13: 0.064
+  Strategy 24: 0.168
+  Strategy 25: 0.085
+  Strategy 27: 0.046
+  Strategy 37: 0.303
+Equilibrium payoff: 2163.21
+Computing best response...
+Best response payoff: 2268.57
+Improvement: 105.3638
+Added best response to pool (new size: 46)
+
+--- Iteration 38 ---
+Computing payoff matrix (46x46)...
+Solving restricted game...
+Equilibrium support size: 7
+  Strategy 0: 0.422
+  Strategy 8: 0.007
+  Strategy 23: 0.079
+  Strategy 32: 0.091
+  Strategy 36: 0.222
+  Strategy 40: 0.162
+  Strategy 45: 0.017
+Equilibrium payoff: 2212.84
+Computing best response...
+Best response payoff: 2419.24
+Improvement: 206.3992
+Added best response to pool (new size: 47)
+
+--- Iteration 39 ---
+Computing payoff matrix (47x47)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.246
+  Strategy 10: 0.333
+  Strategy 12: 0.122
+  Strategy 13: 0.137
+  Strategy 16: 0.111
+  Strategy 35: 0.051
+Equilibrium payoff: 2149.26
+Computing best response...
+Best response payoff: 2365.15
+Improvement: 215.8938
+Added best response to pool (new size: 48)
+
+--- Iteration 40 ---
+Computing payoff matrix (48x48)...
+Solving restricted game...
+Equilibrium support size: 7
+  Strategy 0: 0.328
+  Strategy 8: 0.127
+  Strategy 12: 0.084
+  Strategy 19: 0.140
+  Strategy 23: 0.157
+  Strategy 25: 0.065
+  Strategy 36: 0.098
+Equilibrium payoff: 2138.52
+Computing best response...
+Best response payoff: 2279.88
+Improvement: 141.3595
+Added best response to pool (new size: 49)
+
+--- Iteration 41 ---
+Computing payoff matrix (49x49)...
+Solving restricted game...
+Equilibrium support size: 4
+  Strategy 0: 0.263
+  Strategy 17: 0.092
+  Strategy 20: 0.127
+  Strategy 42: 0.519
+Equilibrium payoff: 2274.53
+Computing best response...
+Best response payoff: 2306.89
+Improvement: 32.3651
+Added best response to pool (new size: 50)
+
+--- Iteration 42 ---
+Computing payoff matrix (50x50)...
+Solving restricted game...
+Equilibrium support size: 5
+  Strategy 0: 0.403
+  Strategy 25: 0.250
+  Strategy 26: 0.185
+  Strategy 32: 0.026
+  Strategy 40: 0.136
+Equilibrium payoff: 2205.55
+Computing best response...
+Best response payoff: 2283.64
+Improvement: 78.0863
+Added best response to pool (new size: 51)
+
+--- Iteration 43 ---
+Computing payoff matrix (51x51)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.180
+  Strategy 13: 0.204
+  Strategy 36: 0.264
+  Strategy 37: 0.166
+  Strategy 38: 0.090
+  Strategy 44: 0.096
+Equilibrium payoff: 2120.09
+Computing best response...
+Best response payoff: 2325.47
+Improvement: 205.3778
+Added best response to pool (new size: 52)
+
+--- Iteration 44 ---
+Computing payoff matrix (52x52)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 13: 0.002
+  Strategy 19: 0.030
+  Strategy 20: 0.288
+  Strategy 30: 0.102
+  Strategy 41: 0.078
+  Strategy 48: 0.501
+Equilibrium payoff: 2291.84
+Computing best response...
+Best response payoff: 2303.63
+Improvement: 11.7885
+Added best response to pool (new size: 53)
+
+--- Iteration 45 ---
+Computing payoff matrix (53x53)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 2: 0.374
+  Strategy 9: 0.017
+  Strategy 12: 0.235
+  Strategy 23: 0.234
+  Strategy 26: 0.123
+  Strategy 39: 0.017
+Equilibrium payoff: 2127.00
+Computing best response...
+Best response payoff: 2374.22
+Improvement: 247.2189
+Added best response to pool (new size: 54)
+
+--- Iteration 46 ---
+Computing payoff matrix (54x54)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.369
+  Strategy 9: 0.029
+  Strategy 29: 0.193
+  Strategy 38: 0.185
+  Strategy 42: 0.072
+  Strategy 52: 0.151
+Equilibrium payoff: 2211.96
+Computing best response...
+Best response payoff: 2361.83
+Improvement: 149.8763
+Added best response to pool (new size: 55)
+
+--- Iteration 47 ---
+Computing payoff matrix (55x55)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 0: 0.323
+  Strategy 2: 0.008
+  Strategy 17: 0.277
+  Strategy 29: 0.142
+  Strategy 30: 0.245
+  Strategy 36: 0.005
+Equilibrium payoff: 2228.14
+Computing best response...
+Best response payoff: 2342.78
+Improvement: 114.6343
+Added best response to pool (new size: 56)
+
+--- Iteration 48 ---
+Computing payoff matrix (56x56)...
+Solving restricted game...
+Equilibrium support size: 8
+  Strategy 0: 0.109
+  Strategy 2: 0.155
+  Strategy 20: 0.144
+  Strategy 34: 0.146
+  Strategy 38: 0.057
+  Strategy 42: 0.141
+  Strategy 46: 0.059
+  Strategy 47: 0.190
+Equilibrium payoff: 2143.64
+Computing best response...
+Best response payoff: 2329.88
+Improvement: 186.2366
+Added best response to pool (new size: 57)
+
+--- Iteration 49 ---
+Computing payoff matrix (57x57)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 13: 0.199
+  Strategy 20: 0.172
+  Strategy 21: 0.216
+  Strategy 40: 0.073
+  Strategy 47: 0.093
+  Strategy 48: 0.248
+Equilibrium payoff: 2147.52
+Computing best response...
+Best response payoff: 2312.87
+Improvement: 165.3584
+Added best response to pool (new size: 58)
+
+--- Iteration 50 ---
+Computing payoff matrix (58x58)...
+Solving restricted game...
+Equilibrium support size: 6
+  Strategy 20: 0.357
+  Strategy 27: 0.215
+  Strategy 32: 0.000
+  Strategy 35: 0.177
+  Strategy 37: 0.037
+  Strategy 38: 0.214
+Equilibrium payoff: 2303.53
+Computing best response...
+Best response payoff: 2416.99
+Improvement: 113.4554
+Added best response to pool (new size: 59)
+
+Max iterations (50) reached.
+
+================================================================================
+Nash Equilibrium Results
+================================================================================
+
+Convergence Status: MAX ITERATIONS
+Iterations: 50
+Expected Payoff: 2009.22
+Support Size: 7
+Time elapsed: 19857.4s
+
+================================================================================
+Equilibrium Strategy Distribution
+================================================================================
+
+Strategy 1: Probability = 0.424
+  Classification: Coordinator
+  Closest archetype: Coordinator (distance: 0.000)
+  Parameters:
+    honesty        : ██████████████████░░ 0.900
+    work_tendency  : ███████████░░░░░░░░░ 0.600
+    neighbor_help  : █████████████░░░░░░░ 0.700
+    own_priority   : ████████████░░░░░░░░ 0.600
+    risk_aversion  : ███████████████░░░░░ 0.800
+    coordination   : ███████████████████░ 1.000
+    exploration    : █░░░░░░░░░░░░░░░░░░░ 0.050
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ████░░░░░░░░░░░░░░░░ 0.200
+    altruism       : ████████████░░░░░░░░ 0.600
+
+Strategy 2: Probability = 0.212
+  Classification: Firefighter/Hero
+  Closest archetype: Firefighter (distance: 1.068)
+  Parameters:
+    honesty        : ████████████████████ 1.000
+    work_tendency  : ████████████████████ 1.000
+    neighbor_help  : ████████████████░░░░ 0.800
+    own_priority   : ██████░░░░░░░░░░░░░░ 0.300
+    risk_aversion  : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    coordination   : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    exploration    : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    altruism       : ████████████████████ 1.000
+
+Strategy 3: Probability = 0.130
+  Classification: Firefighter/Hero
+  Closest archetype: Firefighter (distance: 0.000)
+  Parameters:
+    honesty        : ███████████████████░ 1.000
+    work_tendency  : ██████████████████░░ 0.900
+    neighbor_help  : ██████████░░░░░░░░░░ 0.500
+    own_priority   : ███████████████░░░░░ 0.800
+    risk_aversion  : ██████████░░░░░░░░░░ 0.500
+    coordination   : ██████████████░░░░░░ 0.700
+    exploration    : ██░░░░░░░░░░░░░░░░░░ 0.100
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    altruism       : ████████████████░░░░ 0.800
+
+Strategy 4: Probability = 0.117
+  Classification: Firefighter/Hero
+  Closest archetype: Firefighter (distance: 1.068)
+  Parameters:
+    honesty        : ███████████████████░ 1.000
+    work_tendency  : ███████████████████░ 1.000
+    neighbor_help  : ████████████████░░░░ 0.800
+    own_priority   : █████░░░░░░░░░░░░░░░ 0.300
+    risk_aversion  : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    coordination   : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    exploration    : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    altruism       : ████████████████████ 1.000
+
+Strategy 5: Probability = 0.076
+  Classification: Coordinator
+  Closest archetype: Coordinator (distance: 0.000)
+  Parameters:
+    honesty        : ██████████████████░░ 0.900
+    work_tendency  : ████████████░░░░░░░░ 0.600
+    neighbor_help  : ██████████████░░░░░░ 0.700
+    own_priority   : ████████████░░░░░░░░ 0.600
+    risk_aversion  : ████████████████░░░░ 0.800
+    coordination   : ███████████████████░ 1.000
+    exploration    : █░░░░░░░░░░░░░░░░░░░ 0.050
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ████░░░░░░░░░░░░░░░░ 0.200
+    altruism       : ███████████░░░░░░░░░ 0.600
+
+Strategy 6: Probability = 0.034
+  Classification: Coordinator
+  Closest archetype: Coordinator (distance: 0.000)
+  Parameters:
+    honesty        : ██████████████████░░ 0.900
+    work_tendency  : ████████████░░░░░░░░ 0.600
+    neighbor_help  : ██████████████░░░░░░ 0.700
+    own_priority   : ████████████░░░░░░░░ 0.600
+    risk_aversion  : ████████████████░░░░ 0.800
+    coordination   : ███████████████████░ 1.000
+    exploration    : █░░░░░░░░░░░░░░░░░░░ 0.050
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ████░░░░░░░░░░░░░░░░ 0.200
+    altruism       : ███████████░░░░░░░░░ 0.600
+
+Strategy 7: Probability = 0.006
+  Classification: Coordinator
+  Closest archetype: Coordinator (distance: 0.000)
+  Parameters:
+    honesty        : █████████████████░░░ 0.900
+    work_tendency  : ████████████░░░░░░░░ 0.600
+    neighbor_help  : █████████████░░░░░░░ 0.700
+    own_priority   : ███████████░░░░░░░░░ 0.600
+    risk_aversion  : ███████████████░░░░░ 0.800
+    coordination   : ████████████████████ 1.000
+    exploration    : █░░░░░░░░░░░░░░░░░░░ 0.050
+    fatigue_memory : ░░░░░░░░░░░░░░░░░░░░ 0.000
+    rest_bias      : ████░░░░░░░░░░░░░░░░ 0.200
+    altruism       : ███████████░░░░░░░░░ 0.600
+
+================================================================================
+Game-Theoretic Interpretation
+================================================================================
+
+Mixed Strategy Equilibrium:
+  Agents randomize over 7 strategies.
+  This indicates strategic tension - no single strategy dominates.
+
+  Mixing Indifference Condition:
+    All strategies in the support earn equal expected payoff.
+    This balances the incentives between different behaviors.
+
+Cooperative behavior: 100.0%
+Free-riding behavior: 0.0%
+
+✅ Results saved to: experiments/nash/rest_trap_seeded_do/equilibrium.json
+end: 2026-07-04T20:10:58Z  exit code: 0 (124 = wall-clock cap hit)
