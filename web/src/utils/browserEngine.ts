@@ -10,7 +10,14 @@ export type HouseState = 0 | 1 | 2; // SAFE, BURNING, RUINED
 
 export interface Scenario {
   // Fire dynamics
-  prob_fire_spreads_to_neighbor: number; // Probability fire spreads to adjacent house
+  //
+  // NOTE (issue #458): prob_fire_spreads_to_neighbor (beta) is
+  // dynamics-inert in this engine — burn_out_houses runs before
+  // spread_fires in the step order and ruins every still-BURNING house,
+  // so beta never gates a spread. (The Rust core's "continuous"
+  // extinguish mode, where beta is live, is not implemented here.)
+  // Beta is NOT dead code: agents observe it as scenario_info[0].
+  prob_fire_spreads_to_neighbor: number; // Probability fire spreads to adjacent house (dynamics-inert, see #458)
   prob_solo_agent_extinguishes_fire: number; // Probability one agent extinguishes fire
   prob_house_catches_fire: number; // Probability house catches fire each night
 
@@ -212,6 +219,11 @@ export class BrowserBucketBrigade {
 
     // 5. Spread phase
     // Fires spread to neighbors (visible next turn)
+    // NOTE (issue #458): phase 4 has already ruined every still-BURNING
+    // house (this engine is bernoulli-only), so this phase is a
+    // structural no-op and prob_fire_spreads_to_neighbor never gates a
+    // spread. Kept for step-order parity with the Rust core, where the
+    // "continuous" extinguish mode makes fire spread live.
     this.spread_fires();
 
     // 6. Spontaneous ignition phase
@@ -254,6 +266,11 @@ export class BrowserBucketBrigade {
   }
 
   private spread_fires(): void {
+    // Beta-inertness (issue #458): burn_out_houses runs before this phase
+    // and ruins every still-BURNING house, so the `!== 1` guard below
+    // skips every house and prob_fire_spreads_to_neighbor never gates a
+    // spread (zero RNG draws). Mirrors the Rust core's bernoulli-mode
+    // behavior (engine/phases.rs::spread_fires).
     const new_houses = [...this.houses];
 
     for (let house_idx = 0; house_idx < 10; house_idx++) {

@@ -18,7 +18,12 @@ const PerAgentReward = z.union([z.number(), z.array(z.number())]);
 
 export const ScenarioSchema = z.object({
   // Fire dynamics
-  prob_fire_spreads_to_neighbor: z.number().min(0).max(1), // Probability fire spreads to adjacent house
+  // NOTE (issue #458): prob_fire_spreads_to_neighbor (beta) is
+  // dynamics-inert in the default "bernoulli" extinguish mode (burn-out
+  // ruins every burning house before the spread phase runs); it only
+  // shapes dynamics in the Rust core's "continuous" mode. It is still a
+  // live observation feature (scenario_info[0]).
+  prob_fire_spreads_to_neighbor: z.number().min(0).max(1), // Probability fire spreads to adjacent house (dynamics-inert in bernoulli mode, #458)
   prob_solo_agent_extinguishes_fire: z.number().min(0).max(2), // Probability one agent extinguishes fire
   prob_house_catches_fire: z.number().min(0).max(1), // Probability house catches fire each night
 

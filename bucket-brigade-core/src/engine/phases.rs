@@ -99,6 +99,19 @@ impl BucketBrigade {
     }
 
     pub(super) fn spread_fires(&mut self) {
+        // β-inertness (issue #458): in the default "bernoulli" extinguish
+        // mode this phase is a structural no-op. `burn_out_houses` runs
+        // before this phase in the step order (`engine/core.rs`) and
+        // bernoulli burn-out ruins every still-BURNING house, so the
+        // `houses[house_idx] != 1` guard below skips every house:
+        // `prob_fire_spreads_to_neighbor` never gates a spread and this
+        // phase draws zero RNG (cross-β trajectories are bit-identical
+        // under a shared seed — pinned by tests/test_beta_inertness.py).
+        // Fire spread is only live in "continuous" extinguish mode
+        // (#253), where burn-out returns early and fires persist into
+        // this phase. Do NOT "clean up" β as dead code: it is exposed to
+        // agents as scenario_info[0] (`engine/observation.rs`).
+        //
         // Issue #254: ring length is now `scenario.num_houses` rather than a
         // hardcoded 10. The neighbor wraparound modulo also tracks the
         // scenario value so 2-house and other small-ring topologies wrap
@@ -138,7 +151,11 @@ impl BucketBrigade {
         //   * Bernoulli mode (pre-#253 default): every BURNING house that
         //     wasn't extinguished this step transitions to RUINED. Fires
         //     last exactly one step under the Bernoulli outcome — the
-        //     per-step coin flip is make-or-break.
+        //     per-step coin flip is make-or-break. Structural consequence
+        //     (issue #458): because this phase runs before `spread_fires`,
+        //     no house is ever BURNING when the spread phase executes, so
+        //     `prob_fire_spreads_to_neighbor` is dynamics-inert in this
+        //     mode (see the note on `spread_fires` above).
         //
         //   * Continuous mode: fires persist across steps because the
         //     point of the accumulator is to spread suppression credit

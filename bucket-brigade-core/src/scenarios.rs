@@ -371,7 +371,26 @@ pub struct Scenario {
     pub num_houses: u8,
 
     // Fire dynamics
-    pub prob_fire_spreads_to_neighbor: f32, // Probability fire spreads to adjacent house
+    //
+    // NOTE on `prob_fire_spreads_to_neighbor` (β), issue #458: in the
+    // default `"bernoulli"` extinguish mode this parameter is
+    // **dynamics-inert**. The step order in `engine/core.rs` runs the
+    // burn-out phase before the spread phase, and bernoulli burn-out ruins
+    // every still-BURNING house, so `spread_fires` never sees a BURNING
+    // source — β never gates a spread and draws zero RNG (cross-β
+    // trajectories are bit-identical under a shared seed; pinned by
+    // `tests/test_beta_inertness.py`). β only shapes dynamics in the
+    // `"continuous"` extinguish mode (#253), whose burn-out returns early.
+    //
+    // β is NOT dead code, however: it is exposed to every agent as
+    // `scenario_info[0]` (`engine/observation.rs`), so different β values
+    // produce different network inputs for trained policies even in
+    // bernoulli mode. We deliberately do NOT warn when a bernoulli
+    // scenario sets a non-default β — every built-in scenario is
+    // bernoulli-mode with a meaningful-looking β, so a construction-time
+    // warning would fire on all of them. Treat β in bernoulli scenarios
+    // as an observation feature, not a dynamics knob.
+    pub prob_fire_spreads_to_neighbor: f32, // Probability fire spreads to adjacent house (dynamics-inert in bernoulli mode — see note above / #458)
     pub prob_solo_agent_extinguishes_fire: f32, // Probability one agent extinguishes fire
     pub prob_house_catches_fire: f32,       // Probability house catches fire each night
 
