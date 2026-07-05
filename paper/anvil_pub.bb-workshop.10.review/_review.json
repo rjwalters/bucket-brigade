@@ -1,0 +1,150 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.10",
+  "critic_id": "pub-review",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-v2",
+  "scores": [
+    {
+      "dimension": "1_rigor",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L240-L241",
+      "fix": "Add the cross-class higher-budget significance sweep (already named as the camera-ready gate) to lift the ordering-only limit on the headline trainability claim.",
+      "justification": "Method discipline remains exemplary (reduction with owned 3-10x threshold gap; pre-registered k* test with exact/permutation p-values and power floor; ground-truth-then-falsification framing; honest withdrawal of the metric-robustness sentence). Held at 5/6 because the central section-4 correlation rests on a 50-iteration budget whose class separations (0.045/0.036, verified at HEAD) the paper concedes are ordering-only."
+    },
+    {
+      "dimension": "2_evidence",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L612-L618",
+      "fix": "Add class-mean uncertainty (bootstrap CIs) or the cross-class budget sweep so the ordering claim carries quantitative support.",
+      "justification": "Every headline number independently recomputed from the HEAD artifacts matches (class means, homogeneous inversion, rho=0.109 with rho=0.007 verified at pinned revision 22b1fda6, k* battery, -0.108, full rest_trap ladder). Held at 5/6 because the section-4 headline remains ordering-only: the data does not reject the null of equal class means and the mixed class's rank is conceded metric- and noise-sensitive."
+    },
+    {
+      "dimension": "3_contribution",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L111-L145",
+      "justification": "Abstract compressed to ~325 words with one extractable claim per contribution; section-1 enumerates (1)-(5) crisply including the double negative result. The v9 extraction failure is resolved."
+    },
+    {
+      "dimension": "4_related_work",
+      "score": 4,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1174-L1195",
+      "fix": "Re-run pub-litsearch to resolver-verify openspiel2019/psro2017 and survey the exploitability-evaluation line's empirical follow-ups plus any other parametric-family game constructions.",
+      "justification": "The new section-6 paragraph engages OpenSpiel and PSRO/NashConv and cedes the measurable-equilibrium-convergence credit to that tradition, scoping the novelty claim precisely. Held at 4/5: the engagement rests on two memory-entered citations flagged unverified in refs.bib, and the tradition's empirical follow-ups are not surveyed. No litsearch sibling exists; scored on the legacy baseline."
+    },
+    {
+      "dimension": "5_reproducibility",
+      "score": 4,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1266-L1313",
+      "fix": "Complete (or remove) the HuggingFace baselines hosting promise and regenerate the 300/300 bootstrap sweep as a committed experiments/ artifact before camera-ready.",
+      "justification": "The v9 drift defect is verifiably fixed: class means re-derived and Figure 2 re-rendered from HEAD match the paper exactly, so the byte-for-byte claim is literally true. Held at 4/5 for two self-named gaps: baselines hosting still in progress, and the 300/300 sweep + t-interval trace to a PR-review recomputation rather than a regenerable artifact."
+    },
+    {
+      "dimension": "6_figures_tables",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L527-L529",
+      "fix": "Swap the Figure 1 caption clause to 'rows are beta and columns are kappa' (and consider normalizing Figure 1/Figure 2 to one orientation).",
+      "justification": "v9 defects fixed and verified (CF-2 descriptor correct at all three sites; Table 2 overflow gone; captions otherwise self-contained), but the caption half-sentence added in v10 is transposed: it says rows are kappa and columns are beta while the rendered Figure 1 and its generating script have rows=beta, columns=kappa - a new caption/figure contradiction in the headline figure."
+    },
+    {
+      "dimension": "7_prose_structure",
+      "score": 4,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L86-L101",
+      "justification": "Independent pdflatex+bibtex build: 27 pages, 0 overfull hboxes (v9: 10, five severe), 0 broken cross-references or unresolved citations; structure and tense intact; the xurl/path treatment, display-math reward tuple, and itemized verdict ladder resolve every flagged site. Residual log noise is cosmetic."
+    },
+    {
+      "dimension": "8_citation_hygiene",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1356-L1357",
+      "justification": "All 11 cite keys resolve with complete fields plus arXiv IDs; no orphans; no undefined citations in the final pass; the two new entries are honestly flagged for litsearch/audit verification per the existing precedent; repo-internal results cite committed artifact paths."
+    },
+    {
+      "dimension": "9_rhetorical_economy",
+      "score": 3,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L1315-L1354",
+      "fix": "Cut the conclusion's restatement of the abstract arc to the two sentences a reader needs after the body; answer the page-budget question at submission time.",
+      "justification": "The largest v9 duplication is gone (abstract ~700 -> ~325 words; statistics moved to owning sections; caveat restatements collapsed). Held at 3/4: the conclusion still restates the full result arc at near-abstract length, and 13 body pages serve a 4-page workshop brief."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "major",
+      "dimension": "6_figures_tables",
+      "evidence_span": "main.tex:L527-L529",
+      "rationale": "Figure 1's caption says 'within each panel rows are $\\kappa$ and columns are $\\beta$' but the rendered figure and figures/src/phase_diagram.py have rows=beta, columns=kappa; the caption contradicts the figure's own axis labels and its own later 'kappa in {0.3,0.7} columns' clause.",
+      "suggested_fix": "Swap the clause to 'rows are $\\beta$ and columns are $\\kappa$'."
+    },
+    {
+      "severity": "minor",
+      "dimension": "4_related_work",
+      "evidence_span": "main.tex:L1174-L1195",
+      "rationale": "The new exploitability-tradition engagement rests on two memory-entered, disk-unverified citations (openspiel2019, psro2017) and does not survey that line's empirical follow-ups. [related-work]",
+      "suggested_fix": "Re-run pub-litsearch to resolver-verify the new entries and check for additional close prior work; also source the Appendix A named-template citations."
+    },
+    {
+      "severity": "minor",
+      "dimension": "9_rhetorical_economy",
+      "evidence_span": "main.tex:L1315-L1354",
+      "rationale": "The unnumbered conclusion restates the abstract's full result arc at comparable coverage.",
+      "suggested_fix": "Tighten to what-was-established + open-challenge; deduplicate against the abstract."
+    },
+    {
+      "severity": "minor",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1065-L1071",
+      "rationale": "The 300/300 bootstrap-combination sweep and t-interval trace to the PR #460 judge recomputation, not a regenerable experiments/ artifact (honestly footnoted).",
+      "suggested_fix": "Regenerate as a committed script + JSON before camera-ready."
+    },
+    {
+      "severity": "minor",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1308-L1313",
+      "rationale": "HuggingFace baselines hosting remains 'in progress'; the NeurIPS checklist expects it resolved by submission.",
+      "suggested_fix": "Complete or remove the hosting promise before submission (operator task)."
+    },
+    {
+      "severity": "nit",
+      "dimension": "7_prose_structure",
+      "evidence_span": "main.tex:L24",
+      "rationale": "Header comment says the abstract was compressed 'to ~260 words'; the rendered abstract is ~325 words.",
+      "suggested_fix": "Sync the header comment (cosmetic; never renders)."
+    },
+    {
+      "severity": "nit",
+      "dimension": "6_figures_tables",
+      "evidence_span": "main.tex:L937-L940",
+      "rationale": "xurl breaks caption-resident artifact paths without hyphens ('ex periments'), which can be misparsed as a space in the path.",
+      "suggested_fix": "Optionally shorten/alias caption paths; acceptable cost of the 0-overfull fix."
+    },
+    {
+      "severity": "nit",
+      "dimension": "7_prose_structure",
+      "evidence_span": "main.tex:L344-L365",
+      "rationale": "Tagged display equations (S)/(A)/(C) repeat in Appendix B, producing duplicate hyperref destination warnings.",
+      "suggested_fix": "Silence with hypertexnames=false or distinct tags if the audit log-cleanliness bar tightens."
+    }
+  ],
+  "critical_flags": [],
+  "total": 38,
+  "threshold": 35,
+  "verdict": "ADVANCE"
+}

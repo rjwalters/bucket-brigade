@@ -1,0 +1,160 @@
+{
+  "schema_version": "1",
+  "kind": "judgment",
+  "version_dir": "anvil_pub.bb-workshop.9",
+  "critic_id": "pub-review",
+  "model": "claude-fable-5",
+  "rubric": "anvil-pub-v2",
+  "scores": [
+    {
+      "dimension": "1_rigor",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L243-L244",
+      "fix": "Add the cross-class higher-budget sweep (already named as the natural significance gate) or demote the ordering claim one register in abstract and conclusion.",
+      "justification": "Method discipline is exemplary: the reduction, the pre-registered k* class test with exact and permutation p-values and an explicit power floor, and the framing \"we treat the analytical NE characterization as ground truth and the PPO trainability sweep as a falsification test, in that order\" (— §1) are all sound; the β-inertness correction honestly downgrades a prior confirmation to a solver-noise probe. Held at 5/6 because the central §4 correlation rests on a 4-seed, 50-iteration budget whose class separations the paper itself concedes are ordering-only, so the headline trainability claim is structurally under-powered relative to its prominence."
+    },
+    {
+      "dimension": "2_evidence",
+      "score": 5,
+      "max": 6,
+      "critical": false,
+      "evidence_span": "main.tex:L800-L805",
+      "fix": "Re-derive the metric-robustness sentence against the n=20-merged artifact (or a pinned snapshot) and report class-mean CIs instead of bare orderings.",
+      "justification": "Evidence volume is strong (148-run sweep, 20-seed buy-down, 4x/16x ladders, 10k-episode paired batteries, 12/12 equilibrium coverage) and every spot-checked number traces to a committed artifact. But the robustness sentence \"the load-bearing claim is robust to the metric choice\" (— §4) rests on a 0.001 class-mean separation, and recomputing class means from the current committed recalibrated_verdict.json (regenerated 2026-07-04 with n=20 for 8 cells) yields hom means of 0.041 (symmetric) vs 0.046 (mixed) — the claimed ordering inverts on the freshest committed data."
+    },
+    {
+      "dimension": "3_contribution",
+      "score": 4,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L185-L244",
+      "fix": "Compress the abstract to ~250 words; move the per-test statistics to their body sections.",
+      "justification": "The §1 Contributions paragraph enumerates (1)-(5) crisply, including the double negative result: \"we retire two intuitive predictors in sequence and identify the honest remaining signal\" (— §1). Deducted one point because the abstract has grown to roughly a full rendered page carrying dozens of statistics, so the one-sentence-per-item extraction the rubric asks of the abstract now only works from §1, not from the abstract itself."
+    },
+    {
+      "dimension": "4_related_work",
+      "score": 3,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1118-L1126",
+      "fix": "Add a short paragraph engaging OpenSpiel/exploitability-based evaluation and qualify the only-published claim; re-run pub-litsearch.",
+      "justification": "The six-benchmark comparison is honest — the paper \"dominates on exactly one column---NE characterisability---and loses on every other\" (— §Related work) — but the claim \"it is the only published parametric MARL game where the question\" of right-equilibrium convergence admits a ground-truth answer (— Abstract) is never positioned against the small-game equilibrium-computation and exploitability-evaluation tradition (OpenSpiel; PSRO/NashConv-style convergence-to-equilibrium metrics), which is the closest prior line for exactly that evaluative question. No litsearch sibling exists, so the legacy baseline applies; the gap is a real positioning miss, not just a missing bonus."
+    },
+    {
+      "dimension": "5_reproducibility",
+      "score": 4,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "main.tex:L1198-L1209",
+      "fix": "Pin the paper to a versioned snapshot of recalibrated_verdict.json (commit hash or frozen copy) or regenerate Figure 2 and the §4 numbers from the merged data.",
+      "justification": "The apparatus is unusually strong (pip wheel, frozen scenario IDs, parity manifest, per-cell baselines, PAPER_RESULTS.md; all 16 spot-checked artifact paths exist). Deducted because the claim that the v2 recalibrated artifacts \"reproduce byte-for-byte from the committed per-seed summaries\" (— §Discussion, Reproducibility) is stale: the committed recalibrated_verdict.json was regenerated on 2026-07-04 (commit a5b8ccdc) with n=20 means for 8 cells, so re-running figures/src/recalibrated_heatmap.py today produces a Figure 2 that differs from the shipped one (e.g. 0.372 vs 0.043 at the kappa=0.3, c=1.0, beta=0.5 cell); the HuggingFace baselines pathway also remains in progress."
+    },
+    {
+      "dimension": "6_figures_tables",
+      "score": 2,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L521-L546",
+      "fix": "Rewrite the unsampled-cell description at all three sites to name kappa in {0.3, 0.7} at c=0.5, fix the Table 1 caption row-total sentence, and make Table 3 paths line-breakable.",
+      "justification": "Both figures are self-contained and readable, but the headline Figure 1 caption carries a factual error: \"the six unsampled cells (high-$\\kappa\\times c{=}0.5$ corner, subsumed by the $c{=}1.0$ row) are hatched\" (— Fig. 1 caption) — the actual unsampled cells, verified against experiments/nash/phase_diagram/results.json, are the kappa in {0.3, 0.7} columns of the c=0.5 panel, which are neither high-kappa nor a corner; the same wrong phrase recurs in §3 body text, and the Table 1 caption compounds it (\"the row totals are 9 except at $\\kappa=0.7$\" — the kappa=0.3 row also has 6 cells). Table 3's provenance column and caption overflow the right margin (98-105pt overfull)."
+    },
+    {
+      "dimension": "7_prose_structure",
+      "score": 2,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L851-L905",
+      "fix": "Break or footnote the long \\texttt artifact paths (\\path, \\seqsplit, or move provenance to a table footnote) and re-check the log for zero overfulls above ~10pt.",
+      "justification": "Structure and flow are intact and the full pdflatex+bibtex cycle completes with zero unresolved references, but the build logs 10 overfull hboxes of which five are severe (96.7-128.9pt, i.e. up to ~4.5cm of text past the right margin, visually confirmed on rendered pages 10-12), mostly from long inline artifact paths in §5 such as the anchors paragraph following \"A single night consists of seven sequential phases applied in a fixed, load-bearing order\" is clean but §5's long \\texttt paths are not; the rubric names overfull hboxes in body sections explicitly."
+    },
+    {
+      "dimension": "8_citation_hygiene",
+      "score": 5,
+      "max": 5,
+      "critical": false,
+      "evidence_span": "refs.bib:L1-L106",
+      "justification": "All 9 cite keys resolve against refs.bib and every entry carries complete author/title/venue/year fields; the final compile pass reports no instance of an undefined citation found, and no instance of an unsourced load-bearing external claim found — repo-internal results cite committed artifact paths per the repo convention. The Appendix A named-template attributions without cites remain a camera-ready polish item, not a hygiene defect."
+    },
+    {
+      "dimension": "9_rhetorical_economy",
+      "score": 2,
+      "max": 4,
+      "critical": false,
+      "evidence_span": "main.tex:L74-L148",
+      "fix": "One de-duplication pass: state each caveat once in its owning section, cut the abstract to ~250 words, and halve the conclusion.",
+      "justification": "The v7-v9 accretion has real bloat: the abstract alone now runs ~700 words (statistics like \"A $4{\\times}$/$16{\\times}$ budget-scaling ladder sharpens the hardness statement\" (— Abstract) belong in §5, not the abstract), the conclusion restates the abstract at comparable length, and the 26-page artifact serves a 4-page workshop brief. A busy reviewer can no longer extract the contribution in 90 seconds from the abstract; the caveat discipline is admirable but many caveats are stated three or four times (abstract, §1, section body, conclusion)."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "major",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1206-L1209",
+      "rationale": "The committed experiments/p3_specialization/phase_diagram_ppo_v2/recalibrated_verdict.json was regenerated 2026-07-04 (commit a5b8ccdc) with n=20 means for 8 buy-down cells; the paper's headline class means (0.180/0.107/0.059/-0.049), Figure 2 cell values, and the byte-for-byte reproduction claim no longer re-derive from it (current-artifact recomputation gives 0.142/0.096/0.060 on gap_closed_ne).",
+      "suggested_fix": "Pin a frozen snapshot of the artifact (hash or copy) or regenerate Figure 2 and the section-4 class means from the merged data."
+    },
+    {
+      "severity": "major",
+      "dimension": "2_evidence",
+      "evidence_span": "main.tex:L800-L805",
+      "rationale": "The metric-robustness sentence (homogeneous ordering symmetric 0.051 > mixed 0.050) inverts under the current committed artifact (0.041 vs 0.046), so the robust-to-metric-choice claim is contradicted by the freshest committed data.",
+      "suggested_fix": "Re-derive the robustness sentence against the updated artifact and report class-mean CIs."
+    },
+    {
+      "severity": "major",
+      "dimension": "6_figures_tables",
+      "evidence_span": "main.tex:L521-L546",
+      "rationale": "The six unsampled Nash cells are the kappa in {0.3, 0.7} columns of the c=0.5 panel (verified vs results.json), but Figure 1's caption, the section-3 body, and Table 1's caption all describe them as the 'high-kappa x c=0.5 corner' and 'row totals are 9 except at kappa=0.7'.",
+      "suggested_fix": "Correct the unsampled-cell description at all three sites."
+    },
+    {
+      "severity": "major",
+      "dimension": "7_prose_structure",
+      "evidence_span": "main.tex:L851-L905",
+      "rationale": "Five severe overfull hboxes (96.7-128.9pt) put text visibly into the right margin on rendered pages 4 and 10-12, driven by long inline \\texttt artifact paths added in v7-v9.",
+      "suggested_fix": "Make the long artifact paths line-breakable or move them to footnotes/table notes."
+    },
+    {
+      "severity": "major",
+      "dimension": "4_related_work",
+      "evidence_span": "main.tex:L144-L147",
+      "rationale": "related-work: the 'only published parametric MARL game' claim (abstract, related work, conclusion) is never positioned against the OpenSpiel / exploitability-evaluation (NashConv, PSRO) tradition, the closest prior line for measuring convergence-to-equilibrium quality; no litsearch sibling exists to substantiate the survey.",
+      "suggested_fix": "related-work: re-run pub-litsearch targeting equilibrium-computation benchmarks and exploitability-based MARL evaluation; engage or qualify the claim."
+    },
+    {
+      "severity": "minor",
+      "dimension": "9_rhetorical_economy",
+      "evidence_span": "main.tex:L74-L148",
+      "rationale": "The abstract runs ~700 words (a full rendered page) and the conclusion restates it at comparable length; caveats repeat at up to four sites.",
+      "suggested_fix": "Cut the abstract to ~250 words and de-duplicate caveats to their owning sections."
+    },
+    {
+      "severity": "minor",
+      "dimension": "8_citation_hygiene",
+      "evidence_span": "main.tex:L1547-L1599",
+      "rationale": "Carry-forward from the v6 review: Appendix A's named game-theory templates (Volunteer's Dilemma, Public Goods, Stag Hunt) still ship without cite keys.",
+      "suggested_fix": "Add one canonical citation per named template for the camera-ready."
+    },
+    {
+      "severity": "minor",
+      "dimension": "1_rigor",
+      "evidence_span": "main.tex:L1735-L1737",
+      "rationale": "Carry-forward from the v6 review: the small-q(k) Taylor linearisation in Appendix B.2 is still not named among the 'Five sources of systematic bias' in B.5.",
+      "suggested_fix": "Name the linearisation as a sixth bias source or footnote it at the Taylor step."
+    },
+    {
+      "severity": "nit",
+      "dimension": "5_reproducibility",
+      "evidence_span": "main.tex:L1235-L1240",
+      "rationale": "HuggingFace baselines pathway is still 'in progress and not yet complete' (unchanged since v6).",
+      "suggested_fix": "Update the status for the camera-ready."
+    }
+  ],
+  "critical_flags": [],
+  "total": 32,
+  "threshold": 35,
+  "verdict": "REVISE",
+  "unscored": false
+}

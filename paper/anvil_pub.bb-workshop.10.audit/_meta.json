@@ -1,0 +1,10 @@
+{
+  "critic": "pub-audit",
+  "scorecard_kind": "human-verdict",
+  "started": "2026-07-05T13:40:00Z",
+  "finished": "2026-07-05T14:14:42Z",
+  "model": "claude-fable-5",
+  "schema_version": 1,
+  "rubric_id": null,
+  "notes": "Fact/citation/build re-audit per .anvil/skills/pub/commands/pub-audit.md; CF-1/CF-2 clearance pass after v10 pub-revise. Corpus tier inactive (no corpus: key in BRIEF.md frontmatter) -- no .corpus-audit sibling written, pre-#612 behavior. Repo HEAD at audit time: bf26f818."
+}
