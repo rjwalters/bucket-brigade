@@ -1,0 +1,14 @@
+{
+  "artifact": "kstar_phase_diagram.json",
+  "description": "Full 75-cell coordination-threshold (k*) phase-diagram sweep over the (beta, kappa, c) grid of minimal_specialization-v1. k* is the smallest coalition size k in 1..4 whose best simultaneous deviation from the uniform policy yields a per-step team-return gap with bootstrap CI lower bound > 0.",
+  "source_repo": "rjwalters/thrust",
+  "source_path": "docs/research/data/2026-07-kstar-phase-diagram.json",
+  "source_commit": "4d5d8f4f6ccc209773e4f2bdae240e5f532a2787",
+  "source_pr": "rjwalters/thrust#290",
+  "source_issue": "rjwalters/thrust#269",
+  "git_blob_sha": "305f0ab9d6f622cf1fbec9e315b6bb65fa6688ff",
+  "sha256": "d7f7cbb6eb7478b92c1878ea49ec607f31912b684ca6544fd630ef414a3f03e3",
+  "retrieved": "2026-07-05",
+  "retrieval_command": "gh api repos/rjwalters/thrust/contents/docs/research/data/2026-07-kstar-phase-diagram.json --jq .content | base64 -d",
+  "notes": "Committed verbatim so the issue #430 Task 2 join (kstar_vs_trainability.py) is reproducible without cross-repo access. Per #442 / thrust#458, beta is inert: the 75 (beta, kappa, c) cells collapse to 15 effective (kappa, c) columns with identical k* (in this artifact k* is a pure function of kappa)."
+}
