@@ -182,3 +182,26 @@ trap-escape verdict for degenerate-reference (social-trap) rows, computed by
   `always_rest` (288.55) and the NE bound (≤ 248.67) are both *below*
   random: the trap is real, and a fully-scripted specialist team
   demonstrates the scenario is not reward-capped at random-level play.
+
+### het_ppo / rest_trap (#444 rung 1): budget scaling — first `escaped_trap` at 16×, recorded in separate roots
+
+The 1× het_ppo row above stays `at_random`, but the #444 trap-escape
+ladder's rung 1 re-ran het_ppo + ippo on rest_trap at 4× and 16× the
+tier-1 budget (200 / 800 iterations × 2048 rollout steps, 20 seeds each).
+Those cells live in budget-suffixed sibling roots — budget is encoded in
+the root path, not the cell name, so they are aggregated separately and
+do **not** appear in this table:
+
+- `tier1_runs_trap_escape/4x/tier1_verdict.md` — het_ppo and ippo both
+  `at_random` (het_ppo CI lower bound 304.03 misses the 304.31 anchor by
+  0.28/step).
+- `tier1_runs_trap_escape/16x/tier1_verdict.md` — **het_ppo
+  `escaped_trap`** (trailing-5 307.83, CI [305.00, 310.71]; ippo stays
+  `at_random`). The escape is marginal and variance-driven: the mean is
+  flat across 1×/4×/16× (306.26 → 307.66 → 307.83; all paired budget
+  contrasts n.s.), only the seed spread tightens. Mean uplift +4.96/step
+  is ≈ 6% of the 83.7/step scripted headroom.
+
+Per the pre-registered #444 stopping rule (any `escaped_trap` ends the
+ladder), rung 1 is the ladder's terminal rung. Full caveats in the
+per-root `tier1_verdict_notes.md` files and `docs/PAPER_RESULTS.md` §9.

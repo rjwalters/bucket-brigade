@@ -301,6 +301,10 @@ experiments/hyperparameter_tuning/
 # bloat the repo (8+ MB per 7-cell sweep).
 experiments/p3_specialization/phase_diagram_ppo/**/policies/*.pt
 
+# Trap-escape ladder launch logs (#444): per-window tmux tee output from the
+# remote host; the same per-iteration data is committed in seed_*/metrics.json.
+experiments/p3_specialization/tier1_runs_trap_escape/**/*.log
+
 # Paper LaTeX build byproducts (Anvil pub skill regenerates from main.tex+refs.bib)
 paper/**/*.aux
 paper/**/*.bbl
