@@ -40,6 +40,8 @@ This command is the canonical "N parallel critics, one reviser" pattern. For the
    - `<thread>.{N}.audit/`: `verdict.md` + `findings.md` + `evidence.md`.
    - Every other `<thread>.{N}.<critic>/` sibling discovered on disk (e.g., a consumer-added `.critic/`).
    - `_project.md` for ongoing recipient context.
+   - **Voice grounding docs (conditional — issues #461, #578)**: when the project BRIEF declares a top-level `voice:` block, read the resolved voice docs via `anvil/lib/project_brief.py::resolve_voice_docs(<project_dir>)` alongside the critic feedback and **preserve voice signatures the reviewer flagged as working** — voice-grounded revision must not sand off the persona while chasing rubric points (see `anvil/lib/snippets/voice_grounding.md` §"Reviser contract"). No `voice:` block → skip; behavior is byte-identical to pre-#578.
+     - **Subject voice tier (conditional — issue #613)**: when the BRIEF declares `voice.subjects`, ALSO resolve them via `anvil/lib/project_brief.py::resolve_subject_voice_docs(<project_dir>)` and read each speaker's transcript corpus (+ `voice_doc`) alongside the critic feedback. **The one-line preservation rule extends to subject voices**: preserve the subject voice signatures the reviewer flagged as working — a reconstructed line the reviewer marked corpus-faithful must NOT be sanded into model polish while chasing rubric points (`voice_grounding.md` §"Subject voice tier" → Reviser contract). When a **Misattribution** critical flag was raised (report-review step 6), addressing it MUST mean re-voicing the line into the correct speaker's cadence (or moving it to the right speaker's mouth) — not deleting the dialogue; like every critical flag it MUST be addressed, never `declined`. No `voice.subjects` list → skip this sub-bullet; behavior is byte-identical to pre-#613.
 7. **Build a revision plan**:
    - For each rubric dimension that scored below threshold (or had a critical flag), enumerate the specific changes required to lift the score.
    - For each `comments.md` entry tagged `blocker` or `major`, plan a concrete change.
@@ -108,3 +110,13 @@ After this command produces `<thread>.{N+1}/`, the orchestrator should run BOTH 
 Merge rule (shallow): preserve fields not touched by this command. See `anvil/lib/snippets/progress.md` for the full read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC format.
 
 Note `metadata.revised_from` — the version this revision was produced from. Helpful for the orchestrator's anomaly detection (catches gaps in the version chain).
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the revise phase `done` on the new version dir.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir.
+- **Commit**: `anvil(report/revise): <thread>.{N+1} [REVISED]`.

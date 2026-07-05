@@ -6,18 +6,20 @@ description: Reviser command for the slides skill. Reads the latest version + al
 # slides-revise — Reviser
 
 **Role**: reviser.
-**Reads**: latest `<thread>.{N}/` (deck.md + notes/* + figures/) AND ALL `<thread>.{N}.*/` critic siblings (`.review/`, `.audit/`, `.rehearse/`, `.vision/`, and any others).
-**Writes**: `<thread>.{N+1}/` containing the revised deck, notes, figures, `_progress.json`, and a `changelog.md` mapping critic notes to the changes made.
+**Reads**: latest `<thread>/<thread>.{N}/` (the version dir is nested under the thread root per the artifact contract; deck.md + notes/* + figures/) AND ALL `<thread>/<thread>.{N}.*/` critic siblings (`.review/`, `.audit/`, `.rehearse/`, `.vision/`, and any others).
+**Writes**: `<thread>/<thread>.{N+1}/` containing the revised deck, notes, figures, `_progress.json`, and a `changelog.md` mapping critic notes to the changes made. Bare `<thread>.{N}/` / `<thread>.{N}.<critic>/` references below are shorthand for these nested paths.
 
 This command is the "N parallel critics, one reviser" pattern from anvil's design principles. It consumes any number of critic siblings at the current version and produces a single revised version that addresses them.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version**: highest `N` with `<thread>.{N}/deck.md`.
-- **Critic siblings**: ALL `<thread>.{N}.<critic>/` directories at that `N`. At minimum the `.review/` sibling is required (the reviewer's verdict drives the dimension-by-dimension revision plan). The `.audit/` and `.rehearse/` siblings, when present, contribute additional findings — and `wrong` audit verdicts or set density/time flags MUST be addressed (they short-circuit advancement). The `.vision/` sibling (per `slides-vision.md`), when present, contributes the rendered-artifact scorecard (`kind=vision`, discovered via `anvil.lib.critics.discover_critics`): its `vertical_overflow`/`label_cropping`/`axis_legibility`/`palette_adherence`/`mathtext_artifacts`/`slide_density` dims and its `rendered_overflow_unrecoverable` / `mathtext_artifact_breaks_meaning` critical flags MUST be addressed if set.
+- **Latest version**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
+- **Critic siblings**: ALL `<thread>.{N}.<critic>/` directories at that `N` (also under the thread root). At minimum the `.review/` sibling is required (the reviewer's verdict drives the dimension-by-dimension revision plan). The `.audit/` and `.rehearse/` siblings, when present, contribute additional findings — and `wrong` audit verdicts or set density/time flags MUST be addressed (they short-circuit advancement). The `.vision/` sibling (per `slides-vision.md`), when present, contributes the rendered-artifact scorecard (`kind=vision`, discovered via `anvil.lib.critics.discover_critics`): its `vertical_overflow`/`label_cropping`/`axis_legibility`/`palette_adherence`/`mathtext_artifacts`/`slide_density` dims and its `rendered_overflow_unrecoverable` / `mathtext_artifact_breaks_meaning` critical flags MUST be addressed if set.
 
 ## Outputs
+
+Nested under the thread root `<thread>/`, as a sibling of `<thread>.{N}/`:
 
 ```
 <thread>.{N+1}/
@@ -30,7 +32,7 @@ This command is the "N parallel critics, one reviser" pattern from anvil's desig
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` AND at least `<thread>.{N}.review/verdict.md`. If no review exists, exit with an error ("no review to revise against; run `slides-review` first").
+1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` AND at least `<thread>.{N}.review/verdict.md` under the thread root `<thread>/`. If no review exists, exit with an error ("no review to revise against; run `slides-review` first").
 2. **Resume check**: if `<thread>.{N+1}/_progress.json.revise.state == done` and `deck.md` + `changelog.md` exist, the revision is complete — exit early with a notice.
 3. **Iteration cap check**: read `metadata.max_iterations` from `<thread>.{N}/_progress.json` (or `<thread>/.anvil.json` override; default 4). If `N + 1 > max_iterations`, exit with a `BLOCKED` notice — human review required.
 4. **Verdict pre-check**: parse `<thread>.{N}.review/verdict.md`. If `advance == true` and there are no critical flags from any sibling (review, audit, rehearse), exit with a notice: the thread is `READY`, no revision needed. (Operator can force-run by deleting the verdict or bumping the iteration manually, but the default is to refuse to revise an already-passing version.)
@@ -122,3 +124,13 @@ After this command produces `<thread>.{N+1}/`, the orchestrator runs all three c
 Merge rule (shallow): preserve fields not touched by this command. See `anvil/lib/snippets/progress.md` for the full read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC format. `metadata.revised_from` is a slides-revise extension preserved by the shallow merge.
 
 Note `metadata.revised_from` — the version this revision was produced from. Helpful for the orchestrator's anomaly detection (catches gaps in the version chain).
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the revise phase `done` on the new version dir.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir.
+- **Commit**: `anvil(slides/revise): <thread>.{N+1} [REVISED]`.

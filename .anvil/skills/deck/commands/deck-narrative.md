@@ -1,13 +1,13 @@
 ---
 name: deck-narrative
-description: Narrative-arc critic for the deck skill. Reads the deck end-to-end as a single argument and scores rubric dims 1 (narrative arc) and 7 (ask specificity).
+description: Narrative-arc critic for the deck skill. Reads the deck end-to-end as a single argument and scores rubric dims 1 (narrative arc), 7 (ask specificity), and 9 (rhetorical economy).
 ---
 
 # deck-narrative — Narrative-arc critic
 
 **Role**: narrative-arc critic.
-**Reads**: latest `<thread>.{N}/deck.md` (full read, in slide order) + `speaker-notes.md` + `<thread>/BRIEF.md`.
-**Writes**: `<thread>.{N}.narrative/` with `_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` (the version dir is nested under the thread root per the artifact contract; full read, in slide order) + `speaker-notes.md` + `<thread>/BRIEF.md`.
+**Writes**: `<thread>/<thread>.{N}.narrative/` with `_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.narrative/` references below are shorthand for these nested paths.
 
 This critic evaluates the deck as a **single story** rather than slide-by-slide. The other critics look at individual slides; this critic asks whether the slides cohere into an argument that ends in an ask.
 
@@ -15,34 +15,37 @@ This critic evaluates the deck as a **single story** rather than slide-by-slide.
 
 - **1 — Narrative arc** (weight 6) — the deck flows from problem → solution → why-now → why-us → ask as a single argument.
 - **7 — Ask specificity** (weight 5) — round size, use of funds, runway-to-milestone are concrete and follow from the setup.
+- **9 — Rhetorical economy** (weight 4) — could a busy investor extract the ask in 90 seconds; are slides 18+ load-bearing; could the same arc reach the ask in fewer slides.
 
-Total ownership: 11/40 (the highest-leverage 11 points in the rubric).
+Total ownership: 15/49 (the highest-leverage 15 points in the rubric; post-#551 the rubric pool is /49 with dim 10 *Business-model & unit-economics credibility* owned by `deck-economics` (primary, post-#551) with `deck-review` retained as fallback — see `rubric.md`).
 
 Other rubric dimensions are scored by other critics and remain `null` in this critic's `_summary.md`.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **Brief**: `<thread>/BRIEF.md` (to verify the deck's ask matches the brief's ask).
 - **Optional rubric override**: `.anvil/skills/deck/rubric.overrides.md`.
 
 ## Outputs
 
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under critique:
+
 ```
 <thread>.{N}.narrative/
-  _summary.md       8-dim partial scorecard (dims 1 + 7 scored; others null) + critical-flag bool
+  _summary.md       9-dim partial scorecard (dims 1 + 7 + 9 scored; others null) + critical-flag bool
   findings.md       Itemized findings (severity, slide ref or sequence ref, rationale, suggested fix)
   comments.md       Sequence-level commentary (transitions, missing bridges, slide-order issues)
   _meta.json        { "critic": "narrative", "role": "deck-narrative.md", ... }
   _progress.json    Phase state for this critic
 ```
 
-**Atomicity** (issue #350): the narrative sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.narrative.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.narrative/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.narrative.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the narrative sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five files (`_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.narrative.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.narrative/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.narrative.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.narrative)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ## Procedure
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md`. Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.narrative.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed critic session (issue #350). If `<thread>.{N}.narrative/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early (idempotent).
+1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`. Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.narrative)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.narrative.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). If `<thread>.{N}.narrative/` exists (the atomic-rename contract guarantees the dir only exists when complete), exit early (idempotent).
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial narrative critic left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.{N}.narrative.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.{N}.narrative/` exists WITHOUT `_summary.md`, delete the dir and re-run.
 3. **Open the staged sidecar** for the narrative dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.narrative, required_files=["_summary.md", "findings.md", "comments.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.narrative.tmp/`), NOT inside the final `<thread>.{N}.narrative/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json` and `_meta.json`.
 4. **Read deck.md end-to-end** as one document. Read speaker-notes.md in parallel. Read BRIEF.md for the canonical ask.
@@ -59,14 +62,27 @@ Other rubric dimensions are scored by other critics and remain `null` in this cr
    - Use of funds broken down? (engineering / GTM / hires / runway, with rough percentages or dollar amounts).
    - Runway-to-milestone framing? ("$3M gets us to $5M ARR over 18 months", not just "$3M for 18 months runway").
    - Does the ask in deck.md match the ask in BRIEF.md? If not, flag — drafter or brief is out of sync.
-   - **Critical flag — `Absent ask`**: trigger if any of round size / use of funds / runway-to-milestone is missing entirely, OR if the ask is so vague it gives the investor permission to say "interesting, keep me posted."
-7. **Identify additional findings**:
+   - **Critical flag — `Absent ask`**: trigger if any of round size / use of funds / runway-to-milestone is missing entirely, OR if the ask is so vague it gives the investor permission to say "interesting, keep me posted." (Structural twin: `Incoherent or absent business model` is the parallel dim-10 critical flag owned by `deck-economics` — this critic owns the ask-side disqualifier; `deck-economics` owns the model-side disqualifier. Both are standing critical flags per `rubric.md` §"Critical flags".)
+7. **Evaluate rhetorical economy** (Dim 9, weight 4):
+   - Could a busy investor extract the ask in 90 seconds?
+   - Are slides 18+ load-bearing? Could the same arc reach the ask in fewer slides?
+   - Decks lose to bloat hardest of any skill — a 30-slide deck is fatal regardless of per-slide quality. Score against `rubric.md` dim 9.
+   - **Quoted-evidence requirement (issue #464 / #475)**: each scored dimension's `justification` string in the `_summary.md` JSON `dimensions` block (dims 1 / 7 / 9 — the dims this critic owns) MUST embed at least one **verbatim quote from `deck.md`**, wrapped in inline double quotes and followed by a location anchor — `("the quoted span" — Slide 4)` — per `anvil/lib/snippets/rubric.md` §"Dimension scoring guidance" rule 1. A dim scored at **full weight** MAY substitute the by-absence marker `no instance of <X> found` (e.g., dim 9 at 4/4 with "no instance of a padded sub-15-slide deck found") — absence of defects has no quotable span; below ceiling the quote requirement stands. The quote must be byte-verbatim from the deck body — a paraphrase presented in quote marks is fabricated evidence, the defect class the step 9b self-check exists to catch. **Elision with `...` / `…` is permitted** (issue #478): a quote may skip intervening text with an ellipsis, provided each elided fragment is itself verbatim, ≥ `MIN_QUOTE_CHARS` normalized chars, in document order, and drawn from one nearby passage (within the verifier's `ELISION_WINDOW_CHARS` proximity window) — do NOT stitch fragments from distant slides into one quote. Em/en dashes may be typed as `--` / `---` (the verifier folds dash variants symmetrically).
+8. **Identify additional findings**:
    - Missing logical bridges between slides (specific examples).
    - Slides that don't earn their place (could be cut without weakening the argument).
    - Slides that should be added (e.g., missing competitive-positioning slide makes the differentiation claim float).
    - Speaker-notes that contradict slide content (a sign the drafter is hedging).
    - Stubs and TODOs left over from the draft (e.g., `[TODO: traction number from brief]`).
-8. **Write `_summary.md`**:
+   - **Slide order / boundaries that split a contiguous argument arc** (e.g., Competition sitting between Solution and Product, splitting the product story); these become `[structural]` findings per the kind-axis rule below.
+
+   **Finding-kind axis** (in addition to the severity axis `[blocker]` / `[major]` / `[minor]` / `[nit]`): every finding carries a **kind** marker that classifies *how the reviser is expected to resolve it*. Two kinds:
+
+   - **`[in-place]`** — the default. The finding is resolved by a clause-level edit on the slide as it stands: rewrite a bullet, add a transitional sentence, change a number, replace a stub. Slide order, slide count, and slide boundaries are preserved.
+   - **`[structural]`** — the finding is resolved by a **reorder / merge / split / drop** of slides. In-place clause edits do NOT satisfy a `[structural]` finding; the underlying arc problem is the slide-level structure itself. The reviser gains explicit restructure authority on `[structural]` findings (see `commands/deck-revise.md` step 7 + step 8). Use `[structural]` when the suggested fix names a reorder ("move Competition to before Solution"), a merge ("collapse Slides 9+10 into one Business model + Team slide"), a split ("split Slide 4 into Solution architecture + Solution workflow"), or a drop ("cut Slide 11; financials are already covered in the Ask").
+
+   The kind axis is **orthogonal to severity**: a `[major][structural]` finding is a slide-level reorder that blocks advance; a `[minor][in-place]` finding is a transitional-sentence add that doesn't. Other deck critics (`deck-review`, `deck-market`, `deck-design`, `deck-economics`) MAY also emit `[structural]` findings when the resolution requires slide-level restructure (e.g., a market-critic finding that the Competition slide is splitting the product story); the reviser detects "structural" via the `[structural]` kind marker regardless of which critic emitted it.
+9. **Write `_summary.md`**:
    ```markdown
    # Narrative critic summary
 
@@ -75,29 +91,35 @@ Other rubric dimensions are scored by other critics and remain `null` in this cr
      "critic": "narrative",
      "for_version": <N>,
      "dimensions": {
-       "1_narrative_arc":            { "score": 5, "weight": 6 },
+       "1_narrative_arc":            { "score": 5, "weight": 6, "justification": "Problem → Why-now bridge lands (\"AI agents are mature enough to act, not just suggest\" — Slide 3); ask follows the setup." },
        "2_problem_clarity":          null,
        "3_market_size_credibility":  null,
        "4_solution_differentiation": null,
        "5_traction_proof":           null,
        "6_team_credibility":         null,
-       "7_ask_specificity":          { "score": 4, "weight": 5 },
-       "8_design_polish":            null
+       "7_ask_specificity":          { "score": 4, "weight": 5, "justification": "Round size present (\"Raising $3M\" — Slide 12) but no use-of-funds breakdown." },
+       "8_design_polish":            null,
+       "9_rhetorical_economy":       { "score": 3, "weight": 4, "justification": "Two slides restate the same traction claim (\"8 paying customers\" — Slide 8) without adding load." }
      },
      "critical_flag": false,
      "critical_flag_notes": []
    }
    ```
    ```
-9. **Write `findings.md`**:
+9b. **Validate quoted evidence (deterministic, write-time self-check)** — issue #464 / #475:
+   - After the `_summary.md` write lands inside the staging dir, invoke `python -m anvil.lib.evidence_check <thread>.{N}/ --scoring <staging dir>/_summary.md` (or call `anvil.lib.evidence_check::check_version_dir(<thread>.{N}/, scoring=<staging dir>/_summary.md)` directly). Because the `--scoring` target is a `_summary.md`, the verifier routes to the machine-summary parser (`parse_machine_summary_dimensions`), which reads the JSON `dimensions` block, extracts the quoted spans from each scored dimension's `justification` string, and checks each one against `deck.md` (curly→straight quote folding, dash-variant folding `—`/`–`/`---`/`--`, whitespace collapse, markdown-emphasis stripping; case-sensitive substring match, with `...`/`…`-elided spans matched fragment-by-fragment in document order within the `ELISION_WINDOW_CHARS` proximity window — issue #478). Classification per justification: ≥1 span matching the body → pass; score at full weight + `no instance of <X> found` marker → pass (ceiling-by-absence); spans present but none matching → **major `fabricated_evidence` finding**; no spans at all → minor `missing_evidence` advisory. `null`-score (un-owned) dimensions are skipped, so a partial scorecard is checked cleanly. Anchors are NOT validated (judgment-free scope).
+   - **Findings are a write-time self-check failure — correct before the sidecar lands**: a `missing_evidence` finding means the critic adds the verbatim quote + anchor (or, at full weight, the by-absence marker) to that dimension's `justification` string and re-runs the check. A `fabricated_evidence` finding is the hard case — the quoted span does not appear in `deck.md`, so the critic MUST re-derive that dimension's justification from the actual deck body (re-read the slide, re-quote verbatim, and reconsider whether the score itself was grounded). The check is deterministic and cheaply re-runnable. The staged sidecar MUST NOT exit the context block while `fabricated_evidence` findings persist.
+   - **Advisory boundary**: this self-check governs this critic's OWN staging-dir `_summary.md` only. It does NOT gate the verdict (no new critical-flag category, no change to the aggregator's `advance`), does NOT write a sidecar, and is NEVER run retroactively against existing critic dirs — legacy siblings are immutable and the rule applies to NEW critic runs only.
+10. **Write `findings.md`** — every finding carries both a severity marker (`[blocker]` / `[major]` / `[minor]` / `[nit]`) and a kind marker (`[in-place]` / `[structural]`) per the kind-axis rule in step 8. Default kind is `[in-place]`; use `[structural]` when the suggested fix names a reorder / merge / split / drop. Worked examples:
    ```
    ## Findings (narrative)
 
-   1. **[major]** Slide 3 → 4: Why-now claim ("AI agents are mature enough") not connected to the solution. Suggested fix: add a sentence to Slide 4 explicitly using AI-agent capability that wouldn't have existed 18 months ago.
-   2. **[minor]** Slide 10 (Team) sits between Business model (Slide 9) and Financials (Slide 11); the team intro lands cold after a pricing table. Suggested fix: add a transitional speaker-notes line ("having shown how revenue works, here is the team that will execute it") rather than reordering — Team's canonical slot is Slide 10.
-   3. **[major]** Slide 12 (Ask): "Raising $3M" but no breakdown. Suggested fix: add use-of-funds bullet (40% eng / 30% GTM / 20% hires / 10% runway) and runway-to-milestone framing.
+   1. **[major][in-place]** Slide 3 → 4: Why-now claim ("AI agents are mature enough") not connected to the solution. Suggested fix: add a sentence to Slide 4 explicitly using AI-agent capability that wouldn't have existed 18 months ago.
+   2. **[minor][in-place]** Slide 10 (Team) sits between Business model (Slide 9) and Financials (Slide 11); the team intro lands cold after a pricing table. Suggested fix: add a transitional speaker-notes line ("having shown how revenue works, here is the team that will execute it"). The fundraising canonical slot for Team is Slide 10; preserving the slot is the in-place rationale here. The reviser MAY override the canonical slot with a `[structural]` finding when the deck's specific arc requires it, but the default is to preserve.
+   3. **[major][in-place]** Slide 12 (Ask): "Raising $3M" but no breakdown. Suggested fix: add use-of-funds bullet (40% eng / 30% GTM / 20% hires / 10% runway) and runway-to-milestone framing.
+   4. **[major][structural]** Competition (Slide 5) splits the contiguous product story (Solution → [Competition] → Product → Welfare). The reader loses the product arc when Competition lands in the middle. Suggested fix: move Competition to before Solution (so the reader enters the product arc with the competitive landscape already framed), OR after the full product arc completes (Solution → Product → Welfare → Competition). The reviser picks the reorder that best preserves the deck's specific argument; this is a `[structural]` finding because no in-place clause edit on Slide 5 resolves the arc problem.
    ```
-10. **Write `comments.md`** (sequence-level, not slide-level):
+11. **Write `comments.md`** (sequence-level, not slide-level):
     ```
     ## Slide order
 
@@ -115,8 +137,8 @@ Other rubric dimensions are scored by other critics and remain `null` in this cr
 
     12 slides (within target range 10–15). Slide 13 appendix optional and not included; recommend adding 1-2 appendix slides with detailed unit economics for follow-up Q&A.
     ```
-11. **Update `_progress.json`** and `_meta.json` inside the staging dir (finished: <ISO>). The `_progress.json` write MUST be the LAST file write before the context manager exits — the manifest verification + atomic rename at exit (issue #350) requires it to be present. Then **exit the `staged_sidecar` context block**: the primitive verifies every name in the required-files manifest exists in the staging dir, then atomically renames `.<thread>.{N}.narrative.tmp/` → `<thread>.{N}.narrative/`. The final-named dir only ever exists in **complete** form.
-12. **Report**: one-line status (e.g., `Narrative critic on acme-seed.1 → acme-seed.1.narrative/ (dims 1+7: 9/11; 3 findings)`).
+12. **Update `_progress.json`** and `_meta.json` inside the staging dir (finished: <ISO>). The `_progress.json` write MUST be the LAST file write before the context manager exits — the manifest verification + atomic rename at exit (issue #350) requires it to be present. Then **exit the `staged_sidecar` context block**: the primitive verifies every name in the required-files manifest exists in the staging dir, then atomically renames `.<thread>.{N}.narrative.tmp/` → `<thread>.{N}.narrative/`. The final-named dir only ever exists in **complete** form.
+13. **Report**: one-line status (e.g., `Narrative critic on acme-seed.1 → acme-seed.1.narrative/ (dims 1+7+9: 12/15; 3 findings)`).
 
 ## Idempotence and resumability
 
@@ -131,3 +153,13 @@ Standard: completed = no-op; crashed = re-runnable after deleting partial output
 
 
 **Scorecard kind declaration**: This critic's `_meta.json` SHOULD include `"scorecard_kind": "machine-summary"` per `anvil/lib/snippets/scorecard_kind.md`. This is a deck specialist critic — `machine-summary` shape (`_summary.md` + `findings.md`), partial scorecard with non-owned dimensions set to `null`. The deck-review aggregator reads this sibling's `_summary.md` and combines its scores into the composite verdict.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.narrative/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.narrative/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(deck/narrative): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; specialist critics do not advance the state machine.

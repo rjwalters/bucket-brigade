@@ -34,13 +34,13 @@ This is the terminal command. After `ip-uspto-finalize` succeeds, the package is
   _progress.json                 Phase state with finalize: done
 ```
 
-**Atomicity** (issue #350): the `<thread>.final/` terminal directory is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. Although this is a TERMINAL package directory (not a critic sibling), the same atomic-rename contract applies: the package artifacts are staged under a leading-dot sibling `.<thread>.final.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.final/` name. A mid-cycle interrupt leaves a `.<thread>.final.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. This is load-bearing: a half-written `<thread>.final/` (missing one of the nine submission artifacts) would otherwise look like a complete submission package to the idempotence check at step 1 and could ship to a human attorney. The staged-sidecar contract guarantees the final-named dir only ever exists when the full submission package is complete.
+**Atomicity** (issue #350, #376): the `<thread>.final/` terminal directory is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. Although this is a TERMINAL package directory (not a critic sibling), the same atomic-rename contract applies: the package artifacts are staged under a leading-dot sibling `.<thread>.final.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.final/` name. A mid-cycle interrupt leaves a `.<thread>.final.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.final)` per-critic sweep removes; the final-named dir never exists in partial form. This is load-bearing: a half-written `<thread>.final/` (missing one of the nine submission artifacts) would otherwise look like a complete submission package to the idempotence check at step 1 and could ship to a human attorney. The staged-sidecar contract guarantees the final-named dir only ever exists when the full submission package is complete.
 
 ## Procedure
 
 1. **Discover state**:
    - Find the highest `N` with `<thread>.{N}.audit/_summary.md` containing `passed: true`. If none, exit with an error: "no version is AUDITED; run `ip-uspto-audit` first."
-   - Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.final.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed finalize session (issue #350).
+   - Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.final)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY any leftover `.<thread>.final.tmp/` from a previously-killed run of this same finalize phase. Sibling critics' in-flight staging dirs under the same parent are NOT touched (issue #350, #376).
    - Check whether `<thread>.final/` already exists. If yes (the atomic-rename contract guarantees the dir only exists when complete — `_manifest.json` and all required artifacts are present), exit early (idempotent).
 2. **Resume check**: per the staged-sidecar shape introduced in issue #350, a partial `<thread>.final/` left behind by a mid-cycle interrupt manifests as a leading-dot `.<thread>.final.tmp/` directory; the step 1 sweep has already removed it. Backwards-compat: if a legacy pre-#350 `<thread>.final/` exists without `_manifest.json`, delete and re-run.
 3. **Open the staged sidecar** for the final dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.final, required_files=["spec.pdf", "drawings.pdf", "abstract.txt", "claims.tex", "ads-placeholder.txt", "fee-sheet-placeholder.txt", "inventorship-attestation.md", "README.md", "_manifest.json", "_progress.json"])`. Every file write in steps 4-15 MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.final.tmp/`), NOT inside the final `<thread>.final/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json`.
@@ -48,6 +48,13 @@ This is the terminal command. After `ip-uspto-finalize` succeeds, the package is
 ### Pre-flight gates (must all pass before producing the package)
 
 4. **Audit gate**: `<thread>.{N}.audit/_summary.md` records `passed: true`. (Verified in step 1.)
+4b. **Audit-time render-gate backstop** (issue #572):
+    - Read `<thread>.{N}.audit/_gate.json` (the `GateResult.to_json()` payload from `ip-uspto-audit.md` Check 11).
+    - If the file is missing (legacy pre-#572 audit sibling), emit a `BLOCKED` notice naming the pre-#572 audit: "audit sibling predates the render-gate backstop (issue #572); re-run `ip-uspto-audit <thread>` to refresh."
+    - If `_gate.json` records `pass: false` AND `overfull_boxes` is non-empty, exit with a `BLOCKED` notice that enumerates each overfull box's pt-overflow + source-line span. Example: `BLOCKED: audit-time render-gate found 2 overfull box(es) on <thread>.{N}/spec.tex: Overfull \hbox 83.6pt at L412--L418; Overfull \vbox 18.7pt at L647. The provisional canary (issue #572) reached FILING-READY with this exact defect shape; the backstop refuses to assemble <thread>.final/ until the overfulls are revised away. Run ip-uspto-revise <thread>.`
+    - If `_gate.json` records `pass: false` but the failure was a non-overfull dimension (compile, placeholders), the audit's own pass/fail rule already short-circuited at step 4 — this branch is defensive and should not normally fire. Still, emit a `BLOCKED` notice naming the failed dimensions and the audit's findings.md for context.
+    - If `_gate.json` records `pass: true` (the common case — the audit's Check 11 either ran cleanly or degraded gracefully on engine-unavailable), proceed.
+    - **No new compile here**. The audit already compiled and recorded the result. The finalize gate is a read of the audit's _gate.json, not a re-compile — the audit sibling is read-only, and any new defect introduced AFTER the audit must trigger a new audit cycle (a new revise creates a new version, the audit is re-run on it, and finalize reads the fresh _gate.json). This matches the "audit sibling is the integrity record" discipline.
 5. **Inventorship matrix gate**:
    - `<thread>/inventorship.md` exists.
    - Frontmatter `matrix_locked: true`.
@@ -102,6 +109,16 @@ This is the terminal command. After `ip-uspto-finalize` succeeds, the package is
       - Inventor declarations (37 CFR 1.63) are filed separately; this skill does not generate them.
       - Small-entity / micro-entity status must be elected on the ADS.
     ```
+
+    **§119(e) domestic-priority injection (conversion linkage, issue #501):** when `<thread>/BRIEF.md` carries a `converts_provisional` block (see `ip-uspto-intake.md` §"`converts_provisional`"), REPLACE the `Domestic priority: [ATTORNEY TO COMPLETE if claiming benefit]` line above with the generated §119(e) benefit-claim data:
+
+    ```
+      Domestic priority: Claims benefit under 35 U.S.C. 119(e) of provisional
+        application No. <converts_provisional.application_number>, filed
+        <converts_provisional.filing_date>.
+    ```
+
+    This ADS slot carries the benefit-claim *data*; the spec itself already carries the matching "CROSS-REFERENCE TO RELATED APPLICATIONS" paragraph emitted at draft (`ip-uspto-draft.md` §5a). **Fail loud, never silent**: if `converts_provisional` is present but `filing_date` is missing/empty, exit finalize with a `BLOCKED` notice naming the missing field — never emit a `Domestic priority` line with a blank date (the silent-priority-failure risk the conversion linkage exists to prevent). When `converts_provisional` is ABSENT, leave the `Domestic priority` slot at its `[ATTORNEY TO COMPLETE if claiming benefit]` placeholder — byte-identical to the pre-#501 package.
 
 11. **Generate `fee-sheet-placeholder.txt`** with a claim-count-based fee estimate:
 
@@ -229,3 +246,14 @@ This is the terminal command. After `ip-uspto-finalize` succeeds, the package is
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issues #350, #376) lands the complete `<thread>.final/` package dir — so only the complete package is ever committed.
+- **Staging target**: ONLY the `<thread>.final/` package dir.
+- **Commit**: `anvil(ip-uspto/finalize): <thread>.final [FINALIZED]` — a terminal package dir, not a `<thread>.{N}` version, so the version token is the literal `<thread>.final` per `git_sync.md` §Non-thread commit shapes.
+

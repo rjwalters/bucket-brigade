@@ -1,9 +1,10 @@
 {
-  "anvil_version": "0.4.0",
+  "anvil_version": "0.7.0",
   "anvil_source": "/Users/rwalters/GitHub/anvil",
-  "install_date": "2026-06-08",
+  "install_date": "2026-07-05",
   "layout_version": 2,
-  "installed_skills": ["deck", "installation", "ip-uspto", "memo", "project-migrate", "proposal", "pub", "report", "rubric-rebackport", "slides"],
+  "installed_skills": ["datasheet", "deck", "essay", "installation", "ip-uspto", "ip-uspto-provisional", "memo", "project-book", "project-migrate", "project-photos", "project-scout", "project-share", "proposal", "pub", "report", "rubric-rebackport", "slides"],
   "skipped_overrides": [],
-  "skill_hashes": {"deck": "bdbc93706d625d68f7fc86d0a50e37b91ac66b989f53de01aa0f19f6027d781f", "installation": "9031e5cd8570f175052efb7775daa4ec63f04ea8eb41b2a552405c17e6ed59ae", "ip-uspto": "f4b8e0919e3288e0987fd98de606da683ceac6685b3cef04ed0a1ff56917ec2a", "memo": "5b8c2c6fdcf787f2c7a4e2a94fcd7a72ab273689b367628a759e73289f222a56", "project-migrate": "2a8d59acbfad460b0ecc8ee94099e18f7343d2f442f936233aefa27b35bd5ea4", "proposal": "833fc1b63ed0677757b341bdd58e11bfc5b190914d1e7b9bd24bfd60e9605300", "pub": "0af93152848ec72963c975fa47f9603603485799a34133d76ded0e5d9f535d8e", "report": "20901f33856cfa71e125cd5e96cfa44f439e8e1fc3a906ebb14fab3bbc3485c6", "rubric-rebackport": "69ddf387a68563d596ad0e510ed564d7540cfa4e6604c775a48f4a3958cbd130", "slides": "e7074f6cd7d2937f6f0ce60de31b55f7a7a7bf48e626febddd099434f50fa81d"}
+  "skill_hashes": {"datasheet": "a34b67737b840aacf7776464591f9366d2a1b225371d6eb6f9eedad65536a807", "deck": "484e2285cde28fa7e55bd85d7ba28e86c481c40e95b26f54b5a268493e404e3f", "essay": "56b704e240b7bc5553d85116aaddf080434173d556764b862784c6564ab73a37", "installation": "2716604664507d040cf7655ab09d2785de9c4cd6268e99db38e3722239e67258", "ip-uspto": "55571362a81fa9d3a8b1ce3060f3973b07b57168fd02fd44a058072d9ab69eb1", "ip-uspto-provisional": "ebdc6cba64ce1585e4a478cbc837ed1b451998428b89aa432bee8a6c4c52ae35", "memo": "564056659abce34b461f4c9c6e2d5f037141169a7409cf8eb49633ecc8f6ab13", "project-book": "aeb0b0f503d6d83790fd49585504ff45edf2bf91d29eb4a596cf0af11f84838e", "project-migrate": "4f33c8bfc2be695334474c12858724eb25d2b22b6cabb0d1496839b0cb6a9001", "project-photos": "b8c51d09dc3a8cfdaf1712456032fc2b355bd9e9f9befdcf6f7ed64f97d65061", "project-scout": "a58bbc2a45f7eb1112f399ee1ce1afeebb8309e4f8f6fd2fac927e680956076e", "project-share": "18752116b5f41d996bd9e8dad609c5bfe4885a3d4e758cb1503be0282311d6cb", "proposal": "ea5affda29f5d85cef27faaed403e378ba43a3d1f4c2040b710131add7593713", "pub": "546fa77ffd15284edf06e6df28a0d5d02b1269818dfeaacdb0afd596d66a4441", "report": "2c402271e5e585ad59238a501d6a95e4916cdd8bc7acef12413895a52c351117", "rubric-rebackport": "97c2dc8b04765fb278e79a91de53d6458c208c603000c1a682fbd6f5282da742", "slides": "70387a129ca048d6739bb757d597953c7b94b28c9ce31fda983bcb4d8b470e26"},
+  "lib_hash": "7753f6be21bd5c95650a19c179f881b7a0798246d18895956906f1916418845d"
 }

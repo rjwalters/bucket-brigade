@@ -80,6 +80,8 @@ Suggested calibration:
 - **~25% of weight** — present but inadequate; major rework needed.
 - **0** — absent or actively misleading.
 
+**Quoted evidence (issue #464).** Every justification follows the quoted-evidence sub-rule in `anvil/lib/snippets/rubric.md` §"Dimension scoring guidance" rule 1: at least one verbatim inline quote from `<thread>.md` with a location anchor — `("the quoted span" — §2.1)` — per dimension, with the `no instance of <X> found` by-absence marker allowed at full weight only. The reviewer self-checks its `scoring.md` against the body via `anvil/lib/evidence_check.py` before the review sidecar lands (see `commands/memo-review.md` step 7c); a quote that does not appear verbatim in the body is fabricated evidence and the justification must be re-derived. No weight or threshold changes — this is an evidence-discipline contract on the justification prose, not a scoring change.
+
 ## Citation hooks (dim 3)
 
 Per the `memo-draft` *Evidence* contract, every **named author-year citation** and every **load-bearing quantitative claim** (dollar amounts, percentages, dates, multipliers anchoring an argument) should carry one of three hooks: (a) an inline footnote naming the source, (b) a `<thread>/refs/<key>.md` stub (which MAY be as minimal as `# TODO: source for <claim>`), or (c) an explicit in-prose hedge ("reportedly", "estimated", "roughly", "~"). The reviewer applies a **per-instance deduction** on dim 3 *Evidence quality* for unhooked load-bearing claims.
@@ -200,6 +202,42 @@ The dim 3 justification MUST cite the specific objection title and verdict tag (
 **Backward compatibility.** When the resolved refs-dir list contains no `strongman-against.md` files, this sub-rule is **inactive** and dim 3 falls back to the §"Citation hooks (dim 3)" + §"Refs back-check (dim 3)" behavior alone. A memo authored before the strongman convention was formalized (or one where the operator never wrote a strongman) is unaffected. Similarly, when no `strongman-for.md` is present, the dim 2 calibration note is omitted from the dim 2 justification — dim 2 falls back to the implicit "is the thesis clear and falsifiable on its own merits" judgment.
 
 The classification is applied entirely via reviewer judgment — there is no automated strongman parsing in v0 (no new Python detector, no schema change to `anvil/lib/review_schema.py`). See `commands/memo-review.md` §Procedure step 4g for the reviewer-side procedure and `commands/memo-draft.md` §Procedure step 3 for the drafter-side ingestion contract (drafter reads strongman files when present and addresses or scopes out the named counter-arguments).
+
+### Red-team back-check (dim 2 + dim 3)
+
+The §"Strongman back-check (dim 3)" sub-rule above scores the memo's engagement with the **author-supplied** `strongman-against.md`. Two compounding weaknesses (issue #560) limit that contract: (1) the strongest objection is bounded by the author's willingness to imagine it — the "knowing you're right" failure mode survives intact; (2) the `ADDRESSED` classification clears on *engagement*, not *victory* — a hand-waving rebuttal of a self-authored objection still clears the bar. The **red-team back-check** addresses both weaknesses via an **independent adversarial critic** (`commands/memo-redteam.md`) that generates objections independently of the author's substrate and judges rebuttal sufficiency rather than mere engagement.
+
+This sub-rule is **optional** — it activates when a `<thread>.{N}.redteam/` sibling exists alongside `<thread>.{N}.review/`. Absence of the sibling is byte-identical to a pre-#560 thread: the §"Strongman back-check (dim 3)" sub-rule continues to function as the sole adversarial-engagement surface. Presence of the sibling adds an independent leg whose findings layer additively on dim 2 + dim 3 — same composition shape as the existing back-check triangle (refs back-check + summary-detail consistency + cross-thread cite + author-supplied strongman).
+
+The red-team critic enumerates its own objections (independent of `refs/strongman-against.md` — the author's strongman is consulted only as a post-hoc calibration crosscheck) and renders one of three verdicts on each objection:
+
+- **`DEFEATED`** — the memo's response to this objection actually wins on the merits. The rebuttal is sound, the evidence holds, the scope is honest. **No finding emitted; no deduction; no flag.** This is the only verdict that clears the bar.
+- **`SURVIVES`** — the memo engages the objection but the rebuttal does not win. The objection still stands after the memo's response (thin evidence, hand-wavy reasoning, the rebuttal addresses a weaker version of the objection, or the scope-out is dishonest). Severity ladder splits on load-bearing-ness:
+  - **Load-bearing objection** (one that would force the recommendation to change if it stands): severity **`critical`**; **-2 dim 3 deduction AND critical-flag candidate** (`redteam_survives` type per `anvil/lib/review_schema.py::CriticalFlag.type`, which is skill-defined; the new vocabulary value drops in without a schema bump). Forces `advance: false` via the existing critical-flag aggregation at `commands/memo-review.md` step 7.
+  - **Non-load-bearing objection**: severity `important`; **-1 dim 3 deduction**. Not flag-eligible on its own.
+- **`UNENGAGED`** — the memo does not address the objection at all (neither defeats nor scopes out). Severity ladder splits on load-bearing-ness:
+  - **Load-bearing objection**: severity **`critical`**; **-2 dim 3 deduction AND critical-flag candidate** (`redteam_unengaged` type). Forces `advance: false` via the existing critical-flag aggregation.
+  - **Non-load-bearing objection**: severity `important`; **-1 dim 3 deduction**. Not flag-eligible on its own.
+
+The bar is materially higher than the existing strongman back-check vocabulary. The existing `ADDRESSED` classification clears on engagement alone; the red-team's `DEFEATED` requires the rebuttal to *win*. This is the operational claim of issue #560 — that "knowing you're right" is the failure mode the existing contract cannot catch, and that a sufficiently rigorous independent adversary will surface it.
+
+**Dim ownership.** The red-team critic owns **dim 2 (*Thesis coherence*)** AND **dim 3 (*Evidence quality*)** — the two dimensions a kill-case attacks. Per the aggregator's mean-of-non-null contract (`anvil/lib/critics.py::aggregate`), the red-team writes `score: null` for dims 1, 4, 5, 6, 7, 8, 9 (those dims are owned by `memo-review`); the aggregated dim 2 + dim 3 scores merge across both critics via mean-of-non-null. The red-team's per-instance deductions on dim 3 (above) are applied to its own `_review.json` dim 3 score; the aggregator computes the merged dim 3 from the means.
+
+**Calibration crosscheck (the author's strongman becomes a check on the red-team).** When `refs/strongman-against.md` is present in the resolved refs-dir list, the red-team writes a `calibration.md` block in its sibling dir that compares the red-team's independently-generated objection set against the author's anticipated set:
+
+- **Anticipated** — objections the red-team raised that the author already named (positive signal for author imagination).
+- **Novel** — objections the red-team raised that the author did NOT name (load-bearing-blind-spot signal).
+- **Over-weighted** — author-named objections the red-team judged non-load-bearing or already defeated (author over-imagined).
+
+The calibration block is **operator-facing audit-trail only** — it does NOT contribute findings or critical flags to `_review.json`. The existing §"Strongman back-check (dim 3)" sub-rule above continues to function as designed; the red-team's calibration crosscheck inverts the contract: the self-authored strongman becomes a **calibration signal on the author's adversarial imagination**, not the sole source of adversarial input.
+
+**Verdict pathway.** A `SURVIVES` or `UNENGAGED` verdict on a load-bearing objection emits a critical flag in the red-team's `_review.json`; `anvil/lib/critics.py::aggregate` unions all per-critic critical flags; the aggregated verdict at `commands/memo-review.md` step 7 is `Verdict.BLOCK` regardless of total whenever the union is non-empty. The existing `advance = (total >= 35) AND (no critical flags) AND (lint.errors == 0)` rule is unchanged; the red-team's flags plug into the "no critical flags" clause via the same pathway as every other load-bearing back-check critical flag (refs back-check `CONTRADICTED`, summary-detail `CONTRADICTED`, cross-thread cite `ANCHOR-CONTRADICTED`, strongman back-check `NOT_ADDRESSED (load-bearing)`).
+
+**No new state-machine transition.** A `SURVIVES` on a load-bearing objection forces `advance: false` via the existing critical-flag pathway — the same as every other load-bearing back-check critical flag. The dedicated **NO-GO terminal state** is OUT of scope for this issue — that is owned by issue #559 (Wave 3). The interaction point between this sub-rule and #559 is "SURVIVES → critical_flag candidate → `advance: false`", which existing plumbing already supports.
+
+**Backward compatibility.** When no `<thread>.{N}.redteam/` sibling exists, this sub-rule is **inactive** and dim 2 + dim 3 fall back to the existing per-rule behavior (Citation hooks + Refs back-check + Strongman back-check + Cross-thread cite back-check, plus the dim 2 strongman-for calibration note). A memo authored before the red-team critic shipped (or one where the operator never invokes `memo-redteam`) is unaffected.
+
+See `commands/memo-redteam.md` for the reviewer-side procedure (objection generation, verdict rendering, calibration crosscheck, `_review.json` shape).
 
 ### Figure + hyperlink enrichment (dim 3, advisory `scope: expand`)
 
@@ -424,6 +462,21 @@ The dim 7 justification SHOULD record **both** numbers when both are available (
 **Render-gate findings are non-blocking for the verdict**: `_summary.md.render_gate` informs the dim 7 justification (and surfaces page-fit warnings / overfull-render advisories the operator should act on in the next revise pass) but does NOT gate `advance`. The reviewer's verdict is driven by the rubric total + the four critical-flag categories + the source-side `memo_image_refs_exist` lint as today. A memo that scores ≥35 with no critical flags is advance-eligible even when `_progress.json.render_gate.pass == false`.
 
 **Backwards-compat**: a memo without `_progress.json.render_gate` (legal pre-Phase-3 state, every legacy version dir on disk) reviews exactly as before — the reviewer falls back to word-count-only dim 7 judgment and the `_summary.md.render_gate` block is `{"ran": false, "reason": "no render_gate block in _progress.json"}`.
+
+## Dim 8 — voice-grounding calibration
+
+**Trigger** (issue #461): the project-level `<project>/BRIEF.md` declares an optional top-level `voice:` block naming up to four persona docs — `style_guide` (register / cadence rules), `vocabulary` (AI-tell guidance), `values` (stances / anti-stances / standing / voice signatures / failure modes), and `corpus` (a glob over published exemplars quoted as voice ground truth). The block is parsed by `anvil/lib/project_brief.py::VoiceDocs` and resolved — project-root first, then consumer-root — by `resolve_voice_docs`. The full role contracts live in `anvil/lib/snippets/voice_grounding.md`.
+
+**What changes when triggered**: dim 8 (*Prose & structure*) is where register and voice live, so the voice-fidelity calibration attaches there as a **triggered fixed suffix** — the #348 `recommendation_target: undecided` precedent. This calibration does NOT add a tenth dimension and does NOT alter the /44 total; dim 9 (*Rhetorical economy*) stays economy-scoped (its deterministic vocabulary feeder is the rhetoric lint, issue #463).
+
+- **Verbatim suffix** appended to the dim 8 `scoring.md` justification when the calibration fires: `voice grounding active — dim 8 scored against <resolved values/style_guide paths>; voice deductions must quote corpus exemplars` (with the placeholder replaced by the actual resolved paths).
+- **Composition order** (when multiple surfaces fire on dim 8): base reviewer-prose justification → artifact-type overlay suffix → triggered voice-grounding suffix → per-doc `dim_8_calibration` suffix. Per-doc author wording still wins last — the same ordering as the dim 1 undecided calibration.
+- **Corpus-quote rule**: every voice deduction MUST quote a corpus passage showing what the target voice sounds like. Vague feedback is insufficient — the deduction names the offending memo passage AND the exemplar passage it falls short of. A voice deduction without a corpus quote is itself a defective finding.
+- **Convergence-with-Claude adversarial check**: for each passage under voice scrutiny the reviewer asks — *would I, the AI, also write this sentence?* If yes, scrutinize harder, never defend. Convergence between the memo's voice and the reviewing model's own default register is the biggest meta-failure mode of AI-assisted voice work.
+- **Anti-stance violations are critical-flag candidates** under the existing critical-flag machinery (§"Critical flags" below; the `hard_rules` precedent) — not a new flag category. The flag justification quotes the violated values-doc passage.
+- **Declared-but-missing docs**: the tier stays ACTIVE and each missing doc surfaces as a `major` finding in `comments.md` (a broken declaration is a defect to surface, not an opt-out — the `report/lib/customer_context.py` posture).
+
+**Backwards-compat**: when the BRIEF declares no `voice:` block (or an empty one), the calibration does NOT fire — no suffix, no corpus-quote requirement, no `_summary.md.voice_grounding` block. Dim 8 scores against its standard calibration **byte-identically** to pre-#461 behavior. The audit trail of an active calibration is the `scoring.md` suffix plus the `_summary.md.voice_grounding` block (`commands/memo-review.md` step 9).
 
 ## Dim 9 — rhetorical economy
 

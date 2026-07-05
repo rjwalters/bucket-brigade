@@ -27,7 +27,7 @@ An **installation thread** is a single concept proposal for one piece, authored 
     _progress.json         Phase state for this version
     changelog.md           (revisions only) Maps prior critic notes to changes
   <thread>.1.review/       Reviewer output for version 1 (read-only)
-    verdict.md             Top-level decision (advance / block) + total /40
+    verdict.md             Top-level decision (advance / block) + total /44
     scoring.md             Per-dimension scores against the installation rubric
     comments.md            Line-level comments keyed to installation.tex
     _meta.json             { critic, scorecard_kind: "human-verdict", ... } (see lib/snippets/scorecard_kind.md)
@@ -59,7 +59,7 @@ EMPTY → DRAFTED → REVIEWED → REVISED → … → READY
 | `READY` | Latest `<thread>.{N}.review/verdict.md` records `advance: true` AND no unresolved critical flag |
 | `AUDITED` | `<thread>.{N}.audit/` exists alongside a `READY` version |
 
-Thresholds: ≥32/40 advances. <32/40 requires revision. Any critical flag short-circuits regardless of total — block until addressed.
+Thresholds: ≥35/44 advances. <35/44 requires revision. Any critical flag short-circuits regardless of total — block until addressed.
 
 Iteration cap: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). The cap is configurable per-thread by writing `{ "max_iterations": <N> }` to `<thread>/.anvil.json` in the thread root. Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
 
@@ -119,7 +119,7 @@ Critic siblings (e.g., `<thread>.{N}.review/`) follow the `human-verdict` scorec
 
 ## Rubric
 
-See `rubric.md` for the 8-dimension /40 scoring schema, the ≥32 advance threshold, and the critical-flag short-circuit policy. The dimensions are tuned for installation art (conceptual coherence, spatial resolution, sensory language, visitor experience, buildability, ethics & safety, references & lineage, open decisions), not for an investment recommendation.
+See `rubric.md` for the 9-dimension /44 scoring schema, the ≥35 advance threshold, and the critical-flag short-circuit policy. The dimensions are tuned for installation art (conceptual coherence, spatial resolution, sensory language, visitor experience, buildability, ethics & safety, references & lineage, open decisions, rhetorical economy), not for an investment recommendation.
 
 ## Skill-specific phases
 
@@ -137,3 +137,7 @@ This skill ships with opinionated defaults. Consumers are expected to override l
 - `rubric.overrides.md` (optional) — Add domain-specific critical-flag examples or adjust the open-ended "any deal-breaker" instruction.
 - `templates/anvil-installation.cls` (optional) — A replacement LaTeX class (e.g., a studio house style or a different signature font).
 - `BRIEF.md.example` — Reference brief shape; freeform prose with optional YAML frontmatter is accepted (see `templates/BRIEF.md.example`).
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing installation command end its phase by staging only the dirs it wrote and committing as `anvil(installation/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 4 write-bearing installation commands adopt it; the read-only `installation` portfolio orchestrator is exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

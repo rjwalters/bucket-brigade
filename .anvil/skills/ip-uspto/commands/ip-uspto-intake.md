@@ -43,6 +43,14 @@ inventors:
 priority_date_target: <YYYY-MM-DD or "asap">
 field_of_use: <one-line technical field>
 intake_date: <ISO date>
+# OPTIONAL — present ONLY when this non-provisional converts an earlier provisional
+# (anvil:ip-uspto-provisional). When absent, the draft/finalize commands emit NO
+# priority text and behavior is byte-identical to a thread that claims no benefit.
+converts_provisional:
+  thread: <provisional-slug>             # required when the block is present
+  filing_date: <YYYY-MM-DD>              # the provisional FILING date (starts the §119(e) 12-month clock)
+  application_number: "63/XXX,XXX"       # USPTO provisional app no. (placeholder OK until filed)
+  portfolio_path: <relative-or-abs path> # OPTIONAL — only for a cross-portfolio provisional
 ---
 
 ## 1. Problem statement
@@ -69,6 +77,24 @@ Adjacent ideas the inventor has but is NOT claiming. Critical for scope discipli
 ## 8. Open questions for inventor
 Questions the intake could not answer from the supplied disclosure and that the human attorney must resolve with the inventor before final filing. These do NOT block draft — they block finalize.
 ```
+
+### `converts_provisional` (optional conversion-linkage block)
+
+When this non-provisional thread is the **conversion** of an earlier `anvil:ip-uspto-provisional` filing (the natural provisional → ≤12-month → non-provisional flow), declare the linkage with the optional `converts_provisional` frontmatter block shown above. This block is structured filing data (date math + §119(e) boilerplate generation), NOT body-prose citation — it is the declaration surface the downstream commands read:
+
+- **`ip-uspto-draft`** emits a §119(e) "CROSS-REFERENCE TO RELATED APPLICATIONS" paragraph into `spec.tex`.
+- **`ip-uspto-finalize`** fills the ADS domestic-priority slot with the generated §119(e) benefit-claim text.
+- **`ip-uspto`** (orchestrator) computes and surfaces the 12-month §119(e) conversion deadline (`filing_date + 12 months`).
+- **`ip-uspto-112`** (s112 critic, issue #517) runs a §112(a) **conversion disclosure-coverage** check: it re-runs its per-claim-limitation support sweep with the *provisional* `spec.tex` (resolved via `thread` + optional `portfolio_path` at highest-`N`) as the baseline, flagging possible new-matter / unsupported converted claim subject matter FOR COUNSEL. Dormant when this block is absent.
+
+Field semantics:
+
+- `thread` — the provisional thread slug. **Required** whenever the block is present.
+- `filing_date` — the provisional's USPTO FILING date (`YYYY-MM-DD`). This starts the §119(e) clock. **Must not be blank when the block is present** — a present-but-empty `filing_date` is an error, never silently rendered as blank priority text (the silent-priority-failure risk this whole skill family exists to prevent). The authoritative producer copy lives in the provisional thread's `_filing.json` (written by `ip-uspto-provisional-finalize`); this BRIEF key is the consumer copy. When both exist and disagree, the BRIEF key is the operator-asserted value the consumer uses, but the intake agent SHOULD flag the mismatch in `## 8. Open questions for inventor`.
+- `application_number` — the USPTO provisional application number (`63/XXX,XXX`). A placeholder is acceptable until the provisional's filing receipt is in hand; the downstream text carries it verbatim.
+- `portfolio_path` — **optional**, set ONLY when the provisional lives in a different portfolio directory than this non-provisional. `cross_thread_refs.py` is portfolio-root-relative and does NOT resolve cross-portfolio references, so this path is the cross-portfolio escape hatch. When the provisional is same-portfolio, omit `portfolio_path`; the linkage may then be existence-checked by resolving the provisional thread dir, but that check is optional, not the declaration. Intake does not write, read, or require any `.latest` symlink for this — the BRIEF key is the sole declaration surface.
+
+**Absent block = no change.** When `converts_provisional` is absent (the common case — most non-provisionals claim no domestic benefit), draft emits no cross-reference paragraph and finalize leaves the ADS `Domestic priority` slot at its `[ATTORNEY TO COMPLETE if claiming benefit]` placeholder — byte-identical to the pre-#501 behavior.
 
 ## Procedure
 
@@ -106,3 +132,14 @@ This command does NOT write a `_progress.json` — intake operates on the thread
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `<thread>/BRIEF.md` is written (this command writes no `_progress.json` — the well-formed brief itself is the state signal).
+- **Staging target**: ONLY `<thread>/BRIEF.md`, staged explicitly by path (a thread-level file per the snippet's staging rules).
+- **Commit**: `anvil(ip-uspto/intake): <thread> [INTAKE_DONE]` — a thread-level command with no version dir, so the version token is the bare thread slug per `git_sync.md` §Non-thread commit shapes.
+

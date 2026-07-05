@@ -6,8 +6,8 @@ description: Market/TAM-credibility critic for the deck skill. Verifies TAM/SAM/
 # deck-market — Market / competitor critic
 
 **Role**: market and competitor critic.
-**Reads**: latest `<thread>.{N}/deck.md` (market and competition slides + any supporting figures and `figures/src/*.csv`); `<thread>/BRIEF.md`; optional `<thread>.{M}.perspective/candidates.md` for `M ≤ N` (the latest perspective sibling at or before the current version — see `anvil/lib/snippets/perspective.md`; gracefully absent on threads that have never run `deck-perspective`).
-**Writes**: `<thread>.{N}.market/` with `_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` (the version dir is nested under the thread root per the artifact contract; market and competition slides + any supporting figures and `figures/src/*.csv`); `<thread>/BRIEF.md`; optional `<thread>.{M}.perspective/candidates.md` for `M ≤ N` (the latest perspective sibling at or before the current version — see `anvil/lib/snippets/perspective.md`; gracefully absent on threads that have never run `deck-perspective`).
+**Writes**: `<thread>/<thread>.{N}.market/` with `_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.<critic>/` references below are shorthand for these nested paths.
 
 This critic verifies the market case the deck makes. It computes TAM/SAM/SOM arithmetic, checks bottom-up vs top-down framing, and evaluates competitor positioning. Market-math errors and top-down-only sizing are high-frequency disqualifiers at investor diligence; this critic catches them before send.
 
@@ -16,12 +16,12 @@ This critic verifies the market case the deck makes. It computes TAM/SAM/SOM ari
 - **3 — Market size credibility** (weight 5)
 - **4 — Solution differentiation** (weight 5)
 
-Total ownership: 10/40. Other dimensions are scored by other critics and remain `null` in this critic's `_summary.md`.
+Total ownership: 10/49 (post-#551 the rubric pool is /49 with dim 10 *Business-model & unit-economics credibility* owned by `deck-economics` (primary, post-#551) with `deck-review` retained as fallback — see `rubric.md`). Other dimensions are scored by other critics and remain `null` in this critic's `_summary.md`.
 
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **Brief**: `<thread>/BRIEF.md` (sections "Market" and "Competition" specifically; other sections for grounding).
 - **Source data**: `<thread>.{N}/figures/src/*.csv` (if market sizing uses a chart, the source data lives here).
 - **Optional perspective sibling**: `<thread>.{M}.perspective/candidates.md` for the highest `M ≤ N` (per `anvil/lib/snippets/perspective.md`). If present, widens the competitor cross-check substrate beyond the brief. Gracefully absent on threads with no perspective sibling — no error, no finding. See step 5 "Cross-check against perspective candidates" for the discovery rule.
@@ -29,9 +29,11 @@ Total ownership: 10/40. Other dimensions are scored by other critics and remain 
 
 ## Outputs
 
+Nested under the thread root `<thread>/`, as a sibling of the `<thread>.{N}/` version dir under critique:
+
 ```
 <thread>.{N}.market/
-  _summary.md       8-dim partial scorecard (dims 3 + 4 scored; others null) + critical-flag bool
+  _summary.md       9-dim partial scorecard (dims 3 + 4 scored; others null) + critical-flag bool
   findings.md       Itemized findings (severity, slide ref, rationale, suggested fix)
   comments.md       Slide-level commentary (market slide, competition slide)
   tam-recompute.md  (Optional) Independent recomputation of TAM/SAM/SOM showing the critic's working
@@ -39,11 +41,11 @@ Total ownership: 10/40. Other dimensions are scored by other critics and remain 
   _progress.json
 ```
 
-**Atomicity** (issue #350): the market sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five required files (`_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.market.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.market/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.market.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. The optional `tam-recompute.md` is written inside the staging dir but is NOT in the required-files manifest (it is a conditional output). Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): the market sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The five required files (`_summary.md`, `findings.md`, `comments.md`, `_meta.json`, `_progress.json`) are staged under a leading-dot sibling `.<thread>.{N}.market.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.market/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.market.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.market)` per-critic sweep removes; the final-named dir never exists in partial form. The optional `tam-recompute.md` is written inside the staging dir but is NOT in the required-files manifest (it is a conditional output). Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 ## Procedure
 
-1. **Discover state** + **resume check** (standard). Then **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.market.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed market-critic session (issue #350). The "completed" check is satisfied when the final-named `<thread>.{N}.market/` exists — the atomic-rename contract guarantees the dir only exists when complete.
+1. **Discover state** + **resume check** (standard). Then **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.market)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.market.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same thread root are NOT touched (issue #350, #376). The "completed" check is satisfied when the final-named `<thread>.{N}.market/` exists — the atomic-rename contract guarantees the dir only exists when complete.
 2. **Open the staged sidecar** for the market dir by invoking the context manager `anvil/lib/sidecar.py::staged_sidecar(final_dir=<thread>.{N}.market, required_files=["_summary.md", "findings.md", "comments.md", "_meta.json", "_progress.json"])`. Every file write below MUST land **inside the yielded staging directory** (the path of the shape `.<thread>.{N}.market.tmp/`), NOT inside the final `<thread>.{N}.market/` path. On clean context exit, the primitive verifies the manifest, then atomically renames the staging dir to its final name (issue #350). Then, **inside the staging dir**, initialize `_progress.json` + `_meta.json`.
 3. **Read inputs**: load `deck.md`, identify market slide(s) and competition slide(s). Load `BRIEF.md` market and competition sections. Load any market-chart source data from `figures/src/*.csv`.
 4. **Evaluate market size credibility** (Dim 3, weight 5):
@@ -110,6 +112,7 @@ Total ownership: 10/40. Other dimensions are scored by other critics and remain 
      re-run deck-perspective to capture the candidate, or (c) remove the
      name from the deck if it was speculative.
    ```
+5b. **Quoted-evidence requirement (issue #464 / #475)**: each scored dimension's `justification` string in the `_summary.md` JSON `dimensions` block (dims 3 / 4 — the dims this critic owns) MUST embed at least one **verbatim quote from `deck.md`**, wrapped in inline double quotes and followed by a location anchor — `("the quoted span" — Slide 7)` — per `anvil/lib/snippets/rubric.md` §"Dimension scoring guidance" rule 1. A dim scored at **full weight** MAY substitute the by-absence marker `no instance of <X> found` (e.g., dim 3 at 5/5 with "no instance of unsourced top-down sizing found") — absence of defects has no quotable span; below ceiling the quote requirement stands. The quote must be byte-verbatim from the deck body — a paraphrase presented in quote marks is fabricated evidence, the defect class the step 8b self-check exists to catch. **Elision with `...` / `…` is permitted** (issue #478): a quote may skip intervening text with an ellipsis, provided each elided fragment is itself verbatim, ≥ `MIN_QUOTE_CHARS` normalized chars, in document order, and drawn from one nearby passage (within the verifier's `ELISION_WINDOW_CHARS` proximity window) — do NOT stitch fragments from distant slides into one quote. Em/en dashes may be typed as `--` / `---` (the verifier folds dash variants symmetrically).
 6. **Identify critical flags**:
    - **Market-math error**: as above (recomputation diverges >10% OR top-down-only sizing presented as defensible).
    - **Fabricated competitive claims**: if the deck names a customer of a competitor (e.g., "We won three accounts from Competitor X") and that claim isn't attested in the brief OR in the perspective sibling's `candidates.md` (when present), flag. An unmatched-competitor warning (from step 5's cross-check) accompanied by a verifiable factual claim about that competitor is the canonical trigger pattern; without perspective substrate, the brief is the only attestation source and the same logic applies. See "Cross-check against perspective candidates" in step 5 for the substrate-discovery rule.
@@ -157,18 +160,23 @@ Total ownership: 10/40. Other dimensions are scored by other critics and remain 
      "dimensions": {
        "1_narrative_arc":            null,
        "2_problem_clarity":          null,
-       "3_market_size_credibility":  { "score": 4, "weight": 5 },
-       "4_solution_differentiation": { "score": 3, "weight": 5 },
+       "3_market_size_credibility":  { "score": 4, "weight": 5, "justification": "TAM arithmetic checks out (\"250,000 US mid-market plants\" — Slide 7) but the 25% SAM multiplier is unsourced." },
+       "4_solution_differentiation": { "score": 3, "weight": 5, "justification": "Moat stated by adjective, not mechanism (\"we're faster and cheaper than legacy players\" — Slide 9); no named incumbent risk." },
        "5_traction_proof":           null,
        "6_team_credibility":         null,
        "7_ask_specificity":          null,
-       "8_design_polish":            null
+       "8_design_polish":            null,
+       "9_rhetorical_economy":       null
      },
      "critical_flag": false,
      "critical_flag_notes": []
    }
    ```
    ```
+8b. **Validate quoted evidence (deterministic, write-time self-check)** — issue #464 / #475:
+   - After the `_summary.md` write lands inside the staging dir, invoke `python -m anvil.lib.evidence_check <thread>.{N}/ --scoring <staging dir>/_summary.md` (or call `anvil.lib.evidence_check::check_version_dir(<thread>.{N}/, scoring=<staging dir>/_summary.md)` directly). Because the `--scoring` target is a `_summary.md`, the verifier routes to the machine-summary parser (`parse_machine_summary_dimensions`), which reads the JSON `dimensions` block, extracts the quoted spans from each scored dimension's `justification` string, and checks each one against `deck.md` (curly→straight quote folding, dash-variant folding `—`/`–`/`---`/`--`, whitespace collapse, markdown-emphasis stripping; case-sensitive substring match, with `...`/`…`-elided spans matched fragment-by-fragment in document order within the `ELISION_WINDOW_CHARS` proximity window — issue #478). Classification per justification: ≥1 span matching the body → pass; score at full weight + `no instance of <X> found` marker → pass (ceiling-by-absence); spans present but none matching → **major `fabricated_evidence` finding**; no spans at all → minor `missing_evidence` advisory. `null`-score (un-owned) dimensions are skipped, so a partial scorecard is checked cleanly. Anchors are NOT validated (judgment-free scope).
+   - **Findings are a write-time self-check failure — correct before the sidecar lands**: a `missing_evidence` finding means the critic adds the verbatim quote + anchor (or, at full weight, the by-absence marker) to that dimension's `justification` string and re-runs the check. A `fabricated_evidence` finding is the hard case — the quoted span does not appear in `deck.md`, so the critic MUST re-derive that dimension's justification from the actual deck body (re-read the slide, re-quote verbatim, and reconsider whether the score itself was grounded). The check is deterministic and cheaply re-runnable. The staged sidecar MUST NOT exit the context block while `fabricated_evidence` findings persist.
+   - **Advisory boundary**: this self-check governs this critic's OWN staging-dir `_summary.md` only. It does NOT gate the verdict (no new critical-flag category, no change to the aggregator's `advance`), does NOT write a sidecar, and is NEVER run retroactively against existing critic dirs — legacy siblings are immutable and the rule applies to NEW critic runs only.
 9. **Write `findings.md`** and **`comments.md`** in the standard severity/slide-ref format.
 10. **Update `_progress.json`** and `_meta.json` inside the staging dir. The `_progress.json` write MUST be the LAST file write before the context manager exits — the manifest verification + atomic rename at exit (issue #350) requires it to be present. Then **exit the `staged_sidecar` context block**: the primitive verifies every name in the required-files manifest exists in the staging dir, then atomically renames `.<thread>.{N}.market.tmp/` → `<thread>.{N}.market/`. The final-named dir only ever exists in **complete** form.
 11. **Report**: one-line status (e.g., `Market critic on acme-seed.1 → acme-seed.1.market/ (dims 3+4: 7/10; 4 findings, 0 critical flags; TAM recomputation matches within rounding)`).
@@ -187,3 +195,13 @@ Standard.
 
 
 **Scorecard kind declaration**: This critic's `_meta.json` SHOULD include `"scorecard_kind": "machine-summary"` per `anvil/lib/snippets/scorecard_kind.md`. This is a deck specialist critic — `machine-summary` shape (`_summary.md` + `findings.md`), partial scorecard with non-owned dimensions set to `null`. The deck-review aggregator reads this sibling's `_summary.md` and combines its scores into the composite verdict.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.market/` — so only complete sidecars are ever committed.
+- **Staging target**: ONLY this command's own `<thread>.{N}.market/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(deck/market): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; specialist critics do not advance the state machine.

@@ -38,6 +38,12 @@ A **memo thread** is a single decision artifact (typically: invest / pass / cond
       _progress.json         Phase state for the reviewer
     <thread>.1.audit/        Optional auditor critic sibling (fact-check)
     <thread>.1.critic/       Optional substantive critic sibling
+    <thread>.1.redteam/      Optional independent adversarial critic sibling (issue #560)
+      _review.json             Canonical typed review per anvil/lib/review_schema.py (redteam_survives / redteam_unengaged critical flags)
+      objections.md            Per-objection prose: load-bearing tag + verdict (DEFEATED / SURVIVES / UNENGAGED) + rebuttal-sufficiency justification
+      calibration.md           (conditional) Author-strongman crosscheck (anticipated / novel / over-weighted objections)
+      _meta.json               { critic: redteam, scorecard_kind: human-verdict, rubric_id: anvil-memo-v2, ... }
+      _progress.json           Phase state (phase: redteam)
     <thread>.2.plan/         Optional change-set preview written by `memo-revise <thread> --plan`
       plan.md                Per-item planned-edit table (operator edits in place to decline items)
       _meta.json             { critic: plan, scorecard_kind: planner }
@@ -79,6 +85,8 @@ Typical source-of-truth materials:
 The list is illustrative, not exhaustive. The contract is: *"if a claim's evidentiary basis lives in a file, that file goes in `<thread>/refs/`."* Source-of-truth materials are typically named for their **content** (`cv.pdf`, `filing-s1.pdf`); citation stubs (above) are typically named for their **citation key** (`<key>.md`) and carry a `# TODO: source for <claim>` placeholder. The disambiguation is left to filename convention — a markdown file matching the TODO-stub shape is a stub; a markdown file named for its content (`cv.md`, `transcript-foo.md`, `email-loi-bigcorp.md`, `strongman-for.md`, `strongman-against.md`) is a source-of-truth material.
 
 **Strongman scoping convention.** A `strongman-for.md` / `strongman-against.md` pair is scoped to **one named thesis or research question** — a vertical, an analogy, a strategic bet — NOT to the memo artifact as a whole. Multiple pairs may exist per thread root, typically organized into `refs/<topic>/` (single-thesis memo shape, where the strongman pair sits alongside the rest of `refs/`) or a companion `research/<topic>-analysis/` directory at the portfolio level (multi-vertical memo shape, mirrors the portfolio-level `research/` extension from issue #280 — each vertical's `research/<vertical>-analysis/` directory carries its own `strongman-for.md` / `strongman-against.md` pair scoped to that vertical's research question). Strongman files live in the **research/input layer** (`refs/` or `research/<topic>-analysis/`), **NOT** as a critic sibling of a versioned memo dir. They are author-supplied substrate, not critique output — the strongman author is the operator (or an external substrate-gathering pass), not a reviewer; the files predate `<thread>.{N}/` and feed the drafter / reviewer as authoritative input. See `commands/memo-draft.md` §Procedure step 3 for the drafter contract (the drafter reads strongman files when present and addresses or explicitly scopes out the named counter-arguments), `commands/memo-review.md` §Procedure step 4g for the reviewer-side strongman back-check classifier, and `rubric.md` §"Refs back-check (dim 3)" for the dim 3 strongman sub-rule (dim 2 calibration is documented at `rubric.md` §"Refs back-check (dim 3)" §"Strongman back-check (dim 3)" with the dim 2 cross-reference).
+
+**Independence layer (issue #560)**: an optional `memo-redteam` critic (`commands/memo-redteam.md`) provides an **independent adversarial critic** alongside the author-supplied strongman. The red-team critic is **adversarial-by-default**: it generates objections independently — explicitly without reading `refs/strongman-against.md` during objection generation — and renders `DEFEATED` / `SURVIVES` / `UNENGAGED` verdicts on whether the memo's response defeats each objection. The author's strongman is preserved as drafter substrate AND becomes a **calibration crosscheck** in the red-team's output (anticipated / novel / over-weighted objections, written to `<thread>.{N}.redteam/calibration.md` when `strongman-against.md` is present). The red-team's `redteam_survives` / `redteam_unengaged` critical flags on load-bearing objections flow through the standard critic aggregation pathway (`anvil/lib/critics.py::aggregate`) to force `advance: false` — same plumbing as every other load-bearing back-check critical flag, no new state-machine transition. See `rubric.md` §"Red-team back-check (dim 2 + dim 3)" for the verdict vocabulary and `commands/memo-redteam.md` for the full critic spec.
 
 Accepted file shapes for source-of-truth materials in v0: markdown (`.md`), plain text (`.txt`), JSON (`.json`), PDFs (`.pdf`), images (`.png`, `.jpg`, `.jpeg`). The drafter **reads text-readable files** (markdown, text, JSON) into context as authoritative. **When `pdftotext` is available** (preflighted via `anvil/skills/memo/lib/refs_pdf.py::check_pdftotext_available()` — issue #167), the drafter ALSO extracts PDF text via `extract_pdf_text(...)` and reads it as authoritative source-of-truth content alongside the text-readable path; see `commands/memo-draft.md` step 3 for the drafter contract and `commands/memo-review.md` step 5 for the reviewer-side back-check. When `pdftotext` is absent, PDFs degrade to **presence-only signals** — the drafter is aware they exist by filename and respects the rule that claims about the subject of the file SHOULD NOT be made unless backed by content the drafter can verify; the reviewer records an info-level lint entry in `_summary.md.lint.refs_pdf_extraction` with the install story so the consumer sees how to enable the opt-in path. Images (`.png`, `.jpg`, `.jpeg`) remain presence-only in all v0 paths — OCR / vision back-check is deferred.
 
@@ -155,15 +163,30 @@ documents:
 ---
 ```
 
-**Registered `artifact_type` values** (closed-ended enum per Open Question #5 of #283):
+`audience:` accepts two equivalent shapes (issue #546). The flat list above is the canonical form. The role-keyed mapping form is also accepted for studio drafters who prefer to name precedence explicitly:
+
+```yaml
+audience:
+  primary: <primary audience>
+  secondary: <secondary audience>
+```
+
+Both shapes flatten to the same `brief.audience: List[str]` (the mapping form flattens in `primary → secondary → tertiary → <unknown roles>` order), so downstream consumers are unaffected. Per-role values may be either a string (one audience per role) or a list of strings (multiple audiences per role).
+
+**Registered `artifact_type` values** (closed-ended enum per Open Question #5 of #283, with a consumer extension tier per #394):
 
 - `investment-memo` — ranked-recommendation invest / pass / conditional with check size. The default memo shape.
 - `position-paper` — argumentative case for a specific viewpoint (e.g., the canary's "latency wall" thesis).
 - `tactical-plan` — execution plan with prioritized actions and ownership.
 - `vision-document` — long-horizon technical or strategic vision.
 - `descriptive-thesis` — descriptive case for a team / market / shape (e.g., the canary's "team thesis").
+- `challenge-memo` — stress-tests a **named** positioning thesis against evidence and delivers a verdict **on the test** (holds / breaks / holds-with-amendments), not an invest / pass decision (issue #394; the canary's "broadcom-thesis" / "sensor-stack" threads).
+- `strategy-memo` — internal playbook for the organization itself (e.g., a fundraising strategy): scored on actionability of the play and soundness of its anchors rather than venture financials (issue #394; the canary's "fundraising-strategy" thread).
+- `deck`, `slides`, `proposal`, `pub` — **skill-identity values** (issue #386; `pub` added under #408; enumerated in `SKILL_IDENTITY_ARTIFACT_TYPES`), not memo subtypes: they declare which non-memo skill owns the thread in a mixed project BRIEF. They select **no** memo rubric overlay; memo commands fail loudly when pointed at a thread declared with one (see the selection contract below).
 
-Unknown `artifact_type` values are rejected with an error listing the registered set. Adding a new artifact type requires a code change in `anvil/skills/memo/lib/project_brief.py::REGISTERED_ARTIFACT_TYPES`.
+**Consumer-declared types (issue #394).** A consumer can register additional memo artifact types — with **no framework release** — by shipping an overlay JSON at `<consumer>/.anvil/skills/memo/rubric_overlays/<type>.json` (where `<consumer>` is the repo root carrying the `.anvil/` install marker; the same consumer-tier pattern as the pub skill's `.anvil/skills/pub/rubrics/<venue>.yaml`). A BRIEF declaring such a type parses cleanly and `memo-review` applies the consumer overlay deterministically. The consumer tier also **wins over the shipped tier** when both define the same type, so a consumer can recalibrate a shipped overlay (e.g., their own `position-paper.json`) without forking anvil. Consumer overlay JSONs are parsed with the same strictness as shipped ones (schema, `dim_1`..`dim_9` keys, filename ↔ declared-type consistency).
+
+Unknown `artifact_type` values — registered in neither the enum nor the consumer overlay registry — are rejected with an error listing the registered set, any discovered consumer types, and the consumer-overlay extension path. The enum lives at `anvil/lib/project_brief.py::REGISTERED_ARTIFACT_TYPES` (promoted from the memo-local path under #382; the memo shim re-exports it). Adding a new memo subtype upstream requires the enum literal, membership in `MEMO_ARTIFACT_TYPES`, and a matching overlay JSON; adding a new skill-identity value requires the enum literal plus membership in `SKILL_IDENTITY_ARTIFACT_TYPES` (deliberately left out of `MEMO_ARTIFACT_TYPES`, no memo overlay JSON).
 
 **Parser.** The typed parser at `anvil/skills/memo/lib/project_brief.py::load_project_brief(project_dir)` returns a `ProjectBrief` (or `None` if no BRIEF is present). The strict variant `load_project_brief_strict(project_dir)` raises `FileNotFoundError` on absence and `ValueError` on any schema violation (unknown `artifact_type`, duplicate slug, malformed `target_length`, empty `documents` list, etc.). Both loaders accept an optional `validate_dirs=True` flag that walks the project directory and applies the slug-directory divergence rule (Open Question #1 of #283): listed-but-missing slugs warn and proceed (a draft may not have been started yet); on-disk-but-unlisted slugs raise (configuration drift that would break overlay selection downstream).
 
@@ -171,7 +194,7 @@ Unknown `artifact_type` values are rejected with an error listing the registered
 
 ### Artifact-type rubric overlays (issue #286, sub-deliverable 3 of #283; absorbs closed #278)
 
-When a thread under the project-as-thread-root layout has its `artifact_type` declared in the project BRIEF's `documents:` list, `memo-review` loads a matching **rubric overlay** from `anvil/skills/memo/rubric_overlays/<artifact-type>.json` via `anvil/skills/memo/lib/rubric_overlays.py::select_overlay_for_thread(<thread_dir>)`. The overlay carries two fields:
+When a thread under the project-as-thread-root layout has its `artifact_type` declared in the project BRIEF's `documents:` list, `memo-review` loads a matching **rubric overlay** via `anvil/skills/memo/lib/rubric_overlays.py::select_overlay_for_thread(<thread_dir>)`. Resolution is two-tier (issue #394), first hit wins: the consumer registry `<consumer>/.anvil/skills/memo/rubric_overlays/<artifact-type>.json`, then the shipped registry `anvil/skills/memo/rubric_overlays/<artifact-type>.json`. The overlay carries two fields:
 
 - **`weight_adjustments`** — sparse `dim_N → int` dict (e.g. `{"dim_1": -3, "dim_6": -4}` for `position-paper`) applied as deltas to the base `rubric.md` weights. The reviewer clamps to non-negative integers; no shipped overlay drives any dim below 0.
 - **`calibration_prose`** — sparse `dim_N → str` dict the reviewer appends to its `scoring.md` justifications as a verbatim suffix (the same shape as the per-thread `rubric_overrides.dim_N_calibration` mechanism from issue #233).
@@ -184,25 +207,25 @@ base /44 rubric (rubric.md)
     + per-doc rubric_overrides  (project_brief.py — issues #233 + #296; per-doc dim_N_calibration)
 ```
 
-The `investment-memo` overlay is **identity** (zero adjustments, empty prose) so a thread with `artifact_type: investment-memo` is byte-identical to a thread with no project BRIEF at all — the v0 status quo. The four non-investment-memo overlays (`position-paper`, `tactical-plan`, `vision-document`, `descriptive-thesis`) carry the seed weight choices and calibration prose originally drafted under closed issue #278; see each overlay JSON's `description` field for the per-shape rationale.
+The `investment-memo` overlay is **identity** (zero adjustments, empty prose) so a thread with `artifact_type: investment-memo` is byte-identical to a thread with no project BRIEF at all — the v0 status quo. The six non-investment-memo overlays (`position-paper`, `tactical-plan`, `vision-document`, `descriptive-thesis` from the #278/#286 seed analysis; `challenge-memo`, `strategy-memo` registered under #394 from canary precedent) carry per-shape weight choices and calibration prose; see each overlay JSON's `description` field for the rationale.
 
-**Selection contract.** `select_overlay_for_thread` returns `None` for any of: thread that does not live inside a project root (no project BRIEF on the walk-upward path), thread slug not listed in the BRIEF's `documents:` block, or BRIEF that fails to parse. In all cases the reviewer behaves byte-identically to the pre-#286 status quo (no overlay applied). The selection is **discovery-driven**, not flag-driven — the operator selects an artifact type by writing it into the project BRIEF.
+**Selection contract.** `select_overlay_for_thread` returns `None` for any of: thread that does not live inside a project root (no project BRIEF on the walk-upward path), thread slug not listed in the BRIEF's `documents:` block, or BRIEF that fails to parse. In all cases the reviewer behaves byte-identically to the pre-#286 status quo (no overlay applied). The selection is **discovery-driven**, not flag-driven — the operator selects an artifact type by writing it into the project BRIEF. **Non-memo artifact types fail loudly** (issue #386; re-keyed under #394): when the matching BRIEF entry declares a skill-identity type (the explicit `SKILL_IDENTITY_ARTIFACT_TYPES` set — `deck` / `slides` / `proposal` / `pub`), `select_overlay_for_thread` raises a skill-mismatch `OverlayLoadError` naming the type and the memo-only constraint, rather than silently scoring a non-memo artifact against the memo rubric. Run the owning skill's commands against such threads instead. The guard is keyed on the explicit skill-identity set — not "anything outside `MEMO_ARTIFACT_TYPES`" — so consumer-declared memo types (#394) resolve through the consumer tier instead of tripping the rejection.
 
-### Optional `.latest` convenience symlinks
+### `.latest` convenience symlinks (framework-maintained by default, consumer-pinnable)
 
-Consumers may add per-project convenience symlinks (`memo.latest -> memo.{max_N}`, `memo.latest.review -> memo.{max_N}.review`, etc.) so that downstream tooling — cross-artifact citations, share scripts, `pdfinfo` checks in CI — can target a stable path without parsing N. The convention is documented in `anvil/lib/snippets/version_layout.md` (section "Convenience `.latest` symlinks"). Resolution semantics for the memo lifecycle commands:
+Every memo thread carries per-thread convenience symlinks (`memo.latest -> memo.{max_N}`, `memo.latest.review -> memo.{max_N}.review`, etc.) so that downstream tooling — cross-artifact citations, share scripts, `pdfinfo` checks in CI — can target a stable path without parsing N. The convention is documented in `anvil/lib/snippets/version_layout.md` (section "Convenience `.latest` symlinks"). As of issue #473 the memo lifecycle **maintains these symlinks itself** — the prior consumer-maintained contract was operationally load-bearing for every consumer yet agent-invisible (the studio canary completed a 4-version iteration with zero symlinks). Semantics for the memo lifecycle commands:
 
-- **`memo-revise` does not follow `.latest`.** It enumerates numbered `<thread>.{N}/` directories and picks the highest N (see `commands/memo-revise.md` step 1). A `.latest` symlink in the portfolio dir is inert — the digit-N anchor in `enumerate_versions` (see `anvil/lib/snippets/thread_state.md`) ignores it.
-- **`memo-revise` does not update `.latest`.** After writing `<thread>.{N+1}/`, the symlink (if present) still points at the prior N until the consumer's own script (or hand-`ln`) re-points it. Anvil-shipped memo commands do not write, require, or read `.latest` symlinks in v0; maintenance is consumer-side.
-- **`memo-review` and the `memo` portfolio orchestrator do not dereference `.latest`.** They enumerate the same digit-N directories as the reviser. A `.latest` symlink does not perturb state-machine derivation (`enumerate_versions` / `enumerate_siblings` regex-exclude it; see `anvil/lib/snippets/thread_state.md`).
+- **Lifecycle commands write `.latest` via one canonical path.** `memo-draft` (step 9.6), `memo-revise` (step 9.8), and `memo-review` (step 12.5) each end by invoking the latest-phase CLI (`anvil/skills/memo/lib/latest_phase.py <thread-dir>`), which delegates to the canonical writer `anvil.lib.latest_resolution.update_latest_symlinks()`. Per suffix family independently: `<thread>.latest` tracks the highest version dir, `<thread>.latest.review` tracks the highest review sibling (it may lag `<thread>.latest` by one between revise and the next review — that lag is correct), and any other already-existing `<thread>.latest.<tag>` family is re-pointed too. Targets are relative (`ln -sfn` semantics). Command bodies never hand-roll `ln -sfn`; the CLI is the single sanctioned write path (the #153 exclusion contract, amended under #473, enforces this in `tests/lib/test_latest_symlinks_exclusion.py`).
+- **Operator pins are preserved.** The writer discriminates the steady-lifecycle stale link (still on the immediately-superseded version, set before the new highest dir existed — re-pointed freely; this is the tracking path) from an intentional pin: any other symlink resolving to a real, **non-highest** version dir (e.g., "publish `.latest` against the reviewed-and-AUDITED v3 even though v4 is in progress" — the load-bearing #288 AC) is preserved with a notice; `--force` re-points. A real `.latest/` *directory* (non-symlink) is never replaced. Dangling symlinks are repaired freely. The CLI is idempotent and non-blocking (exits 0 in every failure mode).
+- **The read side is unchanged.** `memo-revise` does not follow `.latest` for input selection — it enumerates numbered `<thread>.{N}/` directories and picks the highest N (see `commands/memo-revise.md` step 1). `memo-review` and the `memo` portfolio orchestrator likewise enumerate digit-N directories only. A `.latest` symlink does not perturb state-machine derivation (`enumerate_versions` / `enumerate_siblings` regex-exclude it; see `anvil/lib/snippets/thread_state.md`).
 
-The symlinks are therefore **purely advisory** — supported in the sense that nothing anvil does will remove or break them, but not produced or consumed by the framework. If consumers want anvil:memo to auto-update `<thread>.latest` after each revise, file a follow-on issue.
+The symlinks are therefore framework-maintained output, but **never framework input**: nothing anvil does depends on their presence, threads that predate #473 (or consumers that delete the symlinks) work unchanged, and the only shipped reader that dereferences them is the canonical resolver below. Other skills (`deck`, `datasheet`, …) adopt the same writer in follow-ups once the memo shape settles.
 
 ### Canonical `.latest` resolution (issue #288, sub-deliverable 5 of #283)
 
 When any anvil-shipped memo code path (today: the cross-thread reference resolver in `lib/cross_thread_refs.py`; future: any intra-thread or downstream tool that needs to dereference `<slug>.latest`) needs to resolve a symbolic `<slug>.latest` reference to a concrete version directory on disk, it MUST go through the single source of truth at `anvil/skills/memo/lib/latest_resolution.py::resolve_latest(thread_dir, slug)`.
 
-Per the curator's recommendation in #288 — **option (c): pure tolerance** — anvil-shipped commands do NOT auto-create or maintain `<slug>.latest` symlinks. The convention is consumer-maintained (see `anvil/lib/snippets/version_layout.md` §"Convenience `.latest` symlinks" above). The framework tolerates four on-disk shapes via a fixed four-step rule:
+Per the curator's recommendation in #288 — **option (c): pure tolerance** — the *resolver* never required the symlinks to exist; issue #473 later added the *writer* half (`update_latest_symlinks` in the same module, invoked via the `latest_phase.py` CLI — see §"`.latest` convenience symlinks" above), so the convention is now framework-maintained by default. The resolver's read-side contract is unchanged: it tolerates four on-disk shapes via a fixed four-step rule:
 
 1. **Symlink wins.** `<thread_dir>/<slug>.latest` is a symlink (whether resolvable or dangling) → return the symlink path. An author can intentionally pin `.latest` to a non-highest version (e.g., "publish `.latest` against the reviewed-and-AUDITED v3 even though v4 is in progress"). This is the load-bearing AC from #288: pinned symlinks are honored.
 2. **Real `.latest/` directory.** `<thread_dir>/<slug>.latest` is a real directory (not a symlink) → return it. The rarer case — typically the operator hasn't migrated to the symlink convention yet, or is on Windows without WSL.
@@ -211,7 +234,7 @@ Per the curator's recommendation in #288 — **option (c): pure tolerance** — 
 
 Precedence is fixed: 1 > 2 > 3 > 4. The helper is **non-throwing**: filesystem errors during traversal degrade to `None` rather than propagating, mirroring the lenient-form precedent across the memo lib (`refs_resolver`, `project_discovery`, `project_brief`). Errors surface as findings, not exceptions.
 
-The helper does NOT auto-create symlinks (option (a) was deferred — promote only if canary feedback shows option (c) is too magic) and does NOT ship a maintenance script (option (b) was rejected). The Python module `lib/cross_thread_refs.py` re-exports `resolve_latest` and the `LATEST = "latest"` constant from `latest_resolution` so callers that already use the cross-thread import path do not need to migrate.
+The resolver itself does NOT auto-create symlinks — creation/maintenance is the writer's job (`update_latest_symlinks` + the `latest_phase.py` CLI, the #473 promotion of #288's deferred option (a)/(b), driven by canary feedback). The Python module `lib/cross_thread_refs.py` re-exports `resolve_latest` and the `LATEST = "latest"` constant from `latest_resolution` so callers that already use the cross-thread import path do not need to migrate.
 
 ## State machine
 
@@ -219,7 +242,8 @@ Per-thread state, derived from on-disk evidence (not flags):
 
 ```
 EMPTY → DRAFTED → REVIEWED → REVISED → … → READY
-        ↑                                  ↘ AUDITED  (optional, via auditor critic sibling)
+        ↑                 ↘ NO-GO (terminal; operator override required — issue #559)
+        |                                  ↘ AUDITED  (optional, via auditor critic sibling)
         (optional .0.perspective/ may exist before DRAFTED; it does not gate the machine)
 ```
 
@@ -232,11 +256,65 @@ The perspective sibling is intentionally allowed at `.0.perspective/` (before th
 | `REVIEWED` | `<thread>.{N}.review/verdict.md` exists for the latest `N` |
 | `REVISED` | A `<thread>.{N+1}/` exists after a prior `<thread>.{N}.review/` |
 | `READY` | Latest `<thread>.{N}.review/verdict.md` records `advance: true` AND no unresolved critical flag |
+| `NO-GO` | Latest `<thread>.{N}.review/verdict.md` records `**Verdict**: NO-GO` AND no `<thread>.{N+1}/` exists. Terminal sink — the evaluator concluded the *thesis itself* fails (issue #559). Resurrection requires `memo-revise <thread> --override-no-go "<rationale>"` and produces `<thread>.{N+1}/` with `metadata.no_go_overridden = true`. |
 | `AUDITED` | `<thread>.{N}.audit/` exists alongside a `READY` version |
 
-Thresholds: ≥35/44 advances. <35/44 requires revision. Any critical flag short-circuits regardless of total — block until addressed.
+Thresholds: ≥35/44 advances. <35/44 requires revision. Any critical flag short-circuits regardless of total — block until addressed. **Red-team critical flags** (issue #560 — `redteam_survives` and `redteam_unengaged` emitted by the optional `<thread>.{N}.redteam/` adversarial critic on load-bearing objections that the memo does not defeat) participate in this standard `advance` aggregation via the existing pathway — `anvil/lib/critics.py::aggregate` unions them into the verdict's critical-flag list exactly like every other load-bearing back-check critical flag. A load-bearing `SURVIVES` (or `UNENGAGED`) finding at iteration `max_iterations - 1` or later promotes to a `no_go` critical flag at memo-review step 7 and routes to the **NO-GO** terminal state instead of `BLOCK`/`REVISE` (issue #559) — see §"NO-GO terminal state" below.
 
 **Plan siblings do NOT advance state.** A `<thread>.{N+1}.plan/` directory (written by `memo-revise <thread> --plan` — see §"Operator-confirmable change-set preview" below) is a critic-sibling-shaped artifact, NOT a version dir. Its presence does NOT advance the thread to `REVISED`: the state stays `REVIEWED` until `memo-revise <thread> --apply` writes the matching `<thread>.{N+1}/<thread>.md` body file. The state-machine derivation table above continues to use `<thread>.{N+1}/` presence as the `REVISED` evidence; plan siblings are invisible to it. This preserves the existing immutability contract (a half-built version dir without a body markdown file is never `REVISED`) and keeps the two-phase flow audit-trailable on disk.
+
+### NO-GO terminal state
+
+The memo skill ships a **thesis-failure terminal sink** alongside `READY` (issue #559). A `<thread>.{N}.review/verdict.md` carrying `**Verdict**: NO-GO` records that the evaluator concluded the *thesis itself* fails — not that the prose has a defect. NO-GO is structurally distinct from `STALLED` (score plateau — recoverable via operator escalation) and from `BLOCKED` (iteration-cap exhaustion — recoverable via per-document cap override): it represents an evaluator-declared structural failure of the thesis that no further revision against the existing evidence can fix. The terminal sink exists because without it every path leads toward shipping — a megaphone with no kill-switch.
+
+**Emission paths.** A `no_go` critical flag is emitted at `memo-review` step 7 via the `_classify_no_go_eligibility(aggregated_flags, iteration, max_iterations)` policy. The policy is conservative in v0 — canary will tune. Initial v0 trigger conditions:
+
+1. A `redteam_survives` flag from the red-team critic sibling (`<thread>.{N}.redteam/_review.json`; issue #560 / PR #573) on a **load-bearing** objection AND `iteration >= max_iterations - 1` (the iteration budget is about to be exhausted against an unrebutted structural objection).
+2. A `Strongman: NOT_ADDRESSED (load-bearing)` flag (issue #330) AND `iteration >= max_iterations - 1`.
+3. A `Summary-detail consistency: CONTRADICTED` flag (issue #245) on a load-bearing thesis claim AND `iteration >= max_iterations - 1`.
+
+Lower-tier flags (typos, dim 9 bloat, unverified cites) NEVER promote to `no_go`. The bar is: **an evaluator has identified a defect that re-revision against the existing evidence cannot fix.** This is the Path A composition with PR #573 documented in issue #559's curator enhancement: the red-team critic continues to emit `redteam_survives` / `redteam_unengaged` unchanged; the memo-review step 7 promotion logic concentrates the NO-GO escalation policy in one place.
+
+**`verdict.md` shape.** A NO-GO `verdict.md` is structurally distinct from the standard `Total: X/Y` + `Decision: advance: true|false` shape:
+
+```markdown
+# NO-GO — terminal
+
+**Verdict**: NO-GO
+**Iteration**: <N>
+**Triggering flag**: <type, e.g. redteam_survives | no_go (direct) | strongman_load_bearing>
+**Source critic**: <critic_id, e.g. memo-redteam, memo-review>
+
+## Kill rationale
+
+<one-paragraph verbatim from the triggering critical flag's justification field>
+
+## Evidence
+
+- <evidence_span(s) from the triggering flag, when present>
+
+## Operator override
+
+To resurrect this thread, run `memo-revise <thread> --override-no-go "<reason>"`.
+The override writes a new version dir with `metadata.no_go_overridden = true`
+and `metadata.no_go_override_reason = "<verbatim>"`. The NO-GO verdict.md is
+preserved as a permanent record of the kill recommendation.
+```
+
+The `parse_memo_verdict_no_go` and `parse_memo_verdict_kill_rationale` helpers in `anvil/lib/critics.py` extract the NO-GO verdict line and the kill rationale paragraph from this prose shape; the legacy `_adapt_memo_legacy` in the same module recognizes the `**Verdict**: NO-GO` line and emits `Verdict.NO_GO` when reading a NO-GO `verdict.md` through the prose-triple adapter.
+
+**`_progress.json` audit trail.** At NO-GO emission time, `memo-review` writes:
+
+- `termination_reason: "NO_GO"` (top-level) — the highest-priority termination value per `anvil/lib/snippets/progress.md` §"`termination_reason`".
+- `metadata.kill_rationale: "<verbatim>"` — the one-paragraph kill rationale extracted from the triggering `no_go` critical flag's `justification` field. Preserved on every subsequent shallow merge.
+
+**Operator override semantics.** NO-GO is a **recommendation, not a hard lock**. Three override paths:
+
+1. **Resurrect with `memo-revise <thread> --override-no-go "<reason>"`** — operator explicitly disagrees with the kill recommendation. Writes a new `<thread>.{N+1}/` with `metadata.no_go_overridden = true` and `metadata.no_go_override_reason = "<verbatim>"`. The next `memo-review` pass judges the resurrected version on its own merits; NO-GO does NOT auto-re-emit unless the underlying triggering flag re-fires. The override is **per-version**: a thread that resurrects and then re-earns a `no_go` flag on the resurrected version is in NO-GO again.
+2. **Address the underlying flag** — operator brings new evidence into `refs/` that the red-team critic didn't have access to (a fresh customer interview, a regulatory ruling). The next `memo-redteam` pass re-evaluates and may not re-emit SURVIVES. The operator runs `memo-revise --override-no-go "new evidence: <description>"` to land the new version; the next `memo-review` cycle judges fresh.
+3. **Kill the thread** — operator accepts the recommendation. No action required; the thread sits in NO-GO terminal state as a durable "we evaluated this and stopped" record, distinct from a half-abandoned thread.
+
+The operator override is intentionally **friction-ful** (required verbatim rationale, no `--polish` analog that silently bypasses) because NO-GO exists precisely to make killing easy and resurrecting hard — the inverse of the default lifecycle's bias. The reviser's verdict pre-check at `memo-revise` step 4 refuses to proceed against a NO-GO `verdict.md` unless `--override-no-go "<reason>"` is passed; the rationale surface is the same shape as the `--polish "<reason>"` shape (non-empty, whitespace-rejected).
 
 Iteration cap: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). Consumer overrides land via the **per-document iteration-cap paired override** on the project BRIEF (issue #349 — `BriefDocument.max_iterations` + `BriefDocument.iteration_cap_rationale`); see "Per-document override contract" below for the full spec. Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
 
@@ -410,9 +488,9 @@ The optional-render contract:
 - **Sub-step of `DRAFTED` and `REVISED`, not a new state.** `_progress.json.phases.render` records whether the renderer ran for a given version directory. Absence of the `phases.render` block is **fully legal** — it means the version was never rendered (the case for every legacy memo, and for consumers who run without pandoc / weasyprint installed). The state-machine derivation in §"State machine" above is **unchanged**: `DRAFTED` is still derived from `phases.draft == done` regardless of whether render ran; `REVISED` is still derived from the presence of `<thread>.{N+1}/` after a prior review.
 - **Non-blocking on failure.** A missing renderer, a render-gate finding, or even a hard pandoc failure does NOT abort `memo-draft` or `memo-revise`. The failure is recorded in `_progress.json.phases.render` and `_progress.json.render_gate`, and the upstream command completes normally. See `commands/memo-render.md` §"Failure modes" for the full table.
 - **Markdown-first; PDF is derived.** The body markdown (`<thread>.md` per the slug-echo convention of #295) is the source-of-truth. `<thread>.pdf` is a one-way derivation produced by `memo-render`; it is **regenerated on every render** and MUST NEVER be hand-edited. If the rendered output looks wrong, fix the markdown or the styles, never the PDF.
-- **Lifecycle wiring.** `memo-draft` and `memo-revise` call `memo-render` after their respective writing pass (drafter step 9.5; reviser step 9.7). Both calls are non-blocking. The drafter / reviser still report success even when render is unavailable or the gate finds issues; the render outcome is for the operator and the Phase 4 reviewer-side integration to surface.
+- **Lifecycle wiring.** `memo-draft` step 9.5 and `memo-revise` step 9.7 instruct the **executing agent** to run the render-phase CLI (`python3 .anvil/skills/memo/lib/render_phase.py <version-dir>` — the canonical execution path for the `memo-render` procedure, issue #472) after their respective writing pass. There is no other runtime that performs the render: when an LLM agent drives the lifecycle, the agent IS the runtime. Both invocations are non-blocking (the CLI always exits 0). The drafter / reviser still report success even when render is unavailable or the gate finds issues; the render outcome is for the operator and the Phase 4 reviewer-side integration to surface.
 - **Composable re-run.** `memo-render <thread>` is independently re-runnable. The consumer can tweak `<consumer>/.anvil/lib/memo/styles.css` (or the framework `anvil/lib/memo/styles.css`) and re-invoke the command WITHOUT going through draft / revise. The PDF picks up the new styles; the body markdown is untouched. See `commands/memo-render.md` §"Re-run pattern".
-- **Render gate.** The five-dimension `render_gate.gate(kind="memo")` (Phase 2 / PR #185) runs as part of every render — `memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_placeholder_scan`. Findings land in `_progress.json.render_gate.findings`. Phase 4 will wire the reviewer to surface them in `_summary.md.render_gate`; in Phase 3 the findings are recorded but not yet read by the reviewer.
+- **Render gate.** The six-dimension `render_gate.gate(kind="memo")` (Phase 2 / PR #185; sixth dimension added by issue #395) runs as part of every render — `memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_image_dimensions`, `memo_placeholder_scan`. Findings land in `_progress.json.render_gate.findings`. Phase 4 will wire the reviewer to surface them in `_summary.md.render_gate`; in Phase 3 the findings are recorded but not yet read by the reviewer.
 
 The full command contract — preflight, gate invocation, `_progress.json` shape, failure modes, re-run pattern — lives in `commands/memo-render.md`. The render-chain dependencies (pandoc + weasyprint / wkhtmltopdf / xelatex + optional pdfinfo) and the renderer-detection priority order are documented in `anvil/lib/memo/README.md` §"The rendering chain" and surfaced via `MEMO_RENDERER_REMEDIATION` in `anvil/lib/render.py`.
 
@@ -424,6 +502,7 @@ The full command contract — preflight, gate invocation, `_progress.json` shape
 | `memo-perspective <thread>` | external-substrate critic (optional, read-only) | `<thread>/BRIEF.md`, `<thread>/refs/**`; for re-run, also latest `<thread>.{N}/<thread>.md` (body filename echoes the slug per #295) and `.review/comments.md` evidence / market / comparables / risk findings | `<thread>.0.perspective/` (initial) or `<thread>.{N}.perspective/` (re-run); both non-gating; may side-effect-write to `<thread>/refs/<key>.md` citation stubs |
 | `memo-draft <thread>` | drafter | `<thread>/BRIEF.md` (+ `<thread>/refs/`), AND any `<thread>.0.perspective/` sibling (optional load-bearing context if present); for revisions, also `<thread>.{N}/` + all `<thread>.{N}.*/` siblings | `<thread>.1/` (or `<thread>.{N+1}/` on revise-from-feedback path; see `memo-revise`) |
 | `memo-review <thread>` | reviewer | latest `<thread>.{N}/` | `<thread>.{N}.review/` |
+| `memo-redteam <thread>` | independent adversarial critic (optional, opt-in, read-only) | latest `<thread>.{N}/<thread>.md`, resolved refs-dir list source-of-truth materials; conditionally `refs/strongman-against.md` for calibration crosscheck only (NOT for objection generation — issue #560) | `<thread>.{N}.redteam/` (non-gating; critical-flag-bearing — `redteam_survives` / `redteam_unengaged` on load-bearing objections force `advance: false` via existing aggregation pathway) |
 | `memo-revise <thread> [--polish "<reason>"] [--plan|--apply]` | reviser | latest `<thread>.{N}/` + all `<thread>.{N}.*/` critic siblings (and `<thread>.{N+1}.plan/` on `--apply`) | `<thread>.{N+1}/` with `changelog.md` (default path; `--apply` path); OR `<thread>.{N+1}.plan/plan.md` only (on `--plan`); with `--polish`, also `metadata.revision_mode = "polish"` + `metadata.revise_force_reason` audit trail; with `--plan`/`--apply`, also `metadata.revision_mode = "plan_then_apply"` (or `"polish_plan_then_apply"` when composed with `--polish`). `--plan` and `--apply` are mutually exclusive. See §"Operator-confirmable change-set preview" + §"Operator-initiated polish passes" for the full two-phase + polish-pass contracts. |
 | `memo-render <thread>` | PDF renderer (optional, non-blocking) | latest `<thread>.{N}/<thread>.md`, `<thread>.{N}/_progress.json.metadata.target_length_resolved` | `<thread>.{N}/<thread>.pdf` (on success); `<thread>.{N}/_progress.json.phases.render` + `_progress.json.render_gate` always |
 | `memo-figures <thread>` | figurer | latest `<thread>.{N}/<thread>.md` | figures/tables under `<thread>.{N}/exhibits/` |
@@ -469,6 +548,10 @@ Phase states: `pending`, `in_progress`, `done`, `failed`. Validation is **by fil
 
 Critic siblings (e.g., `<thread>.{N}.review/`) follow the `human-verdict` scorecard kind documented in `anvil/lib/snippets/scorecard_kind.md`: they emit `verdict.md` + `scoring.md` + `comments.md` for human consumption. A `_meta.json` with `{"scorecard_kind": "human-verdict"}` is recommended for discovery purposes (other agents can detect the scorecard kind without inspecting filenames; absence defaults to `human-verdict`), but it is a **required output** of the `memo-review` command — the reviewer always writes it.
 
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing memo command end its phase by staging only the dirs it wrote and committing as `anvil(memo/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 12 write-bearing memo commands adopt it; the read-only `memo` portfolio orchestrator is exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.
+
 ## Rubric
 
 See `rubric.md` for the 9-dimension /44 scoring schema, the ≥35 advance threshold, and the critical-flag short-circuit policy.
@@ -484,6 +567,7 @@ A pre-flight lint runs as part of `memo-review` (step 4b) before the LLM-judgmen
 | Lint | Module | Rule | What it catches |
 |---|---|---|---|
 | `memo_image_refs_exist` | `anvil/skills/memo/lib/memo_image_refs.py` | `memo_image_refs_exist` | Every markdown `![alt](path)` and HTML `<img src="...">` reference in the body markdown (`<thread>.md`, filename echoes the slug per #295) resolves to an existing file relative to the version directory. URL refs and absolute filesystem paths are skipped. Suppression directive: `<!-- anvil-lint-disable: memo_image_refs_exist -->` on the same line as a ref or on the line immediately above. The canary mode is the `cp -r .../old/exhibits .../new/` footgun (issue #146) — when a missing ref names a subdirectory and a same-basename file exists at the version-dir root, the diagnostic surfaces this shape explicitly. |
+| `memo_image_dimensions` | `anvil/lib/render_gate.py` (render-gate check 5; runs at **render phase**, not review) | `memo_image_dimensions` | Advisory image-dimension/aspect sanity check (issue #395) over every body-referenced image plus every PNG/JPEG under `exhibits/`: (1) width or height over the pixel ceiling (default 6000 px; per-thread overridable via the gate's `image_max_px` kwarg), (1b) aspect ratio over 6:1 either direction, (2) actual dims diverging >1.5x from a sibling `src/<stem>.py`'s parseable `figsize`/`dpi` (or PNG pHYs density) — silent skip when nothing declarative is parseable, (3) content bbox occupying <25% of the canvas (the matplotlib `bbox_inches="tight"` + rogue-artist + transparent-canvas signature; needs the `[image_lint]` extra, graceful-skips with a breadcrumb otherwise). All findings are **warning severity** — `pass` is unaffected and no critical flag is emitted (the `memo_overfull_check` advisory model). Suppression directive: `<!-- anvil-lint-disable: memo_image_dimensions -->` near the body ref. The canary mode is `technical-vision`'s 16,622×5,652 px `silicon-ladder.png` shipping through two versions unnoticed; a style-conformant `anvil.mplstyle` figure is 2400×1400 px. |
 
 When the lint reports `errors > 0`, `memo-review` forces `advance: false` and lists `Memo image refs (lint)` under the verdict's critical flags. The lint result is written to the review sibling's `_summary.md` under a `lint.memo_image_refs` block; see `commands/memo-review.md` step 9 for the JSON shape.
 
@@ -497,6 +581,26 @@ This skill ships with opinionated defaults. Consumers are expected to override l
 - `rubric.overrides.md` (optional) — Add domain-specific critical-flag examples or adjust the open-ended "any-deal-breaker" instruction.
 - Reference brief shapes: `templates/BRIEF.fresh.md.example` (new-thread case — no prior version, no migration context, idea seed only) and `templates/BRIEF.migration.md.example` (migrate-from-prior-pipeline case — carries forward a prior version body, prior critic siblings, and a named delta to land). Both are freeform prose with optional YAML frontmatter. Copy whichever shape matches the thread state into `<thread>/BRIEF.md` and edit in place.
 - Reference rubric-override shape (issues #233 + #296): `templates/BRIEF.rubric-overrides.md.example` is a worked-example project `BRIEF.md` calibrated against both canary subtypes (`synthesis-brief` and `feedback-memo`) documented below. Copy it into `<project>/BRIEF.md`, trim or extend the `documents:` list to match your project, and tune the per-doc `rubric_overrides:` blocks (and `target_length_overrides:` for per-version targets) from there.
+
+### Voice grounding (project BRIEF `voice:` block — issue #461)
+
+A project that writes in a specific author persona declares its voice artifacts via ONE optional top-level key in the project `<project>/BRIEF.md` frontmatter:
+
+```yaml
+voice:
+  style_guide: STYLE_GUIDE.md        # optional — register / cadence rules
+  vocabulary: VOCABULARY.md          # optional — AI-tell guidance (judgment side)
+  values: VALUES.md                  # optional — stances / anti-stances / standing
+  corpus: writing-corpus/**/*.md     # optional glob — published exemplars
+```
+
+The contract is framework-level — see `anvil/lib/snippets/voice_grounding.md` for the four-doc taxonomy and the drafter / reviewer / reviser role contracts. The memo wiring:
+
+- **`memo-draft` step 5e**: loads values → style_guide → vocabulary → 3–5 voice-matched, topically-adjacent corpus exemplars; records the consulted exemplar paths in `_progress.json.metadata.voice_exemplars`.
+- **`memo-review` step 4l + the dim 8 sub-step**: calibrates dim 8 (*Prose & structure*) against the voice docs via a **triggered fixed suffix** (the #348 composition order: base → artifact-type overlay → voice suffix → per-doc `dim_8_calibration` last); every voice deduction must quote a corpus passage; anti-stance violations route through the existing critical-flag machinery; the `_summary.md.voice_grounding` block carries the audit trail. See `rubric.md` §"Dim 8 — voice-grounding calibration". No tenth dimension; the /44 total is unchanged.
+- **`memo-revise` step 6**: reads the voice docs when active and preserves voice signatures the reviewer flagged as working.
+
+Paths resolve **project-root first, then consumer-root** (`anvil/lib/project_brief.py::resolve_voice_docs`) — voice docs are usually persona-level repo-root artifacts shared across projects; a project ghostwriting in a different persona shadows them locally. No `voice:` block → every command behaves **byte-identically** to pre-#461. A declared-but-missing file keeps the tier active and surfaces as a `major` review finding. Deterministic vocabulary / AI-tell screening is NOT this surface — that is the rhetoric lint (issue #463); this block drives the judgment-side calibration only. The consumer-wide `.anvil/skills/memo/voice.md` override above composes with this block (both load; the BRIEF-declared persona docs win on conflict).
 
 ## Rubric overrides and non-investment-memo shapes
 

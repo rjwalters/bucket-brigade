@@ -37,7 +37,7 @@ The prefix vocabulary maps `fig` / `figure` → `Figure`, `tab` / `table` → `T
   _findings.json  Structured payload from GroundingResult.to_json() (informational companion).
 ```
 
-**Atomicity** (issue #350): when `--write-review` is set, the claim-figure-grounding sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`_review.json`, `_findings.json`) are staged under a leading-dot sibling `.<thread>.{N}.claim-figure-grounding.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.claim-figure-grounding/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.claim-figure-grounding.tmp/` dir on disk that the next invocation's `cleanup_stale_staging` sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
+**Atomicity** (issue #350, #376): when `--write-review` is set, the claim-figure-grounding sibling dir is written **atomically** via the staged-sidecar primitive at `anvil/lib/sidecar.py`. The two files (`_review.json`, `_findings.json`) are staged under a leading-dot sibling `.<thread>.{N}.claim-figure-grounding.tmp/` during writing; on clean completion the staging dir is renamed (one atomic `Path.rename`) to the final `<thread>.{N}.claim-figure-grounding/` name. A mid-cycle interrupt leaves a `.<thread>.{N}.claim-figure-grounding.tmp/` dir on disk that the next invocation's `cleanup_one_staging(<thread>.{N}.claim-figure-grounding)` per-critic sweep removes; the final-named dir never exists in partial form. Discovery (`anvil/lib/critics.py::discover_critics`) is unchanged — the leading-dot staging shape is invisible to the discovery glob.
 
 The `_review.json` carries:
 
@@ -48,7 +48,7 @@ The `_review.json` carries:
 
 ## Procedure
 
-1. **Discover state**: enumerate `<thread>.{N}/` dirs; pick the highest `N` with `report.md` present. If no such version exists, exit with a notice (`No report version found; nothing to scan.`). When `--write-review` is set, **sweep stale staging dirs from prior interrupts** by invoking `anvil/lib/sidecar.py::cleanup_stale_staging(<portfolio_root>)` where `<portfolio_root>` is the directory that contains `<thread>.{N}/`. This removes any leftover `.<thread>.<M>.claim-figure-grounding.tmp/` (and other `.<...>.tmp/`) shapes left behind by a previously-killed session (issue #350).
+1. **Discover state**: enumerate `<thread>.{N}/` dirs; pick the highest `N` with `report.md` present. If no such version exists, exit with a notice (`No report version found; nothing to scan.`). When `--write-review` is set, **sweep a stale staging dir from a prior interrupt of THIS critic on THIS version** by invoking `anvil/lib/sidecar.py::cleanup_one_staging(<thread>.{N}.claim-figure-grounding)` (the per-critic, parallel-safe sweep — issue #376). This removes ONLY a leftover `.<thread>.{N}.claim-figure-grounding.tmp/` from a previously-killed run of this same critic on THIS version. Sibling critics' in-flight staging dirs under the same portfolio root are NOT touched (issue #350, #376).
 2. **Invoke the claim-figure-grounding scan**: call
 
    ```python
@@ -184,3 +184,13 @@ The lifecycle wiring (per Epic #328 Phase 6):
 - **`report-revise`** consumes findings from the aggregated review (which includes the `.claim-figure-grounding/` findings) and either adds the missing figure or rewrites the prose to drop the reference.
 
 There is no required order between `report-claim-figure-grounding` and the LLM-side `report-review`. The standard pattern is: `report-draft` → `report-figures` → `report-claim-figure-grounding` → `report-review` → `report-revise`, but operators may invoke the critic on demand to validate a figure addition without re-running the full review.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: on the `--write-review` path, after the staged-sidecar atomic rename (issue #350) lands the final-named `<thread>.{N}.claim-figure-grounding/` — so only complete sidecars are ever committed. The default invocation is a pure stdout scan that writes nothing, so the hook has nothing to commit and is a silent no-op.
+- **Staging target**: ONLY this command's own `<thread>.{N}.claim-figure-grounding/` sidecar (never sibling critics' dirs — the narrow scope keeps the hook safe under parallel critic fan-out).
+- **Commit**: `anvil(report/claim-figure-grounding): <thread>.{N} [<state>]` (the bracket carries the thread's current derived state per SKILL.md §State machine — this optional pre-review critic does not advance the state machine).

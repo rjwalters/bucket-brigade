@@ -6,8 +6,8 @@ description: Generative-imagery command for the deck skill. Opt-in via `imagery_
 # deck-imagegen — Generative-imagery command (opt-in)
 
 **Role**: generative-imagery dispatcher.
-**Reads**: latest `<thread>.{N}/deck.md`, `<thread>/BRIEF.md` (for the `imagery_policy` opt-in + style preset), and the consumer-registered backend adapter (per `commands/deck-imagegen-adapter.md`).
-**Writes**: PNG assets into `<thread>.{N}/assets/` and a prompt journal at `<thread>.{N}/assets/_prompts.json`.
+**Reads**: latest `<thread>/<thread>.{N}/deck.md` (the version dir is nested under the thread root per the artifact contract), `<thread>/BRIEF.md` (for the `imagery_policy` opt-in + style preset), and the consumer-registered backend adapter (per `commands/deck-imagegen-adapter.md`).
+**Writes**: PNG assets into `<thread>.{N}/assets/` and a prompt journal at `<thread>.{N}/assets/_prompts.json` (same nested version dir; bare `<thread>.{N}/` references below are shorthand).
 
 Generative imagery is opt-in. Decks without `imagery_policy: generative-eligible` in `BRIEF.md` frontmatter are unaffected — `deck-imagegen` is a no-op (or a refusal) on those threads. The default policy is `deterministic-only`, which preserves the historical hybrid asset policy (Mermaid + matplotlib + consumer-provided assets; see `SKILL.md` § "Asset generation").
 
@@ -16,12 +16,14 @@ This command exists because aesthetic-craft venture categories (consumer product
 ## Inputs
 
 - **Thread slug** (positional argument).
-- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md`.
+- **Latest version directory**: highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/`.
 - **`<thread>/BRIEF.md`**: read frontmatter for `imagery_policy` (REQUIRED gate) and `imagery_style` (optional style preset key; see `commands/imagery-style-presets.md` when shipped per Epic #130 Phase 1C / issue #133).
-- **`.anvil/config.toml`**: read `[deck.imagegen] backend` to discover the consumer-registered adapter. See `commands/deck-imagegen-adapter.md` for the adapter contract and registration mechanics.
+- **`.anvil/config.json`**: read `deck.imagegen.backend` to discover the consumer-registered adapter. See `commands/deck-imagegen-adapter.md` for the adapter contract and registration mechanics.
 - **`deck.md` imagery markers**: the drafter MAY annotate a slide that needs a generative asset with an HTML comment of the form `<!-- anvil-imagegen: <slot> [style=<preset>] [steps=<N>] -->` immediately above the `![alt](assets/generated/<slot>.png)` reference. `<slot>` is the asset's stable filename stem; `<style>` (optional) overrides the brief-level style preset for this single slide; `<steps>` (optional) overrides the adapter's default step count. The `assets/generated/` namespace is the canonical generative-asset location per Phase 1B (see `commands/deck-draft.md` §"Respecting imagery_policy" and issue #132).
 
 ## Outputs
+
+Nested under the thread root `<thread>/`:
 
 ```
 <thread>.{N}/
@@ -41,8 +43,13 @@ The prompt-journal schema is owned by the Phase 2D prompt-journal primitive at `
 
 The following gates MUST pass before `deck-imagegen` will dispatch any generation:
 
-1. **Opt-in gate**: `<thread>/BRIEF.md` frontmatter MUST contain `imagery_policy: generative-eligible`. Any other value (or a missing field) is treated as `deterministic-only` — `deck-imagegen` refuses to run with a clear pointer to the opt-in mechanism. See `SKILL.md` § "Asset generation" and Epic #130 Phase 1B (issue #132) for the frontmatter contract.
-2. **Adapter gate**: `.anvil/config.toml` MUST register a backend under `[deck.imagegen] backend = "<dotted.path>"`. Refer to `commands/deck-imagegen-adapter.md` for the adapter contract (the minimal `generate(prompt, style, steps) -> bytes` signature) and the registration mechanics. Anvil ships zero backends; backend selection is per-consumer.
+1. **Opt-in gate (with consumer-level `default_policy` override)**: the effective `imagery_policy` MUST resolve to `generative-eligible`. Resolution order (highest priority first; issue #547):
+   1. `<thread>/BRIEF.md` frontmatter `imagery_policy:` (per-thread, explicit).
+   2. `.anvil/config.json` `deck.imagegen.default_policy` (consumer-level proactive override — set once, applies to every BRIEF that omits the field).
+   3. Built-in `deterministic-only` (existing default, unchanged).
+
+   Any effective value other than `generative-eligible` is a clean refusal — `deck-imagegen` records `phases.imagegen.state = skipped` with a `reason` field naming the **source** of the effective value (`BRIEF.md`, `.anvil/config.json deck.imagegen.default_policy`, or `built-in default`), so an operator who set `default_policy: generative-eligible` but is surprised by a `skipped` run can see whether the BRIEF or the config supplied the effective value. The `default_policy` value is validated against the same closed enum as `imagery_policy` (`generative-eligible | consumer-provided | deterministic-only`); an out-of-enum value raises `ImagegenError` at config-read time, not at policy-check time. See `SKILL.md` § "Asset generation", Epic #130 Phase 1B (issue #132), and `commands/deck-brief.md` § "imagery_policy" for the frontmatter contract; see `commands/deck-imagegen-adapter.md` § "Consumer registration" for the `default_policy` registration snippet.
+2. **Adapter gate**: `.anvil/config.json` MUST register a backend under `deck.imagegen.backend = "<dotted.path>"` (inside the `"version": 1` envelope). Refer to `commands/deck-imagegen-adapter.md` for the adapter contract (the minimal `generate(prompt, style, steps) -> bytes` signature) and the registration mechanics. Anvil ships zero backends; backend selection is per-consumer.
 3. **Latest-version gate**: a `<thread>.{N}/deck.md` MUST exist (the command runs after `deck-draft`, before `deck-figures`, OR in parallel with `deck-figures` on a different asset class).
 4. **Imagery-marker gate**: at least one `<!-- anvil-imagegen: <prompt-id> -->` marker (or the brief-level equivalent for hero slides) MUST exist in `deck.md`. A deck with `imagery_policy: generative-eligible` but no markers is a no-op (warning in the run report; not an error).
 
@@ -61,13 +68,13 @@ After a successful run:
 
 The full dispatch loop is implemented in `anvil/skills/deck/lib/imagegen.py` (`run_imagegen`); the steps below correspond to that runtime so the doc + code stay coupled. Each step is paragraph-form so an LLM agent reading the spec can follow the same logic when invoking the runtime by hand (e.g., `python -m anvil.skills.deck.lib.imagegen ...` once a thin CLI wrapper lands).
 
-1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` under the portfolio (the lookup pattern is `<thread>.{digits}/`, intentionally skipping critic siblings like `<thread>.{N}.review/`). Read `<thread>/BRIEF.md` frontmatter and prepare to read `.anvil/config.toml`.
+1. **Discover state**: find the highest `N` with `<thread>.{N}/deck.md` under the thread root `<thread>/` (the lookup pattern is `<thread>.{digits}/` within the thread root, intentionally skipping critic siblings like `<thread>.{N}.review/`). Read `<thread>/BRIEF.md` frontmatter and prepare to read `.anvil/config.json`.
 
-2. **Precondition 1 — opt-in gate**: parse the `BRIEF.md` YAML frontmatter and inspect `imagery_policy`. If absent OR not equal to `generative-eligible` (case-sensitive), abort with an `ImagegenError` whose message names the policy and points at `commands/deck-brief.md` § "imagery_policy". Record `phases.imagegen.state = skipped` in `_progress.json` with the policy value as the `reason`. This is documented as "clean exit" (the deck simply isn't on the generative-imagery path); the framework surfaces it as a refusal so an operator who expected dispatch sees the gap.
+2. **Precondition 1 — opt-in gate (with `default_policy` resolution)**: parse the `BRIEF.md` YAML frontmatter and inspect `imagery_policy`. When the field is present and non-empty, use its value. When the field is **absent**, read `.anvil/config.json` and consult `deck.imagegen.default_policy` — if present and a valid closed-enum value (`generative-eligible | consumer-provided | deterministic-only`), use it as the effective policy; an out-of-enum value raises `ImagegenError` at this resolution step (the consumer's intent is clear but the value is typoed). When neither BRIEF nor config supplies a value, fall back to the built-in `deterministic-only`. If the resolved effective policy is not `generative-eligible`, abort with an `ImagegenError` whose message names the effective value AND the **source** that supplied it (`BRIEF.md`, `.anvil/config.json deck.imagegen.default_policy`, or `built-in default`) and points at `commands/deck-brief.md` § "imagery_policy". Record `phases.imagegen.state = skipped` in `_progress.json` with the resolved policy value AND its source as the `reason` field. This is documented as "clean exit" (the deck simply isn't on the generative-imagery path); the framework surfaces it as a refusal so an operator who expected dispatch sees the gap and can tell whether the BRIEF or the config decided.
 
 3. **Precondition 2 — version gate**: verify `<thread>.{N}/deck.md` exists for some `N ≥ 1`. If not, abort with an `ImagegenError` pointing at `deck-draft` (the dispatcher runs after the drafter has produced markers).
 
-4. **Precondition 3 — adapter registration**: read `.anvil/config.toml` (graceful fall-through: stdlib `tomllib` ≥ 3.11 → `tomli` backport → minimal regex parser sufficient for the v0 single-key shape). Look for `[deck.imagegen] backend = "<module>:<attribute>"`. If absent, abort with an `ImagegenError` pointing at `commands/deck-imagegen-adapter.md` § "Consumer registration"; record `phases.imagegen.state = failed`. Anvil ships zero backends — the dispatcher cannot guess what the consumer wants.
+4. **Precondition 3 — adapter registration**: read `.anvil/config.json` (stdlib `json`; invalid JSON or a non-object top level aborts with an `ImagegenError` naming the file). Look for `deck.imagegen.backend = "<module>:<attribute>"`. If absent, abort with an `ImagegenError` pointing at `commands/deck-imagegen-adapter.md` § "Consumer registration"; record `phases.imagegen.state = failed`. When the JSON registration is absent but a stale pre-#442 `.anvil/config.toml` still contains a `[deck.imagegen]` section (cheap substring scan — no TOML parsing), the error is instead the #442 migration message carrying the paste-ready JSON snippet. Anvil ships zero backends — the dispatcher cannot guess what the consumer wants.
 
 5. **Load adapter**: `importlib.import_module(module)` then `getattr(module, attribute)`. Three duck-typed resolutions per `commands/deck-imagegen-adapter.md`:
    - **Class** → instantiate with zero arguments; the instance must expose `generate(prompt, style, steps) -> bytes`.
@@ -87,7 +94,7 @@ The full dispatch loop is implemented in `anvil/skills/deck/lib/imagegen.py` (`r
 
 11. **Dispatch**: call `adapter.generate(prompt, style, steps)`. Any exception whose class name is `BackendError` (anywhere in the MRO) is caught per-slot — write a `<slot>.png-FAILED.md` stub with the exception's `str()` as the body, leave any prior PNG in place, and continue with the next slot. Other (non-BackendError) exceptions propagate; the dispatcher records `phases.imagegen.state = failed` first so the crash-recovery contract has something to read.
 
-12. **PNG signature check**: verify the returned bytes start with `\x89PNG\r\n\x1a\n`. Non-PNG bytes are treated as a per-slot `BackendError` (synthesized internally) — the stub naming the type mismatch is written and the run continues.
+12. **Format sniff + JPEG/WebP→PNG transcode (issue #564)**: sniff the returned bytes for PNG / JPEG / WebP via a stdlib byte-prefix check. PNG passes through to disk byte-identical. JPEG and WebP are transcoded to PNG via Pillow (the optional `[deck_imagegen]` extra) — the on-disk artifact is always PNG, so `deck-figures` / Marp / mmdc never see the format change. When the adapter returns JPEG or WebP but Pillow is NOT installed, the run aborts with an `ImagegenError` whose message names the `[deck_imagegen]` extra and the `pip install 'anvil[deck_imagegen]'` command — every subsequent slot would fail the same way, so it's better to fail fast with the install pointer than to write N stubs. Bytes in any other format (truncated transfers, HTML error pages, exotic raster types) are treated as a per-slot `BackendError` (synthesized internally) — the stub names the format as "unrecognized" with the byte prefix recorded.
 
 13. **Write PNG + journal entry**: write the returned bytes to `<thread>.{N}/assets/generated/<slot>.png`. Delete any prior `<slot>.png-FAILED.md` stub (the slot succeeded this run). Update the in-memory journal dict with a new `JournalEntry(prompt=final, style=K, backend=<registered-spec>, steps=...)`.
 
@@ -105,19 +112,21 @@ The full dispatch loop is implemented in `anvil/skills/deck/lib/imagegen.py` (`r
 
 | Failure | Surface | Exit |
 |---|---|---|
-| `imagery_policy` absent or `deterministic-only` | `ImagegenError` pointing at SKILL.md § "Asset generation" and the BRIEF.md frontmatter contract | clean (`phases.imagegen.state = skipped`) |
-| `imagery_policy: generative-eligible` but no `[deck.imagegen] backend` in `.anvil/config.toml` | `ImagegenError` pointing at `commands/deck-imagegen-adapter.md` | failed (`phases.imagegen.state = failed`) |
+| Effective `imagery_policy` (post BRIEF + `default_policy` resolution) is not `generative-eligible` | `ImagegenError` naming the effective value AND the source (`BRIEF.md`, `.anvil/config.json deck.imagegen.default_policy`, or `built-in default`); pointer to SKILL.md § "Asset generation", the BRIEF.md frontmatter contract, and the `default_policy` registration snippet | clean (`phases.imagegen.state = skipped`; `reason` field names the effective value AND source) |
+| `.anvil/config.json` `deck.imagegen.default_policy` set to a value outside the closed enum (`generative-eligible | consumer-provided | deterministic-only`) | `ImagegenError` naming the offending value and enumerating the three valid choices | failed (the consumer's intent is clear but the value is typoed — fail fast, not at every BRIEF read) |
+| `imagery_policy: generative-eligible` but no `deck.imagegen.backend` in `.anvil/config.json` | `ImagegenError` pointing at `commands/deck-imagegen-adapter.md` (or, when a stale pre-#442 `.anvil/config.toml` still carries `[deck.imagegen]`, the migration error with the paste-ready JSON snippet) | failed (`phases.imagegen.state = failed`) |
 | `imagery_policy: generative-eligible` but no `<!-- anvil-imagegen -->` markers in `deck.md` | Recorded as `reason` on the `imagegen` phase (deck is gated but has no imagery to generate) | clean (`phases.imagegen.state = done`, no-op) |
 | Adapter import fails (dotted path invalid, missing module, missing attribute, instance has no `generate` method) | `ImagegenError` with the full import / lookup failure and a pointer to `commands/deck-imagegen-adapter.md` § "Adapter contract" | failed |
 | `adapter.generate(...)` raises `BackendError` (or any class whose name is `BackendError` in its MRO) for one or more slots | `assets/generated/<slot>.png-FAILED.md` stub per failed slot; the dispatcher continues with the remaining slots | partial (`phases.imagegen.state = partial` when at least one slot also succeeded; `failed` when every slot failed) |
-| Adapter returns non-PNG bytes (no PNG signature) | `assets/generated/<slot>.png-FAILED.md` stub describing the type mismatch | partial / failed (same convention as `BackendError`) |
+| Adapter returns JPEG or WebP bytes but Pillow is NOT installed | `ImagegenError` naming the optional `[deck_imagegen]` extra and the `pip install 'anvil[deck_imagegen]'` command (run-level abort — every subsequent JPEG/WebP slot would fail the same way) | failed (`phases.imagegen.state = failed`) |
+| Adapter returns bytes in an unrecognized image format (truncated transfer, HTML error page, exotic raster) | `assets/generated/<slot>.png-FAILED.md` stub naming the format as "unrecognized" with the byte prefix recorded | partial / failed (same convention as `BackendError`) |
 | Prompt cannot be resolved (no `assets/generated/<slot>.prompt.md` sidecar AND no `## Imagery prompt: <slot>` section in `speaker-notes.md`) | `assets/generated/<slot>.png-FAILED.md` stub describing the missing-prompt condition; the dispatcher continues with the remaining slots | partial / failed (no fabrication — anvil does not invent prompts from slide body) |
 
 The command never retries on `BackendError`. Retry/backoff is the consumer's responsibility per the adapter contract (see `commands/deck-imagegen-adapter.md` § "Non-goals").
 
 ## Cross-references
 
-- `commands/deck-imagegen-adapter.md` — adapter contract (minimal `generate()` signature, consumer registration via `.anvil/config.toml`, explicit non-goals).
+- `commands/deck-imagegen-adapter.md` — adapter contract (minimal `generate()` signature, consumer registration via `.anvil/config.json`, explicit non-goals).
 - `SKILL.md` § "Asset generation" — the opt-in framing and the `imagery_policy` contract.
 - `commands/imagery-style-presets.md` (Epic #130 Phase 1C / issue #133) — the style-preset library (keys + prompt-prefix definitions).
 - Epic #130 — the multi-phase plan that ships `deck-imagegen`, the prompt-journal primitive, the fabrication-contract drafter prompts, and the `deck-audit` extension.
@@ -160,10 +169,20 @@ When the opt-in gate refuses the run, the phase records a `state: "skipped"` wit
   "phases": {
     "imagegen": {
       "state": "skipped",
-      "reason": "BRIEF.md imagery_policy is 'deterministic-only'; deck-imagegen is opt-in via imagery_policy: generative-eligible."
+      "reason": "effective imagery_policy is 'deterministic-only' (source: built-in default); deck-imagegen is opt-in via imagery_policy: generative-eligible in BRIEF.md frontmatter or deck.imagegen.default_policy in .anvil/config.json. See commands/deck-brief.md."
     }
   }
 }
 ```
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the `phases.imagegen` outcome. A gate-refused run records only `phases.imagegen.state = "skipped"`; if even that left the tree unchanged the hook has nothing to commit and is a silent no-op.
+- **Staging target**: ONLY the `<thread>.{N}/` version dir this phase wrote into (the `assets/generated/` PNGs and failure stubs, the `assets/_prompts.json` prompt journal, and `_progress.json`).
+- **Commit**: `anvil(deck/imagegen): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine; imagegen does not advance the state machine.

@@ -19,7 +19,10 @@ A **paper thread** is a single research paper authored across one or more revisi
 ```
 <portfolio>/
   <thread>/                       Optional thread root with brief and reference material
-    BRIEF.md                      Optional structured or freeform brief (frontmatter + prose)
+    BRIEF.md                      Structured or freeform brief (frontmatter + prose); when absent,
+                                  pub-draft bootstraps one via an interactive interview
+                                  (non-interactive / --no-interview runs keep the fail-fast;
+                                  see commands/pub-draft.md § BRIEF bootstrap interview)
     refs/                         Optional reference material (datasets, prior drafts, transcripts)
     refs.bib                      Optional starter bibliography supplied by the author
   <thread>.0.litsearch/           Optional pre-draft literature-search sibling (read-only)
@@ -35,7 +38,7 @@ A **paper thread** is a single research paper authored across one or more revisi
     _progress.json                Phase state for this version
     changelog.md                  (revisions only) Maps prior critic notes to changes
   <thread>.1.review/              Reviewer output for version 1 (read-only)
-    verdict.md                    Top-level decision (advance / block) + total /40
+    verdict.md                    Top-level decision (advance / block) + total /44
     scoring.md                    Per-dimension scores against the paper rubric
     comments.md                   Line-level comments keyed to main.tex sections
   <thread>.1.audit/               Fact / citation auditor critic sibling (read-only)
@@ -71,7 +74,7 @@ EMPTY → DRAFTED → REVIEWED → REVISED → … → READY → AUDITED
 | `READY` | Latest `<thread>.{N}.review/verdict.md` records `advance: true` AND no unresolved critical flag (in either `.review/` or `.audit/`) |
 | `AUDITED` | `<thread>.{N}.audit/` exists alongside a `READY` version AND `audit/_progress.json.audit == done` AND `flags.md` records no unresolved critical flag |
 
-Thresholds: **≥32/40** advances. **<32/40** requires revision. Any critical flag (from `.review/` OR `.audit/`) short-circuits regardless of total — block until addressed.
+Thresholds: **≥35/44** advances. **<35/44** requires revision. Any critical flag (from `.review/` OR `.audit/`) short-circuits regardless of total — block until addressed.
 
 Iteration cap: default `max_iterations: 4` (so worst-case terminal version is `<thread>.5/`). The cap is configurable per-thread by writing `{ "max_iterations": <N> }` to `<thread>/.anvil.json` in the thread root. Exceeding the cap marks the thread `BLOCKED` (in the portfolio orchestrator's report) and requires human review.
 
@@ -89,11 +92,11 @@ The per-thread config supports the following optional fields:
 | Field | Type | Default | Effect |
 |---|---|---|---|
 | `max_iterations` | int | 4 | Iteration cap (see above). |
-| `venue` | string | none | Target venue slug. When set, `pub-review` also scores the paper against the matching venue YAML and writes `_review.venue.json` alongside `_review.json`. Advisory only; does not change the /40 gate. See "Venue overlays" below. |
+| `venue` | string | none | Target venue slug. When set, `pub-review` also scores the paper against the matching venue YAML and writes `_review.venue.json` alongside `_review.json`. Advisory only; does not change the /44 gate. See "Venue overlays" below. |
 
 ### Venue overlays (advisory)
 
-`anvil:pub` supports **venue-pinned advisory rubrics** in addition to the generic /40. When `<thread>/.anvil.json` declares a `venue`, the reviewer scores the paper against the matching venue YAML and writes the results as a second `_review.json`-shaped file (`_review.venue.json`) in the same `.review/` sibling dir. The venue overlay is **advisory only** — the generic /40 rubric remains the sole driver of the `advance` decision, preserving the framework-wide "/40 means the same thing across skills" invariant. See `rubric.md` for the convergence-gate semantics and `anvil/lib/snippets/rubric.md` for the framework-wide rule.
+`anvil:pub` supports **venue-pinned advisory rubrics** in addition to the generic /44. When `<thread>/.anvil.json` declares a `venue`, the reviewer scores the paper against the matching venue YAML and writes the results as a second `_review.json`-shaped file (`_review.venue.json`) in the same `.review/` sibling dir. The venue overlay is **advisory only** — the generic /44 rubric remains the sole driver of the `advance` decision, preserving the framework-wide "the skill's generic rubric is the sole advance gate" invariant. See `rubric.md` for the convergence-gate semantics and `anvil/lib/snippets/rubric.md` for the framework-wide rule.
 
 The Python-side schema and loader live in `anvil/lib/rubric.py` (`Rubric`, `load_rubric`, `discover_venue_rubric`).
 
@@ -117,7 +120,7 @@ Each YAML cites its public source in a header comment so the overlay can be upda
 
 Search precedence: per-thread > consumer-installed > skill-shipped. Both override tiers are consumer-controlled; the per-thread file is more specific and wins. Skill-shipped is the fallback.
 
-When `venue` is set but no matching YAML is found in any tier, the reviewer emits a stdout warning and proceeds with the generic rubric only. The review is not blocked by the missing venue overlay — the generic /40 gate continues to apply unchanged.
+When `venue` is set but no matching YAML is found in any tier, the reviewer emits a stdout warning and proceeds with the generic rubric only. The review is not blocked by the missing venue overlay — the generic /44 gate continues to apply unchanged.
 
 #### Adding a consumer venue
 
@@ -135,7 +138,7 @@ The "Area Chair ensemble" pattern published in AI-Scientist (Sakana, 2024) — m
 |---|---|---|---|
 | `pub` | portfolio orchestrator | all `<thread>.*` dirs under cwd | (none; reports state per thread + recommends next command) |
 | `pub-litsearch <thread>` | literature-search critic | `<thread>/BRIEF.md` (+ `<thread>/refs/`); for re-run, the latest `<thread>.{N}/main.tex` and any `.review/` notes about missing prior work | `<thread>.0.litsearch/` (initial) or `<thread>.{N}.litsearch/` (re-run) |
-| `pub-draft <thread>` | drafter | `<thread>/BRIEF.md`, `<thread>/refs.bib` (if present), `<thread>/refs/`, AND any `<thread>.0.litsearch/` sibling | `<thread>.1/` with `main.tex` + `refs.bib` + `figures/` |
+| `pub-draft <thread>` | drafter | `<thread>/BRIEF.md` (bootstrapped via interview when absent + interactive; `--no-interview` keeps the fail-fast), `<thread>/refs.bib` (if present), `<thread>/refs/`, AND any `<thread>.0.litsearch/` sibling | `<thread>.1/` with `main.tex` + `refs.bib` + `figures/` (+ `<thread>/BRIEF.md` on the bootstrap path) |
 | `pub-review <thread>` | reviewer | latest `<thread>.{N}/` | `<thread>.{N}.review/` |
 | `pub-vision <thread>` | vision critic (rendered-artifact) | latest `<thread>.{N}/main.tex` rendered to `paper.pdf` + per-page PNGs | `<thread>.{N}.vision/` with `_review.json` (`kind=vision`) |
 | `pub-revise <thread>` | reviser | latest `<thread>.{N}/` + all `<thread>.{N}.*/` critic siblings | `<thread>.{N+1}/` with `changelog.md` |
@@ -169,13 +172,24 @@ The canonical `_progress.json` schema, read-merge-write recipe, and crash recove
 
 ## Rubric
 
-See `rubric.md` for the 8-dimension /40 scoring schema (paper-tuned weights, rigor + evidence + citation hygiene = 17/40 ≈ 43%), the ≥32 advance threshold, and the critical-flag short-circuit policy. `rubric.md` also documents the **vision-owned dimensions** (`label_cropping`, `axis_legibility`, `palette_adherence`, `mathtext_artifacts`) scored by the optional `pub-vision` critic against the *rendered* PDF — these are an additive overlay (like the venue overlay), not part of the /40 gate.
+See `rubric.md` for the 9-dimension /44 scoring schema (paper-tuned weights, rigor + evidence + citation hygiene = 17/44 ≈ 38.6%), the ≥35 advance threshold, and the critical-flag short-circuit policy. `rubric.md` also documents the **vision-owned dimensions** (`label_cropping`, `axis_legibility`, `palette_adherence`, `mathtext_artifacts`) scored by the optional `pub-vision` critic against the *rendered* PDF — these are an additive overlay (like the venue overlay), not part of the /44 gate.
 
 ## Skill-specific phases
 
 **`pub-litsearch` (optional, read-only critic).** Pure-LLM literature search is prone to hallucinating citations. This role MUST refuse to invent BibTeX entries. Instead, it produces:
 - `notes.md` — discussion of how the paper positions against the related work the author already supplied, plus a list of **gaps** (named missing topics or specific known papers the brief mentioned but did not supply BibTeX for).
 - `candidates.bib` — entries that come from author-supplied refs (re-formatted for consistency) or that the role is **explicitly told** about in the brief. Entries from "I think there's a 2023 paper about X by someone named Smith" are forbidden — the role surfaces such gaps in `notes.md` for the author to fill manually (e.g., by pasting a Semantic Scholar export into `<thread>/refs/`).
+
+### Opt-in web search (`web_search: true`) — issue #424
+
+By default this skill runs **no autonomous web search** — the anti-hallucination posture above. A consumer can opt a thread in by setting `web_search: true` (a YAML boolean, default `false`) in the per-thread `<thread>/BRIEF.md` frontmatter; in a post-#295 project layout the equivalent carrier is the `web_search` key on the thread's `documents:` entry in the project `BRIEF.md` (schema-validated as a strict bool by `anvil/lib/project_brief.py`). When the knob is absent or `false`, `pub-litsearch` and `pub-review` are byte-identical to their default no-web behavior.
+
+When enabled:
+
+- **`pub-litsearch`** may run live academic web searches, under the **resolver-verified-or-dropped contract**: a web-discovered candidate enters `candidates.bib` ONLY after `anvil/lib/cite.py::resolve()` returns a `BibRecord` (Crossref for DOIs, arXiv API for arXiv IDs). No resolver hit, no BibTeX entry. Unresolvable hits (`pmid`/`url` identifier kinds — unsupported in v0, `CiteResolutionError` after retries, or no extractable identifier) become **leads** in the `## Web leads (unverified)` section of `notes.md` — never citations. Verified web discoveries get a provenance table row in `notes.md` (bib key → identifier → resolver) so author-supplied vs web-verified entries stay auditable. The drafter and reviser MUST NOT cite leads; the author promotes a lead by supplying a resolvable DOI / arXiv ID.
+- **`pub-review`** may run 3–5 targeted searches while scoring D4 (related-work positioning). The reviewer stays read-only with respect to citations: discovered identifiers land in `comments.md` as `related-work`-tagged leads recommending a `pub-litsearch` re-run, which centralizes the resolver verification in one command.
+
+See `commands/pub-litsearch.md` § "Opt-in web search" and `commands/pub-review.md` Inputs for the full contracts.
 
 **`pub-audit` (mandatory at READY).** Sharper than the generic auditor:
 1. Verify every `\cite{}` in `main.tex` resolves to a real entry in `refs.bib`.
@@ -202,6 +216,20 @@ The auditor (`pub-audit`) may re-run scripts in `figures/src/` to verify rendere
 - **Starter bibliography**: `templates/refs.bib.j2` — empty `.bib` with a comment header explaining that entries come from either author-supplied `<thread>/refs.bib` or the litsearch sibling's `candidates.bib`.
 - **Smoke test brief**: `assets/example-brief.md` — a one-page paper brief the drafter can turn into a compilable 2–4 page paper with one figure and a handful of citations. Used by the acceptance test.
 
+## Project BRIEF artifact type
+
+`pub` is registered as a **skill-identity** `artifact_type` value in the
+shared project-BRIEF registry
+(`anvil/lib/project_brief.py::REGISTERED_ARTIFACT_TYPES` /
+`SKILL_IDENTITY_ARTIFACT_TYPES`; issue #408, following the #386
+pattern for `deck`/`slides`/`proposal`). In a shared project BRIEF, a
+`documents:` entry with `artifact_type: pub` declares that this skill
+owns the thread. It is NOT a memo subtype: it selects no memo rubric
+overlay, and memo commands fail loudly when pointed at a `pub`-declared
+thread. `anvil:project-migrate` writes this value when its BRIEF
+synthesis infers a pub-class thread from a `.tex` body with a
+non-`anvil-proposal` `\documentclass`.
+
 ## Defaults and overrides
 
 This skill ships opinionated defaults. Consumers are expected to override liberally via `.anvil/skills/pub/` in their own repo:
@@ -219,3 +247,7 @@ When the brief sets `anonymous: true`, the drafter:
 3. Scrubs identifying language in acknowledgements and self-citations (`\citet{ourpriorwork}` becomes `\citet{anonprior}` with a note in `changelog.md`).
 
 Venue overrides handle their own anonymization on top of this.
+
+## Git sync hook (opt-in, off by default)
+
+Consumers running anvil under an external orchestrator (a sphere channel-agent, a Loom-style daemon) can opt in to a per-phase git commit hook so every lifecycle phase leaves the working tree clean: a repo-level `.anvil/config.json` with `git.commit_per_phase: true` (and optionally `git.push: true`) has each write-bearing pub command end its phase by staging only the dirs it wrote and committing as `anvil(pub/<phase>): <thread>.{N} [<state>]`. The full contract — knob shape, defaults-off rule, commit-message format, staging scope, warn-and-continue failure semantics, and ordering after the `_progress.json` `done` write and the #350 sidecar atomic rename — lives in `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo). All 7 write-bearing pub commands adopt it; the read-only `pub` portfolio orchestrator is exempt by definition. When `.anvil/config.json` is absent or the knob is false, behavior is byte-identical to a pre-#426 install — the hook is **default off**.

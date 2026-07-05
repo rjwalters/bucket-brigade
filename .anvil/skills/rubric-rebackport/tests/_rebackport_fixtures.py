@@ -334,10 +334,287 @@ def build_pub_44_unstamped(
     return project_dir
 
 
+# ---------------------------------------------------------------------------
+# Fixture: unconventional_body_filename_thread (issue #374 — canary repro)
+# ---------------------------------------------------------------------------
+
+
+def build_unconventional_body_filename_thread(
+    root: Path,
+    project_name: str = "canary-unconventional",
+    *,
+    thread_slug: str = "aldus",
+    body_filename: str = "body.md",
+    body_skill: str = "deck",
+) -> Path:
+    """Build a thread whose body filename is NOT in the inference table
+    AND has no BRIEF — so the planner sees ``inferred_skill is None``.
+
+    Reproduces the canary's #374 failure mode after the inference-table
+    extension landed. The canary's actual repro was ``aldus/aldus.4/
+    deck.md`` (no BRIEF), which the table-extension half of #374 fixes
+    via rule 2. This fixture instead uses a body filename that is NOT
+    in the (post-#374) extended table — ``body.md`` — so rule 2 still
+    misses. Without the force-set-on-None semantics promoted by #374,
+    this thread would be skipped with ``outside --skill=<deck> scope
+    (inferred skill: None)`` even though the operator's assertion
+    carries enough information to stamp.
+
+    Shape (defaults):
+      <project>/
+        aldus/
+          aldus.4/
+            body.md             <- body filename NOT in inference table
+            _progress.json
+          aldus.4.review/
+            _meta.json          <- /40-era pre-stamp shape
+            _summary.md
+            verdict.md
+
+    Note: no BRIEF.md at the project root. This is intentional and
+    matches the canary's actual on-disk state for portfolios that
+    predate the post-#295/#296 BRIEF.md model.
+
+    The ``body_filename`` and ``body_skill`` knobs let callers
+    parameterize the fixture for other unconventional cases (e.g.,
+    use ``body_filename="memo-body.md"`` to exercise the same code
+    path under a memo-shaped operator assertion).
+    """
+    project_dir = root / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    thread_dir = project_dir / thread_slug
+    v = thread_dir / f"{thread_slug}.4"
+    _write(v / body_filename, f"# {body_skill} v4\n\nBody.\n")
+    _write(
+        v / "_progress.json",
+        json.dumps(_progress_legacy(thread_slug), indent=2) + "\n",
+    )
+
+    review_dir = thread_dir / f"{thread_slug}.4.review"
+    meta = _meta_legacy()
+    meta["role"] = f"{body_skill}-review.md"
+    _write(
+        review_dir / "_meta.json",
+        json.dumps(meta, indent=2) + "\n",
+    )
+    _write(
+        review_dir / "_summary.md",
+        "---\n"
+        "for_version: 4\n"
+        "scorecard_kind: human-verdict\n"
+        "critical_flag: false\n"
+        "---\n"
+        "\n"
+        f"# Review summary\n\nLegacy {body_skill} summary body.\n",
+    )
+    _write(review_dir / "verdict.md", "# Verdict\n\nLegacy verdict.\n")
+    return project_dir
+
+
+def build_deck_thread_no_brief(
+    root: Path,
+    project_name: str = "canary-deck-no-brief",
+    *,
+    thread_slug: str = "aldus",
+) -> Path:
+    """Build the canary's exact #374 repro: deck thread, no BRIEF.
+
+    Shape:
+      <project>/
+        aldus/
+          aldus.4/
+            deck.md             <- deck-fixed body filename
+            _progress.json
+          aldus.4.review/
+            _meta.json          <- /40-era pre-stamp shape
+            _summary.md
+            verdict.md
+
+    The #374 table extension (adding ``deck.md``,  ``slides.md``,
+    ``ip-uspto.md`` to ``_BODY_FILENAME_TO_SKILL``) lets rule 2 of
+    ``_infer_skill`` resolve this to ``"deck"`` even without a BRIEF.
+    Used by ``test_deck_thread_no_brief_infers_via_body_filename``.
+    """
+    project_dir = root / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    thread_dir = project_dir / thread_slug
+    v = thread_dir / f"{thread_slug}.4"
+    _write(v / "deck.md", "# deck v4\n\nBody.\n")
+    _write(
+        v / "_progress.json",
+        json.dumps(_progress_legacy(thread_slug), indent=2) + "\n",
+    )
+
+    review_dir = thread_dir / f"{thread_slug}.4.review"
+    meta = _meta_legacy()
+    meta["role"] = "deck-review.md"
+    _write(
+        review_dir / "_meta.json",
+        json.dumps(meta, indent=2) + "\n",
+    )
+    _write(
+        review_dir / "_summary.md",
+        "---\n"
+        "for_version: 4\n"
+        "scorecard_kind: human-verdict\n"
+        "critical_flag: false\n"
+        "---\n"
+        "\n"
+        "# Review summary\n\nLegacy deck summary body.\n",
+    )
+    _write(review_dir / "verdict.md", "# Verdict\n\nLegacy verdict.\n")
+    return project_dir
+
+
+# ---------------------------------------------------------------------------
+# Fixture: essay_44_unstamped (post-#366 catalog refresh — issue #482)
+# ---------------------------------------------------------------------------
+
+
+def _meta_essay_44_unstamped() -> dict:
+    """Return an essay reviewer ``_meta.json`` with rubric_total but no rubric_id."""
+    return {
+        "critic": "review",
+        "role": "essay-review.md",
+        "started": "2026-06-01T12:00:00Z",
+        "finished": "2026-06-01T12:05:00Z",
+        "model": "claude-opus-4-1",
+        "schema_version": 1,
+        "scorecard_kind": "human-verdict",
+        # Essay review missing its rubric_id stamp (e.g., a tool-edited
+        # or hand-rolled review). The planner must heuristically pick
+        # `anvil-essay-v1` from the (skill=essay, total=44) pair
+        # without --legacy-rubric.
+        "rubric_total": 44,
+    }
+
+
+def build_essay_44_unstamped(
+    root: Path,
+    project_name: str = "unstamped-essay-44",
+    *,
+    slug: str = "essay",
+) -> Path:
+    """Build an essay thread whose review is missing `rubric_id`.
+
+    Exercises the post-#366 catalog entry for ``("essay", 44)`` —
+    issue #482's second-occurrence catalog-drift repro. Skill
+    inference goes through the BRIEF route (rule 1): the essay skill's
+    body filename echoes the slug, so rule 2's fixed-filename table
+    cannot fire.
+    """
+    project_dir = root / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+    _write(project_dir / "BRIEF.md", _brief_for_skill(slug, "essay"))
+
+    thread_dir = project_dir / slug
+    v1 = thread_dir / f"{slug}.1"
+    _write(v1 / f"{slug}.md", f"# {slug} v1\n\nBody.\n")
+    _write(
+        v1 / "_progress.json",
+        json.dumps(_progress_legacy(slug), indent=2) + "\n",
+    )
+
+    review_dir = thread_dir / f"{slug}.1.review"
+    _write(
+        review_dir / "_meta.json",
+        json.dumps(_meta_essay_44_unstamped(), indent=2) + "\n",
+    )
+    _write(
+        review_dir / "_summary.md",
+        "---\n"
+        "for_version: 1\n"
+        "scorecard_kind: human-verdict\n"
+        "critical_flag: false\n"
+        "---\n"
+        "\n"
+        "# Review summary\n\nUnstamped essay summary body.\n",
+    )
+    _write(review_dir / "verdict.md", "# Verdict\n\nEssay verdict.\n")
+    return project_dir
+
+
+# ---------------------------------------------------------------------------
+# Fixture: datasheet_44_unstamped (registry backfill — issue #486)
+# ---------------------------------------------------------------------------
+
+
+def _meta_datasheet_44_unstamped() -> dict:
+    """Return a datasheet reviewer ``_meta.json`` with rubric_total but no rubric_id."""
+    return {
+        "critic": "review",
+        "role": "datasheet-review.md",
+        "started": "2026-06-01T12:00:00Z",
+        "finished": "2026-06-01T12:05:00Z",
+        "model": "claude-opus-4-1",
+        "schema_version": 1,
+        "scorecard_kind": "human-verdict",
+        # Datasheet review missing its rubric_id stamp. The planner must
+        # heuristically pick `anvil-datasheet-v1` from the
+        # (skill=datasheet, total=44) pair without --legacy-rubric.
+        "rubric_total": 44,
+    }
+
+
+def build_datasheet_44_unstamped(
+    root: Path,
+    project_name: str = "unstamped-datasheet-44",
+    *,
+    slug: str = "ax101-objdet",
+) -> Path:
+    """Build a datasheet thread whose review is missing `rubric_id`.
+
+    Exercises the `("datasheet", 44)` catalog row (#484) through the
+    BRIEF route (rule 1). The body is a fixed-name `datasheet.tex`,
+    which is deliberately ABSENT from detect's
+    `_BODY_FILENAME_TO_SKILL` table (BRIEF-route-only contract,
+    matching `ip-uspto-provisional`'s `spec.tex`; issue #486), so
+    rule-2 cannot fire — the only inference path is the registered
+    `artifact_type: datasheet` BRIEF entry that #486 makes survive
+    strict validation.
+    """
+    project_dir = root / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+    _write(project_dir / "BRIEF.md", _brief_for_skill(slug, "datasheet"))
+
+    thread_dir = project_dir / slug
+    v1 = thread_dir / f"{slug}.1"
+    # Fixed-name tex body — NOT slug-derived, NOT in rule-2 table.
+    _write(v1 / "datasheet.tex", f"% {slug} v1\n\\documentclass{{anvil-datasheet}}\n")
+    _write(
+        v1 / "_progress.json",
+        json.dumps(_progress_legacy(slug), indent=2) + "\n",
+    )
+
+    review_dir = thread_dir / f"{slug}.1.review"
+    _write(
+        review_dir / "_meta.json",
+        json.dumps(_meta_datasheet_44_unstamped(), indent=2) + "\n",
+    )
+    _write(
+        review_dir / "_summary.md",
+        "---\n"
+        "for_version: 1\n"
+        "scorecard_kind: human-verdict\n"
+        "critical_flag: false\n"
+        "---\n"
+        "\n"
+        "# Review summary\n\nUnstamped datasheet summary body.\n",
+    )
+    _write(review_dir / "verdict.md", "# Verdict\n\nDatasheet verdict.\n")
+    return project_dir
+
+
 __all__ = [
+    "build_datasheet_44_unstamped",
+    "build_deck_thread_no_brief",
+    "build_essay_44_unstamped",
     "build_fully_stamped",
     "build_legacy_unstamped",
     "build_mixed_skill_portfolio",
     "build_partially_stamped",
     "build_pub_44_unstamped",
+    "build_unconventional_body_filename_thread",
 ]

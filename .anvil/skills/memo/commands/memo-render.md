@@ -15,6 +15,27 @@ This command is the memo-skill analog of `deck-figures`: an **optional, asset-pr
 
 **Composability**: `memo-render` is **independently re-runnable**. The consumer can hand-edit the `<thread>/.anvil/anvil/lib/memo/styles.css` override (or the framework `anvil/lib/memo/styles.css`), then re-invoke `memo-render <thread>` without going through draft / revise. Each invocation regenerates `<thread>.pdf` from the current `<thread>.md` and current styles; `<thread>.pdf` is a **derived artifact** and MUST NEVER be hand-edited. See §"Re-run pattern" below.
 
+## Canonical execution path
+
+The runnable implementation of this command is the **render-phase CLI** (issue #472):
+
+```bash
+# Consumer install (from the repo root; <version-dir> is the <thread>.{N}/ to render):
+python3 .anvil/skills/memo/lib/render_phase.py <version-dir>
+
+# When bare python3 cannot import the framework (pydantic missing), use the consumer venv:
+uv run --project .anvil python .anvil/skills/memo/lib/render_phase.py <version-dir>
+
+# Anvil source repo:
+python3 anvil/skills/memo/lib/render_phase.py <version-dir>
+```
+
+The CLI executes the full §Procedure below against one explicit version directory: idempotence check (step 2), `phases.render` checkpointing (step 3), the complete metadata-knob threading (steps 4–4g, reading `target_length_resolved` / `render_engine_requested` / `latex_header_includes_resolved` / the #391 passthrough trio from `_progress.json.metadata` and resolving the #463/#468 rhetoric rules from the project BRIEF), the `render_gate.gate(kind="memo", ...)` invocation (step 5), the shallow-merge persistence of `phases.render` + `render_gate` + the provenance keys (step 6), and the one-line operator report (step 7). It **always exits 0** — every failure mode in §"Failure modes" is non-blocking by design, including renderer-unavailable (recorded as `phases.render.reason = "renderer_unavailable"`).
+
+`memo-draft` step 9.5 and `memo-revise` step 9.7 instruct the executing agent to run this CLI directly — there is no separate runtime that performs the render (issue #472). The manual §Procedure below is retained as the **specification** the CLI implements (and as the fallback recipe when invoking the gate from a Python REPL — see §"Running anvil Python from a consumer").
+
+`memo-render <thread>` (thread-slug form) remains the operator-facing re-run surface: resolve the latest `<thread>.{N}/` per §Procedure step 1, then run the CLI on it.
+
 ## Inputs
 
 - **Thread slug** (positional argument): identifies the thread within the cwd portfolio.
@@ -33,7 +54,7 @@ This command is the memo-skill analog of `deck-figures`: an **optional, asset-pr
 `_progress.json` carries the render outcome under two keys (both initialized by this command, neither read or mutated by `memo-draft` / `memo-review` / `memo-revise` in Phase 3 — reviewer-side wiring lands in Phase 4):
 
 - `phases.render` — the standard phase block (`state`, `started`, `completed`) per `anvil/lib/snippets/progress.md`.
-- `render_gate` — the JSON shape from `render_gate.GateResult.to_json()`: `{gate, pdf_path, pages, page_cap, overfull_boxes, compile, placeholders, findings, pass, reasons}`. See `anvil/lib/render_gate.py` for the dimension list (`memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_placeholder_scan`).
+- `render_gate` — the JSON shape from `render_gate.GateResult.to_json()`: `{gate, pdf_path, pages, page_cap, overfull_boxes, compile, placeholders, findings, pass, reasons, engine_used, template_used}`. See `anvil/lib/render_gate.py` for the dimension list (`memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_image_dimensions`, `memo_placeholder_scan`, `memo_rhetoric_lint`).
 
 The `render_gate` block is **always written** (whether the gate passed or failed) so downstream consumers — including the Phase 4 reviewer integration — can read it deterministically. Absence of the block means `memo-render` never ran, which is a legal pre-render state.
 
@@ -49,6 +70,14 @@ The `render_gate` block is **always written** (whether the gate passed or failed
 4b. **Resolve the `words_per_page` override** (optional, per-thread page_cap calibration): a future BRIEF.md project-level knob is the intended home for the `render_gate.words_per_page` value (not yet schema-formalized; the field was historically on `<thread>/.anvil.json` and is queued for migration). Until the BRIEF schema is grown to carry it, omit the `words_per_page=` kwarg and the gate's default `MEMO_WORDS_PER_PAGE = 400` applies. The override (when implemented) **only affects the `target_length.words → page range` conversion**: when `target_length.pages` is declared directly, the override is a no-op. See `anvil/lib/render_gate.py` module docstring §"page_cap calibration" for the calibration story (400 wpp is the mixed-content default; table-dense memos typically want ~300-350 wpp; pure dense-prose memos may want 500-600 wpp).
 4c. **Resolve the `render_engine` override** (issue #320, optional per-document HTML/PDF engine pin): read `metadata.render_engine_requested` from the same `_progress.json`. When present (one of `"weasyprint"`, `"xelatex"`, `"wkhtmltopdf"` — the drafter / reviser wrote it from `BriefDocument.render_engine` at draft/revise time), pass `render_engine="<value>"` to the gate. When absent (legacy version dirs or BRIEFs without the knob), omit the kwarg — the gate's default auto-priority (`weasyprint > wkhtmltopdf > xelatex`) applies. The gate honors the request when the named binary is on PATH; otherwise it gracefully falls through to auto-priority and records the fallthrough in `render_gate.reasons` (silent-with-record per architect Q7).
 4d. **Resolve the `latex_header_includes` override** (issue #347, optional per-document LaTeX preamble extension): read `metadata.latex_header_includes_resolved` from the same `_progress.json`. When present (a free-form string of LaTeX preamble text — e.g., `\usepackage{xcolor}` + `\definecolor{...}{HTML}{...}` + custom `\newenvironment{callout}` — written by the drafter / reviser from `BriefDocument.latex_header_includes` at draft/revise time), pass `latex_header_includes="<value>"` to the gate. When absent (legacy version dirs or BRIEFs without the knob), omit the kwarg. The gate writes the contents to a tempfile and passes `--include-in-header=<tempfile>` to pandoc **only when** the dispatched engine resolves to `xelatex` (the field is xelatex-only by name — see `anvil/lib/memo/README.md` §"Override discipline" for the lightweight-vs-template-override decision matrix). When the dispatched engine is `weasyprint` / `wkhtmltopdf` (e.g., the requested engine fell through to auto-priority because the xelatex binary is missing on PATH), the include is silently skipped and the skip is recorded in `render_gate.reasons` per architect Q7.
+4e. **Resolve the pandoc passthrough knobs** (issue #391, optional per-document consumer template / Lua filters / metadata): read `metadata.render_template_requested`, `metadata.render_lua_filters_requested`, and `metadata.render_metadata_requested` from the same `_progress.json` (the drafter / reviser persisted them verbatim from `BriefDocument.render_template` / `.render_lua_filters` / `.render_metadata` — see `memo-draft.md` step 5d / `memo-revise.md` step 6). For each field that is present, pass the corresponding kwarg to the gate (`render_template=...`, `render_lua_filters=[...]`, `render_metadata={...}`); for each that is absent, omit the kwarg. Pass the persisted **BRIEF-relative strings verbatim** — the gate resolves relative paths against the project root (`version_dir.parent.parent`, the directory containing `BRIEF.md` under the post-#295/#296 canonical model; absolute paths are used as-is) at render time, so re-running `memo-render` alone picks up template/filter edits without a draft/revise pass. Semantics at the gate: the consumer template short-circuits the theme/framework template **iff** its extension matches the dispatched engine chain (`.tex`/`.latex` on xelatex; `.html`/`.htm` on weasyprint/wkhtmltopdf) and the file exists — on mismatch or a missing file the default chain applies with a breadcrumb in `render_gate.reasons` (silent-with-record; never aborts, per the non-blocking render contract). Lua filters (`--lua-filter` per entry, declaration order) and metadata (`-M key=value` per entry, with literal `{N}` in values expanded to the version number from the `<slug>.{N}` dir name) are engine-agnostic and always applied when set.
+4f. **Resolve the `image_max_px` override** (issue #395, optional per-thread pixel ceiling for the advisory `memo_image_dimensions` check): same carrier story as the `words_per_page` knob in step 4b — a future BRIEF.md project-level field is the intended home (the historical `<thread>/.anvil.json` `render_gate` block was retired under #296). Until the BRIEF schema is grown to carry it, omit the `image_max_px=` kwarg and the gate's default `MEMO_IMAGE_MAX_PX = 6000` applies. Validation at the gate mirrors `words_per_page` exactly: a non-numeric or non-positive override is silently discarded and the default is used; the effective ceiling is recorded in the finding/reason message so a reviewer can see which calibration applied.
+4g. **Resolve the consumer rhetoric rules** (issues #463/#468, optional consumer rule file for the advisory `memo_rhetoric_lint` check): the carrier is the #461 voice contract's `voice.rhetoric_rules` BRIEF sub-key (a path to a consumer JSON rule file — gate-side lint config, NOT a drafter grounding doc). Call `anvil.lib.project_brief.resolve_rhetoric_rules(project_dir)` with `project_dir = version_dir.parent.parent` (the directory containing `BRIEF.md` under the post-#295/#296 canonical model; pass an explicit `consumer_root=` only when the caller already knows it). Then:
+   - **`None` returned** (no BRIEF / malformed BRIEF / no `voice:` block / no `rhetoric_rules` sub-key / whitespace-only value) → **omit the `rhetoric_rules_path=` kwarg** entirely; the framework default rule set (`anvil/lib/rhetoric_lint.py::DEFAULT_RHETORIC_RULES`) applies — defaults-only behavior is byte-identical whether or not a `voice:` block is present.
+   - **Resolved entry with `missing == False`** → pass `rhetoric_rules_path=entry.paths[0]` (project-root hit wins over consumer-root fallback; absolute declared paths bypass the walk — the `resolve_voice_docs` precedent).
+   - **Resolved entry with `missing == True`** (declared-but-missing file) → **still pass the path**: `rhetoric_rules_path=<project_dir>/<entry.declared>` (the declared path verbatim when it is absolute). Do NOT silently omit the kwarg — `lint_rhetoric`'s loader graceful-degrades to a defaults-only run **plus one warning finding naming the error**, so the broken declaration surfaces mechanically in `render_gate.findings` ("a defect to surface, not an opt-out"; zero new error machinery).
+
+   When a consumer file IS passed and loads: valid rules merge over the defaults (id collision → consumer wins), `disable` ids switch off defaults, and malformed JSON graceful-degrades to a defaults-only run with one warning finding naming the parse error. Note the asymmetry with step 4-series voice consumers elsewhere: `rhetoric_rules` does not activate the voice-grounding judgment tier (`resolve_voice_docs` never returns it; a `rhetoric_rules`-only `voice:` block keeps `VoiceDocs.is_empty` True).
 5. **Invoke the render gate**: call
 
    ```python
@@ -60,17 +89,23 @@ The `render_gate` block is **always written** (whether the gate passed or failed
        out_pdf=<thread>.{N}/<thread>.pdf,
        target_length=target_length,
        words_per_page=words_per_page,         # omit when not set in BRIEF.md (knob queued for migration)
+       image_max_px=image_max_px,             # omit when not set in BRIEF.md (issue #395; knob queued for migration)
        render_engine=render_engine,           # omit when metadata.render_engine_requested is absent (issue #320)
        latex_header_includes=latex_header_includes,  # omit when metadata.latex_header_includes_resolved is absent (issue #347)
+       render_template=render_template,       # omit when metadata.render_template_requested is absent (issue #391)
+       render_lua_filters=render_lua_filters, # omit when metadata.render_lua_filters_requested is absent (issue #391)
+       render_metadata=render_metadata,       # omit when metadata.render_metadata_requested is absent (issue #391)
+       rhetoric_rules_path=rhetoric_rules_path,  # omit when resolve_rhetoric_rules(project_dir) is None (issues #463/#468; defaults apply); pass the joined declared path even when missing (step 4g)
    )
    ```
 
-   The gate owns the full render chain (pandoc → weasyprint OR wkhtmltopdf OR xelatex) plus the five deterministic memo checks (`memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_placeholder_scan`). See `anvil/lib/render_gate.py` module docstring for the full check list and severity model. The gate is **graceful-degrading** on missing renderer: when pandoc and/or the HTML/PDF engines are absent on PATH, the gate returns `compile_status == "unavailable"` and records the `MEMO_RENDERER_REMEDIATION` install story in `result.reasons` (NOT a hard failure — see `_gate_memo` Check 1).
+   The gate owns the full render chain (pandoc → weasyprint OR wkhtmltopdf OR xelatex) plus the seven deterministic memo checks (`memo_compile_success`, `memo_page_fit`, `memo_overfull_check`, `memo_image_refs_exist`, `memo_image_dimensions`, `memo_placeholder_scan`, `memo_rhetoric_lint`). See `anvil/lib/render_gate.py` module docstring for the full check list and severity model. The `memo_image_dimensions` check (issue #395) is **advisory throughout**: warning-severity findings (pixel ceiling > 6000 px, aspect > 6:1, declared-vs-actual divergence > 1.5x, content bbox < 25% of canvas) land in `render_gate.findings` without affecting `pass`; the content-bbox sub-check needs the `[image_lint]` extra (Pillow + numpy) and records a remediation breadcrumb in `render_gate.reasons` when absent. The `memo_rhetoric_lint` check (issue #463) follows the same advisory model verbatim: deterministic phrase/regex/frequency AI-tell findings over the body markdown (code fences and HTML comments excluded) land in `render_gate.findings` at warning severity (info when suppressed via `<!-- anvil-lint-disable: memo_rhetoric_lint -->`) without ever affecting `pass` or emitting a `CriticalFlag` — they are mechanical evidence for the dim 9 *Rhetorical economy* critics, not a gate verdict. The gate is **graceful-degrading** on missing renderer: when pandoc and/or the HTML/PDF engines are absent on PATH, the gate returns `compile_status == "unavailable"` and records the `MEMO_RENDERER_REMEDIATION` install story in `result.reasons` (NOT a hard failure — see `_gate_memo` Check 1).
 
    `out_pdf` defaults to `<version_dir>/<thread>.pdf`; the explicit form is documented here so the contract is visible at the command surface. The PDF lands **alongside `<thread>.md`** in the version directory — NOT in a separate `render/` subdir — so downstream tooling (vision critics, `pdftoppm`, manual review) can find it without path conventions.
 6. **Persist results to `_progress.json`** — independent of gate outcome:
-   - Write `render_gate = result.to_json()` (the full JSON shape from `GateResult.to_json()`) into the version dir's `_progress.json` as a top-level key (sibling to `phases` and `metadata`). The shape is `{gate, pdf_path, pages, page_cap, overfull_boxes, compile, placeholders, findings, pass, reasons}` — see `render_gate.py::GateResult.to_json` for the canonical shape.
+   - Write `render_gate = result.to_json()` (the full JSON shape from `GateResult.to_json()`) into the version dir's `_progress.json` as a top-level key (sibling to `phases` and `metadata`). The shape is `{gate, pdf_path, pages, page_cap, overfull_boxes, compile, placeholders, findings, pass, reasons, engine_used, template_used}` — see `render_gate.py::GateResult.to_json` for the canonical shape.
    - Set `phases.render.completed = <ISO>`.
+   - **Record render provenance** (issue #391): set `phases.render.engine = result.engine_used` and `phases.render.template = result.template_used`. `engine` is the engine that actually ran (which may differ from `metadata.render_engine_requested` on PATH fallthrough); `template` is the resolved consumer template path string, or a symbolic marker (`"framework-default"`, `"theme:<name>"`, `"pandoc-default"`) when no consumer template applied. Write both keys whenever the gate ran an engine (`result.engine_used` is non-null); when the renderer was unavailable (`compile_status == "unavailable"`) both are null — omit them or write null, consumers tolerate both. This makes the "re-rendered with the wrong template/engine" regression class detectable on disk by diffing `_progress.json.phases.render` across versions.
    - Set `phases.render.state` based on `result.compile_status`:
      - `compile_status == "ok"` → `phases.render.state = "done"` (the artifact was produced; gate-finding failures land in `render_gate.findings` but do not flip the phase to `failed` — they are recorded for the Phase 4 reviewer to surface).
      - `compile_status == "failed"` → `phases.render.state = "failed"` (pandoc ran but produced no PDF or exited non-zero; this is recoverable on re-run after the operator addresses the renderer error).
@@ -104,6 +139,7 @@ In all five cases the upstream `memo-draft` / `memo-revise` step that invoked `m
 `memo-render` is **idempotent + cheaply re-runnable**. The intended re-run scenarios are:
 
 - **Operator edited `styles.css`**: the consumer modified `<consumer>/.anvil/lib/memo/styles.css` (or the framework `anvil/lib/memo/styles.css`) to tune typography. They re-invoke `memo-render <thread>` and the rendered PDF picks up the new styles WITHOUT going through draft / revise. The `_progress.json.phases.render.completed` timestamp updates; `<thread>.md` is untouched.
+- **Operator edited the consumer pandoc template or a Lua filter** (issue #391): `render_template` / `render_lua_filters` paths are resolved against the project root at render time (not pinned at draft time), and pandoc reads the file contents at invocation — so re-invoking `memo-render <thread>` picks up edits to `<project>/sphere-memo-template.tex` (etc.) without a draft / revise pass. `phases.render.template` records which template produced the PDF.
 - **Operator installed the toolchain**: a prior `memo-render` run recorded `compile.status == "unavailable"`. The operator installs pandoc + weasyprint per `MEMO_RENDERER_REMEDIATION`, then re-invokes `memo-render <thread>`. The phase transitions from `failed` to `done` and `<thread>.pdf` appears.
 - **Operator edited `<thread>.md` by hand** (not the canonical path, but supported): the `<thread>.md` mtime is newer than `<thread>.pdf`, so step 2's resume check re-renders. (Anvil's canonical flow is to revise via `memo-revise`, which produces a new version directory; in-place hand-edits to `<thread>.md` are a power-user path.)
 
@@ -140,7 +176,11 @@ This command writes the version-dir shape documented in `anvil/lib/snippets/prog
   "thread": "<slug>",
   "phases": {
     "draft":  { "state": "done", "started": "<ISO>", "completed": "<ISO>" },
-    "render": { "state": "done", "started": "<ISO>", "completed": "<ISO>" }
+    "render": {
+      "state": "done", "started": "<ISO>", "completed": "<ISO>",
+      "engine": "weasyprint",
+      "template": "framework-default"
+    }
   },
   "metadata": {
     "iteration": 2,
@@ -165,7 +205,9 @@ This command writes the version-dir shape documented in `anvil/lib/snippets/prog
     "reasons": [
       "memo_page_fit: rendered 4 pages within target [3, 4] (source=words).",
       "memo_overfull_check: overflow check ran with no stderr warnings detected."
-    ]
+    ],
+    "engine_used": "weasyprint",
+    "template_used": "framework-default"
   }
 }
 ```
@@ -225,3 +267,13 @@ If `uv` is not on the consumer's PATH, fall back to the source-checkout pattern 
 
 
 **Snippet references**: See `anvil/lib/snippets/progress.md` for the `_progress.json` read-merge-write recipe and `anvil/lib/snippets/timestamp.md` for the ISO-8601 UTC timestamp convention. The merge is shallow: preserve fields and phases not touched by this command. See `anvil/lib/render_gate.py` for the canonical `gate(kind="memo")` API and the `GateResult.to_json()` shape consumed by step 6.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase (the render still reports its own non-blocking outcome unchanged). When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records the `phases.render` outcome and the `render_gate` block.
+- **Staging target**: ONLY the `<thread>.{N}/` version dir this phase wrote into (the PDF + `_progress.json`).
+- **Commit**: `anvil(memo/render): <thread>.{N} [<state>]` — the bracket carries the thread's current derived state per SKILL.md §State machine, since render is informational and does not advance the state machine.

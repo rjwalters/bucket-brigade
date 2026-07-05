@@ -6,12 +6,12 @@ description: Drafter command for the slides skill. Produces a new slides version
 # slides-draft — Drafter
 
 **Role**: drafter.
-**Reads**: `<thread>/BRIEF.md` (if present), `<thread>/refs/**` (if present), `<thread>.0.outline/outline.md` (if present). For revise-from-feedback path: also the latest `<thread>.{N}/` and all `<thread>.{N}.*/` critic siblings.
-**Writes**: `<thread>.{N+1}/` containing `deck.md`, `notes/<NN>-<slug>.md` per slide, optional `figures/`, and `_progress.json`.
+**Reads**: `<thread>/BRIEF.md` (if present), `<thread>/refs/**` (if present), `<thread>/<thread>.0.outline/outline.md` (if present — nested under the thread root per the artifact contract). For revise-from-feedback path: also the latest `<thread>.{N}/` and all `<thread>.{N}.*/` critic siblings.
+**Writes**: `<thread>/<thread>.{N+1}/` containing `deck.md`, `notes/<NN>-<slug>.md` per slide, optional `figures/`, and `_progress.json`. Bare `<thread>.{N}/` / `<thread>.{N}.<critic>/` references below are shorthand for these nested paths.
 
 ## Inputs
 
-- **Thread slug** (positional argument): identifies the thread within the cwd portfolio.
+- **Thread slug** (positional argument): identifies the thread directory `<thread>/` under the project root (cwd).
 - **Brief** (`<thread>/BRIEF.md`): freeform prose, optionally with YAML frontmatter (see `slides-outline.md` for recognized keys).
 - **Outline** (`<thread>.0.outline/outline.md`): if present, the narrative spine to expand into slides. If absent, the drafter operates from the brief directly and produces a less-narrative-shaped first draft (Dimension 3 score will likely suffer; orchestrators should run `slides-outline` first).
 - **References** (`<thread>/refs/**`): supporting material. Treated as read-only context.
@@ -19,7 +19,7 @@ description: Drafter command for the slides skill. Produces a new slides version
 
 ## Outputs
 
-A new version directory:
+A new version directory, nested under the thread root `<thread>/`:
 
 ```
 <thread>.{N+1}/
@@ -36,7 +36,7 @@ For a new thread, `N+1 == 1` so the output is `<thread>.1/`.
 
 ## Procedure
 
-1. **Discover thread state**: enumerate existing `<thread>.{N}/` dirs (N ≥ 1). Compute the next `N`.
+1. **Discover thread state**: enumerate existing `<thread>.{N}/` version dirs (N ≥ 1) under the thread root `<thread>/`. Compute the next `N`.
 2. **Resume check**: if `<thread>.{N+1}/_progress.json` exists with `draft.state == in_progress`, treat as a crashed prior run. Delete any partial `deck.md` and re-draft. If `draft.state == done`, the version is already drafted — exit early with a notice (this command is idempotent: it does not overwrite a completed draft).
 3. **Read inputs**: load `BRIEF.md` (if present), enumerate `refs/`, and load `outline.md` from `<thread>.0.outline/` if present. If revising from feedback, also load the prior version's `deck.md` + `notes/` and concatenate all critic siblings' verdicts and findings.
 4. **Initialize `_progress.json`**: write `phases.draft.state = in_progress`, `phases.draft.started = <ISO timestamp>`, `metadata.iteration = N+1`, `metadata.max_iterations` (inherit from `<thread>/.anvil.json` if set, else 4).
@@ -53,7 +53,7 @@ For a new thread, `N+1 == 1` so the output is `<thread>.1/`.
      html: true
      ---
      ```
-     (The `theme: anvil-slides-theme` reference resolves to `templates/anvil-slides-theme.css` when rendered with `marp --theme-set <path-to-theme>`; consumers may override. `math: mathjax` + `html: true` mirror the framework pin at `anvil/lib/marp/config.yml` so `deck.md` renders correctly even without the CLI config file.)
+     (The `theme: anvil-slides-theme` reference resolves to `templates/anvil-slides-theme.css` when rendered with `marp --theme-set <path-to-theme>`; consumers may override. `math: mathjax` + `html: true` mirror the framework pin at `anvil/lib/marp/config.yml` so `deck.md` renders correctly even without the CLI config file.) **Theme selection**: if the `BRIEF.md` frontmatter sets the optional `theme:` key, write that value as the frontmatter `theme:` line instead of the default `anvil-slides-theme`; the consumer registers the named theme CSS at `.anvil/skills/slides/templates/<their-theme>.css` and passes it via `--theme-set` per `anvil/lib/snippets/brand-theme-porting.md`. When the key is absent, use `theme: anvil-slides-theme` exactly as before.
    - **One slide per `---` block.** The first slide is the title slide.
    - **Math** via MathJax (Marp v3 default): `$x^2$` inline, `$$\nabla \cdot E = \rho / \varepsilon_0$$` display.
    - **Diagrams** via `mmdc → PNG`. Write the Mermaid source to `figures/src/<name>.mmd` and reference the rendered image from `deck.md` as `![alt](figures/<name>.png)`. Inline fenced ```mermaid blocks do **NOT** render as diagrams in the canonical `--pdf` output (verified false, issue #65) — they emit as raw monospace code; `html: true` only passes raw HTML through, it does not execute mermaid.js during Marp's PDF render. The drafter writes `.mmd` sources; `slides-figures` renders them via `mmdc`. See `assets/marp-renderer.md` for the full rationale.
@@ -116,3 +116,13 @@ Merge rule (shallow): read existing `_progress.json` if present, update only `ph
 - **One idea per slide.** This is the highest-leverage discipline for Dimension 2 (Pedagogical clarity). When in doubt, split.
 - **Notes are not optional.** A slide without notes is a slide the talk has not earned. Write notes as you draft, not in a separate pass.
 - **Never invent data.** Figures and statistics come from the brief, refs, or outline. If a number is needed and not provided, request it in `figures/_specs.md` rather than guessing.
+
+## Git sync (opt-in, off by default)
+
+Per `anvil/lib/snippets/git_sync.md` (`.anvil/lib/snippets/git_sync.md` in an installed consumer repo): if `.anvil/config.json` exists and `git.commit_per_phase` is `true`, end this phase: stage only the dirs this phase wrote, commit as `anvil(<skill>/<phase>): <thread>.{N} [<state>]`, push if `git.push` is `true`. Git failures warn and continue — never fail the phase. When the config or knob is absent, skip this step entirely (default off).
+
+This phase's specifics:
+
+- **Ordering**: after `_progress.json` records `phases.draft.state = done`.
+- **Staging target**: ONLY the new `<thread>.{N+1}/` version dir.
+- **Commit**: `anvil(slides/draft): <thread>.{N+1} [DRAFTED]`.
