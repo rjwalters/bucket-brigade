@@ -83,6 +83,38 @@ class TestJSONDefinitions:
         assert "scenarios" in data, "Missing scenarios field"
         assert isinstance(data["scenarios"], dict), "Scenarios must be dict"
 
+    def test_scenarios_json_v2_schema_preserved(self):
+        """Guard the hand-maintained v2.0 schema of scenarios.json.
+
+        definitions/scenarios.json is the source of truth for the codegen
+        chain and is edited by hand. A stale v1.0 exporter once existed
+        (scripts/export_definitions.py, removed in issue #468) that would
+        silently rewrite the file with version "1.0", short parameter names
+        (beta, kappa, ...), and drop the top-level annotation keys. This
+        test fails loudly if any future writer regresses the schema.
+        """
+        with open(SCENARIOS_JSON) as f:
+            data = json.load(f)
+
+        assert data["version"] == "2.0", (
+            f"scenarios.json version must be '2.0', got {data['version']!r} — "
+            "was the file clobbered by a stale exporter?"
+        )
+        assert "note" in data, "Top-level 'note' annotation was dropped"
+        assert "beta_inertness_note" in data, (
+            "Top-level 'beta_inertness_note' annotation was dropped"
+        )
+
+        # v1.0 exporters wrote short parameter names; the current schema
+        # uses descriptive names (see REQUIRED_SCENARIO_PARAMS).
+        legacy_short_names = {"beta", "kappa", "A", "L", "c", "N_min"}
+        for name, spec in data["scenarios"].items():
+            found_legacy = legacy_short_names & set(spec.keys())
+            assert not found_legacy, (
+                f"Scenario {name} uses legacy v1.0 short parameter names "
+                f"{sorted(found_legacy)} — file was rewritten with the old schema"
+            )
+
     def test_all_archetypes_have_params(self):
         """All archetypes have params array."""
         with open(ARCHETYPES_JSON) as f:
