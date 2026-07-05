@@ -74,7 +74,7 @@ k\* columns without a PPO sweep (not joinable): (κ=0.3, c=0.5, k*=2), (κ=0.7, 
 - Registration: pre-registered (issue #430 Task 2 / thrust#259 threshold prediction)
 - Outcome: `gap_closed_ne_pooled`; classes k*=1 (n=3) vs k*>=2 (n=8)
 - k*=1 values: 0.054, 0.101, 0.122 (median 0.101)
-- k*>=2 values: -0.038, 0.000, 0.001, 0.066, 0.111, 0.135, 0.154, 0.326 (median 0.111)
+- k*>=2 values: -0.038, 0.000, 0.001, 0.066, 0.111, 0.135, 0.154, 0.326 (median 0.089)
 - Exact Mann-Whitney U = 12.0: one-sided p = 0.5394, two-sided p = 1.0000
 - Rank-biserial (Cliff's δ) = 0.00
 - Exhaustive permutation (165 assignments): Δmean = -0.0018, one-sided p = 0.4606, two-sided p = 0.9939
@@ -85,7 +85,7 @@ k\* columns without a PPO sweep (not joinable): (κ=0.3, c=0.5, k*=2), (κ=0.7, 
 - Registration: pre-registered split, secondary outcome (homogeneous gap)
 - Outcome: `gap_closed_homogeneous_pooled`; classes k*=1 (n=3) vs k*>=2 (n=10)
 - k*=1 values: 0.033, 0.048, 0.060 (median 0.048)
-- k*>=2 values: -0.012, -0.011, -0.003, 0.000, 0.000, 0.018, 0.033, 0.051, 0.065, 0.103 (median 0.018)
+- k*>=2 values: -0.012, -0.011, -0.003, 0.000, 0.000, 0.018, 0.033, 0.051, 0.065, 0.103 (median 0.009)
 - Exact Mann-Whitney U = 21.0: one-sided p = 0.1853, two-sided p = 0.3706
 - Rank-biserial (Cliff's δ) = 0.40
 - Exhaustive permutation (286 assignments): Δmean = 0.0224, one-sided p = 0.1888, two-sided p = 0.3601
@@ -96,7 +96,7 @@ k\* columns without a PPO sweep (not joinable): (κ=0.3, c=0.5, k*=2), (κ=0.7, 
 - Registration: POST-HOC (exploratory; split chosen after observing the primary null — treat the p-value as descriptive, not confirmatory)
 - Outcome: `gap_closed_homogeneous_pooled`; classes k*=4 (=k_max) (n=3) vs k*<=2 (n=10)
 - k*=4 (=k_max) values: -0.012, -0.011, -0.003 (median -0.011)
-- k*<=2 values: 0.000, 0.000, 0.018, 0.033, 0.033, 0.048, 0.051, 0.060, 0.065, 0.103 (median 0.048)
+- k*<=2 values: 0.000, 0.000, 0.018, 0.033, 0.033, 0.048, 0.051, 0.060, 0.065, 0.103 (median 0.040)
 - Exact Mann-Whitney U = 0.0: one-sided p = 0.0035, two-sided p = 0.0070
 - Rank-biserial (Cliff's δ) = -1.00
 - Exhaustive permutation (286 assignments): Δmean = -0.0498, one-sided p = 0.0035, two-sided p = 0.0210

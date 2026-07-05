@@ -192,6 +192,37 @@ def test_rank_biserial_bounds():
 
 
 # ---------------------------------------------------------------------------
+# class_comparison — median display (issue #476)
+# ---------------------------------------------------------------------------
+
+
+def test_class_comparison_median_interpolates_even_sized_groups():
+    """Issue #476: even-sized groups must report the conventional
+    interpolated median (mean of the two middle values), not the
+    upper-middle order statistic. Odd-sized groups are unaffected."""
+    rows = [
+        {"v": 0.0, "g": True},
+        {"v": 1.0, "g": True},
+        {"v": 2.0, "g": True},  # odd group (n=3): median = 1.0 either way
+        {"v": 10.0, "g": False},
+        {"v": 20.0, "g": False},
+        {"v": 30.0, "g": False},
+        {"v": 40.0, "g": False},  # even group (n=4): 25.0, NOT 30.0
+    ]
+    out = kvt.class_comparison(
+        rows,
+        "v",
+        lambda r: r["g"],
+        "g1",
+        "g2",
+        alternative="less",
+        registration="test",
+    )
+    assert out["group1_median"] == pytest.approx(1.0)
+    assert out["group2_median"] == pytest.approx(25.0)
+
+
+# ---------------------------------------------------------------------------
 # End-to-end against the committed artifacts
 # ---------------------------------------------------------------------------
 

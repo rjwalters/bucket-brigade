@@ -60,6 +60,7 @@ import argparse
 import itertools
 import json
 import math
+import statistics
 import sys
 from pathlib import Path
 
@@ -298,8 +299,8 @@ def class_comparison(
         "n2": len(g2),
         "group1_values": sorted(g1),
         "group2_values": sorted(g2),
-        "group1_median": sorted(g1)[len(g1) // 2],
-        "group2_median": sorted(g2)[len(g2) // 2],
+        "group1_median": statistics.median(g1),
+        "group2_median": statistics.median(g2),
         "mann_whitney_u": float(mwu_one.statistic),
         "mwu_p_one_sided": float(mwu_one.pvalue),
         "mwu_p_two_sided": float(mwu_two.pvalue),
