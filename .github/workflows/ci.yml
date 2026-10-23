@@ -9,6 +9,9 @@ on:
 jobs:
   test-python:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Codecov OIDC authentication; no upload secret required.
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
@@ -16,7 +19,7 @@ jobs:
       with:
         version: "latest"
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Setup Rust
@@ -72,10 +75,11 @@ jobs:
         tail -50 pytest-output.txt >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v7.1.1
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         flags: python
+        use_oidc: true
 
   test-web:
     runs-on: ubuntu-latest
@@ -88,7 +92,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: "22.23.4"
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
     - name: Install dependencies
@@ -114,7 +118,7 @@ jobs:
       with:
         version: "latest"
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Setup Rust
@@ -136,9 +140,9 @@ jobs:
     - name: Install Python dependencies
       run: uv pip install -e .[dev]
     - name: Run Ruff
-      run: uv run ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
+      run: uv run --locked --extra dev ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run Ruff Format Check
-      run: uv run ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
+      run: uv run --locked --extra dev ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run MyPy
       run: uv run mypy . --ignore-missing-imports || true
 
@@ -151,7 +155,7 @@ jobs:
       with:
         version: "latest"
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Set up pnpm
@@ -161,7 +165,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: "22.23.4"
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
     - name: Setup Rust
@@ -189,7 +193,7 @@ jobs:
       with:
         version: "latest"
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Setup Rust
@@ -203,7 +207,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: "22.23.4"
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
     - name: Create virtual environment
@@ -258,7 +262,7 @@ jobs:
       with:
         version: "latest"
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Setup Rust
