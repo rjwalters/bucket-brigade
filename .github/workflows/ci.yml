@@ -140,9 +140,9 @@ jobs:
     - name: Install Python dependencies
       run: uv pip install -e .[dev]
     - name: Run Ruff
-      run: uv run ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
+      run: uv run --locked --extra dev ruff check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run Ruff Format Check
-      run: uv run ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
+      run: uv run --locked --extra dev ruff format --check . --exclude .venv/ --exclude scripts/ --exclude node_modules/ --exclude web/node_modules/ --exclude .anvil/
     - name: Run MyPy
       run: uv run mypy . --ignore-missing-imports || true
 
